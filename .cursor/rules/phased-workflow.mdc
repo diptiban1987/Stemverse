@@ -1,0 +1,54 @@
+---
+description: Read progress/docs, work one phase at a time, update progress, commit
+alwaysApply: true
+---
+
+# Phased development workflow
+
+Follow this workflow at the start of every coding session and before making implementation changes.
+
+## 1. Read first
+
+Before writing or changing code, read:
+
+- `progress.md` (repo root)
+- Relevant files under `docs/` (specs referenced in progress tables and the **Source Documents Reference** section)
+
+Do not skip this step. Implementation must align with the docs and current tracker state.
+
+## 2. Orient
+
+From `progress.md`, determine:
+
+1. **Completed items** — tasks marked ✅ (and any 🔶 worth treating as done for sequencing).
+2. **Current phase** — use the **MVP Phase Tracker** (Phase 1–4) and section order (1 → 20). The current phase is the first phase or section that still has incomplete work.
+3. **Next work** — the single next logical unit: the next ⬜ task in the current section, or the first task of the next section if the current one is complete.
+
+## 3. Scope of work
+
+- Work **only** on the next phase/task identified above.
+- Do not start later phases, sections, or tasks “ahead of schedule” unless the user explicitly asks.
+- If a task is ⚠️ Blocked, note the blocker in `progress.md` and pick the next unblocked item in the same phase, or ask the user.
+
+## 4. While implementing
+
+- Use the **Source Doc** column and files in `docs/` for requirements.
+- Keep changes focused on the active task.
+
+## 5. After completing work
+
+Update `progress.md`:
+
+- Set task status (✅ Completed, 🔵 In Progress, 🔶 Partial, ⚠️ Blocked).
+- Refresh **Overall Progress Summary** counts and percentages when a task’s status changes.
+- Update **MVP Phase Tracker** completion % when phase scope changes.
+- Add a row to **Change Log** (date, section, change, updated by).
+
+## 6. Commit
+
+When a coherent unit of work is finished, commit with a meaningful summary:
+
+- Subject: what was done and which task/section (e.g. `feat(setup): scaffold monorepo — task 1.1`).
+- Body (optional): reference task id (e.g. `1.1`) and doc if helpful.
+
+Do not commit secrets (`.env`, credentials). Only commit when there are real changes to commit.

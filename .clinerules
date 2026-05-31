@@ -1,0 +1,62 @@
+# STEMVerse Block Coding Platform - Cline Configuration
+
+## Session Startup Protocol
+
+**MANDATORY**: Before starting any task in a new session, you MUST:
+
+1. **Read `progress.md`** — Always read the file `progress.md` in the project root first. This file tracks the current status of all 184 tasks across 20 sections of the STEMVerse platform.
+
+2. **Understand current state** — Note which tasks are:
+   - ⬜ Not Started
+   - 🔵 In Progress
+   - ✅ Completed
+   - ⚠️ Blocked
+   - 🔶 Partial
+
+3. **Update progress.md** — After completing any task, update the corresponding status in `progress.md` immediately. Also update the "Overall Progress Summary" table and add an entry to the "Change Log" at the bottom.
+
+4. **Follow the task order** — Prioritize work according to the section numbering (1.x before 2.x, etc.) unless explicitly instructed otherwise. Within a section, follow the item numbering (e.g., 1.1 before 1.2).
+
+## Project Context
+
+- **Project**: STEMVerse Block Coding Platform — A comprehensive robotics/IoT/AI block-coding IDE
+- **Tech Stack**: Next.js 16+ (App Router, TypeScript, Tailwind CSS), NestJS microservices, PostgreSQL, Redis, S3, Docker, Kubernetes
+- **Architecture**: Monorepo with apps/, packages/, services/
+- **Documentation**: All specs are in `/docs/` — 13 source documents covering implementation, enterprise, and design specs
+- **Progress Tracker**: `progress.md` is the single source of truth for project status
+
+## Coding Standards
+
+- Use TypeScript strictly (no `any` types unless absolutely necessary)
+- Follow the design tokens defined in the Unified Docs v2 (colors, spacing, typography)
+- All components must be accessible (WCAG AA)
+- All pages must be responsive (mobile-first)
+- Write tests for critical paths
+- Use conventional commits (feat:, fix:, chore:, docs:, etc.)
+
+## File Organization
+
+- `apps/web` — Next.js frontend
+- `apps/docs` — Documentation portal
+- `apps/academy` — LMS frontend
+- `packages/ui` — Shared UI component library
+- `packages/blockly-engine` — Blockly workspace & block system
+- `packages/scratch-engine` — Scratch VM integration
+- `packages/simulator` — Three.js simulator engine
+- `packages/ai` — AI features (Explain, Auto Fix, Text-to-Blocks)
+- `packages/sdk` — Public SDK (JS, Python, ROS)
+- `packages/database` — Prisma/TypeORM models & migrations
+- `services/auth` — Authentication microservice
+- `services/projects` — Projects microservice
+- `services/compiler` — Compiler microservice
+- `services/simulator` — Simulator microservice
+- `services/marketplace` — Marketplace microservice
+- `services/analytics` — Analytics microservice
+- `services/billing` — Billing microservice
+
+## Important Reminders
+
+- Always check `progress.md` before starting work to avoid duplicating effort
+- Always update `progress.md` after completing work to keep it accurate
+- Reference the source documents in `/docs/` when implementing features to ensure spec compliance
+- The MVP roadmap follows 4 quarters — check the "MVP Phase Tracker" section for current phase priorities

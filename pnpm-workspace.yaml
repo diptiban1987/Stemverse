@@ -1,0 +1,6 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+  - "services/*"
+
+# scratch-engine outputs to apps/web/public/scratch

@@ -1,0 +1,35 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: stemverse-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: stemverse
+      POSTGRES_PASSWORD: stemverse_dev
+      POSTGRES_DB: stemverse
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stemverse -d stemverse"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: stemverse-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - default
+
+# Object storage (MinIO): docker compose -f docker-compose.yml -f docker-compose.storage.yml up -d
+
+volumes:
+  postgres_data:
+  redis_data:

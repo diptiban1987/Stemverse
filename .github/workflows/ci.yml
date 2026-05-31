@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: stemverse
+          POSTGRES_PASSWORD: stemverse_dev
+          POSTGRES_DB: stemverse
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://stemverse:stemverse_dev@localhost:5432/stemverse?schema=public
+      JWT_ACCESS_SECRET: ci-access-secret-minimum-32-characters
+      JWT_REFRESH_SECRET: ci-refresh-secret-minimum-32-characters
+      CORS_ORIGIN: http://localhost:3000
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install
+      - run: pnpm db:generate
+      - run: pnpm --filter @stemverse/database push
+      - run: pnpm --filter @stemverse/database build
+      - run: pnpm --filter @stemverse/api build
+      - run: pnpm --filter @stemverse/scratch-engine build
+      - run: pnpm --filter @stemverse/web build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:4000/api

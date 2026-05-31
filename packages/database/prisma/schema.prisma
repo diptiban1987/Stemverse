@@ -1,0 +1,608 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  GUEST
+  STUDENT
+  TEACHER
+  SCHOOL_ADMIN
+  MARKETPLACE_CREATOR
+  ENTERPRISE_ADMIN
+  PLATFORM_ADMIN
+}
+
+enum ProjectType {
+  SCRATCH
+  ROBOTICS
+  IOT
+  AI
+  ROS2
+  INDUSTRIAL
+}
+
+enum ProjectVisibility {
+  PRIVATE
+  UNLISTED
+  PUBLIC
+}
+
+enum OrganizationPlan {
+  FREE
+  PRO
+  EDUCATION
+  ENTERPRISE
+}
+
+model Organization {
+  id        String           @id @default(uuid()) @db.Uuid
+  name      String
+  plan      OrganizationPlan @default(FREE)
+  createdAt DateTime         @default(now()) @map("created_at")
+  updatedAt DateTime         @updatedAt @map("updated_at")
+
+  users    User[]
+  projects Project[]
+
+  @@map("organizations")
+}
+
+model User {
+  id             String    @id @default(uuid()) @db.Uuid
+  email          String    @unique
+  passwordHash   String    @map("password_hash")
+  displayName    String?   @map("display_name")
+  role           UserRole  @default(STUDENT)
+  organizationId String?   @map("organization_id") @db.Uuid
+  emailVerified  Boolean   @default(false) @map("email_verified")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  organization  Organization?  @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  refreshTokens RefreshToken[]
+  projects             Project[]
+  auditLogs            AuditLog[]
+  certificates         Certificate[]
+  marketplaceListings  MarketplaceListing[]
+  pluginInstallations  PluginInstallation[]
+  aiSessions           AiSession[]
+  aiSettings           AiUserSettings?
+  projectVersions      ProjectVersion[]
+  assets               Asset[]
+
+  @@index([organizationId])
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  tokenHash String   @unique @map("token_hash")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  revokedAt DateTime? @map("revoked_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model Project {
+  id            String            @id @default(uuid()) @db.Uuid
+  ownerId       String            @map("owner_id") @db.Uuid
+  organizationId String?          @map("organization_id") @db.Uuid
+  forkedFromId  String?           @map("forked_from_id") @db.Uuid
+  name          String
+  slug          String?           @unique
+  description   String?
+  type          ProjectType       @default(SCRATCH)
+  visibility    ProjectVisibility @default(PRIVATE)
+  workspaceJson Json              @default("{}") @map("workspace_json")
+  thumbnailUrl  String?           @map("thumbnail_url")
+  boardType     String?           @map("board_type")
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+
+  owner        User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  forkedFrom   Project?      @relation("ProjectForks", fields: [forkedFromId], references: [id], onDelete: SetNull)
+  forks        Project[]     @relation("ProjectForks")
+  workspaces   Workspace[]
+  listing      MarketplaceListing?
+  versions     ProjectVersion[]
+  aiSessions   AiSession[]
+  assets       Asset[]
+
+  @@index([ownerId])
+  @@index([organizationId])
+  @@index([type])
+  @@index([visibility])
+  @@map("projects")
+}
+
+model ProjectVersion {
+  id                String   @id @default(uuid()) @db.Uuid
+  projectId         String   @map("project_id") @db.Uuid
+  createdById       String   @map("created_by_id") @db.Uuid
+  versionNumber     Int      @map("version_number")
+  label             String?
+  workspaceJson     Json     @map("workspace_json")
+  generatedCode     String?  @map("generated_code")
+  simulatorMetadata Json?    @map("simulator_metadata")
+  aiSessionMetadata Json?    @map("ai_session_metadata")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy User    @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, versionNumber])
+  @@index([projectId])
+  @@map("project_versions")
+}
+
+model AiSession {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  projectId String?  @map("project_id") @db.Uuid
+  title     String
+  model     String?
+  messages  Json     @default("[]")
+  metadata  Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  assets  Asset[]
+
+  @@index([userId])
+  @@index([projectId])
+  @@map("ai_sessions")
+}
+
+model AiUserSettings {
+  userId           String  @id @map("user_id") @db.Uuid
+  preferredModel   String? @map("preferred_model")
+  fallbackModel    String? @map("fallback_model")
+  temperature      Float   @default(0.7)
+  maxTokens        Int     @default(1024) @map("max_tokens")
+  streamingEnabled Boolean @default(true) @map("streaming_enabled")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("ai_user_settings")
+}
+
+model Workspace {
+  id            String   @id @default(uuid()) @db.Uuid
+  projectId     String   @map("project_id") @db.Uuid
+  name          String   @default("Main")
+  workspaceJson Json     @default("{}") @map("workspace_json")
+  version       Int      @default(1)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("workspaces")
+}
+
+enum CertificateLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  PROFESSIONAL
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  MULTIPLE_SELECT
+  TRUE_FALSE
+  BLOCKLY_CHALLENGE
+  CODE_REVIEW
+}
+
+model LearningTrack {
+  id          String   @id @default(uuid()) @db.Uuid
+  slug        String   @unique
+  title       String
+  description String?
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  courses Course[]
+
+  @@map("learning_tracks")
+}
+
+model Course {
+  id          String   @id @default(uuid()) @db.Uuid
+  trackId     String?  @map("track_id") @db.Uuid
+  title       String
+  slug        String   @unique
+  category    String
+  level       String
+  description String?
+  published   Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  track         LearningTrack?     @relation(fields: [trackId], references: [id], onDelete: SetNull)
+  modules       Module[]
+  certificates  Certificate[]
+  enrollments   CourseEnrollment[]
+  listing       MarketplaceListing?
+
+  @@index([trackId])
+  @@map("courses")
+}
+
+model Module {
+  id          String   @id @default(uuid()) @db.Uuid
+  courseId    String   @map("course_id") @db.Uuid
+  title       String
+  description String?
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  course      Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons     Lesson[]
+  assessments Assessment[]
+
+  @@index([courseId])
+  @@map("modules")
+}
+
+model Lesson {
+  id        String   @id @default(uuid()) @db.Uuid
+  moduleId  String   @map("module_id") @db.Uuid
+  title     String
+  contentMd String?  @map("content_md")
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  module         Module           @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  lessonProjects LessonProject[]
+  assessments    Assessment[]
+  progress       LessonProgress[]
+
+  @@index([moduleId])
+  @@map("lessons")
+}
+
+model LessonProject {
+  id          String   @id @default(uuid()) @db.Uuid
+  lessonId    String   @map("lesson_id") @db.Uuid
+  title       String
+  description String?
+  projectId   String?  @map("project_id") @db.Uuid
+  boardType   String?  @map("board_type")
+  templateKey String?  @map("template_key")
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  lesson            Lesson             @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  projectCompletions ProjectCompletion[]
+
+  @@index([lessonId])
+  @@map("lesson_projects")
+}
+
+model Assessment {
+  id           String   @id @default(uuid()) @db.Uuid
+  lessonId     String?  @map("lesson_id") @db.Uuid
+  moduleId     String?  @map("module_id") @db.Uuid
+  title        String
+  description  String?
+  passingScore Int      @default(70) @map("passing_score")
+  sortOrder    Int      @default(0) @map("sort_order")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  lesson    Lesson?              @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  module    Module?              @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  questions AssessmentQuestion[]
+  attempts  AssessmentAttempt[]
+
+  @@index([lessonId])
+  @@index([moduleId])
+  @@map("assessments")
+}
+
+model AssessmentQuestion {
+  id            String       @id @default(uuid()) @db.Uuid
+  assessmentId  String       @map("assessment_id") @db.Uuid
+  type          QuestionType
+  prompt        String
+  options       Json?
+  correctAnswer Json         @map("correct_answer")
+  points        Int          @default(1)
+  sortOrder     Int          @default(0) @map("sort_order")
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@index([assessmentId])
+  @@map("assessment_questions")
+}
+
+model AssessmentAttempt {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  assessmentId String   @map("assessment_id") @db.Uuid
+  score        Float
+  maxScore     Float    @map("max_score")
+  passed       Boolean
+  answers      Json     @default("{}")
+  submittedAt  DateTime @default(now()) @map("submitted_at")
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([assessmentId])
+  @@map("assessment_attempts")
+}
+
+model CourseEnrollment {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @map("user_id") @db.Uuid
+  courseId        String   @map("course_id") @db.Uuid
+  progressPercent Float    @default(0) @map("progress_percent")
+  startedAt       DateTime @default(now()) @map("started_at")
+  completedAt     DateTime? @map("completed_at")
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@index([userId])
+  @@map("course_enrollments")
+}
+
+model LessonProgress {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  lessonId    String    @map("lesson_id") @db.Uuid
+  completed   Boolean   @default(false)
+  completedAt DateTime? @map("completed_at")
+
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
+  @@index([userId])
+  @@map("lesson_progress")
+}
+
+model ProjectCompletion {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @map("user_id") @db.Uuid
+  lessonProjectId String   @map("lesson_project_id") @db.Uuid
+  projectId       String?  @map("project_id") @db.Uuid
+  completedAt     DateTime @default(now()) @map("completed_at")
+
+  lessonProject LessonProject @relation(fields: [lessonProjectId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonProjectId])
+  @@index([userId])
+  @@map("project_completions")
+}
+
+model Certificate {
+  id        String           @id @default(uuid()) @db.Uuid
+  userId    String           @map("user_id") @db.Uuid
+  courseId  String           @map("course_id") @db.Uuid
+  level     CertificateLevel @default(BEGINNER)
+  metadata  Json             @default("{}")
+  issuedAt  DateTime         @default(now()) @map("issued_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@map("certificates")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String?  @map("user_id") @db.Uuid
+  action     String
+  resource   String?
+  resourceId String?  @map("resource_id")
+  metadata   Json?
+  ipAddress  String?  @map("ip_address")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model Board {
+  id            String   @id @default(uuid()) @db.Uuid
+  slug          String   @unique
+  name          String
+  architecture  String
+  capabilities  Json     @default("{}")
+  digitalPins   Json     @default("[]") @map("digital_pins")
+  analogPins    Json     @default("[]") @map("analog_pins")
+  pwmPins       Json     @default("[]") @map("pwm_pins")
+  defaultConfig Json     @default("{}") @map("default_config")
+  metadata      Json     @default("{}")
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("boards")
+}
+
+model Sensor {
+  id           String   @id @default(uuid()) @db.Uuid
+  slug         String   @unique
+  name         String
+  category     String
+  properties   Json     @default("[]")
+  defaultPin   Int?     @map("default_pin")
+  libraries    Json     @default("[]")
+  blockType    String   @map("block_type")
+  generatorKey String   @map("generator_key")
+  metadata     Json     @default("{}")
+  boardSupport Json     @default("[]") @map("board_support")
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([category])
+  @@map("sensors")
+}
+
+model Actuator {
+  id           String   @id @default(uuid()) @db.Uuid
+  slug         String   @unique
+  name         String
+  category     String
+  fields       Json     @default("[]")
+  libraries    Json     @default("[]")
+  blockType    String   @map("block_type")
+  generatorKey String   @map("generator_key")
+  metadata     Json     @default("{}")
+  boardSupport Json     @default("[]") @map("board_support")
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([category])
+  @@map("actuators")
+}
+
+enum MarketplaceItemType {
+  PLUGIN
+  COMPONENT_SENSOR
+  COMPONENT_ACTUATOR
+  COMPONENT_DISPLAY
+  COMPONENT_BOARD
+  COURSE
+  PROJECT
+}
+
+enum MarketplaceListingStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum PluginInstallState {
+  INSTALLED
+  ENABLED
+  DISABLED
+}
+
+model MarketplaceListing {
+  id             String                   @id @default(uuid()) @db.Uuid
+  slug           String                   @unique
+  type           MarketplaceItemType
+  title          String
+  description    String?
+  category       String
+  authorId       String                   @map("author_id") @db.Uuid
+  status         MarketplaceListingStatus @default(DRAFT)
+  version        String                   @default("1.0.0")
+  tags           Json                     @default("[]")
+  installCount   Int                      @default(0) @map("install_count")
+  pluginManifest Json?                    @map("plugin_manifest")
+  projectId      String?                  @unique @map("project_id") @db.Uuid
+  courseId       String?                  @unique @map("course_id") @db.Uuid
+  componentSlug  String?                  @map("component_slug")
+  componentKind  String?                  @map("component_kind")
+  metadata       Json                     @default("{}")
+  publishedAt    DateTime?                @map("published_at")
+  createdAt      DateTime                 @default(now()) @map("created_at")
+  updatedAt      DateTime                 @updatedAt @map("updated_at")
+
+  author      User                 @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  project     Project?             @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  course      Course?              @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  installations PluginInstallation[]
+  assets        Asset[]
+
+  @@index([type, status])
+  @@index([category])
+  @@index([authorId])
+  @@map("marketplace_listings")
+}
+
+model PluginInstallation {
+  id          String             @id @default(uuid()) @db.Uuid
+  userId      String             @map("user_id") @db.Uuid
+  listingId   String             @map("listing_id") @db.Uuid
+  version     String
+  state       PluginInstallState @default(ENABLED)
+  installedAt DateTime           @default(now()) @map("installed_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+
+  user    User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listing MarketplaceListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, listingId])
+  @@index([userId])
+  @@map("plugin_installations")
+}
+
+enum AssetBucket {
+  SCRATCH_ASSETS
+  PROJECT_ASSETS
+  MARKETPLACE_ASSETS
+  AI_ASSETS
+}
+
+enum AssetPurpose {
+  SCRATCH_COSTUME
+  SCRATCH_SOUND
+  PROJECT_THUMBNAIL
+  PROJECT_ATTACHMENT
+  MARKETPLACE_ICON
+  MARKETPLACE_PREVIEW
+  MARKETPLACE_DOWNLOAD
+  AI_DIAGRAM
+  AI_WIRING
+  AI_IMAGE
+  AI_PROJECT_ASSET
+  GENERAL
+}
+
+model Asset {
+  id                 String       @id @default(uuid()) @db.Uuid
+  userId             String       @map("user_id") @db.Uuid
+  projectId          String?      @map("project_id") @db.Uuid
+  listingId          String?      @map("listing_id") @db.Uuid
+  aiSessionId        String?      @map("ai_session_id") @db.Uuid
+  bucket             AssetBucket
+  objectKey          String       @map("object_key")
+  mimeType           String       @map("mime_type")
+  sizeBytes          Int          @map("size_bytes")
+  purpose            AssetPurpose @default(GENERAL)
+  originalFilename   String?      @map("original_filename")
+  metadata           Json         @default("{}")
+  createdAt          DateTime     @default(now()) @map("created_at")
+
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project   Project?            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  listing   MarketplaceListing? @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  aiSession AiSession?          @relation(fields: [aiSessionId], references: [id], onDelete: SetNull)
+
+  @@unique([bucket, objectKey])
+  @@index([userId])
+  @@index([projectId])
+  @@index([listingId])
+  @@index([purpose])
+  @@map("assets")
+}
