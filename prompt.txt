@@ -1,0 +1,258 @@
+Implementation Plan — Phase 7U — Visual Wire & Connection Layout Foundation
+
+Implement a deterministic, serializable, browser-safe visual wire metadata foundation for @stemverse/runtime-engine.
+
+IMPORTANT
+
+This phase DOES NOT implement:
+
+* actual wire rendering
+* SVG rendering
+* Pixi graphics rendering
+* wire routing algorithms
+* drag-and-drop wire editing
+* electrical simulation
+* voltage/current calculations
+
+This phase ONLY implements:
+
+* wire metadata
+* wire path ownership
+* wire layout synchronization
+* serialization
+* renderer synchronization
+
+==================================================
+GOAL
+====
+
+Allow RuntimeConnection objects to own visual layout metadata.
+
+Examples:
+
+ESP32 GPIO2
+───── wire ─────
+LED INPUT
+
+BUTTON OUTPUT
+───── wire ─────
+ESP32 GPIO4
+
+Only metadata.
+
+No rendering.
+
+==================================================
+
+1. TYPES
+   ==================================================
+
+[MODIFY]
+
+packages/runtime-engine/src/types/index.ts
+
+Add:
+
+export interface WirePoint {
+x: number;
+y: number;
+}
+
+export interface WireLayout {
+connectionId: string;
+
+points: WirePoint[];
+
+color?: string;
+
+thickness?: number;
+
+visible: boolean;
+}
+
+Extend StageSyncState:
+
+wireLayouts?: WireLayout[];
+
+Extend SerializedTarget:
+
+wireLayouts?: WireLayout[];
+
+==================================================
+2. RUNTIME REGISTRY
+===================
+
+[MODIFY]
+
+runtime/index.ts
+
+Add:
+
+wireLayouts:
+Map<string, WireLayout>
+
+Methods:
+
+registerWireLayout(...)
+removeWireLayout(...)
+getWireLayout(...)
+getWireLayouts(...)
+
+Requirements:
+
+* deterministic ordering
+* O(1) lookup
+* deep-copy isolation
+
+==================================================
+3. DEFAULT LAYOUTS
+==================
+
+Default:
+
+points: []
+
+visible: true
+
+thickness: 1
+
+color: "#808080"
+
+==================================================
+4. MUTATION HELPERS
+===================
+
+Add:
+
+setWirePoints(...)
+setWireColor(...)
+setWireThickness(...)
+setWireVisibility(...)
+
+Warnings only.
+
+Never throw.
+
+==================================================
+5. SNAPSHOT SYNCHRONIZATION
+===========================
+
+Expose:
+
+wireLayouts
+
+through:
+
+getStageSnapshot()
+
+Deep-copy all points.
+
+==================================================
+6. RENDERER ADAPTERS
+====================
+
+[MODIFY]
+
+renderer-adapter.ts
+
+pixi-renderer-adapter.ts
+
+Add:
+
+wireLayouts
+
+Metadata only.
+
+No graphics.
+
+==================================================
+7. IMPORT / EXPORT
+==================
+
+Preserve:
+
+wireLayouts
+
+through:
+
+exportProject()
+importProject()
+
+==================================================
+8. VALIDATION
+=============
+
+Warnings only.
+
+Never throw.
+
+Validate:
+
+* duplicate wire layouts
+* malformed points
+* invalid coordinates
+* missing connection IDs
+* invalid thickness
+
+==================================================
+9. TESTS
+========
+
+Create:
+
+tests/wire-layout-runtime.test.ts
+
+Add at least 140 deterministic tests covering:
+
+* registration
+* lookup
+* removal
+* mutation helpers
+* snapshot isolation
+* renderer synchronization
+* import/export
+* deep-copy guarantees
+* malformed layouts
+* duplicate layouts
+* cleanup
+* deterministic ordering
+* warning diagnostics
+
+==================================================
+10. VALIDATION
+==============
+
+Run:
+
+pnpm --filter @stemverse/runtime-engine test
+
+pnpm --filter @stemverse/runtime-engine build
+
+If passing:
+
+STOP.
+
+==================================================
+OUTPUT
+======
+
+Return ONLY:
+
+1. Files modified
+2. Tests passing count
+3. Build status
+4. Concise summary
+
+No large walkthroughs.
+
+==================================================
+CRITICAL
+========
+
+Preserve all existing architecture.
+
+This phase is metadata-only.
+
+DO NOT implement rendering.
+DO NOT implement electrical simulation.
+DO NOT redesign runtime architecture.

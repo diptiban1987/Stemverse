@@ -14,3 +14,8 @@ coverage
 *.7z
 *.zip
 *.tar.gz
+
+credentials.txt
+
+login-body.json
+register-body.json

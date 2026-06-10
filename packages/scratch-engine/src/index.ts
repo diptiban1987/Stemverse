@@ -9,7 +9,7 @@ export * from './asset-resolve';
 
 import VirtualMachine from 'scratch-vm';
 import Renderer from 'scratch-render';
-import Storage from 'scratch-storage';
+import { ScratchStorage as Storage } from 'scratch-storage';
 import { ScratchEventRuntime } from './event-runtime';
 import { ScratchHardwareRuntime } from './hardware-runtime';
 

@@ -1,0 +1,9 @@
+▼Todo
+[✓] Read current codebase state (types, runtime, renderer adapters, progress)
+[✓] Extend types/index.ts with LocalTransformState, WorldTransformState, hierarchy types
+[✓] Add hierarchy registry and transform propagation to runtime/index.ts
+[✓] Update renderer-adapter.ts for hierarchy metadata ingestion
+[✓] Update pixi-renderer-adapter.ts for metadata-only consumption
+[•] Create scene-graph-runtime.test.ts with 42+ tests
+[ ] Update progress.md
+[ ] Run validation (test, build, full build)

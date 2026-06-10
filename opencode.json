@@ -6,7 +6,7 @@
       "name": "Modal",
       "npm": "@ai-sdk/openai-compatible",
       "options": {
-        "apiKey": "modalresearch_8QEt8gtabYqQvw77rjrGwJovmzXlWorz7oQcs9X_eps",
+        "apiKey": "modalresearch_w1UGIrdBTbkgQ3ChQWqGxtjG0v_dlFf3UQdP-EGBeLQ",
         "baseURL": "https://api.us-west-2.modal.direct/v1"
       },
       "models": {
