@@ -1,5 +1,5 @@
 import { IRuntime } from '../core';
-import { TargetId, TargetState, ASTScript, Thread, SpriteState, StageState, PendingBroadcast, BroadcastCompletionToken, ListenerEntry, BubbleState, StageSyncState, CostumeAsset, SoundAsset, BackdropAsset, ActiveSoundTrigger, SoundChannelState, PenCommand, PenState, VariableWatcher, WatcherMode, ListWatcher, ListWatcherMode, GlideState, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, SerializedProject, SerializedStage, SerializedTarget, SerializedAssetManifest, SerializedProjectMetadata, VariableState, ListState, RuntimeAssetState, AssetLoadStatus, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, ComponentType, RuntimeComponent, PinDirection, RuntimePin, RuntimeConnection, DeviceState, WorkspaceTransform, WorkspaceComponentLayout, WirePoint, WireLayout, DevelopmentBoardType, BoardPinDefinition, BoardPinCapabilities, DevelopmentBoardDefinition, WorkspaceBoard, RenderModelType, RenderMetadata, RuntimeHALState, HardwareAddress, PinMode, PullMode, PinCapability, ProtocolState, ProtocolType, PWMChannelState, I2CBusState, SPIBusState, UARTPortState, HardwareBackendMetadata, ExecutionCommand, ExecutionCommandLifecycleState, ExecutionCommandType, ESP32RuntimeMetadata, ESP32ExecutionState, ESP32PinCapability, ESP32PinMode } from '../types';
+import { TargetId, TargetState, ASTScript, Thread, SpriteState, StageState, PendingBroadcast, BroadcastCompletionToken, ListenerEntry, BubbleState, StageSyncState, CostumeAsset, SoundAsset, BackdropAsset, ActiveSoundTrigger, SoundChannelState, PenCommand, PenState, VariableWatcher, WatcherMode, ListWatcher, ListWatcherMode, GlideState, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, SerializedProject, SerializedStage, SerializedTarget, SerializedAssetManifest, SerializedProjectMetadata, VariableState, ListState, RuntimeAssetState, AssetLoadStatus, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, ComponentType, RuntimeComponent, PinDirection, RuntimePin, RuntimeConnection, DeviceState, WorkspaceTransform, WorkspaceComponentLayout, WirePoint, WireLayout, DevelopmentBoardType, BoardPinDefinition, BoardPinCapabilities, DevelopmentBoardDefinition, WorkspaceBoard, RenderModelType, RenderMetadata, RuntimeHALState, HardwareAddress, PinMode, PullMode, PinCapability, ProtocolState, ProtocolType, PWMChannelState, I2CBusState, SPIBusState, UARTPortState, HardwareBackendMetadata, ExecutionCommand, ExecutionCommandLifecycleState, ExecutionCommandType, ESP32RuntimeMetadata, ESP32ExecutionState, ESP32PinCapability, ESP32PinMode, ESP32InstructionMetadata, ESP32InstructionExecutionState, ESP32InstructionType } from '../types';
 import { MinimalASTInterpreter, IHardwareAdapter } from '../ast/interpreter';
 import { SimulatedHardwareBackend } from '../hal';
 import { createThread, TaskQueue, PendingTask, resetThreadCounter } from './execution-context';
@@ -268,6 +268,8 @@ export class BaseRuntime implements IRuntime {
   private executionCommandOrder: string[] = [];
   private esp32RuntimeRegistry = new Map<string, ESP32RuntimeMetadata>();
   private esp32RuntimeOrder: string[] = [];
+  private esp32InstructionRegistry = new Map<string, ESP32InstructionMetadata>();
+  private esp32InstructionOrder: string[] = [];
 
   private static readonly DEFAULT_RENDER_METADATA: Record<RenderModelType, RenderMetadata> = {
     'LED': { modelType: 'LED', width: 20, height: 20, anchorX: 0.5, anchorY: 0.5, rotation: 0, visible: true },
@@ -923,6 +925,122 @@ export class BaseRuntime implements IRuntime {
       return;
     }
     metadata.executionContext.state = state;
+  }
+
+  private static readonly VALID_ESP32_INSTRUCTION_TYPES: ESP32InstructionType[] = [
+    'PIN_MODE', 'DIGITAL_WRITE', 'DIGITAL_READ', 'ANALOG_READ', 'ANALOG_WRITE', 'PWM_WRITE', 'DELAY', 'NOP'
+  ];
+
+  private static readonly VALID_ESP32_INSTRUCTION_STATES: ESP32InstructionExecutionState[] = [
+    'CREATED', 'READY', 'QUEUED', 'EXECUTING', 'COMPLETED', 'FAILED'
+  ];
+
+  private validateESP32InstructionMetadata(instruction: ESP32InstructionMetadata): boolean {
+    if (!instruction || typeof instruction.instructionId !== 'string' || instruction.instructionId.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed ESP32 instruction metadata: Instruction is missing a valid instructionId.');
+      return false;
+    }
+    if (typeof instruction.runtimeId !== 'string' || instruction.runtimeId.length === 0) {
+      console.warn(`[Runtime Diagnostics] malformed ESP32 instruction metadata: Instruction "${instruction.instructionId}" is missing a valid runtimeId.`);
+      return false;
+    }
+    if (!BaseRuntime.VALID_ESP32_INSTRUCTION_TYPES.includes(instruction.instructionType)) {
+      console.warn(`[Runtime Diagnostics] unsupported ESP32 instruction types: Instruction "${instruction.instructionId}" has unsupported type "${(instruction as any).instructionType}".`);
+      return false;
+    }
+    if (!BaseRuntime.VALID_ESP32_INSTRUCTION_STATES.includes(instruction.executionState)) {
+      console.warn(`[Runtime Diagnostics] invalid ESP32 instruction states: Instruction "${instruction.instructionId}" has invalid state "${(instruction as any).executionState}".`);
+      return false;
+    }
+    if (!this.validatePlainObject(instruction.address)) {
+      console.warn(`[Runtime Diagnostics] malformed ESP32 instruction metadata: Instruction "${instruction.instructionId}" has invalid address metadata.`);
+      return false;
+    }
+    for (const [key, value] of Object.entries(instruction.address)) {
+      if (value !== undefined && typeof value !== 'string') {
+        console.warn(`[Runtime Diagnostics] malformed ESP32 instruction metadata: Instruction "${instruction.instructionId}" has invalid address field "${key}".`);
+        return false;
+      }
+    }
+    if (!this.validatePlainObject(instruction.operands) || !this.validatePlainObject(instruction.metadata)) {
+      console.warn(`[Runtime Diagnostics] malformed ESP32 instruction metadata: Instruction "${instruction.instructionId}" has invalid operands or metadata.`);
+      return false;
+    }
+    if (!this.validatePlainObject(instruction.diagnostics) || !Array.isArray(instruction.diagnostics.warnings) || !Array.isArray(instruction.diagnostics.errors) || !this.validatePlainObject(instruction.diagnostics.metadata)) {
+      console.warn(`[Runtime Diagnostics] malformed ESP32 instruction metadata: Instruction "${instruction.instructionId}" has invalid diagnostics.`);
+      return false;
+    }
+    if (!instruction.diagnostics.warnings.every(value => typeof value === 'string') || !instruction.diagnostics.errors.every(value => typeof value === 'string')) {
+      console.warn(`[Runtime Diagnostics] malformed ESP32 instruction metadata: Instruction "${instruction.instructionId}" has non-string diagnostics.`);
+      return false;
+    }
+    return true;
+  }
+
+  public registerESP32Instruction(instruction: ESP32InstructionMetadata): void {
+    if (!this.validateESP32InstructionMetadata(instruction)) return;
+    if (this.esp32InstructionRegistry.has(instruction.instructionId)) {
+      console.warn(`[Runtime Diagnostics] duplicate ESP32 instruction IDs: ESP32 instruction ID "${instruction.instructionId}" already exists.`);
+    }
+    this.esp32InstructionRegistry.set(instruction.instructionId, JSON.parse(JSON.stringify(instruction)));
+    if (!this.esp32InstructionOrder.includes(instruction.instructionId)) this.esp32InstructionOrder.push(instruction.instructionId);
+
+    const runtime = this.esp32RuntimeRegistry.get(instruction.runtimeId);
+    if (runtime) {
+      runtime.executionContext.currentInstructionId = instruction.instructionId;
+      runtime.executionContext.instructionCount = (runtime.executionContext.instructionCount ?? 0) + 1;
+      runtime.executionContext.instructionExecutionState = instruction.executionState;
+      runtime.executionContext.diagnostics = JSON.parse(JSON.stringify(instruction.diagnostics));
+    }
+  }
+
+  public getESP32Instruction(id: string): ESP32InstructionMetadata | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed ESP32 instruction metadata: Instruction ID must be a non-empty string.');
+      return undefined;
+    }
+    const instruction = this.esp32InstructionRegistry.get(id);
+    return instruction ? JSON.parse(JSON.stringify(instruction)) : undefined;
+  }
+
+  public getESP32Instructions(): ESP32InstructionMetadata[] {
+    return this.esp32InstructionOrder
+      .map(id => this.esp32InstructionRegistry.get(id))
+      .filter((instruction): instruction is ESP32InstructionMetadata => !!instruction)
+      .map(instruction => JSON.parse(JSON.stringify(instruction)));
+  }
+
+  public removeESP32Instruction(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed ESP32 instruction metadata: Instruction ID must be a non-empty string.');
+      return;
+    }
+    this.esp32InstructionRegistry.delete(id);
+    this.esp32InstructionOrder = this.esp32InstructionOrder.filter(existing => existing !== id);
+  }
+
+  public clearESP32Instructions(): void {
+    this.esp32InstructionRegistry.clear();
+    this.esp32InstructionOrder = [];
+  }
+
+  public setESP32InstructionExecutionState(id: string, state: ESP32InstructionExecutionState): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed ESP32 instruction metadata: Instruction ID must be a non-empty string.');
+      return;
+    }
+    if (!BaseRuntime.VALID_ESP32_INSTRUCTION_STATES.includes(state)) {
+      console.warn(`[Runtime Diagnostics] invalid ESP32 instruction states: State "${state}" is invalid.`);
+      return;
+    }
+    const instruction = this.esp32InstructionRegistry.get(id);
+    if (!instruction) {
+      console.warn(`[Runtime Diagnostics] malformed ESP32 instruction metadata: ESP32 instruction "${id}" is not registered.`);
+      return;
+    }
+    instruction.executionState = state;
+    const runtime = this.esp32RuntimeRegistry.get(instruction.runtimeId);
+    if (runtime) runtime.executionContext.instructionExecutionState = state;
   }
 
   private static readonly VALID_BOARD_TYPES: DevelopmentBoardType[] = [
@@ -3238,6 +3356,9 @@ export class BaseRuntime implements IRuntime {
 
     // Reset Phase 8C ESP32 runtime metadata registry
     this.clearESP32Runtimes();
+
+    // Reset Phase 8D ESP32 instruction metadata registry
+    this.clearESP32Instructions();
   }
 
   public start(): void {
@@ -4099,6 +4220,9 @@ export class BaseRuntime implements IRuntime {
       if (this.esp32RuntimeRegistry.size > 0) {
         stageSnap.esp32Runtimes = this.getESP32Runtimes();
       }
+      if (this.esp32InstructionRegistry.size > 0) {
+        stageSnap.esp32Instructions = this.getESP32Instructions();
+      }
       // Phase 7R: Attach connection metadata to stage snapshot entry
       if (this.connectionRegistry.size > 0) {
         stageSnap.connections = this.getConnections();
@@ -4279,6 +4403,11 @@ export class BaseRuntime implements IRuntime {
       // Phase 8C: Serialize ESP32 runtime metadata registry
       if (isStage && this.esp32RuntimeRegistry.size > 0) {
         serializedTarget.esp32Runtimes = this.getESP32Runtimes();
+      }
+
+      // Phase 8D: Serialize ESP32 instruction metadata registry
+      if (isStage && this.esp32InstructionRegistry.size > 0) {
+        serializedTarget.esp32Instructions = this.getESP32Instructions();
       }
 
       const targetWatchers = Array.from(this.variableWatchers.values())
@@ -4670,6 +4799,12 @@ export class BaseRuntime implements IRuntime {
       if (Array.isArray(stageTarget.esp32Runtimes)) {
         for (const esp32Runtime of stageTarget.esp32Runtimes) {
           this.registerESP32Runtime(JSON.parse(JSON.stringify(esp32Runtime)));
+        }
+      }
+      // Phase 8D: Restore ESP32 instruction metadata from stage target
+      if (Array.isArray(stageTarget.esp32Instructions)) {
+        for (const instruction of stageTarget.esp32Instructions) {
+          this.registerESP32Instruction(JSON.parse(JSON.stringify(instruction)));
         }
       }
     }

@@ -431,6 +431,9 @@ export interface StageSyncState {
 
   // Phase 8C: ESP32 runtime metadata synchronization
   esp32Runtimes?: ESP32RuntimeMetadata[];
+
+  // Phase 8D: ESP32 instruction metadata synchronization
+  esp32Instructions?: ESP32InstructionMetadata[];
 }
 
 /**
@@ -599,6 +602,9 @@ export interface SerializedTarget {
 
   // Phase 8C: ESP32 runtime metadata serialization
   esp32Runtimes?: ESP32RuntimeMetadata[];
+
+  // Phase 8D: ESP32 instruction metadata serialization
+  esp32Instructions?: ESP32InstructionMetadata[];
 }
 
 export interface SerializedAssetManifest {
@@ -855,6 +861,10 @@ export interface ESP32BoardBinding {
 export interface ESP32ExecutionContext {
   contextId: string;
   state: ESP32ExecutionState;
+  currentInstructionId?: string;
+  instructionCount?: number;
+  instructionExecutionState?: ESP32InstructionExecutionState;
+  diagnostics?: ESP32InstructionDiagnostics;
   metadata: Record<string, unknown>;
 }
 
@@ -864,6 +874,37 @@ export interface ESP32RuntimeMetadata {
   executionContext: ESP32ExecutionContext;
   capabilitySet: ESP32CapabilitySet;
   pinStates: ESP32PinState[];
+  metadata: Record<string, unknown>;
+}
+
+// ─── Phase 8D: ESP32 Instruction Execution Foundation Metadata ──────────────
+
+export type ESP32InstructionType =
+  | 'PIN_MODE'
+  | 'DIGITAL_WRITE'
+  | 'DIGITAL_READ'
+  | 'ANALOG_READ'
+  | 'ANALOG_WRITE'
+  | 'PWM_WRITE'
+  | 'DELAY'
+  | 'NOP';
+
+export type ESP32InstructionExecutionState = 'CREATED' | 'READY' | 'QUEUED' | 'EXECUTING' | 'COMPLETED' | 'FAILED';
+
+export interface ESP32InstructionDiagnostics {
+  warnings: string[];
+  errors: string[];
+  metadata: Record<string, unknown>;
+}
+
+export interface ESP32InstructionMetadata {
+  instructionId: string;
+  runtimeId: string;
+  instructionType: ESP32InstructionType;
+  executionState: ESP32InstructionExecutionState;
+  address: HardwareAddress;
+  operands: Record<string, unknown>;
+  diagnostics: ESP32InstructionDiagnostics;
   metadata: Record<string, unknown>;
 }
 

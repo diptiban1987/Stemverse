@@ -215,6 +215,7 @@
 | 8.52 | HAL Backend Finalization (Phase 8A.6) | Runtime Architecture | ✅ | Runtime-owned backend metadata registry, active backend ownership, deterministic lifecycle wrappers, snapshot/export/import round-trip, and 456 backend finalization tests |
 | 8.53 | Execution Command Layer Foundation (Phase 8B) | Runtime Architecture | ✅ | Metadata-only execution command registry, lifecycle state tracking, warning-only validation, snapshot/export/import round-trip, and 524 command layer tests |
 | 8.54 | ESP32 Runtime Foundation (Phase 8C) | Runtime Architecture | ✅ | Metadata-only ESP32 runtime identity, GPIO0-GPIO39 pin model, board binding, execution context states, snapshot/export/import round-trip, and 684 ESP32 runtime tests |
+| 8.55 | ESP32 Instruction Execution Foundation (Phase 8D) | Runtime Architecture | ✅ | Metadata-only ESP32 instruction definitions, deterministic registry, execution states, context diagnostics, snapshot/export/import round-trip, and 708 instruction tests |
 ---
 
 ## 9. Robotics Studio Workspace
@@ -422,6 +423,7 @@ Based on V3 Enterprise Spec quarterly breakdown:
 | **Phase 8A.6 — HAL Backend Finalization** | Q3 | Runtime-owned backend registry, active backend ownership metadata, lifecycle wrappers, and serialization-safe backend snapshots | ✅ | 100% |
 | **Phase 8B — Execution Command Layer Foundation** | Q3 | Metadata-only execution command definitions, registry, lifecycle states, snapshots, and serialization | ✅ | 100% |
 | **Phase 8C — ESP32 Runtime Foundation** | Q3 | Metadata-only ESP32 runtime identity, pin ownership, board binding, execution context, and serialization | ✅ | 100% |
+| **Phase 8D — ESP32 Instruction Execution Foundation** | Q3 | Metadata-only ESP32 instruction definitions, execution states, context diagnostics, snapshots, and serialization | ✅ | 100% |
 | **Phase 4 (Roadmap)** | Q3 | Simulator Engine + AI Studio + Advanced Blocks | 🔵 | 72% |
 | **Phase 5.1 (Roadmap)** | Q4 | Production hardening, unified streaming, Scratch runtime, E2E, OpenAPI | 🔵 | 55% |
 | **Phase 5.2A (Roadmap)** | Q4 | Object storage & asset pipeline (MinIO, presign, Asset model) | ✅ | 90% |
@@ -551,6 +553,7 @@ Based on V3 Enterprise Spec quarterly breakdown:
 | 2026-06-11 | 8 | Phase 8A.6 — HAL Backend Finalization: Added backend metadata contracts, runtime-owned backend registry, active backend ownership, deterministic lifecycle wrappers, snapshot/export/import support, and 456 backend finalization tests. | Kilo |
 | 2026-06-11 | 8 | Phase 8B — Execution Command Layer Foundation: Added JSON-safe execution command metadata contracts, runtime-owned command registry, lifecycle metadata updates, warning-only validation, snapshot/export/import support, and 524 command layer tests. | Kilo |
 | 2026-06-11 | 8 | Phase 8C — ESP32 Runtime Foundation: Added JSON-safe ESP32 runtime metadata contracts, GPIO0-GPIO39 pin/capability model, board binding metadata, execution context state metadata, snapshot/export/import support, and 684 ESP32 runtime tests. | Kilo |
+| 2026-06-11 | 8 | Phase 8D — ESP32 Instruction Execution Foundation: Added JSON-safe ESP32 instruction metadata contracts, deterministic instruction registry, execution states, execution context integration, diagnostics metadata, snapshot/export/import support, and 708 instruction tests. | Kilo |
 
 ---
 
@@ -568,8 +571,8 @@ As per visual simulator rendering foundation design decisions, the following vis
 - **MicroPython**: Defer Python virtual execution runtime or MicroPython runtime interpreters.
 - **Python Runtime**: Defer standard Python script evaluation inside the simulator engine.
 - **Execution Commands**: Command definitions are metadata-only with registry, lifecycle state tracking, snapshots, and serialization; no ESP32/Arduino/MicroPython/Python execution, async scheduling, firmware simulation, code generation, transport, or physical hardware effects are implemented.
-- **ESP32 Runtime**: ESP32 runtime identity, GPIO0-GPIO39 pin ownership metadata, board binding, capability metadata, and execution context states are metadata-only; instruction execution, GPIO execution, WiFi, Bluetooth, FreeRTOS, MicroPython, firmware simulation, timers, workers, threads, serial/USB/network transport, and physical hardware effects remain deferred.
-- **HAL Backends**: Simulated runtime backend is integrated with rich pin state, board pin capability metadata, protocol shell metadata, runtime-owned backend metadata registry, active backend ownership, deterministic lifecycle wrappers, metadata-only execution command definitions, and metadata-only ESP32 runtime foundation; ESP32 execution, Arduino, MicroPython, Python, async operations, serial/USB/network transport, and physical hardware backend implementations remain deferred.
+- **ESP32 Runtime**: ESP32 runtime identity, GPIO0-GPIO39 pin ownership metadata, board binding, capability metadata, execution context states, instruction metadata, and diagnostics metadata are metadata-only; GPIO execution, CPU execution, WiFi, Bluetooth, FreeRTOS, MicroPython, firmware execution, timers, workers, threads, serial/USB/network transport, and physical hardware effects remain deferred.
+- **HAL Backends**: Simulated runtime backend is integrated with rich pin state, board pin capability metadata, protocol shell metadata, runtime-owned backend metadata registry, active backend ownership, deterministic lifecycle wrappers, metadata-only execution command definitions, metadata-only ESP32 runtime foundation, and metadata-only ESP32 instruction definitions; ESP32 GPIO/CPU execution, Arduino, MicroPython, Python, async operations, serial/USB/network transport, and physical hardware backend implementations remain deferred.
 
 ## ESP32 Runtime Status
 
@@ -578,19 +581,21 @@ Completed:
 - Pin model
 - Board binding
 - Execution context
+- Instruction metadata
 
 Not Started:
-- Instruction execution
 - GPIO execution
+- CPU execution
+- FreeRTOS
 - WiFi
 - Bluetooth
-- FreeRTOS
 - MicroPython
+- Firmware execution
 
 ---
 
 ### Verification Metrics
 
-- **Tests Added**: 684 unit tests for Phase 8C (ESP32 Runtime Foundation)
-- **Total Test Count**: 5180 tests passing successfully across 38 test files
+- **Tests Added**: 708 unit tests for Phase 8D (ESP32 Instruction Execution Foundation)
+- **Total Test Count**: 5988 tests passing successfully across 39 test files
 - **Build Status**: Clean compiler run (0 errors, 0 warnings)
