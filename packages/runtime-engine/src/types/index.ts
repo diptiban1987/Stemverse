@@ -465,6 +465,9 @@ export interface StageSyncState {
 
   // Phase 10E: Signal visualization metadata synchronization
   signalVisualRegistry?: SignalVisualRegistryEntry[];
+
+  // Phase 10F: Animation metadata registry synchronization
+  animationRegistry?: AnimationRegistryEntry[];
 }
 
 // ─── Phase 10C: Wire Visualization Foundation ──────────────
@@ -950,6 +953,9 @@ export interface SerializedTarget {
 
   // Phase 10E: Signal visualization metadata serialization
   signalVisualRegistry?: SignalVisualRegistryEntry[];
+
+  // Phase 10F: Animation metadata registry serialization
+  animationRegistry?: AnimationRegistryEntry[];
 }
 
 export interface SerializedAssetManifest {
@@ -1690,4 +1696,89 @@ export interface ComponentVisualModel {
   futureAnimationHints: Record<string, unknown>;
   futureSkinHints: Record<string, unknown>;
   futureThemeHints: Record<string, unknown>;
+}
+
+// ─── Phase 10F: Animation Metadata Foundation ──────────────
+
+export type AnimationType =
+  | 'LED_BLINK'
+  | 'SERVO_MOTION'
+  | 'BUTTON_PRESS'
+  | 'LCD_REFRESH'
+  | 'OLED_REFRESH'
+  | 'SIGNAL_FLOW'
+  | 'PULSE'
+  | 'POWER_ACTIVITY'
+  | 'STATUS_INDICATOR'
+  | 'HIGH_TRANSITION'
+  | 'LOW_TRANSITION'
+  | 'PWM_TRANSITION'
+  | 'ANALOG_TRANSITION'
+  | 'PROTOCOL_TRAFFIC'
+  | 'HOVER'
+  | 'SELECTION'
+  | 'FOCUS'
+  | 'EDITING'
+  | 'CUSTOM';
+
+export type AnimationRepeatMode = 'NONE' | 'LOOP' | 'BOUNCE';
+
+export type AnimationPlaybackMode = 'FORWARD' | 'REVERSE' | 'PING_PONG';
+
+export interface AnimationVisualModel {
+  animationId: string;
+  animationType: AnimationType;
+  displayName: string;
+  category: string;
+  duration: number;
+  repeatMode: AnimationRepeatMode;
+  playbackMode: AnimationPlaybackMode;
+  futureRendererHints: Record<string, unknown>;
+}
+
+export interface ComponentAnimationMetadata {
+  ledBlinkHints: Record<string, unknown>;
+  servoMotionHints: Record<string, unknown>;
+  buttonPressHints: Record<string, unknown>;
+  lcdRefreshHints: Record<string, unknown>;
+  oledRefreshHints: Record<string, unknown>;
+  futureDeviceActivityHints: Record<string, unknown>;
+}
+
+export interface WireAnimationMetadata {
+  signalFlowHints: Record<string, unknown>;
+  pulseHints: Record<string, unknown>;
+  activityHints: Record<string, unknown>;
+  futureTrafficHints: Record<string, unknown>;
+}
+
+export interface BoardAnimationMetadata {
+  powerActivityHints: Record<string, unknown>;
+  statusIndicators: Record<string, unknown>;
+  futureBoardActivityHints: Record<string, unknown>;
+}
+
+export interface SignalAnimationMetadata {
+  highTransitionHints: Record<string, unknown>;
+  lowTransitionHints: Record<string, unknown>;
+  pwmTransitionHints: Record<string, unknown>;
+  analogTransitionHints: Record<string, unknown>;
+  protocolTrafficHints: Record<string, unknown>;
+}
+
+export interface InteractionAnimationMetadata {
+  hoverAnimations: Record<string, unknown>;
+  selectionAnimations: Record<string, unknown>;
+  focusAnimations: Record<string, unknown>;
+  futureEditingAnimations: Record<string, unknown>;
+}
+
+export interface AnimationRegistryEntry {
+  animationId: string;
+  visualModel: AnimationVisualModel;
+  componentAnimation: ComponentAnimationMetadata;
+  wireAnimation: WireAnimationMetadata;
+  boardAnimation: BoardAnimationMetadata;
+  signalAnimation: SignalAnimationMetadata;
+  interactionAnimation: InteractionAnimationMetadata;
 }

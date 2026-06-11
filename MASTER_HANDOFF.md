@@ -10,8 +10,8 @@ Repository maturity is HIGH.
 
 This repository contains:
 
-* 21057 passing tests
-* 48 passing test files
+* 32217 passing tests
+* 50 passing test files
 * Clean build
 
 You are NOT designing a new architecture.
@@ -104,11 +104,11 @@ backup-phase7Z-to-8A4
 
 Latest Stable Tag:
 
-phase-10D-stable
+phase-10F-stable
 
 Recommended Recovery Tag:
 
-phase-10D-stable
+phase-10F-stable
 
 ---
 
@@ -124,9 +124,9 @@ PASS
 
 Verification Metrics:
 
-21057 tests passing
+32217 tests passing
 
-48 test files passing
+50 test files passing
 
 Build clean
 
@@ -141,9 +141,9 @@ pnpm --filter @stemverse/runtime-engine build
 Expected:
 
 ```text
-Test Files 48 passed
+Test Files 50 passed
 
-Tests 21057 passed
+Tests 32217 passed
 
 Build clean
 
@@ -255,6 +255,12 @@ Wire Visualization Foundation
 Phase 10D
 Board Visualization Foundation
 
+Phase 10E
+Signal Visualization Foundation
+
+Phase 10F
+Animation Metadata Foundation
+
 Completed.
 
 ---
@@ -334,11 +340,11 @@ COMPLETED
 
 ✓ Board Visualization Metadata
 
+✓ Signal Visualization (Phase 10E)
+
+✓ Animation Metadata (Phase 10F)
+
 NOT STARTED
-
-✗ Signal Visualization
-
-✗ Animation Metadata
 
 ✗ Rendering
 
@@ -350,152 +356,27 @@ NOT STARTED
 
 # NEXT PHASE
 
-PHASE 10E
+PHASE 11A
 
-Signal Visualization Foundation
+Renderer Foundation
 
 ---
 
-# PHASE 10E GOAL
+# PHASE 11A GOAL
 
-Create deterministic metadata-only signal visualization models.
+Create the first rendering foundation for the STEMVerse visual simulator.
 
-Renderer consumes metadata only.
+Renderer consumes metadata from snapshots only.
 
-NO rendering.
+NO rendering engine modifications.
 
-NO drawing.
+NO Pixi rewrite.
 
-NO artwork.
+NO Canvas overhaul.
 
-NO SVG.
-
-NO Canvas.
-
-NO Pixi.
-
-NO React.
+NO SVG engine.
 
 NO WebGL.
-
----
-
-# REQUIREMENTS
-
-## 1. SIGNAL VISUALIZATION METADATA
-
-Create metadata for:
-
-signalId
-
-signalType
-
-signalDirection
-
-signalActivity
-
-signalState
-
-propagationDelay
-
-visualizationHints
-
-futureFlowAnimationHints
-
-futurePulseHints
-
-futureThemeHints
-
----
-
-## 2. SIGNAL PROBE METADATA
-
-Track:
-
-probeId
-
-probeType
-
-sourceConnectorId
-
-targetConnectorId
-
-position
-
-label
-
-color
-
-visibility
-
-futureProbeHints
-
----
-
-## 3. SIGNAL REGISTRY
-
-Must support:
-
-register
-
-lookup
-
-update
-
-remove
-
-clear
-
-getAll
-
-Requirements:
-
-* O(1) lookup
-* deterministic ordering
-* clone safe
-* deep-copy safe
-* serialization safe
-* snapshot safe
-
----
-
-## 4. SNAPSHOT INTEGRATION
-
-Expose through:
-
-StageSyncState
-
-Renderer receives metadata only.
-
----
-
-## 5. SERIALIZATION
-
-Support:
-
-exportProject()
-
-importProject()
-
-Round-trip preservation required.
-
----
-
-## 6. VALIDATION
-
-Warning-only.
-
-Never throw.
-
-Validate:
-
-duplicate IDs
-
-invalid signal types
-
-invalid signal states
-
-invalid probe metadata
 
 ---
 
@@ -511,13 +392,7 @@ Protocol Layer
 
 Execution Layer
 
-Board Metadata
-
-Component Visual Models
-
-Wire Visualization
-
-Board Visualization
+Animation Metadata
 
 Renderer Architecture
 
@@ -529,7 +404,7 @@ Clone Architecture
 
 Create:
 
-tests/signal-visualization-runtime.test.ts
+tests/renderer-foundation-runtime.test.ts
 
 Target:
 
@@ -537,97 +412,15 @@ Target:
 
 Cover:
 
-registration
-
-lookup
-
-updates
-
-removal
-
-serialization
-
-snapshot sync
-
-renderer isolation
-
-deep-copy guarantees
-
-clone safety
-
-cleanup
-
-probe metadata
-
-duplicate IDs
-
-invalid metadata
-
-validation warnings
-
-ordering guarantees
-
----
-
-# TEST RULES
-
-Tests are authoritative.
-
-Generate deterministic tests only.
-
-NO randomization.
-
-NO timers.
-
-NO wall-clock dependence.
-
-NO async delays.
-
-Follow existing repository testing style.
-
----
-
-# PROGRESS.MD
-
-MUST UPDATE
-
-ONLY AFTER:
-
-1. Tests pass
-2. Build passes
-
-Add:
-
-Phase 10E
-
-Signal Visualization Foundation
-
-Update:
-
-* roadmap
-* completion percentage
-* changelog
-* verification metrics
-* visual simulator status
-
-Visual Simulator Status:
-
-Completed:
-
-* visual metadata
-* visual registry
-* visual themes
-* component visual models
-* wire visualization metadata
-* board visualization metadata
-
-Not Started:
-
-* signal visualization
-* rendering
-* animations
-* artwork
-* component skins
+* renderer adapter initialization
+* snapshot ingestion
+* render target lifecycle
+* orphan cleanup
+* layer ordering
+* metadata-only rendering
+* renderer isolation
+* deep-copy guarantees
+* validation warnings
 
 ---
 
@@ -651,8 +444,9 @@ Both MUST pass.
 10B Component Visual Models ✅
 10C Wire Visualization ✅
 10D Board Visualization ✅
-10E Signal Visualization
-10F Animation Metadata
+10E Signal Visualization ✅
+10F Animation Metadata ✅
+11A Renderer Foundation
 
 ---
 

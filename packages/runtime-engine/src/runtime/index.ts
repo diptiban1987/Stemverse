@@ -1,5 +1,5 @@
 import { IRuntime } from '../core';
-import { TargetId, TargetState, ASTScript, Thread, SpriteState, StageState, PendingBroadcast, BroadcastCompletionToken, ListenerEntry, BubbleState, StageSyncState, CostumeAsset, SoundAsset, BackdropAsset, ActiveSoundTrigger, SoundChannelState, PenCommand, PenState, VariableWatcher, WatcherMode, ListWatcher, ListWatcherMode, GlideState, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, SerializedProject, SerializedStage, SerializedTarget, SerializedAssetManifest, SerializedProjectMetadata, VariableState, ListState, RuntimeAssetState, AssetLoadStatus, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, ComponentType, RuntimeComponent, PinDirection, RuntimePin, RuntimeConnection, DeviceState, WorkspaceTransform, WorkspaceComponentLayout, WirePoint, WireLayout, DevelopmentBoardType, BoardPinDefinition, BoardPinCapabilities, DevelopmentBoardDefinition, WorkspaceBoard, RenderModelType, RenderMetadata, RuntimeHALState, HardwareAddress, PinMode, PullMode, PinCapability, ProtocolState, ProtocolType, PWMChannelState, I2CBusState, SPIBusState, UARTPortState, HardwareBackendMetadata, ExecutionCommand, ExecutionCommandLifecycleState, ExecutionCommandType, ESP32RuntimeMetadata, ESP32ExecutionState, ESP32PinCapability, ESP32PinMode, ESP32InstructionMetadata, ESP32InstructionExecutionState, ESP32InstructionType, ESP32GPIOExecutionResult, ESP32GPIOExecutionStatus, ESP32PWMExecutionState, ESP32ServoExecutionState, ESP32ADCExecutionState, ESP32TouchExecutionState, ESP32PeripheralCommandExecutionResult, ESP32PeripheralCommandExecutionStatus, ProtocolCommandExecutionResult, ProtocolCommandExecutionStatus, STEMVerseVisualState, STEMVerseVisualThemeState, STEMVerseVisualType, STEMVerseBoardStatus, STEMVerseSignalFlowDirection, STEMVerseVisualThemeMode, ComponentVisualModel, ComponentVisualType, ComponentVisualCategory, PinVisualMetadata, InteractionZone, AnchorPoint, LabelPosition, WireVisualRegistryEntry, WireType, WireCategory, RoutingPathType, SignalDirection, SignalActivity, SignalState, WireVisualModel, ControlPoint, WireRoutingMetadata, SignalVisualizationMetadata, InteractionZoneRect, WireInteractionMetadata, BoardVisualModel, BoardVisualType, BoardVisualCategory, BoardVisualRegistryEntry, BoardLayoutMetadata, ConnectorVisualMetadata, BoardInteractionMetadata, BoardBounds, ComponentRegion, PowerRegion, SignalRegion, ReservedRegion, BoardInteractionZone, SignalVisualModel, SignalVisualType, SignalVisualCategory, DigitalSignalMetadata, DigitalSignalLevel, DigitalSignalDirection, AnalogSignalMetadata, PWMSignalMetadata, ProtocolSignalMetadata, ProtocolSignalType, SignalVariantMetadata, SignalInteractionZone, SignalInteractionMetadata, SignalVisualRegistryEntry } from '../types';
+import { TargetId, TargetState, ASTScript, Thread, SpriteState, StageState, PendingBroadcast, BroadcastCompletionToken, ListenerEntry, BubbleState, StageSyncState, CostumeAsset, SoundAsset, BackdropAsset, ActiveSoundTrigger, SoundChannelState, PenCommand, PenState, VariableWatcher, WatcherMode, ListWatcher, ListWatcherMode, GlideState, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, SerializedProject, SerializedStage, SerializedTarget, SerializedAssetManifest, SerializedProjectMetadata, VariableState, ListState, RuntimeAssetState, AssetLoadStatus, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, ComponentType, RuntimeComponent, PinDirection, RuntimePin, RuntimeConnection, DeviceState, WorkspaceTransform, WorkspaceComponentLayout, WirePoint, WireLayout, DevelopmentBoardType, BoardPinDefinition, BoardPinCapabilities, DevelopmentBoardDefinition, WorkspaceBoard, RenderModelType, RenderMetadata, RuntimeHALState, HardwareAddress, PinMode, PullMode, PinCapability, ProtocolState, ProtocolType, PWMChannelState, I2CBusState, SPIBusState, UARTPortState, HardwareBackendMetadata, ExecutionCommand, ExecutionCommandLifecycleState, ExecutionCommandType, ESP32RuntimeMetadata, ESP32ExecutionState, ESP32PinCapability, ESP32PinMode, ESP32InstructionMetadata, ESP32InstructionExecutionState, ESP32InstructionType, ESP32GPIOExecutionResult, ESP32GPIOExecutionStatus, ESP32PWMExecutionState, ESP32ServoExecutionState, ESP32ADCExecutionState, ESP32TouchExecutionState, ESP32PeripheralCommandExecutionResult, ESP32PeripheralCommandExecutionStatus, ProtocolCommandExecutionResult, ProtocolCommandExecutionStatus, STEMVerseVisualState, STEMVerseVisualThemeState, STEMVerseVisualType, STEMVerseBoardStatus, STEMVerseSignalFlowDirection, STEMVerseVisualThemeMode, ComponentVisualModel, ComponentVisualType, ComponentVisualCategory, PinVisualMetadata, InteractionZone, AnchorPoint, LabelPosition, WireVisualRegistryEntry, WireType, WireCategory, RoutingPathType, SignalDirection, SignalActivity, SignalState, WireVisualModel, ControlPoint, WireRoutingMetadata, SignalVisualizationMetadata, InteractionZoneRect, WireInteractionMetadata, BoardVisualModel, BoardVisualType, BoardVisualCategory, BoardVisualRegistryEntry, BoardLayoutMetadata, ConnectorVisualMetadata, BoardInteractionMetadata, BoardBounds, ComponentRegion, PowerRegion, SignalRegion, ReservedRegion, BoardInteractionZone, SignalVisualModel, SignalVisualType, SignalVisualCategory, DigitalSignalMetadata, DigitalSignalLevel, DigitalSignalDirection, AnalogSignalMetadata, PWMSignalMetadata, ProtocolSignalMetadata, ProtocolSignalType, SignalVariantMetadata, SignalInteractionZone, SignalInteractionMetadata, SignalVisualRegistryEntry, AnimationType, AnimationRepeatMode, AnimationPlaybackMode, AnimationVisualModel, ComponentAnimationMetadata, WireAnimationMetadata, BoardAnimationMetadata, SignalAnimationMetadata, InteractionAnimationMetadata, AnimationRegistryEntry } from '../types';
 import { MinimalASTInterpreter, IHardwareAdapter } from '../ast/interpreter';
 import { SimulatedHardwareBackend } from '../hal';
 import { createThread, TaskQueue, PendingTask, resetThreadCounter } from './execution-context';
@@ -274,6 +274,10 @@ export class BaseRuntime implements IRuntime {
   private signalVisualRegistry = new Map<string, SignalVisualRegistryEntry>();
   private signalVisualOrder: string[] = [];
 
+  // Phase 10F Animation metadata registry
+  private animationRegistry = new Map<string, AnimationRegistryEntry>();
+  private animationOrder: string[] = [];
+
   // Phase 8A.1 HAL state registry (passive contracts/state only)
   private halStateRegistry = new Map<string, RuntimeHALState>();
   private halStateOrder: string[] = [];
@@ -329,6 +333,11 @@ export class BaseRuntime implements IRuntime {
   private static readonly VALID_DIGITAL_SIGNAL_DIRECTIONS: DigitalSignalDirection[] = ['INPUT', 'OUTPUT', 'BIDIRECTIONAL'];
   private static readonly VALID_PROTOCOL_SIGNAL_TYPES: ProtocolSignalType[] = ['I2C', 'SPI', 'UART', 'ONEWIRE', 'CUSTOM'];
   private static readonly VALID_SIGNAL_INTERACTION_ZONE_KINDS = ['hover', 'selection', 'focus', 'inspection', 'debug'] as const;
+
+  // Phase 10F Animation metadata valid constants
+  private static readonly VALID_ANIMATION_TYPES: AnimationType[] = ['LED_BLINK', 'SERVO_MOTION', 'BUTTON_PRESS', 'LCD_REFRESH', 'OLED_REFRESH', 'SIGNAL_FLOW', 'PULSE', 'POWER_ACTIVITY', 'STATUS_INDICATOR', 'HIGH_TRANSITION', 'LOW_TRANSITION', 'PWM_TRANSITION', 'ANALOG_TRANSITION', 'PROTOCOL_TRAFFIC', 'HOVER', 'SELECTION', 'FOCUS', 'EDITING', 'CUSTOM'];
+  private static readonly VALID_ANIMATION_REPEAT_MODES: AnimationRepeatMode[] = ['NONE', 'LOOP', 'BOUNCE'];
+  private static readonly VALID_ANIMATION_PLAYBACK_MODES: AnimationPlaybackMode[] = ['FORWARD', 'REVERSE', 'PING_PONG'];
 
   private static readonly DEFAULT_COMPONENT_VISUAL_MODELS: Record<string, ComponentVisualModel> = {
     'LED': {
@@ -1463,7 +1472,7 @@ export class BaseRuntime implements IRuntime {
       case 'pwm': return this.validatePWMSignalMetadata(variant.data, signalVisualId);
       case 'protocol': return this.validateProtocolSignalMetadata(variant.data, signalVisualId);
       default:
-        console.warn(`[Runtime Diagnostics] invalid signal variant kinds: Signal "${signalVisualId}" has unknown variant kind "${variant.kind}".`);
+        console.warn(`[Runtime Diagnostics] invalid signal variant kinds: Signal "${signalVisualId}" has unknown variant kind.`);
         return false;
     }
   }
@@ -1571,6 +1580,181 @@ export class BaseRuntime implements IRuntime {
 
   public hasSignalVisual(id: string): boolean {
     return this.signalVisualRegistry.has(id);
+  }
+
+  // ─── Phase 10F: Animation Metadata Registry ──────────────
+
+  private validateAnimationVisualModel(model: AnimationVisualModel): boolean {
+    if (!model || typeof model !== 'object') {
+      console.warn('[Runtime Diagnostics] malformed animation visual model: Model is null or not an object.');
+      return false;
+    }
+    if (typeof model.animationId !== 'string' || model.animationId.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed animation visual model: animationId must be a non-empty string.');
+      return false;
+    }
+    if (!BaseRuntime.VALID_ANIMATION_TYPES.includes(model.animationType)) {
+      console.warn(`[Runtime Diagnostics] invalid animation types: "${model.animationType}" is not a recognized animation type.`);
+      return false;
+    }
+    if (typeof model.displayName !== 'string' || model.displayName.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed animation visual model: displayName must be a non-empty string.');
+      return false;
+    }
+    if (typeof model.category !== 'string' || model.category.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed animation visual model: category must be a non-empty string.');
+      return false;
+    }
+    if (typeof model.duration !== 'number' || !Number.isFinite(model.duration) || model.duration < 0) {
+      console.warn(`[Runtime Diagnostics] invalid animation durations: duration "${model.duration}" is not a valid non-negative finite number.`);
+      return false;
+    }
+    if (!BaseRuntime.VALID_ANIMATION_REPEAT_MODES.includes(model.repeatMode)) {
+      console.warn(`[Runtime Diagnostics] invalid animation repeat modes: "${model.repeatMode}" is not a recognized repeat mode.`);
+      return false;
+    }
+    if (!BaseRuntime.VALID_ANIMATION_PLAYBACK_MODES.includes(model.playbackMode)) {
+      console.warn(`[Runtime Diagnostics] invalid animation playback modes: "${model.playbackMode}" is not a recognized playback mode.`);
+      return false;
+    }
+    if (!model.futureRendererHints || typeof model.futureRendererHints !== 'object') {
+      console.warn('[Runtime Diagnostics] malformed animation visual model: futureRendererHints must be a non-null object.');
+      return false;
+    }
+    return true;
+  }
+
+  private validateComponentAnimationMetadata(meta: ComponentAnimationMetadata, animationId: string): boolean {
+    if (!meta || typeof meta !== 'object') {
+      console.warn(`[Runtime Diagnostics] malformed component animation metadata: Animation "${animationId}" has null or non-object componentAnimation.`);
+      return false;
+    }
+    if (!meta.ledBlinkHints || typeof meta.ledBlinkHints !== 'object') { console.warn(`[Runtime Diagnostics] malformed component animation ledBlinkHints: Animation "${animationId}".`); return false; }
+    if (!meta.servoMotionHints || typeof meta.servoMotionHints !== 'object') { console.warn(`[Runtime Diagnostics] malformed component animation servoMotionHints: Animation "${animationId}".`); return false; }
+    if (!meta.buttonPressHints || typeof meta.buttonPressHints !== 'object') { console.warn(`[Runtime Diagnostics] malformed component animation buttonPressHints: Animation "${animationId}".`); return false; }
+    if (!meta.lcdRefreshHints || typeof meta.lcdRefreshHints !== 'object') { console.warn(`[Runtime Diagnostics] malformed component animation lcdRefreshHints: Animation "${animationId}".`); return false; }
+    if (!meta.oledRefreshHints || typeof meta.oledRefreshHints !== 'object') { console.warn(`[Runtime Diagnostics] malformed component animation oledRefreshHints: Animation "${animationId}".`); return false; }
+    if (!meta.futureDeviceActivityHints || typeof meta.futureDeviceActivityHints !== 'object') { console.warn(`[Runtime Diagnostics] malformed component animation futureDeviceActivityHints: Animation "${animationId}".`); return false; }
+    return true;
+  }
+
+  private validateWireAnimationMetadata(meta: WireAnimationMetadata, animationId: string): boolean {
+    if (!meta || typeof meta !== 'object') { console.warn(`[Runtime Diagnostics] malformed wire animation metadata: Animation "${animationId}".`); return false; }
+    if (!meta.signalFlowHints || typeof meta.signalFlowHints !== 'object') { console.warn(`[Runtime Diagnostics] malformed wire animation signalFlowHints: Animation "${animationId}".`); return false; }
+    if (!meta.pulseHints || typeof meta.pulseHints !== 'object') { console.warn(`[Runtime Diagnostics] malformed wire animation pulseHints: Animation "${animationId}".`); return false; }
+    if (!meta.activityHints || typeof meta.activityHints !== 'object') { console.warn(`[Runtime Diagnostics] malformed wire animation activityHints: Animation "${animationId}".`); return false; }
+    if (!meta.futureTrafficHints || typeof meta.futureTrafficHints !== 'object') { console.warn(`[Runtime Diagnostics] malformed wire animation futureTrafficHints: Animation "${animationId}".`); return false; }
+    return true;
+  }
+
+  private validateBoardAnimationMetadata(meta: BoardAnimationMetadata, animationId: string): boolean {
+    if (!meta || typeof meta !== 'object') { console.warn(`[Runtime Diagnostics] malformed board animation metadata: Animation "${animationId}".`); return false; }
+    if (!meta.powerActivityHints || typeof meta.powerActivityHints !== 'object') { console.warn(`[Runtime Diagnostics] malformed board animation powerActivityHints: Animation "${animationId}".`); return false; }
+    if (!meta.statusIndicators || typeof meta.statusIndicators !== 'object') { console.warn(`[Runtime Diagnostics] malformed board animation statusIndicators: Animation "${animationId}".`); return false; }
+    if (!meta.futureBoardActivityHints || typeof meta.futureBoardActivityHints !== 'object') { console.warn(`[Runtime Diagnostics] malformed board animation futureBoardActivityHints: Animation "${animationId}".`); return false; }
+    return true;
+  }
+
+  private validateSignalAnimationMetadata(meta: SignalAnimationMetadata, animationId: string): boolean {
+    if (!meta || typeof meta !== 'object') { console.warn(`[Runtime Diagnostics] malformed signal animation metadata: Animation "${animationId}".`); return false; }
+    if (!meta.highTransitionHints || typeof meta.highTransitionHints !== 'object') { console.warn(`[Runtime Diagnostics] malformed signal animation highTransitionHints: Animation "${animationId}".`); return false; }
+    if (!meta.lowTransitionHints || typeof meta.lowTransitionHints !== 'object') { console.warn(`[Runtime Diagnostics] malformed signal animation lowTransitionHints: Animation "${animationId}".`); return false; }
+    if (!meta.pwmTransitionHints || typeof meta.pwmTransitionHints !== 'object') { console.warn(`[Runtime Diagnostics] malformed signal animation pwmTransitionHints: Animation "${animationId}".`); return false; }
+    if (!meta.analogTransitionHints || typeof meta.analogTransitionHints !== 'object') { console.warn(`[Runtime Diagnostics] malformed signal animation analogTransitionHints: Animation "${animationId}".`); return false; }
+    if (!meta.protocolTrafficHints || typeof meta.protocolTrafficHints !== 'object') { console.warn(`[Runtime Diagnostics] malformed signal animation protocolTrafficHints: Animation "${animationId}".`); return false; }
+    return true;
+  }
+
+  private validateInteractionAnimationMetadata(meta: InteractionAnimationMetadata, animationId: string): boolean {
+    if (!meta || typeof meta !== 'object') { console.warn(`[Runtime Diagnostics] malformed interaction animation metadata: Animation "${animationId}".`); return false; }
+    if (!meta.hoverAnimations || typeof meta.hoverAnimations !== 'object') { console.warn(`[Runtime Diagnostics] malformed interaction animation hoverAnimations: Animation "${animationId}".`); return false; }
+    if (!meta.selectionAnimations || typeof meta.selectionAnimations !== 'object') { console.warn(`[Runtime Diagnostics] malformed interaction animation selectionAnimations: Animation "${animationId}".`); return false; }
+    if (!meta.focusAnimations || typeof meta.focusAnimations !== 'object') { console.warn(`[Runtime Diagnostics] malformed interaction animation focusAnimations: Animation "${animationId}".`); return false; }
+    if (!meta.futureEditingAnimations || typeof meta.futureEditingAnimations !== 'object') { console.warn(`[Runtime Diagnostics] malformed interaction animation futureEditingAnimations: Animation "${animationId}".`); return false; }
+    return true;
+  }
+
+  private validateAnimationRegistryEntry(entry: AnimationRegistryEntry): boolean {
+    if (!entry || typeof entry.animationId !== 'string' || entry.animationId.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed animation registry entry: Entry is missing a valid animationId.');
+      return false;
+    }
+    if (!this.validateAnimationVisualModel(entry.visualModel)) return false;
+    if (!this.validateComponentAnimationMetadata(entry.componentAnimation, entry.animationId)) return false;
+    if (!this.validateWireAnimationMetadata(entry.wireAnimation, entry.animationId)) return false;
+    if (!this.validateBoardAnimationMetadata(entry.boardAnimation, entry.animationId)) return false;
+    if (!this.validateSignalAnimationMetadata(entry.signalAnimation, entry.animationId)) return false;
+    if (!this.validateInteractionAnimationMetadata(entry.interactionAnimation, entry.animationId)) return false;
+    return true;
+  }
+
+  public registerAnimationEntry(entry: AnimationRegistryEntry): void {
+    if (!this.validateAnimationRegistryEntry(entry)) return;
+    if (this.animationRegistry.has(entry.animationId)) {
+      console.warn(`[Runtime Diagnostics] duplicate animation entry IDs: Animation ID "${entry.animationId}" already exists.`);
+    }
+    this.animationRegistry.set(entry.animationId, JSON.parse(JSON.stringify(entry)));
+    if (!this.animationOrder.includes(entry.animationId)) {
+      this.animationOrder.push(entry.animationId);
+    }
+  }
+
+  public getAnimationEntry(id: string): AnimationRegistryEntry | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed animation entry: Animation ID must be a non-empty string.');
+      return undefined;
+    }
+    const entry = this.animationRegistry.get(id);
+    return entry ? JSON.parse(JSON.stringify(entry)) : undefined;
+  }
+
+  public getAnimationEntries(): AnimationRegistryEntry[] {
+    return this.animationOrder
+      .map(id => this.animationRegistry.get(id))
+      .filter((entry): entry is AnimationRegistryEntry => !!entry)
+      .map(entry => JSON.parse(JSON.stringify(entry)));
+  }
+
+  public updateAnimationEntry(id: string, updates: Partial<AnimationRegistryEntry>): void {
+    const existing = this.animationRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing animation entry: Animation "${id}" not found.`);
+      return;
+    }
+    const merged: AnimationRegistryEntry = {
+      ...existing,
+      ...updates,
+      animationId: existing.animationId,
+      visualModel: updates.visualModel ? { ...existing.visualModel, ...updates.visualModel } : { ...existing.visualModel },
+      componentAnimation: updates.componentAnimation ? { ...existing.componentAnimation, ...updates.componentAnimation } : { ...existing.componentAnimation },
+      wireAnimation: updates.wireAnimation ? { ...existing.wireAnimation, ...updates.wireAnimation } : { ...existing.wireAnimation },
+      boardAnimation: updates.boardAnimation ? { ...existing.boardAnimation, ...updates.boardAnimation } : { ...existing.boardAnimation },
+      signalAnimation: updates.signalAnimation ? { ...existing.signalAnimation, ...updates.signalAnimation } : { ...existing.signalAnimation },
+      interactionAnimation: updates.interactionAnimation ? { ...existing.interactionAnimation, ...updates.interactionAnimation } : { ...existing.interactionAnimation },
+    };
+    this.registerAnimationEntry(merged);
+  }
+
+  public removeAnimationEntry(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed animation entry: Animation ID must be a non-empty string.');
+      return;
+    }
+    this.animationRegistry.delete(id);
+    this.animationOrder = this.animationOrder.filter(existing => existing !== id);
+  }
+
+  public clearAnimationRegistry(): void {
+    this.animationRegistry.clear();
+    this.animationOrder = [];
+  }
+
+  public getAnimationKeys(): string[] {
+    return [...this.animationOrder];
+  }
+
+  public hasAnimation(id: string): boolean {
+    return this.animationRegistry.has(id);
   }
 
   private static readonly VALID_PIN_MODES: PinMode[] = ['INPUT', 'OUTPUT', 'INPUT_PULLUP', 'INPUT_PULLDOWN', 'ANALOG', 'PWM'];
@@ -5200,6 +5384,9 @@ export class BaseRuntime implements IRuntime {
     // Reset Phase 10E signal visual registry
     this.clearSignalVisualRegistry();
 
+    // Reset Phase 10F animation registry
+    this.clearAnimationRegistry();
+
     // Reset Phase 8A.1 HAL state registry
     this.clearHALStates();
 
@@ -5399,6 +5586,9 @@ export class BaseRuntime implements IRuntime {
 
     // Reset Phase 10E signal visual registry
     this.clearSignalVisualRegistry();
+
+    // Reset Phase 10F animation registry
+    this.clearAnimationRegistry();
 
     // Clean up component metadata from remaining targets
     for (const target of this.targets.values()) {
@@ -6169,6 +6359,10 @@ export class BaseRuntime implements IRuntime {
       if (this.signalVisualRegistry.size > 0) {
         stageSnap.signalVisualRegistry = this.getSignalVisualEntries();
       }
+      // Phase 10F: Attach animation registry metadata to stage snapshot entry
+      if (this.animationRegistry.size > 0) {
+        stageSnap.animationRegistry = this.getAnimationEntries();
+      }
       // Phase 7R: Attach connection metadata to stage snapshot entry
       if (this.connectionRegistry.size > 0) {
         stageSnap.connections = this.getConnections();
@@ -6340,6 +6534,11 @@ export class BaseRuntime implements IRuntime {
       // Phase 10E: Serialize signal visualization registry metadata
       if (isStage && this.signalVisualRegistry.size > 0) {
         serializedTarget.signalVisualRegistry = this.getSignalVisualEntries();
+      }
+
+      // Phase 10F: Serialize animation registry metadata
+      if (isStage && this.animationRegistry.size > 0) {
+        serializedTarget.animationRegistry = this.getAnimationEntries();
       }
 
       // Phase 7W: Serialize board definitions & workspace boards
@@ -6760,6 +6959,12 @@ export class BaseRuntime implements IRuntime {
       if (Array.isArray(stageTarget.signalVisualRegistry)) {
         for (const entry of stageTarget.signalVisualRegistry) {
           this.registerSignalVisualEntry(JSON.parse(JSON.stringify(entry)));
+        }
+      }
+      // Phase 10F: Restore animation registry metadata from stage target
+      if (Array.isArray(stageTarget.animationRegistry)) {
+        for (const entry of stageTarget.animationRegistry) {
+          this.registerAnimationEntry(JSON.parse(JSON.stringify(entry)));
         }
       }
       // Phase 7W: Restore board definitions from stage target
