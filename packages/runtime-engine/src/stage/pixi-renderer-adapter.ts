@@ -245,6 +245,10 @@ export class PixiRendererAdapter implements IRendererAdapter {
         target.componentBoundsModels = snap.componentBoundsModels ? JSON.parse(JSON.stringify(snap.componentBoundsModels)) : undefined;
         target.componentLabelModels = snap.componentLabelModels ? JSON.parse(JSON.stringify(snap.componentLabelModels)) : undefined;
         target.componentPinRenderModels = snap.componentPinRenderModels ? JSON.parse(JSON.stringify(snap.componentPinRenderModels)) : undefined;
+        target.wireRenderModels = snap.wireRenderModels ? JSON.parse(JSON.stringify(snap.wireRenderModels)) : undefined;
+        target.wirePathModels = snap.wirePathModels ? JSON.parse(JSON.stringify(snap.wirePathModels)) : undefined;
+        target.wireSegmentModels = snap.wireSegmentModels ? JSON.parse(JSON.stringify(snap.wireSegmentModels)) : undefined;
+        target.wireAnchorModels = snap.wireAnchorModels ? JSON.parse(JSON.stringify(snap.wireAnchorModels)) : undefined;
       } else {
         target = {
           id: snap.targetId,
@@ -315,6 +319,10 @@ export class PixiRendererAdapter implements IRendererAdapter {
           componentBoundsModels: snap.componentBoundsModels ? JSON.parse(JSON.stringify(snap.componentBoundsModels)) : undefined,
           componentLabelModels: snap.componentLabelModels ? JSON.parse(JSON.stringify(snap.componentLabelModels)) : undefined,
           componentPinRenderModels: snap.componentPinRenderModels ? JSON.parse(JSON.stringify(snap.componentPinRenderModels)) : undefined,
+          wireRenderModels: snap.wireRenderModels ? JSON.parse(JSON.stringify(snap.wireRenderModels)) : undefined,
+          wirePathModels: snap.wirePathModels ? JSON.parse(JSON.stringify(snap.wirePathModels)) : undefined,
+          wireSegmentModels: snap.wireSegmentModels ? JSON.parse(JSON.stringify(snap.wireSegmentModels)) : undefined,
+          wireAnchorModels: snap.wireAnchorModels ? JSON.parse(JSON.stringify(snap.wireAnchorModels)) : undefined,
         };
         this.targets.set(snap.targetId, target);
       }

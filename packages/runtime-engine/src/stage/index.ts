@@ -66,3 +66,5 @@ export * from './scene-model';
 export * from './breadboard-workspace';
 export * from './canvas-rendering';
 export * from './component-rendering';
+export * from './wire-rendering';
+

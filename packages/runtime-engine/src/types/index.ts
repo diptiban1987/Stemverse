@@ -489,6 +489,12 @@ export interface StageSyncState {
   componentBoundsModels?: ComponentBoundsModel[];
   componentLabelModels?: ComponentLabelModel[];
   componentPinRenderModels?: ComponentPinRenderModel[];
+
+  // Phase 12C: Wire rendering foundation metadata synchronization
+  wireRenderModels?: WireRenderModel[];
+  wirePathModels?: WirePathModel[];
+  wireSegmentModels?: WireSegmentModel[];
+  wireAnchorModels?: WireAnchorModel[];
 }
 
 // ─── Phase 11B: Visual Interaction Engine ──────────────────
@@ -1085,6 +1091,12 @@ export interface SerializedTarget {
   componentBoundsModels?: ComponentBoundsModel[];
   componentLabelModels?: ComponentLabelModel[];
   componentPinRenderModels?: ComponentPinRenderModel[];
+
+  // Phase 12C: Wire rendering foundation metadata serialization
+  wireRenderModels?: WireRenderModel[];
+  wirePathModels?: WirePathModel[];
+  wireSegmentModels?: WireSegmentModel[];
+  wireAnchorModels?: WireAnchorModel[];
 }
 
 export interface SerializedAssetManifest {
@@ -2226,4 +2238,51 @@ export interface ComponentRenderSnapshot {
   componentBoundsModels: ComponentBoundsModel[];
   componentLabelModels: ComponentLabelModel[];
   componentPinRenderModels: ComponentPinRenderModel[];
+}
+
+// ─── Phase 12C: Wire Rendering Foundation ──────────────────
+
+export interface WireRenderModel {
+  wireRenderId: string;
+  wireId: string;
+  wireType: string;
+  displayName: string;
+  renderNodeId: string;
+  layerId: string;
+  visibilityState: VisibilityState;
+  selectionState: boolean;
+  focusState: boolean;
+  futureRendererHints: Record<string, unknown>;
+}
+
+export interface WirePathModel {
+  pathId: string;
+  startAnchor: string;
+  endAnchor: string;
+  controlPoints: ControlPoint[];
+  routingMetadata: Record<string, unknown>;
+  futureOptimizationHints: Record<string, unknown>;
+}
+
+export interface WireSegmentModel {
+  segmentId: string;
+  segmentType: string;
+  segmentBounds: { x: number; y: number; width: number; height: number };
+  segmentDirection: { x: number; y: number };
+  futureRoutingHints: Record<string, unknown>;
+}
+
+export interface WireAnchorModel {
+  anchorId: string;
+  anchorType: string;
+  anchorPosition: { x: number; y: number };
+  anchorOwner: string;
+  futureConnectionHints: Record<string, unknown>;
+}
+
+export interface WireRenderSnapshot {
+  wireRenderModels: WireRenderModel[];
+  wirePathModels: WirePathModel[];
+  wireSegmentModels: WireSegmentModel[];
+  wireAnchorModels: WireAnchorModel[];
 }
