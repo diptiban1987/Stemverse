@@ -437,6 +437,12 @@ export interface StageSyncState {
 
   // Phase 8E: ESP32 GPIO execution result synchronization
   esp32GPIOExecutionResults?: ESP32GPIOExecutionResult[];
+
+  // Phase 8F: ESP32 peripheral execution state synchronization
+  pwmRegistry?: ESP32PWMExecutionState[];
+  servoRegistry?: ESP32ServoExecutionState[];
+  adcRegistry?: ESP32ADCExecutionState[];
+  touchRegistry?: ESP32TouchExecutionState[];
 }
 
 /**
@@ -611,6 +617,12 @@ export interface SerializedTarget {
 
   // Phase 8E: ESP32 GPIO execution result serialization
   esp32GPIOExecutionResults?: ESP32GPIOExecutionResult[];
+
+  // Phase 8F: ESP32 peripheral execution state serialization
+  pwmRegistry?: ESP32PWMExecutionState[];
+  servoRegistry?: ESP32ServoExecutionState[];
+  adcRegistry?: ESP32ADCExecutionState[];
+  touchRegistry?: ESP32TouchExecutionState[];
 }
 
 export interface SerializedAssetManifest {
@@ -933,6 +945,68 @@ export interface ESP32GPIOExecutionResult {
   digitalValue?: boolean;
   readValue?: boolean;
   diagnostics: ESP32InstructionDiagnostics;
+  metadata: Record<string, unknown>;
+}
+
+// ─── Phase 8F: ESP32 Peripheral Execution Foundation Metadata ──────────────
+
+export interface ESP32PWMExecutionState {
+  pwmId: string;
+  runtimeId: string;
+  channelId: string;
+  pinId?: string;
+  gpio?: number;
+  frequencyHz: number;
+  resolutionBits: number;
+  dutyCycle: number;
+  targetId?: string;
+  componentId?: string;
+  metadata: Record<string, unknown>;
+}
+
+export interface ESP32ServoPulseMetadata {
+  minPulseWidthUs: number;
+  maxPulseWidthUs: number;
+  neutralPulseWidthUs?: number;
+}
+
+export interface ESP32ServoExecutionState {
+  servoId: string;
+  runtimeId: string;
+  angle: number;
+  attachedPinId?: string;
+  attachedGPIO?: number;
+  pulseWidth: ESP32ServoPulseMetadata;
+  targetId?: string;
+  componentId?: string;
+  metadata: Record<string, unknown>;
+}
+
+export interface ESP32ADCExecutionState {
+  adcId: string;
+  runtimeId: string;
+  channelId: string;
+  currentValue: number;
+  minValue: number;
+  maxValue: number;
+  resolutionBits: number;
+  pinId?: string;
+  gpio?: number;
+  targetId?: string;
+  componentId?: string;
+  metadata: Record<string, unknown>;
+}
+
+export interface ESP32TouchExecutionState {
+  touchId: string;
+  runtimeId: string;
+  pinId: string;
+  gpio?: number;
+  touchCapable: boolean;
+  touched: boolean;
+  threshold: number;
+  targetId?: string;
+  componentId?: string;
   metadata: Record<string, unknown>;
 }
 

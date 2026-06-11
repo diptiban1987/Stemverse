@@ -217,6 +217,7 @@
 | 8.54 | ESP32 Runtime Foundation (Phase 8C) | Runtime Architecture | ✅ | Metadata-only ESP32 runtime identity, GPIO0-GPIO39 pin model, board binding, execution context states, snapshot/export/import round-trip, and 684 ESP32 runtime tests |
 | 8.55 | ESP32 Instruction Execution Foundation (Phase 8D) | Runtime Architecture | ✅ | Metadata-only ESP32 instruction definitions, deterministic registry, execution states, context diagnostics, snapshot/export/import round-trip, and 708 instruction tests |
 | 8.56 | ESP32 GPIO Execution Layer (Phase 8E) | Runtime Architecture | ✅ | Deterministic GPIO-only execution for PIN_MODE, DIGITAL_WRITE, DIGITAL_READ, NOP, HAL-routed pin state updates, execution result metadata, snapshot/export/import round-trip, and 1104 GPIO execution tests |
+| 8.57 | ESP32 Peripheral Execution Foundation (Phase 8F) | Runtime Architecture | ✅ | Deterministic metadata-only PWM, servo, ADC, and touch execution registries with HAL compatibility, snapshot/export/import round-trip, cleanup, validation, 725 peripheral tests, plus Phase 8F.1 ownership hardening for touch updates and HAL/protocol cleanup invariants |
 ---
 
 ## 9. Robotics Studio Workspace
@@ -426,6 +427,7 @@ Based on V3 Enterprise Spec quarterly breakdown:
 | **Phase 8C — ESP32 Runtime Foundation** | Q3 | Metadata-only ESP32 runtime identity, pin ownership, board binding, execution context, and serialization | ✅ | 100% |
 | **Phase 8D — ESP32 Instruction Execution Foundation** | Q3 | Metadata-only ESP32 instruction definitions, execution states, context diagnostics, snapshots, and serialization | ✅ | 100% |
 | **Phase 8E — ESP32 GPIO Execution Layer** | Q3 | Deterministic GPIO-only execution for PIN_MODE, DIGITAL_WRITE, DIGITAL_READ, and NOP through HAL | ✅ | 100% |
+| **Phase 8F — ESP32 Peripheral Execution Foundation** | Q3 | Metadata-only PWM, servo, ADC, and touch execution state registries with snapshots, serialization, validation, cleanup, and Phase 8F.1 ownership hardening | ✅ | 100% |
 | **Phase 4 (Roadmap)** | Q3 | Simulator Engine + AI Studio + Advanced Blocks | 🔵 | 72% |
 | **Phase 5.1 (Roadmap)** | Q4 | Production hardening, unified streaming, Scratch runtime, E2E, OpenAPI | 🔵 | 55% |
 | **Phase 5.2A (Roadmap)** | Q4 | Object storage & asset pipeline (MinIO, presign, Asset model) | ✅ | 90% |
@@ -557,6 +559,8 @@ Based on V3 Enterprise Spec quarterly breakdown:
 | 2026-06-11 | 8 | Phase 8C — ESP32 Runtime Foundation: Added JSON-safe ESP32 runtime metadata contracts, GPIO0-GPIO39 pin/capability model, board binding metadata, execution context state metadata, snapshot/export/import support, and 684 ESP32 runtime tests. | Kilo |
 | 2026-06-11 | 8 | Phase 8D — ESP32 Instruction Execution Foundation: Added JSON-safe ESP32 instruction metadata contracts, deterministic instruction registry, execution states, execution context integration, diagnostics metadata, snapshot/export/import support, and 708 instruction tests. | Kilo |
 | 2026-06-11 | 8 | Phase 8E — ESP32 GPIO Execution Layer: Added deterministic GPIO-only execution for PIN_MODE, DIGITAL_WRITE, DIGITAL_READ, and NOP through HAL, execution result metadata, context result tracking, snapshot/export/import support, and 1104 GPIO execution tests. | Kilo |
+| 2026-06-11 | 8 | Phase 8F — ESP32 Peripheral Execution Foundation: Added runtime-owned PWM, servo, ADC, and touch execution metadata registries, warning-only validation, HAL compatibility projection, deterministic ordering, target/clone cleanup, snapshot/export/import support, renderer isolation, and 725 peripheral tests. | Kilo |
+| 2026-06-11 | 8 | Phase 8F.1 ownership hardening: Added touch state update accessor, fixed PWM/servo/ADC/touch HAL cleanup on remove/clear/target/clone/initialize/stop paths, verified protocol cleanup invariants, and added 350 hardening tests. | Kilo |
 
 ---
 
@@ -569,13 +573,13 @@ As per visual simulator rendering foundation design decisions, the following vis
 - **React Rendering**: Defer visual UI components rendering in React workspace views.
 - **DOM Rendering**: Defer HTML elements/DOM node representation updates for simulator targets.
 - **WebGL Rendering**: Defer custom WebGL shader-based drawings and canvas renders.
-- **ESP32 Execution**: Defer actual microcontroller target execution simulation (GPIO metadata-only).
+- **ESP32 Execution**: Defer actual microcontroller target execution simulation; GPIO and peripheral execution foundations are metadata-only.
 - **Arduino Execution**: Defer Arduino hardware instruction execution emulator.
 - **MicroPython**: Defer Python virtual execution runtime or MicroPython runtime interpreters.
 - **Python Runtime**: Defer standard Python script evaluation inside the simulator engine.
 - **Execution Commands**: Command definitions are metadata-only with registry, lifecycle state tracking, snapshots, and serialization; no ESP32/Arduino/MicroPython/Python execution, async scheduling, firmware simulation, code generation, transport, or physical hardware effects are implemented.
-- **ESP32 Runtime**: ESP32 runtime identity, GPIO0-GPIO39 pin ownership metadata, board binding, capability metadata, execution context states, instruction metadata, diagnostics metadata, and deterministic GPIO-only execution are implemented; CPU execution, WiFi, Bluetooth, FreeRTOS, MicroPython, firmware execution, timers, workers, threads, serial/USB/network transport, and physical hardware effects remain deferred.
-- **HAL Backends**: Simulated runtime backend is integrated with rich pin state, board pin capability metadata, protocol shell metadata, runtime-owned backend metadata registry, active backend ownership, deterministic lifecycle wrappers, metadata-only execution command definitions, metadata-only ESP32 runtime foundation, metadata-only ESP32 instruction definitions, and HAL-routed ESP32 GPIO execution; ESP32 CPU execution, Arduino, MicroPython, Python, async operations, serial/USB/network transport, and physical hardware backend implementations remain deferred.
+- **ESP32 Runtime**: ESP32 runtime identity, GPIO0-GPIO39 pin ownership metadata, board binding, capability metadata, execution context states, instruction metadata, diagnostics metadata, deterministic GPIO-only execution, and metadata-only PWM/servo/ADC/touch execution state are implemented; WiFi, Bluetooth, FreeRTOS, tasks, threads, timers, interrupts, MicroPython, firmware simulation, physical hardware execution, USB, UART transport, SPI transport, and I2C transport remain deferred.
+- **HAL Backends**: Simulated runtime backend is integrated with rich pin state, board pin capability metadata, protocol shell metadata, runtime-owned backend metadata registry, active backend ownership, deterministic lifecycle wrappers, metadata-only execution command definitions, metadata-only ESP32 runtime foundation, metadata-only ESP32 instruction definitions, HAL-routed ESP32 GPIO execution, and metadata-only ESP32 peripheral state compatibility; ESP32 CPU execution, Arduino, MicroPython, Python, async operations, serial/USB/network transport, and physical hardware backend implementations remain deferred.
 
 ## ESP32 Runtime Status
 
@@ -586,19 +590,31 @@ Completed:
 - Execution context
 - Instruction metadata
 - GPIO execution
+- PWM execution metadata
+- Servo execution metadata
+- ADC execution metadata
+- Touch GPIO metadata
 
 Not Started:
-- CPU execution
-- FreeRTOS
 - WiFi
 - Bluetooth
+- FreeRTOS
+- Tasks
+- Threads
+- Timers
+- Interrupts
 - MicroPython
-- Firmware execution
+- Firmware simulation
+- Physical hardware execution
+- USB
+- UART transport
+- SPI transport
+- I2C transport
 
 ---
 
 ### Verification Metrics
 
-- **Tests Added**: 1104 unit tests for Phase 8E (ESP32 GPIO Execution Layer)
-- **Total Test Count**: 7092 tests passing successfully across 40 test files
+- **Tests Added**: 350 unit tests for Phase 8F.1 ownership hardening
+- **Total Test Count**: 8162 tests passing successfully across 42 test files
 - **Build Status**: Clean compiler run (0 errors, 0 warnings)

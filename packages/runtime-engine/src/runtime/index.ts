@@ -1,5 +1,5 @@
 import { IRuntime } from '../core';
-import { TargetId, TargetState, ASTScript, Thread, SpriteState, StageState, PendingBroadcast, BroadcastCompletionToken, ListenerEntry, BubbleState, StageSyncState, CostumeAsset, SoundAsset, BackdropAsset, ActiveSoundTrigger, SoundChannelState, PenCommand, PenState, VariableWatcher, WatcherMode, ListWatcher, ListWatcherMode, GlideState, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, SerializedProject, SerializedStage, SerializedTarget, SerializedAssetManifest, SerializedProjectMetadata, VariableState, ListState, RuntimeAssetState, AssetLoadStatus, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, ComponentType, RuntimeComponent, PinDirection, RuntimePin, RuntimeConnection, DeviceState, WorkspaceTransform, WorkspaceComponentLayout, WirePoint, WireLayout, DevelopmentBoardType, BoardPinDefinition, BoardPinCapabilities, DevelopmentBoardDefinition, WorkspaceBoard, RenderModelType, RenderMetadata, RuntimeHALState, HardwareAddress, PinMode, PullMode, PinCapability, ProtocolState, ProtocolType, PWMChannelState, I2CBusState, SPIBusState, UARTPortState, HardwareBackendMetadata, ExecutionCommand, ExecutionCommandLifecycleState, ExecutionCommandType, ESP32RuntimeMetadata, ESP32ExecutionState, ESP32PinCapability, ESP32PinMode, ESP32InstructionMetadata, ESP32InstructionExecutionState, ESP32InstructionType, ESP32GPIOExecutionResult, ESP32GPIOExecutionStatus } from '../types';
+import { TargetId, TargetState, ASTScript, Thread, SpriteState, StageState, PendingBroadcast, BroadcastCompletionToken, ListenerEntry, BubbleState, StageSyncState, CostumeAsset, SoundAsset, BackdropAsset, ActiveSoundTrigger, SoundChannelState, PenCommand, PenState, VariableWatcher, WatcherMode, ListWatcher, ListWatcherMode, GlideState, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, SerializedProject, SerializedStage, SerializedTarget, SerializedAssetManifest, SerializedProjectMetadata, VariableState, ListState, RuntimeAssetState, AssetLoadStatus, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, ComponentType, RuntimeComponent, PinDirection, RuntimePin, RuntimeConnection, DeviceState, WorkspaceTransform, WorkspaceComponentLayout, WirePoint, WireLayout, DevelopmentBoardType, BoardPinDefinition, BoardPinCapabilities, DevelopmentBoardDefinition, WorkspaceBoard, RenderModelType, RenderMetadata, RuntimeHALState, HardwareAddress, PinMode, PullMode, PinCapability, ProtocolState, ProtocolType, PWMChannelState, I2CBusState, SPIBusState, UARTPortState, HardwareBackendMetadata, ExecutionCommand, ExecutionCommandLifecycleState, ExecutionCommandType, ESP32RuntimeMetadata, ESP32ExecutionState, ESP32PinCapability, ESP32PinMode, ESP32InstructionMetadata, ESP32InstructionExecutionState, ESP32InstructionType, ESP32GPIOExecutionResult, ESP32GPIOExecutionStatus, ESP32PWMExecutionState, ESP32ServoExecutionState, ESP32ADCExecutionState, ESP32TouchExecutionState } from '../types';
 import { MinimalASTInterpreter, IHardwareAdapter } from '../ast/interpreter';
 import { SimulatedHardwareBackend } from '../hal';
 import { createThread, TaskQueue, PendingTask, resetThreadCounter } from './execution-context';
@@ -272,6 +272,14 @@ export class BaseRuntime implements IRuntime {
   private esp32InstructionOrder: string[] = [];
   private esp32GPIOExecutionResultRegistry = new Map<string, ESP32GPIOExecutionResult>();
   private esp32GPIOExecutionResultOrder: string[] = [];
+  private pwmRegistry = new Map<string, ESP32PWMExecutionState>();
+  private pwmOrder: string[] = [];
+  private servoRegistry = new Map<string, ESP32ServoExecutionState>();
+  private servoOrder: string[] = [];
+  private adcRegistry = new Map<string, ESP32ADCExecutionState>();
+  private adcOrder: string[] = [];
+  private touchRegistry = new Map<string, ESP32TouchExecutionState>();
+  private touchOrder: string[] = [];
 
   private static readonly DEFAULT_RENDER_METADATA: Record<RenderModelType, RenderMetadata> = {
     'LED': { modelType: 'LED', width: 20, height: 20, anchorX: 0.5, anchorY: 0.5, rotation: 0, visible: true },
@@ -1137,6 +1145,122 @@ export class BaseRuntime implements IRuntime {
   public clearESP32GPIOExecutionResults(): void {
     this.esp32GPIOExecutionResultRegistry.clear();
     this.esp32GPIOExecutionResultOrder = [];
+  }
+
+  private validatePeripheralIdentifier(id: unknown, label: string): id is string {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn(`[Runtime Diagnostics] malformed ESP32 peripheral IDs: ${label} must be a non-empty string.`);
+      return false;
+    }
+    return true;
+  }
+
+  private validateOptionalPeripheralOwner(state: { targetId?: unknown; componentId?: unknown; pinId?: unknown; gpio?: unknown }, id: string): boolean {
+    if (state.targetId !== undefined && typeof state.targetId !== 'string') {
+      console.warn(`[Runtime Diagnostics] malformed ESP32 peripheral metadata: Peripheral "${id}" has invalid targetId.`);
+      return false;
+    }
+    if (state.componentId !== undefined && typeof state.componentId !== 'string') {
+      console.warn(`[Runtime Diagnostics] malformed ESP32 peripheral metadata: Peripheral "${id}" has invalid componentId.`);
+      return false;
+    }
+    if (state.pinId !== undefined && typeof state.pinId !== 'string') {
+      console.warn(`[Runtime Diagnostics] malformed ESP32 peripheral metadata: Peripheral "${id}" has invalid pinId.`);
+      return false;
+    }
+    if (state.gpio !== undefined && !this.validateGPIOPinNumber(state.gpio, id)) return false;
+    return true;
+  }
+
+  private validateESP32PWMExecutionState(state: ESP32PWMExecutionState): boolean {
+    if (!state || !this.validatePeripheralIdentifier(state.pwmId, 'PWM ID')) return false;
+    if (!this.validatePeripheralIdentifier(state.runtimeId, `PWM "${state.pwmId}" runtimeId`) || !this.validatePeripheralIdentifier(state.channelId, `PWM "${state.pwmId}" channelId`)) return false;
+    if (!this.validateOptionalPeripheralOwner(state, state.pwmId) || !this.validatePlainObject(state.metadata)) return false;
+    if (typeof state.frequencyHz !== 'number' || !Number.isFinite(state.frequencyHz) || state.frequencyHz <= 0) {
+      console.warn(`[Runtime Diagnostics] invalid PWM frequencies: PWM "${state.pwmId}" has invalid frequency "${state.frequencyHz}".`);
+      return false;
+    }
+    if (typeof state.resolutionBits !== 'number' || !Number.isInteger(state.resolutionBits) || state.resolutionBits <= 0) {
+      console.warn(`[Runtime Diagnostics] invalid PWM resolution: PWM "${state.pwmId}" has invalid resolution "${state.resolutionBits}".`);
+      return false;
+    }
+    if (typeof state.dutyCycle !== 'number' || !Number.isFinite(state.dutyCycle) || state.dutyCycle < 0 || state.dutyCycle > 1) {
+      console.warn(`[Runtime Diagnostics] invalid PWM duty cycles: PWM "${state.pwmId}" has invalid duty cycle "${state.dutyCycle}".`);
+      return false;
+    }
+    return true;
+  }
+
+  public registerPWMExecutionState(state: ESP32PWMExecutionState): void {
+    if (!this.validateESP32PWMExecutionState(state)) return;
+    if (this.pwmRegistry.has(state.pwmId)) console.warn(`[Runtime Diagnostics] duplicate PWM IDs: PWM ID "${state.pwmId}" already exists.`);
+    this.pwmRegistry.set(state.pwmId, JSON.parse(JSON.stringify(state)));
+    if (!this.pwmOrder.includes(state.pwmId)) this.pwmOrder.push(state.pwmId);
+    this.registerPWMChannel({ protocolId: state.pwmId, protocolType: 'PWM', boardId: state.runtimeId, enabled: true, metadata: { ...state.metadata, resolutionBits: state.resolutionBits }, channelId: state.channelId, pinId: state.pinId, frequencyHz: state.frequencyHz, dutyCycle: state.dutyCycle });
+    if (state.pinId) this.registerHALState({ id: `${state.runtimeId}:${state.pinId}:pwm`, address: { targetId: state.targetId, componentId: state.componentId, boardId: state.runtimeId, pinId: state.pinId, channelId: state.channelId }, signal: { digitalValue: state.dutyCycle > 0, analogValue: state.dutyCycle, pwmValue: state.dutyCycle, mode: 'PWM', pullMode: 'NONE' }, metadata: { runtimeId: state.runtimeId, pwmId: state.pwmId, gpio: state.gpio, resolutionBits: state.resolutionBits } });
+  }
+
+  public getPWMExecutionState(id: string): ESP32PWMExecutionState | undefined { const state = this.pwmRegistry.get(id); return state ? JSON.parse(JSON.stringify(state)) : undefined; }
+  public getPWMExecutionStates(): ESP32PWMExecutionState[] { return this.pwmOrder.map(id => this.pwmRegistry.get(id)).filter((s): s is ESP32PWMExecutionState => !!s).map(s => JSON.parse(JSON.stringify(s))); }
+  public updatePWMDutyCycle(id: string, dutyCycle: number): void { const state = this.pwmRegistry.get(id); if (!state) { console.warn(`[Runtime Diagnostics] malformed ESP32 peripheral metadata: PWM "${id}" is not registered.`); return; } this.registerPWMExecutionState({ ...state, dutyCycle }); }
+  public removePWMExecutionState(id: string): void { const state = this.pwmRegistry.get(id); if (state && state.pinId) { this.removeHALState(`${state.runtimeId}:${state.pinId}:pwm`); } this.pwmRegistry.delete(id); this.pwmOrder = this.pwmOrder.filter(existing => existing !== id); this.removeProtocolState(id); }
+  public clearPWMExecutionStates(): void { for (const id of [...this.pwmOrder]) this.removePWMExecutionState(id); }
+
+  private validateESP32ServoExecutionState(state: ESP32ServoExecutionState): boolean {
+    if (!state || !this.validatePeripheralIdentifier(state.servoId, 'Servo ID')) return false;
+    if (!this.validatePeripheralIdentifier(state.runtimeId, `Servo "${state.servoId}" runtimeId`)) return false;
+    if (!this.validateOptionalPeripheralOwner({ ...state, pinId: state.attachedPinId, gpio: state.attachedGPIO }, state.servoId) || !this.validatePlainObject(state.metadata)) return false;
+    if (typeof state.angle !== 'number' || !Number.isFinite(state.angle) || state.angle < 0 || state.angle > 180) { console.warn(`[Runtime Diagnostics] invalid servo angles: Servo "${state.servoId}" has invalid angle "${state.angle}".`); return false; }
+    if (!state.pulseWidth || typeof state.pulseWidth.minPulseWidthUs !== 'number' || typeof state.pulseWidth.maxPulseWidthUs !== 'number' || state.pulseWidth.minPulseWidthUs <= 0 || state.pulseWidth.maxPulseWidthUs <= state.pulseWidth.minPulseWidthUs || (state.pulseWidth.neutralPulseWidthUs !== undefined && typeof state.pulseWidth.neutralPulseWidthUs !== 'number')) { console.warn(`[Runtime Diagnostics] malformed servo pulse metadata: Servo "${state.servoId}" has invalid pulse width metadata.`); return false; }
+    return true;
+  }
+
+  public registerServoExecutionState(state: ESP32ServoExecutionState): void { if (!this.validateESP32ServoExecutionState(state)) return; if (this.servoRegistry.has(state.servoId)) console.warn(`[Runtime Diagnostics] duplicate servo IDs: Servo ID "${state.servoId}" already exists.`); this.servoRegistry.set(state.servoId, JSON.parse(JSON.stringify(state))); if (!this.servoOrder.includes(state.servoId)) this.servoOrder.push(state.servoId); if (state.attachedPinId) this.registerHALState({ id: `${state.runtimeId}:${state.attachedPinId}:servo`, address: { targetId: state.targetId, componentId: state.componentId, boardId: state.runtimeId, pinId: state.attachedPinId }, signal: { digitalValue: state.angle > 0, analogValue: state.angle, pwmValue: state.angle / 180, mode: 'PWM', pullMode: 'NONE' }, metadata: { runtimeId: state.runtimeId, servoId: state.servoId, gpio: state.attachedGPIO, pulseWidth: JSON.parse(JSON.stringify(state.pulseWidth)) } }); }
+  public getServoExecutionState(id: string): ESP32ServoExecutionState | undefined { const state = this.servoRegistry.get(id); return state ? JSON.parse(JSON.stringify(state)) : undefined; }
+  public getServoExecutionStates(): ESP32ServoExecutionState[] { return this.servoOrder.map(id => this.servoRegistry.get(id)).filter((s): s is ESP32ServoExecutionState => !!s).map(s => JSON.parse(JSON.stringify(s))); }
+  public updateServoAngle(id: string, angle: number): void { const state = this.servoRegistry.get(id); if (!state) { console.warn(`[Runtime Diagnostics] malformed ESP32 peripheral metadata: Servo "${id}" is not registered.`); return; } this.registerServoExecutionState({ ...state, angle }); }
+  public removeServoExecutionState(id: string): void { const state = this.servoRegistry.get(id); if (state && state.attachedPinId) { this.removeHALState(`${state.runtimeId}:${state.attachedPinId}:servo`); } this.servoRegistry.delete(id); this.servoOrder = this.servoOrder.filter(existing => existing !== id); }
+  public clearServoExecutionStates(): void { for (const id of [...this.servoOrder]) this.removeServoExecutionState(id); }
+
+  private validateESP32ADCExecutionState(state: ESP32ADCExecutionState): boolean {
+    if (!state || !this.validatePeripheralIdentifier(state.adcId, 'ADC ID')) return false;
+    if (!this.validatePeripheralIdentifier(state.runtimeId, `ADC "${state.adcId}" runtimeId`) || !this.validatePeripheralIdentifier(state.channelId, `ADC "${state.adcId}" channelId`)) return false;
+    if (!this.validateOptionalPeripheralOwner(state, state.adcId) || !this.validatePlainObject(state.metadata)) return false;
+    if (typeof state.minValue !== 'number' || typeof state.maxValue !== 'number' || !Number.isFinite(state.minValue) || !Number.isFinite(state.maxValue) || state.maxValue <= state.minValue) { console.warn(`[Runtime Diagnostics] invalid ADC ranges: ADC "${state.adcId}" has invalid range.`); return false; }
+    if (typeof state.currentValue !== 'number' || !Number.isFinite(state.currentValue) || state.currentValue < state.minValue || state.currentValue > state.maxValue) { console.warn(`[Runtime Diagnostics] invalid ADC values: ADC "${state.adcId}" has invalid current value "${state.currentValue}".`); return false; }
+    if (typeof state.resolutionBits !== 'number' || !Number.isInteger(state.resolutionBits) || state.resolutionBits <= 0) { console.warn(`[Runtime Diagnostics] invalid ADC resolution: ADC "${state.adcId}" has invalid resolution.`); return false; }
+    return true;
+  }
+
+  public registerADCExecutionState(state: ESP32ADCExecutionState): void { if (!this.validateESP32ADCExecutionState(state)) return; if (this.adcRegistry.has(state.adcId)) console.warn(`[Runtime Diagnostics] duplicate ADC IDs: ADC ID "${state.adcId}" already exists.`); this.adcRegistry.set(state.adcId, JSON.parse(JSON.stringify(state))); if (!this.adcOrder.includes(state.adcId)) this.adcOrder.push(state.adcId); if (state.pinId) this.registerHALState({ id: `${state.runtimeId}:${state.pinId}:adc`, address: { targetId: state.targetId, componentId: state.componentId, boardId: state.runtimeId, pinId: state.pinId, channelId: state.channelId }, signal: { digitalValue: state.currentValue > state.minValue, analogValue: state.currentValue, pwmValue: 0, mode: 'ANALOG', pullMode: 'NONE' }, metadata: { runtimeId: state.runtimeId, adcId: state.adcId, gpio: state.gpio, minValue: state.minValue, maxValue: state.maxValue, resolutionBits: state.resolutionBits } }); }
+  public getADCExecutionState(id: string): ESP32ADCExecutionState | undefined { const state = this.adcRegistry.get(id); return state ? JSON.parse(JSON.stringify(state)) : undefined; }
+  public getADCExecutionStates(): ESP32ADCExecutionState[] { return this.adcOrder.map(id => this.adcRegistry.get(id)).filter((s): s is ESP32ADCExecutionState => !!s).map(s => JSON.parse(JSON.stringify(s))); }
+  public updateADCValue(id: string, currentValue: number): void { const state = this.adcRegistry.get(id); if (!state) { console.warn(`[Runtime Diagnostics] malformed ESP32 peripheral metadata: ADC "${id}" is not registered.`); return; } this.registerADCExecutionState({ ...state, currentValue }); }
+  public removeADCExecutionState(id: string): void { const state = this.adcRegistry.get(id); if (state && state.pinId) { this.removeHALState(`${state.runtimeId}:${state.pinId}:adc`); } this.adcRegistry.delete(id); this.adcOrder = this.adcOrder.filter(existing => existing !== id); }
+  public clearADCExecutionStates(): void { for (const id of [...this.adcOrder]) this.removeADCExecutionState(id); }
+
+  private validateESP32TouchExecutionState(state: ESP32TouchExecutionState): boolean {
+    if (!state || !this.validatePeripheralIdentifier(state.touchId, 'Touch ID')) return false;
+    if (!this.validatePeripheralIdentifier(state.runtimeId, `Touch "${state.touchId}" runtimeId`) || !this.validatePeripheralIdentifier(state.pinId, `Touch "${state.touchId}" pinId`)) return false;
+    if (!this.validateOptionalPeripheralOwner(state, state.touchId) || !this.validatePlainObject(state.metadata)) return false;
+    if (typeof state.touchCapable !== 'boolean' || typeof state.touched !== 'boolean') { console.warn(`[Runtime Diagnostics] malformed touch GPIO metadata: Touch "${state.touchId}" has invalid state flags.`); return false; }
+    if (typeof state.threshold !== 'number' || !Number.isFinite(state.threshold) || state.threshold < 0) { console.warn(`[Runtime Diagnostics] invalid touch thresholds: Touch "${state.touchId}" has invalid threshold "${state.threshold}".`); return false; }
+    return true;
+  }
+
+  public registerTouchExecutionState(state: ESP32TouchExecutionState): void { if (!this.validateESP32TouchExecutionState(state)) return; if (this.touchRegistry.has(state.touchId)) console.warn(`[Runtime Diagnostics] duplicate touch IDs: Touch ID "${state.touchId}" already exists.`); this.touchRegistry.set(state.touchId, JSON.parse(JSON.stringify(state))); if (!this.touchOrder.includes(state.touchId)) this.touchOrder.push(state.touchId); this.registerHALState({ id: `${state.runtimeId}:${state.pinId}:touch`, address: { targetId: state.targetId, componentId: state.componentId, boardId: state.runtimeId, pinId: state.pinId }, signal: { digitalValue: state.touched, analogValue: state.threshold, pwmValue: 0, mode: 'INPUT', pullMode: 'NONE' }, metadata: { runtimeId: state.runtimeId, touchId: state.touchId, gpio: state.gpio, touchCapable: state.touchCapable, threshold: state.threshold } }); }
+  public getTouchExecutionState(id: string): ESP32TouchExecutionState | undefined { const state = this.touchRegistry.get(id); return state ? JSON.parse(JSON.stringify(state)) : undefined; }
+  public getTouchExecutionStates(): ESP32TouchExecutionState[] { return this.touchOrder.map(id => this.touchRegistry.get(id)).filter((s): s is ESP32TouchExecutionState => !!s).map(s => JSON.parse(JSON.stringify(s))); }
+  public updateTouchState(id: string, touched: boolean): void { const state = this.touchRegistry.get(id); if (!state) { console.warn(`[Runtime Diagnostics] malformed ESP32 peripheral metadata: Touch "${id}" is not registered.`); return; } this.registerTouchExecutionState({ ...state, touched }); }
+  public removeTouchExecutionState(id: string): void { const state = this.touchRegistry.get(id); if (state) { this.removeHALState(`${state.runtimeId}:${state.pinId}:touch`); } this.touchRegistry.delete(id); this.touchOrder = this.touchOrder.filter(existing => existing !== id); }
+  public clearTouchExecutionStates(): void { for (const id of [...this.touchOrder]) this.removeTouchExecutionState(id); }
+
+  private cleanupESP32PeripheralStateForTarget(targetId: string, componentIds: Set<string>, pinIds: Set<string>): void {
+    const owns = (state: { targetId?: string; componentId?: string; pinId?: string; attachedPinId?: string }) => state.targetId === targetId || (state.componentId !== undefined && componentIds.has(state.componentId)) || (state.pinId !== undefined && pinIds.has(state.pinId)) || (state.attachedPinId !== undefined && pinIds.has(state.attachedPinId));
+    for (const state of this.getPWMExecutionStates()) if (owns(state)) this.removePWMExecutionState(state.pwmId);
+    for (const state of this.getServoExecutionStates()) if (owns(state)) this.removeServoExecutionState(state.servoId);
+    for (const state of this.getADCExecutionStates()) if (owns(state)) this.removeADCExecutionState(state.adcId);
+    for (const state of this.getTouchExecutionStates()) if (owns(state)) this.removeTouchExecutionState(state.touchId);
   }
 
   public executeESP32Instruction(id: string): ESP32GPIOExecutionResult | undefined {
@@ -3544,6 +3668,12 @@ export class BaseRuntime implements IRuntime {
 
     // Reset Phase 8E ESP32 GPIO execution result registry
     this.clearESP32GPIOExecutionResults();
+
+    // Reset Phase 8F ESP32 peripheral execution registries
+    this.clearPWMExecutionStates();
+    this.clearServoExecutionStates();
+    this.clearADCExecutionStates();
+    this.clearTouchExecutionStates();
   }
 
   public start(): void {
@@ -3711,6 +3841,19 @@ export class BaseRuntime implements IRuntime {
         }
       }
     }
+
+    // Reset Phase 8A-8F hardware and ESP32 metadata registries
+    this.clearHALStates();
+    this.clearProtocolStates();
+    this.clearHardwareBackendMetadata();
+    this.clearExecutionCommands();
+    this.clearESP32Runtimes();
+    this.clearESP32Instructions();
+    this.clearESP32GPIOExecutionResults();
+    this.clearPWMExecutionStates();
+    this.clearServoExecutionStates();
+    this.clearADCExecutionStates();
+    this.clearTouchExecutionStates();
   }
 
   /**
@@ -4147,6 +4290,8 @@ export class BaseRuntime implements IRuntime {
           this.workspaceLayouts.delete(wlKey);
         }
       }
+
+      this.cleanupESP32PeripheralStateForTarget(targetId, componentIds, pinIds);
     }
 
     this.targets.delete(targetId);
@@ -4411,6 +4556,18 @@ export class BaseRuntime implements IRuntime {
       if (this.esp32GPIOExecutionResultRegistry.size > 0) {
         stageSnap.esp32GPIOExecutionResults = this.getESP32GPIOExecutionResults();
       }
+      if (this.pwmRegistry.size > 0) {
+        stageSnap.pwmRegistry = this.getPWMExecutionStates();
+      }
+      if (this.servoRegistry.size > 0) {
+        stageSnap.servoRegistry = this.getServoExecutionStates();
+      }
+      if (this.adcRegistry.size > 0) {
+        stageSnap.adcRegistry = this.getADCExecutionStates();
+      }
+      if (this.touchRegistry.size > 0) {
+        stageSnap.touchRegistry = this.getTouchExecutionStates();
+      }
       // Phase 7R: Attach connection metadata to stage snapshot entry
       if (this.connectionRegistry.size > 0) {
         stageSnap.connections = this.getConnections();
@@ -4602,6 +4759,12 @@ export class BaseRuntime implements IRuntime {
       if (isStage && this.esp32GPIOExecutionResultRegistry.size > 0) {
         serializedTarget.esp32GPIOExecutionResults = this.getESP32GPIOExecutionResults();
       }
+
+      // Phase 8F: Serialize ESP32 peripheral execution state registries
+      if (isStage && this.pwmRegistry.size > 0) serializedTarget.pwmRegistry = this.getPWMExecutionStates();
+      if (isStage && this.servoRegistry.size > 0) serializedTarget.servoRegistry = this.getServoExecutionStates();
+      if (isStage && this.adcRegistry.size > 0) serializedTarget.adcRegistry = this.getADCExecutionStates();
+      if (isStage && this.touchRegistry.size > 0) serializedTarget.touchRegistry = this.getTouchExecutionStates();
 
       const targetWatchers = Array.from(this.variableWatchers.values())
         .filter(w => w.targetId === target.id || (!w.targetId && isStage));
@@ -5005,6 +5168,19 @@ export class BaseRuntime implements IRuntime {
         for (const result of stageTarget.esp32GPIOExecutionResults) {
           this.registerESP32GPIOExecutionResult(JSON.parse(JSON.stringify(result)));
         }
+      }
+      // Phase 8F: Restore ESP32 peripheral execution state registries
+      if (Array.isArray(stageTarget.pwmRegistry)) {
+        for (const state of stageTarget.pwmRegistry) this.registerPWMExecutionState(JSON.parse(JSON.stringify(state)));
+      }
+      if (Array.isArray(stageTarget.servoRegistry)) {
+        for (const state of stageTarget.servoRegistry) this.registerServoExecutionState(JSON.parse(JSON.stringify(state)));
+      }
+      if (Array.isArray(stageTarget.adcRegistry)) {
+        for (const state of stageTarget.adcRegistry) this.registerADCExecutionState(JSON.parse(JSON.stringify(state)));
+      }
+      if (Array.isArray(stageTarget.touchRegistry)) {
+        for (const state of stageTarget.touchRegistry) this.registerTouchExecutionState(JSON.parse(JSON.stringify(state)));
       }
     }
     // Restore pins from component pin data
