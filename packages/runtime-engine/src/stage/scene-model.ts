@@ -13,6 +13,10 @@ import {
   SignalVisualRegistryEntry,
   AnimationRegistryEntry,
   StageSyncState,
+  BreadboardModel,
+  BreadboardPositionModel,
+  ComponentPlacementModel,
+  BreadboardConnectionMetadata,
 } from '../types';
 
 import { RenderRegistry } from './render-registry';
@@ -231,6 +235,10 @@ export class SceneSynchronizer {
     boardVisualRegistry: BoardVisualRegistryEntry[] = [],
     signalVisualRegistry: SignalVisualRegistryEntry[] = [],
     animationRegistry: AnimationRegistryEntry[] = [],
+    breadboardModels: BreadboardModel[] = [],
+    breadboardPositions: BreadboardPositionModel[] = [],
+    componentPlacements: ComponentPlacementModel[] = [],
+    breadboardConnectionMetadata: BreadboardConnectionMetadata[] = [],
   ): SceneSyncSnapshot {
     if (!snapshot || !Array.isArray(snapshot)) {
       console.warn(`${this.warnPrefix} sync called with invalid snapshot.`);
@@ -272,6 +280,10 @@ export class SceneSynchronizer {
       boardVisualRegistry: JSON.parse(JSON.stringify(boardVisualRegistry)),
       signalVisualRegistry: JSON.parse(JSON.stringify(signalVisualRegistry)),
       animationRegistry: JSON.parse(JSON.stringify(animationRegistry)),
+      breadboardModels: JSON.parse(JSON.stringify(breadboardModels)),
+      breadboardPositions: JSON.parse(JSON.stringify(breadboardPositions)),
+      componentPlacements: JSON.parse(JSON.stringify(componentPlacements)),
+      breadboardConnectionMetadata: JSON.parse(JSON.stringify(breadboardConnectionMetadata)),
     };
   }
 
@@ -286,6 +298,10 @@ export class SceneSynchronizer {
     boardVisualRegistry: BoardVisualRegistryEntry[] = [],
     signalVisualRegistry: SignalVisualRegistryEntry[] = [],
     animationRegistry: AnimationRegistryEntry[] = [],
+    breadboardModels: BreadboardModel[] = [],
+    breadboardPositions: BreadboardPositionModel[] = [],
+    componentPlacements: ComponentPlacementModel[] = [],
+    breadboardConnectionMetadata: BreadboardConnectionMetadata[] = [],
   ): SceneSyncSnapshot {
     validateDuplicateLayerIds(layers, this.warnPrefix);
     validateSceneModel(scene, this.warnPrefix);
@@ -312,6 +328,10 @@ export class SceneSynchronizer {
       boardVisualRegistry: JSON.parse(JSON.stringify(boardVisualRegistry)),
       signalVisualRegistry: JSON.parse(JSON.stringify(signalVisualRegistry)),
       animationRegistry: JSON.parse(JSON.stringify(animationRegistry)),
+      breadboardModels: JSON.parse(JSON.stringify(breadboardModels)),
+      breadboardPositions: JSON.parse(JSON.stringify(breadboardPositions)),
+      componentPlacements: JSON.parse(JSON.stringify(componentPlacements)),
+      breadboardConnectionMetadata: JSON.parse(JSON.stringify(breadboardConnectionMetadata)),
     };
   }
 
@@ -366,6 +386,10 @@ export class SceneSynchronizer {
       boardVisualRegistry: [],
       signalVisualRegistry: [],
       animationRegistry: [],
+      breadboardModels: [],
+      breadboardPositions: [],
+      componentPlacements: [],
+      breadboardConnectionMetadata: [],
     };
   }
 
@@ -380,7 +404,6 @@ export class SceneSynchronizer {
     if (first && first.stemverseVisualStates && first.stemverseVisualStates.length > 0) {
       const visualType = first.stemverseVisualStates[0].visualType;
       if (visualType === 'BREADBOARD') sceneType = 'BREADBOARD';
-      else if (visualType === 'PCB') sceneType = 'PCB';
     }
 
     const cameraMetadata: CameraMetadata = {

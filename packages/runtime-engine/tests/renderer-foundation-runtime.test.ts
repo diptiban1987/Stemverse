@@ -1716,8 +1716,9 @@ describe('Phase 11A: Renderer Foundation', () => {
         reg.register(`b_${i}`, { order: 2 });
         const json = reg.toJSON();
         const reg2 = new RenderRegistry<{ order: number }>();
-        reg2.fromJSON(json, (item: any, idx: number) => {
-          return Object.keys(reg.keys())[idx] || `key_${i}`;
+        let idx = 0;
+        reg2.fromJSON(json, (_item: { order: number }) => {
+          return `auto_${idx++}`;
         });
       });
     }

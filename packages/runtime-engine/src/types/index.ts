@@ -471,6 +471,12 @@ export interface StageSyncState {
 
   // Phase 11B: Interaction metadata synchronization
   interactionMetadata?: InteractionMetadata[];
+
+  // Phase 11C: Breadboard workspace metadata synchronization
+  breadboardModels?: BreadboardModel[];
+  breadboardPositions?: BreadboardPositionModel[];
+  componentPlacements?: ComponentPlacementModel[];
+  breadboardConnectionMetadata?: BreadboardConnectionMetadata[];
 }
 
 // ─── Phase 11B: Visual Interaction Engine ──────────────────
@@ -1049,6 +1055,12 @@ export interface SerializedTarget {
 
   // Phase 11B: Interaction metadata serialization
   interactionMetadata?: InteractionMetadata[];
+
+  // Phase 11C: Breadboard workspace metadata serialization
+  breadboardModels?: BreadboardModel[];
+  breadboardPositions?: BreadboardPositionModel[];
+  componentPlacements?: ComponentPlacementModel[];
+  breadboardConnectionMetadata?: BreadboardConnectionMetadata[];
 }
 
 export interface SerializedAssetManifest {
@@ -1876,6 +1888,126 @@ export interface AnimationRegistryEntry {
   interactionAnimation: InteractionAnimationMetadata;
 }
 
+// ─── Phase 11C: Breadboard Workspace Foundation ────────────────────
+
+export type BreadboardType =
+  | 'STANDARD'
+  | 'HALF'
+  | 'MINI'
+  | 'CUSTOM';
+
+export type PowerRailPositionType = 'TOP' | 'BOTTOM' | 'LEFT' | 'RIGHT';
+
+export interface PowerRailMetadata {
+  railId: string;
+  label: string;
+  voltage: string;
+  position: PowerRailPositionType;
+  columnRange: { start: number; end: number };
+}
+
+export interface SignalRailMetadata {
+  railId: string;
+  label: string;
+  rowRange: { start: number; end: number };
+  columnRange: { start: number; end: number };
+}
+
+export interface BreadboardModel {
+  breadboardId: string;
+  breadboardType: BreadboardType;
+  displayName: string;
+  category: string;
+  rowCount: number;
+  columnCount: number;
+  powerRailMetadata: PowerRailMetadata[];
+  signalRailMetadata: SignalRailMetadata[];
+  futureThemeHints: Record<string, unknown>;
+}
+
+export interface BreadboardSlotPosition {
+  row: number;
+  column: number;
+  railId?: string;
+}
+
+export interface PowerRailPosition {
+  railId: string;
+  startRow: number;
+  endRow: number;
+  side: 'LEFT' | 'RIGHT';
+}
+
+export interface SignalRailPosition {
+  railId: string;
+  startColumn: number;
+  endColumn: number;
+  row: number;
+}
+
+export interface BreadboardPositionModel {
+  positionId: string;
+  breadboardId: string;
+  slotPositions: BreadboardSlotPosition[];
+  rowPositions: number[];
+  columnPositions: number[];
+  powerRailPositions: PowerRailPosition[];
+  signalRailPositions: SignalRailPosition[];
+  futurePlacementHints: Record<string, unknown>;
+}
+
+export interface PinOccupancy {
+  pinId: string;
+  slotRow: number;
+  slotColumn: number;
+}
+
+export interface SlotOccupancy {
+  slotId: string;
+  occupied: boolean;
+  componentId?: string;
+}
+
+export interface BoardOccupancy {
+  boardId: string;
+  occupied: boolean;
+  breadboardId: string;
+}
+
+export interface ComponentPlacementModel {
+  placementId: string;
+  componentId: string;
+  breadboardId: string;
+  slotId: string;
+  pinOccupancy: PinOccupancy[];
+  slotOccupancy: SlotOccupancy[];
+  boardOccupancy: BoardOccupancy;
+  futureRoutingHints: Record<string, unknown>;
+}
+
+export interface PowerRailConnection {
+  railId: string;
+  pinId: string;
+}
+
+export interface SignalRailConnection {
+  railId: string;
+  pinId: string;
+}
+
+export type BreadboardConnectionType = 'JUMPER' | 'WIRE' | 'CUSTOM';
+
+export interface BreadboardConnectionMetadata {
+  connectionId: string;
+  breadboardId: string;
+  sourceBreadboardPinId: string;
+  targetBreadboardPinId: string;
+  connectionType: BreadboardConnectionType;
+  powerRailConnections: PowerRailConnection[];
+  signalRailConnections: SignalRailConnection[];
+  futureJumperHints: Record<string, unknown>;
+}
+
 // ─── Phase 11A: Renderer Foundation ───────────────────────────────
 
 export type RenderSceneType = 'BREADBOARD' | 'PCB' | 'WIRING' | 'COMPONENT_PREVIEW' | 'FULL_BOARD' | 'CUSTOM';
@@ -1926,6 +2058,19 @@ export interface SceneSyncSnapshot {
   signalVisualRegistry: SignalVisualRegistryEntry[];
   animationRegistry: AnimationRegistryEntry[];
   interactionMetadata?: InteractionMetadata[];
+
+  // Phase 11C: Breadboard workspace metadata synchronization
+  breadboardModels?: BreadboardModel[];
+  breadboardPositions?: BreadboardPositionModel[];
+  componentPlacements?: ComponentPlacementModel[];
+  breadboardConnectionMetadata?: BreadboardConnectionMetadata[];
+}
+
+export interface BreadboardWorkspaceState {
+  breadboardModels: BreadboardModel[];
+  breadboardPositions: BreadboardPositionModel[];
+  componentPlacements: ComponentPlacementModel[];
+  connectionMetadata: BreadboardConnectionMetadata[];
 }
 
 export interface RenderRegistryEntry<T> {

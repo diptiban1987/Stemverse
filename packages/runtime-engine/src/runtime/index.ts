@@ -3,6 +3,7 @@ import { TargetId, TargetState, ASTScript, Thread, SpriteState, StageState, Pend
 import { MinimalASTInterpreter, IHardwareAdapter } from '../ast/interpreter';
 import { SimulatedHardwareBackend } from '../hal';
 import { createThread, TaskQueue, PendingTask, resetThreadCounter } from './execution-context';
+import { BreadboardWorkspace } from '../stage/breadboard-workspace';
 
 /**
  * Concrete runtime implementation with minimal AST execution.
@@ -281,6 +282,9 @@ export class BaseRuntime implements IRuntime {
   // Phase 11B Visual interaction registry
   private interactionRegistry = new Map<string, InteractionMetadata>();
   private interactionOrder: string[] = [];
+
+  // Phase 11C Breadboard workspace registry
+  public readonly breadboardWorkspace = new BreadboardWorkspace();
 
   // Phase 8A.1 HAL state registry (passive contracts/state only)
   private halStateRegistry = new Map<string, RuntimeHALState>();
@@ -5570,6 +5574,9 @@ export class BaseRuntime implements IRuntime {
     // Reset Phase 11B interaction registry
     this.clearInteractionRegistry();
 
+    // Reset Phase 11C breadboard workspace
+    this.breadboardWorkspace.clear();
+
     // Reset Phase 8A.1 HAL state registry
     this.clearHALStates();
 
@@ -5787,6 +5794,9 @@ export class BaseRuntime implements IRuntime {
         }
       }
     }
+
+    // Reset Phase 11C breadboard workspace
+    this.breadboardWorkspace.clear();
 
     // Reset Phase 8A-8F hardware and ESP32 metadata registries
     this.clearHALStates();
@@ -6550,6 +6560,14 @@ export class BaseRuntime implements IRuntime {
       if (this.interactionRegistry.size > 0) {
         stageSnap.interactionMetadata = this.getInteractionEntries();
       }
+      // Phase 11C: Attach breadboard workspace metadata to stage snapshot entry
+      if (this.breadboardWorkspace.modelCount > 0 || this.breadboardWorkspace.positionCount > 0 || this.breadboardWorkspace.placementCount > 0 || this.breadboardWorkspace.connectionCount > 0) {
+        const bwState = this.breadboardWorkspace.toJSON();
+        if (bwState.breadboardModels.length > 0) stageSnap.breadboardModels = bwState.breadboardModels;
+        if (bwState.breadboardPositions.length > 0) stageSnap.breadboardPositions = bwState.breadboardPositions;
+        if (bwState.componentPlacements.length > 0) stageSnap.componentPlacements = bwState.componentPlacements;
+        if (bwState.connectionMetadata.length > 0) stageSnap.breadboardConnectionMetadata = bwState.connectionMetadata;
+      }
       // Phase 7R: Attach connection metadata to stage snapshot entry
       if (this.connectionRegistry.size > 0) {
         stageSnap.connections = this.getConnections();
@@ -6731,6 +6749,15 @@ export class BaseRuntime implements IRuntime {
       // Phase 11B: Serialize interaction registry metadata
       if (isStage && this.interactionRegistry.size > 0) {
         serializedTarget.interactionMetadata = this.getInteractionEntries();
+      }
+
+      // Phase 11C: Serialize breadboard workspace metadata
+      if (isStage && (this.breadboardWorkspace.modelCount > 0 || this.breadboardWorkspace.positionCount > 0 || this.breadboardWorkspace.placementCount > 0 || this.breadboardWorkspace.connectionCount > 0)) {
+        const bwState = this.breadboardWorkspace.toJSON();
+        if (bwState.breadboardModels.length > 0) serializedTarget.breadboardModels = bwState.breadboardModels;
+        if (bwState.breadboardPositions.length > 0) serializedTarget.breadboardPositions = bwState.breadboardPositions;
+        if (bwState.componentPlacements.length > 0) serializedTarget.componentPlacements = bwState.componentPlacements;
+        if (bwState.connectionMetadata.length > 0) serializedTarget.breadboardConnectionMetadata = bwState.connectionMetadata;
       }
 
       // Phase 7W: Serialize board definitions & workspace boards
@@ -7164,6 +7191,22 @@ export class BaseRuntime implements IRuntime {
         for (const entry of stageTarget.interactionMetadata) {
           this.registerInteractionEntry(JSON.parse(JSON.stringify(entry)));
         }
+      }
+      // Phase 11C: Restore breadboard workspace metadata from stage target
+      if (Array.isArray(stageTarget.breadboardModels) ||
+          Array.isArray(stageTarget.breadboardPositions) ||
+          Array.isArray(stageTarget.componentPlacements) ||
+          Array.isArray(stageTarget.breadboardConnectionMetadata)) {
+        this.breadboardWorkspace.fromJSON({
+          breadboardModels: Array.isArray(stageTarget.breadboardModels)
+            ? stageTarget.breadboardModels.map(m => JSON.parse(JSON.stringify(m))) : undefined,
+          breadboardPositions: Array.isArray(stageTarget.breadboardPositions)
+            ? stageTarget.breadboardPositions.map(p => JSON.parse(JSON.stringify(p))) : undefined,
+          componentPlacements: Array.isArray(stageTarget.componentPlacements)
+            ? stageTarget.componentPlacements.map(c => JSON.parse(JSON.stringify(c))) : undefined,
+          connectionMetadata: Array.isArray(stageTarget.breadboardConnectionMetadata)
+            ? stageTarget.breadboardConnectionMetadata.map(c => JSON.parse(JSON.stringify(c))) : undefined,
+        });
       }
       // Phase 7W: Restore board definitions from stage target
       if (Array.isArray(stageTarget.boardDefinitions)) {

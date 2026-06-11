@@ -63,3 +63,4 @@ export * from './renderer-adapter';
 export * from './pixi-renderer-adapter';
 export * from './render-registry';
 export * from './scene-model';
+export * from './breadboard-workspace';

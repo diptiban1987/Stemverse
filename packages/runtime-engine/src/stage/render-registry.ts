@@ -8,7 +8,7 @@ function safeDeepCopy<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
 }
 
-export class RenderRegistry<T extends Record<string, unknown>> {
+export class RenderRegistry<T extends object> {
   private readonly entries = new Map<string, T>();
   private readonly order: string[] = [];
 
