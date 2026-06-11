@@ -237,6 +237,10 @@ export class PixiRendererAdapter implements IRendererAdapter {
         target.breadboardPositions = snap.breadboardPositions ? JSON.parse(JSON.stringify(snap.breadboardPositions)) : undefined;
         target.componentPlacements = snap.componentPlacements ? JSON.parse(JSON.stringify(snap.componentPlacements)) : undefined;
         target.breadboardConnectionMetadata = snap.breadboardConnectionMetadata ? JSON.parse(JSON.stringify(snap.breadboardConnectionMetadata)) : undefined;
+        target.renderNodes = snap.renderNodes ? JSON.parse(JSON.stringify(snap.renderNodes)) : undefined;
+        target.sceneGraphs = snap.sceneGraphs ? JSON.parse(JSON.stringify(snap.sceneGraphs)) : undefined;
+        target.viewports = snap.viewports ? JSON.parse(JSON.stringify(snap.viewports)) : undefined;
+        target.renderPipelines = snap.renderPipelines ? JSON.parse(JSON.stringify(snap.renderPipelines)) : undefined;
       } else {
         target = {
           id: snap.targetId,
@@ -299,6 +303,10 @@ export class PixiRendererAdapter implements IRendererAdapter {
           breadboardPositions: snap.breadboardPositions ? JSON.parse(JSON.stringify(snap.breadboardPositions)) : undefined,
           componentPlacements: snap.componentPlacements ? JSON.parse(JSON.stringify(snap.componentPlacements)) : undefined,
           breadboardConnectionMetadata: snap.breadboardConnectionMetadata ? JSON.parse(JSON.stringify(snap.breadboardConnectionMetadata)) : undefined,
+          renderNodes: snap.renderNodes ? JSON.parse(JSON.stringify(snap.renderNodes)) : undefined,
+          sceneGraphs: snap.sceneGraphs ? JSON.parse(JSON.stringify(snap.sceneGraphs)) : undefined,
+          viewports: snap.viewports ? JSON.parse(JSON.stringify(snap.viewports)) : undefined,
+          renderPipelines: snap.renderPipelines ? JSON.parse(JSON.stringify(snap.renderPipelines)) : undefined,
         };
         this.targets.set(snap.targetId, target);
       }

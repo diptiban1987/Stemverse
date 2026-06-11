@@ -1,5 +1,5 @@
 import { IRuntime } from '../core';
-import { TargetId, TargetState, ASTScript, Thread, SpriteState, StageState, PendingBroadcast, BroadcastCompletionToken, ListenerEntry, BubbleState, StageSyncState, CostumeAsset, SoundAsset, BackdropAsset, ActiveSoundTrigger, SoundChannelState, PenCommand, PenState, VariableWatcher, WatcherMode, ListWatcher, ListWatcherMode, GlideState, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, SerializedProject, SerializedStage, SerializedTarget, SerializedAssetManifest, SerializedProjectMetadata, VariableState, ListState, RuntimeAssetState, AssetLoadStatus, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, ComponentType, RuntimeComponent, PinDirection, RuntimePin, RuntimeConnection, DeviceState, WorkspaceTransform, WorkspaceComponentLayout, WirePoint, WireLayout, DevelopmentBoardType, BoardPinDefinition, BoardPinCapabilities, DevelopmentBoardDefinition, WorkspaceBoard, RenderModelType, RenderMetadata, RuntimeHALState, HardwareAddress, PinMode, PullMode, PinCapability, ProtocolState, ProtocolType, PWMChannelState, I2CBusState, SPIBusState, UARTPortState, HardwareBackendMetadata, ExecutionCommand, ExecutionCommandLifecycleState, ExecutionCommandType, ESP32RuntimeMetadata, ESP32ExecutionState, ESP32PinCapability, ESP32PinMode, ESP32InstructionMetadata, ESP32InstructionExecutionState, ESP32InstructionType, ESP32GPIOExecutionResult, ESP32GPIOExecutionStatus, ESP32PWMExecutionState, ESP32ServoExecutionState, ESP32ADCExecutionState, ESP32TouchExecutionState, ESP32PeripheralCommandExecutionResult, ESP32PeripheralCommandExecutionStatus, ProtocolCommandExecutionResult, ProtocolCommandExecutionStatus, STEMVerseVisualState, STEMVerseVisualThemeState, STEMVerseVisualType, STEMVerseBoardStatus, STEMVerseSignalFlowDirection, STEMVerseVisualThemeMode, ComponentVisualModel, ComponentVisualType, ComponentVisualCategory, PinVisualMetadata, InteractionZone, AnchorPoint, LabelPosition, WireVisualRegistryEntry, WireType, WireCategory, RoutingPathType, SignalDirection, SignalActivity, SignalState, WireVisualModel, ControlPoint, WireRoutingMetadata, SignalVisualizationMetadata, InteractionZoneRect, WireInteractionMetadata, BoardVisualModel, BoardVisualType, BoardVisualCategory, BoardVisualRegistryEntry, BoardLayoutMetadata, ConnectorVisualMetadata, BoardInteractionMetadata, BoardBounds, ComponentRegion, PowerRegion, SignalRegion, ReservedRegion, BoardInteractionZone, SignalVisualModel, SignalVisualType, SignalVisualCategory, DigitalSignalMetadata, DigitalSignalLevel, DigitalSignalDirection, AnalogSignalMetadata, PWMSignalMetadata, ProtocolSignalMetadata, ProtocolSignalType, SignalVariantMetadata, SignalInteractionZone, SignalInteractionMetadata, SignalVisualRegistryEntry, AnimationType, AnimationRepeatMode, AnimationPlaybackMode, AnimationVisualModel, ComponentAnimationMetadata, WireAnimationMetadata, BoardAnimationMetadata, SignalAnimationMetadata, InteractionAnimationMetadata, AnimationRegistryEntry, InteractionMetadata, SelectionMetadata, HoverMetadata, FocusMetadata, InspectionMetadata, InteractionType, SelectionType, HoverPriority, HoverSource, FocusOwnership, InspectionTargetType } from '../types';
+import { TargetId, TargetState, ASTScript, Thread, SpriteState, StageState, PendingBroadcast, BroadcastCompletionToken, ListenerEntry, BubbleState, StageSyncState, CostumeAsset, SoundAsset, BackdropAsset, ActiveSoundTrigger, SoundChannelState, PenCommand, PenState, VariableWatcher, WatcherMode, ListWatcher, ListWatcherMode, GlideState, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, SerializedProject, SerializedStage, SerializedTarget, SerializedAssetManifest, SerializedProjectMetadata, VariableState, ListState, RuntimeAssetState, AssetLoadStatus, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, ComponentType, RuntimeComponent, PinDirection, RuntimePin, RuntimeConnection, DeviceState, WorkspaceTransform, WorkspaceComponentLayout, WirePoint, WireLayout, DevelopmentBoardType, BoardPinDefinition, BoardPinCapabilities, DevelopmentBoardDefinition, WorkspaceBoard, RenderModelType, RenderMetadata, RuntimeHALState, HardwareAddress, PinMode, PullMode, PinCapability, ProtocolState, ProtocolType, PWMChannelState, I2CBusState, SPIBusState, UARTPortState, HardwareBackendMetadata, ExecutionCommand, ExecutionCommandLifecycleState, ExecutionCommandType, ESP32RuntimeMetadata, ESP32ExecutionState, ESP32PinCapability, ESP32PinMode, ESP32InstructionMetadata, ESP32InstructionExecutionState, ESP32InstructionType, ESP32GPIOExecutionResult, ESP32GPIOExecutionStatus, ESP32PWMExecutionState, ESP32ServoExecutionState, ESP32ADCExecutionState, ESP32TouchExecutionState, ESP32PeripheralCommandExecutionResult, ESP32PeripheralCommandExecutionStatus, ProtocolCommandExecutionResult, ProtocolCommandExecutionStatus, STEMVerseVisualState, STEMVerseVisualThemeState, STEMVerseVisualType, STEMVerseBoardStatus, STEMVerseSignalFlowDirection, STEMVerseVisualThemeMode, ComponentVisualModel, ComponentVisualType, ComponentVisualCategory, PinVisualMetadata, InteractionZone, AnchorPoint, LabelPosition, WireVisualRegistryEntry, WireType, WireCategory, RoutingPathType, SignalDirection, SignalActivity, SignalState, WireVisualModel, ControlPoint, WireRoutingMetadata, SignalVisualizationMetadata, InteractionZoneRect, WireInteractionMetadata, BoardVisualModel, BoardVisualType, BoardVisualCategory, BoardVisualRegistryEntry, BoardLayoutMetadata, ConnectorVisualMetadata, BoardInteractionMetadata, BoardBounds, ComponentRegion, PowerRegion, SignalRegion, ReservedRegion, BoardInteractionZone, SignalVisualModel, SignalVisualType, SignalVisualCategory, DigitalSignalMetadata, DigitalSignalLevel, DigitalSignalDirection, AnalogSignalMetadata, PWMSignalMetadata, ProtocolSignalMetadata, ProtocolSignalType, SignalVariantMetadata, SignalInteractionZone, SignalInteractionMetadata, SignalVisualRegistryEntry, AnimationType, AnimationRepeatMode, AnimationPlaybackMode, AnimationVisualModel, ComponentAnimationMetadata, WireAnimationMetadata, BoardAnimationMetadata, SignalAnimationMetadata, InteractionAnimationMetadata, AnimationRegistryEntry, InteractionMetadata, SelectionMetadata, HoverMetadata, FocusMetadata, InspectionMetadata, InteractionType, SelectionType, HoverPriority, HoverSource, FocusOwnership, InspectionTargetType, RenderNodeModel, NodeType, VisibilityState, SceneGraphModel, ViewportModel, VisibleRegion, RenderPipelineModel, PipelineType, CanvasRenderSnapshot } from '../types';
 import { MinimalASTInterpreter, IHardwareAdapter } from '../ast/interpreter';
 import { SimulatedHardwareBackend } from '../hal';
 import { createThread, TaskQueue, PendingTask, resetThreadCounter } from './execution-context';
@@ -285,6 +285,16 @@ export class BaseRuntime implements IRuntime {
 
   // Phase 11C Breadboard workspace registry
   public readonly breadboardWorkspace = new BreadboardWorkspace();
+
+  // Phase 12A Canvas rendering foundation registries
+  private renderNodeRegistry = new Map<string, RenderNodeModel>();
+  private renderNodeOrder: string[] = [];
+  private sceneGraphRegistry = new Map<string, SceneGraphModel>();
+  private sceneGraphOrder: string[] = [];
+  private viewportModelRegistry = new Map<string, ViewportModel>();
+  private viewportModelOrder: string[] = [];
+  private pipelineRegistry = new Map<string, RenderPipelineModel>();
+  private pipelineOrder: string[] = [];
 
   // Phase 8A.1 HAL state registry (passive contracts/state only)
   private halStateRegistry = new Map<string, RuntimeHALState>();
@@ -1939,6 +1949,389 @@ export class BaseRuntime implements IRuntime {
 
   public hasInteraction(id: string): boolean {
     return this.interactionRegistry.has(id);
+  }
+
+  // ─── Phase 12A: Canvas Rendering Foundation ──────────────────
+
+  private static readonly VALID_NODE_TYPES: NodeType[] = ['COMPONENT', 'WIRE', 'BOARD', 'SIGNAL', 'ANIMATION', 'GROUP', 'CUSTOM'];
+  private static readonly VALID_VISIBILITY_STATES: VisibilityState[] = ['VISIBLE', 'HIDDEN', 'PARENT_HIDDEN'];
+  private static readonly VALID_PIPELINE_TYPES: PipelineType[] = ['FORWARD', 'DEFERRED', 'CUSTOM'];
+
+  private validateRenderNodeModel(model: RenderNodeModel): boolean {
+    if (!model || typeof model.renderNodeId !== 'string' || model.renderNodeId.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed render node: Missing a valid renderNodeId.');
+      return false;
+    }
+    if (!BaseRuntime.VALID_NODE_TYPES.includes(model.nodeType)) {
+      console.warn(`[Runtime Diagnostics] invalid node types: Render node "${model.renderNodeId}" has invalid nodeType "${model.nodeType}".`);
+      return false;
+    }
+    if (typeof model.displayName !== 'string' || model.displayName.length === 0) {
+      console.warn(`[Runtime Diagnostics] malformed render node: Render node "${model.renderNodeId}" has invalid displayName.`);
+      return false;
+    }
+    if (!BaseRuntime.VALID_VISIBILITY_STATES.includes(model.visibilityState)) {
+      console.warn(`[Runtime Diagnostics] invalid visibility states: Render node "${model.renderNodeId}" has invalid visibilityState "${model.visibilityState}".`);
+      return false;
+    }
+    if (!Array.isArray(model.childNodeIds)) {
+      console.warn(`[Runtime Diagnostics] malformed render node: Render node "${model.renderNodeId}" has invalid childNodeIds.`);
+      return false;
+    }
+    if (model.parentNodeId === model.renderNodeId) {
+      console.warn(`[Runtime Diagnostics] invalid node parenting: Render node "${model.renderNodeId}" references itself as parent.`);
+      return false;
+    }
+    if (typeof model.futureRendererHints !== 'object' || model.futureRendererHints === null || Array.isArray(model.futureRendererHints)) {
+      console.warn(`[Runtime Diagnostics] malformed render node: Render node "${model.renderNodeId}" has invalid futureRendererHints.`);
+      return false;
+    }
+    return true;
+  }
+
+  public registerRenderNode(model: RenderNodeModel): void {
+    if (!this.validateRenderNodeModel(model)) return;
+    if (this.renderNodeRegistry.has(model.renderNodeId)) {
+      console.warn(`[Runtime Diagnostics] duplicate render node IDs: Node ID "${model.renderNodeId}" already exists.`);
+    }
+    this.renderNodeRegistry.set(model.renderNodeId, JSON.parse(JSON.stringify(model)));
+    if (!this.renderNodeOrder.includes(model.renderNodeId)) {
+      this.renderNodeOrder.push(model.renderNodeId);
+    }
+  }
+
+  public getRenderNode(id: string): RenderNodeModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed render node: Node ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.renderNodeRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getRenderNodes(): RenderNodeModel[] {
+    return this.renderNodeOrder
+      .map(id => this.renderNodeRegistry.get(id))
+      .filter((model): model is RenderNodeModel => !!model)
+      .map(model => JSON.parse(JSON.stringify(model)));
+  }
+
+  public updateRenderNode(id: string, updates: Partial<RenderNodeModel>): void {
+    const existing = this.renderNodeRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing render node: Node "${id}" not found.`);
+      return;
+    }
+    const merged: RenderNodeModel = {
+      ...existing,
+      ...updates,
+      renderNodeId: existing.renderNodeId,
+      childNodeIds: updates.childNodeIds ? [...updates.childNodeIds] : [...existing.childNodeIds],
+    };
+    this.registerRenderNode(merged);
+  }
+
+  public removeRenderNode(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed render node: Node ID must be a non-empty string.');
+      return;
+    }
+    this.renderNodeRegistry.delete(id);
+    this.renderNodeOrder = this.renderNodeOrder.filter(existing => existing !== id);
+  }
+
+  public clearRenderNodes(): void {
+    this.renderNodeRegistry.clear();
+    this.renderNodeOrder = [];
+  }
+
+  public getRenderNodeKeys(): string[] {
+    return [...this.renderNodeOrder];
+  }
+
+  public hasRenderNode(id: string): boolean {
+    return this.renderNodeRegistry.has(id);
+  }
+
+  private validateSceneGraphModel(graph: SceneGraphModel): boolean {
+    if (!graph || typeof graph.sceneGraphId !== 'string' || graph.sceneGraphId.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed scene graph: Missing a valid sceneGraphId.');
+      return false;
+    }
+    if (typeof graph.rootNodeId !== 'string' || graph.rootNodeId.length === 0) {
+      console.warn(`[Runtime Diagnostics] malformed scene graph: Scene graph "${graph.sceneGraphId}" has invalid rootNodeId.`);
+      return false;
+    }
+    if (!Array.isArray(graph.nodeHierarchy)) {
+      console.warn(`[Runtime Diagnostics] malformed scene graph: Scene graph "${graph.sceneGraphId}" has invalid nodeHierarchy.`);
+      return false;
+    }
+    if (!Array.isArray(graph.layerMembership)) {
+      console.warn(`[Runtime Diagnostics] malformed scene graph: Scene graph "${graph.sceneGraphId}" has invalid layerMembership.`);
+      return false;
+    }
+    if (graph.nodeHierarchy.length > 0 && !graph.nodeHierarchy.includes(graph.rootNodeId)) {
+      console.warn(`[Runtime Diagnostics] invalid scene graph: Scene graph "${graph.sceneGraphId}" rootNodeId not in nodeHierarchy.`);
+      return false;
+    }
+    if (typeof graph.futureOptimizationHints !== 'object' || graph.futureOptimizationHints === null || Array.isArray(graph.futureOptimizationHints)) {
+      console.warn(`[Runtime Diagnostics] malformed scene graph: Scene graph "${graph.sceneGraphId}" has invalid futureOptimizationHints.`);
+      return false;
+    }
+    return true;
+  }
+
+  public registerSceneGraph(graph: SceneGraphModel): void {
+    if (!this.validateSceneGraphModel(graph)) return;
+    if (this.sceneGraphRegistry.has(graph.sceneGraphId)) {
+      console.warn(`[Runtime Diagnostics] duplicate scene graph IDs: Graph ID "${graph.sceneGraphId}" already exists.`);
+    }
+    this.sceneGraphRegistry.set(graph.sceneGraphId, JSON.parse(JSON.stringify(graph)));
+    if (!this.sceneGraphOrder.includes(graph.sceneGraphId)) {
+      this.sceneGraphOrder.push(graph.sceneGraphId);
+    }
+  }
+
+  public getSceneGraph(id: string): SceneGraphModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed scene graph: Graph ID must be a non-empty string.');
+      return undefined;
+    }
+    const graph = this.sceneGraphRegistry.get(id);
+    return graph ? JSON.parse(JSON.stringify(graph)) : undefined;
+  }
+
+  public getSceneGraphs(): SceneGraphModel[] {
+    return this.sceneGraphOrder
+      .map(id => this.sceneGraphRegistry.get(id))
+      .filter((graph): graph is SceneGraphModel => !!graph)
+      .map(graph => JSON.parse(JSON.stringify(graph)));
+  }
+
+  public updateSceneGraph(id: string, updates: Partial<SceneGraphModel>): void {
+    const existing = this.sceneGraphRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing scene graph: Graph "${id}" not found.`);
+      return;
+    }
+    const merged: SceneGraphModel = {
+      ...existing,
+      ...updates,
+      sceneGraphId: existing.sceneGraphId,
+      nodeHierarchy: updates.nodeHierarchy ? [...updates.nodeHierarchy] : [...existing.nodeHierarchy],
+      layerMembership: updates.layerMembership ? [...updates.layerMembership] : [...existing.layerMembership],
+    };
+    this.registerSceneGraph(merged);
+  }
+
+  public removeSceneGraph(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed scene graph: Graph ID must be a non-empty string.');
+      return;
+    }
+    this.sceneGraphRegistry.delete(id);
+    this.sceneGraphOrder = this.sceneGraphOrder.filter(existing => existing !== id);
+  }
+
+  public clearSceneGraphs(): void {
+    this.sceneGraphRegistry.clear();
+    this.sceneGraphOrder = [];
+  }
+
+  public getSceneGraphKeys(): string[] {
+    return [...this.sceneGraphOrder];
+  }
+
+  public hasSceneGraph(id: string): boolean {
+    return this.sceneGraphRegistry.has(id);
+  }
+
+  private validateViewportModel(viewport: ViewportModel): boolean {
+    if (!viewport || typeof viewport.viewportId !== 'string' || viewport.viewportId.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed viewport model: Missing a valid viewportId.');
+      return false;
+    }
+    if (typeof viewport.width !== 'number' || !Number.isFinite(viewport.width) || viewport.width <= 0) {
+      console.warn(`[Runtime Diagnostics] invalid viewport dimensions: Viewport "${viewport.viewportId}" has invalid width "${viewport.width}".`);
+      return false;
+    }
+    if (typeof viewport.height !== 'number' || !Number.isFinite(viewport.height) || viewport.height <= 0) {
+      console.warn(`[Runtime Diagnostics] invalid viewport dimensions: Viewport "${viewport.viewportId}" has invalid height "${viewport.height}".`);
+      return false;
+    }
+    if (typeof viewport.zoom !== 'number' || !Number.isFinite(viewport.zoom) || viewport.zoom <= 0) {
+      console.warn(`[Runtime Diagnostics] invalid viewport zoom: Viewport "${viewport.viewportId}" has invalid zoom "${viewport.zoom}".`);
+      return false;
+    }
+    if (typeof viewport.panX !== 'number' || !Number.isFinite(viewport.panX)) {
+      console.warn(`[Runtime Diagnostics] invalid viewport pan: Viewport "${viewport.viewportId}" has invalid panX "${viewport.panX}".`);
+      return false;
+    }
+    if (typeof viewport.panY !== 'number' || !Number.isFinite(viewport.panY)) {
+      console.warn(`[Runtime Diagnostics] invalid viewport pan: Viewport "${viewport.viewportId}" has invalid panY "${viewport.panY}".`);
+      return false;
+    }
+    if (!viewport.visibleRegion || typeof viewport.visibleRegion.x !== 'number' || typeof viewport.visibleRegion.y !== 'number' || typeof viewport.visibleRegion.width !== 'number' || typeof viewport.visibleRegion.height !== 'number') {
+      console.warn(`[Runtime Diagnostics] invalid viewport region: Viewport "${viewport.viewportId}" has invalid visibleRegion.`);
+      return false;
+    }
+    if (typeof viewport.futureNavigationHints !== 'object' || viewport.futureNavigationHints === null || Array.isArray(viewport.futureNavigationHints)) {
+      console.warn(`[Runtime Diagnostics] malformed viewport model: Viewport "${viewport.viewportId}" has invalid futureNavigationHints.`);
+      return false;
+    }
+    return true;
+  }
+
+  public registerViewportModel(viewport: ViewportModel): void {
+    if (!this.validateViewportModel(viewport)) return;
+    if (this.viewportModelRegistry.has(viewport.viewportId)) {
+      console.warn(`[Runtime Diagnostics] duplicate viewport IDs: Viewport ID "${viewport.viewportId}" already exists.`);
+    }
+    this.viewportModelRegistry.set(viewport.viewportId, JSON.parse(JSON.stringify(viewport)));
+    if (!this.viewportModelOrder.includes(viewport.viewportId)) {
+      this.viewportModelOrder.push(viewport.viewportId);
+    }
+  }
+
+  public getViewportModel(id: string): ViewportModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed viewport model: Viewport ID must be a non-empty string.');
+      return undefined;
+    }
+    const vp = this.viewportModelRegistry.get(id);
+    return vp ? JSON.parse(JSON.stringify(vp)) : undefined;
+  }
+
+  public getViewportModels(): ViewportModel[] {
+    return this.viewportModelOrder
+      .map(id => this.viewportModelRegistry.get(id))
+      .filter((vp): vp is ViewportModel => !!vp)
+      .map(vp => JSON.parse(JSON.stringify(vp)));
+  }
+
+  public updateViewportModel(id: string, updates: Partial<ViewportModel>): void {
+    const existing = this.viewportModelRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing viewport model: Viewport "${id}" not found.`);
+      return;
+    }
+    const merged: ViewportModel = {
+      ...existing,
+      ...updates,
+      viewportId: existing.viewportId,
+      visibleRegion: updates.visibleRegion ? { ...updates.visibleRegion } : { ...existing.visibleRegion },
+    };
+    this.registerViewportModel(merged);
+  }
+
+  public removeViewportModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed viewport model: Viewport ID must be a non-empty string.');
+      return;
+    }
+    this.viewportModelRegistry.delete(id);
+    this.viewportModelOrder = this.viewportModelOrder.filter(existing => existing !== id);
+  }
+
+  public clearViewportModels(): void {
+    this.viewportModelRegistry.clear();
+    this.viewportModelOrder = [];
+  }
+
+  public getViewportModelKeys(): string[] {
+    return [...this.viewportModelOrder];
+  }
+
+  public hasViewportModel(id: string): boolean {
+    return this.viewportModelRegistry.has(id);
+  }
+
+  private validateRenderPipelineModel(pipeline: RenderPipelineModel): boolean {
+    if (!pipeline || typeof pipeline.pipelineId !== 'string' || pipeline.pipelineId.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed render pipeline: Missing a valid pipelineId.');
+      return false;
+    }
+    if (!BaseRuntime.VALID_PIPELINE_TYPES.includes(pipeline.pipelineType)) {
+      console.warn(`[Runtime Diagnostics] invalid pipeline types: Pipeline "${pipeline.pipelineId}" has invalid pipelineType "${pipeline.pipelineType}".`);
+      return false;
+    }
+    if (typeof pipeline.renderOrder !== 'number' || !Number.isInteger(pipeline.renderOrder)) {
+      console.warn(`[Runtime Diagnostics] invalid pipeline order: Pipeline "${pipeline.pipelineId}" has invalid renderOrder "${pipeline.renderOrder}".`);
+      return false;
+    }
+    if (!Array.isArray(pipeline.enabledLayers)) {
+      console.warn(`[Runtime Diagnostics] malformed render pipeline: Pipeline "${pipeline.pipelineId}" has invalid enabledLayers.`);
+      return false;
+    }
+    if (typeof pipeline.futureOptimizationHints !== 'object' || pipeline.futureOptimizationHints === null || Array.isArray(pipeline.futureOptimizationHints)) {
+      console.warn(`[Runtime Diagnostics] malformed render pipeline: Pipeline "${pipeline.pipelineId}" has invalid futureOptimizationHints.`);
+      return false;
+    }
+    return true;
+  }
+
+  public registerRenderPipeline(pipeline: RenderPipelineModel): void {
+    if (!this.validateRenderPipelineModel(pipeline)) return;
+    if (this.pipelineRegistry.has(pipeline.pipelineId)) {
+      console.warn(`[Runtime Diagnostics] duplicate pipeline IDs: Pipeline ID "${pipeline.pipelineId}" already exists.`);
+    }
+    this.pipelineRegistry.set(pipeline.pipelineId, JSON.parse(JSON.stringify(pipeline)));
+    if (!this.pipelineOrder.includes(pipeline.pipelineId)) {
+      this.pipelineOrder.push(pipeline.pipelineId);
+    }
+  }
+
+  public getRenderPipeline(id: string): RenderPipelineModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed render pipeline: Pipeline ID must be a non-empty string.');
+      return undefined;
+    }
+    const pipe = this.pipelineRegistry.get(id);
+    return pipe ? JSON.parse(JSON.stringify(pipe)) : undefined;
+  }
+
+  public getRenderPipelines(): RenderPipelineModel[] {
+    return this.pipelineOrder
+      .map(id => this.pipelineRegistry.get(id))
+      .filter((pipe): pipe is RenderPipelineModel => !!pipe)
+      .map(pipe => JSON.parse(JSON.stringify(pipe)));
+  }
+
+  public updateRenderPipeline(id: string, updates: Partial<RenderPipelineModel>): void {
+    const existing = this.pipelineRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing render pipeline: Pipeline "${id}" not found.`);
+      return;
+    }
+    const merged: RenderPipelineModel = {
+      ...existing,
+      ...updates,
+      pipelineId: existing.pipelineId,
+      enabledLayers: updates.enabledLayers ? [...updates.enabledLayers] : [...existing.enabledLayers],
+    };
+    this.registerRenderPipeline(merged);
+  }
+
+  public removeRenderPipeline(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed render pipeline: Pipeline ID must be a non-empty string.');
+      return;
+    }
+    this.pipelineRegistry.delete(id);
+    this.pipelineOrder = this.pipelineOrder.filter(existing => existing !== id);
+  }
+
+  public clearRenderPipelines(): void {
+    this.pipelineRegistry.clear();
+    this.pipelineOrder = [];
+  }
+
+  public getRenderPipelineKeys(): string[] {
+    return [...this.pipelineOrder];
+  }
+
+  public hasRenderPipeline(id: string): boolean {
+    return this.pipelineRegistry.has(id);
   }
 
   private static readonly VALID_PIN_MODES: PinMode[] = ['INPUT', 'OUTPUT', 'INPUT_PULLUP', 'INPUT_PULLDOWN', 'ANALOG', 'PWM'];
@@ -5577,6 +5970,12 @@ export class BaseRuntime implements IRuntime {
     // Reset Phase 11C breadboard workspace
     this.breadboardWorkspace.clear();
 
+    // Reset Phase 12A canvas rendering foundation registries
+    this.clearRenderNodes();
+    this.clearSceneGraphs();
+    this.clearViewportModels();
+    this.clearRenderPipelines();
+
     // Reset Phase 8A.1 HAL state registry
     this.clearHALStates();
 
@@ -5797,6 +6196,12 @@ export class BaseRuntime implements IRuntime {
 
     // Reset Phase 11C breadboard workspace
     this.breadboardWorkspace.clear();
+
+    // Reset Phase 12A canvas rendering foundation registries
+    this.clearRenderNodes();
+    this.clearSceneGraphs();
+    this.clearViewportModels();
+    this.clearRenderPipelines();
 
     // Reset Phase 8A-8F hardware and ESP32 metadata registries
     this.clearHALStates();
@@ -6568,6 +6973,19 @@ export class BaseRuntime implements IRuntime {
         if (bwState.componentPlacements.length > 0) stageSnap.componentPlacements = bwState.componentPlacements;
         if (bwState.connectionMetadata.length > 0) stageSnap.breadboardConnectionMetadata = bwState.connectionMetadata;
       }
+      // Phase 12A: Attach canvas rendering foundation metadata to stage snapshot entry
+      if (this.renderNodeRegistry.size > 0) {
+        stageSnap.renderNodes = this.getRenderNodes();
+      }
+      if (this.sceneGraphRegistry.size > 0) {
+        stageSnap.sceneGraphs = this.getSceneGraphs();
+      }
+      if (this.viewportModelRegistry.size > 0) {
+        stageSnap.viewports = this.getViewportModels();
+      }
+      if (this.pipelineRegistry.size > 0) {
+        stageSnap.renderPipelines = this.getRenderPipelines();
+      }
       // Phase 7R: Attach connection metadata to stage snapshot entry
       if (this.connectionRegistry.size > 0) {
         stageSnap.connections = this.getConnections();
@@ -6758,6 +7176,20 @@ export class BaseRuntime implements IRuntime {
         if (bwState.breadboardPositions.length > 0) serializedTarget.breadboardPositions = bwState.breadboardPositions;
         if (bwState.componentPlacements.length > 0) serializedTarget.componentPlacements = bwState.componentPlacements;
         if (bwState.connectionMetadata.length > 0) serializedTarget.breadboardConnectionMetadata = bwState.connectionMetadata;
+      }
+
+      // Phase 12A: Serialize canvas rendering foundation metadata
+      if (isStage && this.renderNodeRegistry.size > 0) {
+        serializedTarget.renderNodes = this.getRenderNodes();
+      }
+      if (isStage && this.sceneGraphRegistry.size > 0) {
+        serializedTarget.sceneGraphs = this.getSceneGraphs();
+      }
+      if (isStage && this.viewportModelRegistry.size > 0) {
+        serializedTarget.viewports = this.getViewportModels();
+      }
+      if (isStage && this.pipelineRegistry.size > 0) {
+        serializedTarget.renderPipelines = this.getRenderPipelines();
       }
 
       // Phase 7W: Serialize board definitions & workspace boards
@@ -7207,6 +7639,27 @@ export class BaseRuntime implements IRuntime {
           connectionMetadata: Array.isArray(stageTarget.breadboardConnectionMetadata)
             ? stageTarget.breadboardConnectionMetadata.map(c => JSON.parse(JSON.stringify(c))) : undefined,
         });
+      }
+      // Phase 12A: Restore canvas rendering foundation metadata from stage target
+      if (Array.isArray(stageTarget.renderNodes)) {
+        for (const node of stageTarget.renderNodes) {
+          this.registerRenderNode(JSON.parse(JSON.stringify(node)));
+        }
+      }
+      if (Array.isArray(stageTarget.sceneGraphs)) {
+        for (const graph of stageTarget.sceneGraphs) {
+          this.registerSceneGraph(JSON.parse(JSON.stringify(graph)));
+        }
+      }
+      if (Array.isArray(stageTarget.viewports)) {
+        for (const vp of stageTarget.viewports) {
+          this.registerViewportModel(JSON.parse(JSON.stringify(vp)));
+        }
+      }
+      if (Array.isArray(stageTarget.renderPipelines)) {
+        for (const pipe of stageTarget.renderPipelines) {
+          this.registerRenderPipeline(JSON.parse(JSON.stringify(pipe)));
+        }
       }
       // Phase 7W: Restore board definitions from stage target
       if (Array.isArray(stageTarget.boardDefinitions)) {

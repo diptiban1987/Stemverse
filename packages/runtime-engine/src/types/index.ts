@@ -477,6 +477,12 @@ export interface StageSyncState {
   breadboardPositions?: BreadboardPositionModel[];
   componentPlacements?: ComponentPlacementModel[];
   breadboardConnectionMetadata?: BreadboardConnectionMetadata[];
+
+  // Phase 12A: Canvas rendering foundation metadata synchronization
+  renderNodes?: RenderNodeModel[];
+  sceneGraphs?: SceneGraphModel[];
+  viewports?: ViewportModel[];
+  renderPipelines?: RenderPipelineModel[];
 }
 
 // ─── Phase 11B: Visual Interaction Engine ──────────────────
@@ -1061,6 +1067,12 @@ export interface SerializedTarget {
   breadboardPositions?: BreadboardPositionModel[];
   componentPlacements?: ComponentPlacementModel[];
   breadboardConnectionMetadata?: BreadboardConnectionMetadata[];
+
+  // Phase 12A: Canvas rendering foundation metadata serialization
+  renderNodes?: RenderNodeModel[];
+  sceneGraphs?: SceneGraphModel[];
+  viewports?: ViewportModel[];
+  renderPipelines?: RenderPipelineModel[];
 }
 
 export interface SerializedAssetManifest {
@@ -2076,4 +2088,77 @@ export interface BreadboardWorkspaceState {
 export interface RenderRegistryEntry<T> {
   key: string;
   value: T;
+}
+
+// ─── Phase 12A: Canvas Rendering Foundation ────────────────────────
+
+export type RenderNodeId = string;
+
+export type NodeType =
+  | 'COMPONENT'
+  | 'WIRE'
+  | 'BOARD'
+  | 'SIGNAL'
+  | 'ANIMATION'
+  | 'GROUP'
+  | 'CUSTOM';
+
+export type VisibilityState = 'VISIBLE' | 'HIDDEN' | 'PARENT_HIDDEN';
+
+export interface RenderNodeModel {
+  renderNodeId: RenderNodeId;
+  nodeType: NodeType;
+  displayName: string;
+  componentId?: string;
+  wireId?: string;
+  boardId?: string;
+  signalId?: string;
+  animationId?: string;
+  parentNodeId?: RenderNodeId;
+  childNodeIds: RenderNodeId[];
+  visibilityState: VisibilityState;
+  futureRendererHints: Record<string, unknown>;
+}
+
+export interface SceneGraphModel {
+  sceneGraphId: string;
+  rootNodeId: RenderNodeId;
+  nodeHierarchy: RenderNodeId[];
+  layerMembership: string[];
+  futureOptimizationHints: Record<string, unknown>;
+}
+
+export interface ViewportModel {
+  viewportId: string;
+  width: number;
+  height: number;
+  zoom: number;
+  panX: number;
+  panY: number;
+  visibleRegion: VisibleRegion;
+  futureNavigationHints: Record<string, unknown>;
+}
+
+export interface VisibleRegion {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export type PipelineType = 'FORWARD' | 'DEFERRED' | 'CUSTOM';
+
+export interface RenderPipelineModel {
+  pipelineId: string;
+  pipelineType: PipelineType;
+  renderOrder: number;
+  enabledLayers: string[];
+  futureOptimizationHints: Record<string, unknown>;
+}
+
+export interface CanvasRenderSnapshot {
+  renderNodes: RenderNodeModel[];
+  sceneGraphs: SceneGraphModel[];
+  viewports: ViewportModel[];
+  renderPipelines: RenderPipelineModel[];
 }
