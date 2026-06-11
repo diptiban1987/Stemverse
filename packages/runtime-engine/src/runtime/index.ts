@@ -1,5 +1,5 @@
 import { IRuntime } from '../core';
-import { TargetId, TargetState, ASTScript, Thread, SpriteState, StageState, PendingBroadcast, BroadcastCompletionToken, ListenerEntry, BubbleState, StageSyncState, CostumeAsset, SoundAsset, BackdropAsset, ActiveSoundTrigger, SoundChannelState, PenCommand, PenState, VariableWatcher, WatcherMode, ListWatcher, ListWatcherMode, GlideState, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, SerializedProject, SerializedStage, SerializedTarget, SerializedAssetManifest, SerializedProjectMetadata, VariableState, ListState, RuntimeAssetState, AssetLoadStatus, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, ComponentType, RuntimeComponent, PinDirection, RuntimePin, RuntimeConnection, DeviceState, WorkspaceTransform, WorkspaceComponentLayout, WirePoint, WireLayout, DevelopmentBoardType, BoardPinDefinition, BoardPinCapabilities, DevelopmentBoardDefinition, WorkspaceBoard, RenderModelType, RenderMetadata, RuntimeHALState, HardwareAddress, PinMode, PullMode, PinCapability, ProtocolState, ProtocolType, PWMChannelState, I2CBusState, SPIBusState, UARTPortState, HardwareBackendMetadata, ExecutionCommand, ExecutionCommandLifecycleState, ExecutionCommandType, ESP32RuntimeMetadata, ESP32ExecutionState, ESP32PinCapability, ESP32PinMode, ESP32InstructionMetadata, ESP32InstructionExecutionState, ESP32InstructionType, ESP32GPIOExecutionResult, ESP32GPIOExecutionStatus, ESP32PWMExecutionState, ESP32ServoExecutionState, ESP32ADCExecutionState, ESP32TouchExecutionState, ESP32PeripheralCommandExecutionResult, ESP32PeripheralCommandExecutionStatus, ProtocolCommandExecutionResult, ProtocolCommandExecutionStatus, STEMVerseVisualState, STEMVerseVisualThemeState, STEMVerseVisualType, STEMVerseBoardStatus, STEMVerseSignalFlowDirection, STEMVerseVisualThemeMode } from '../types';
+import { TargetId, TargetState, ASTScript, Thread, SpriteState, StageState, PendingBroadcast, BroadcastCompletionToken, ListenerEntry, BubbleState, StageSyncState, CostumeAsset, SoundAsset, BackdropAsset, ActiveSoundTrigger, SoundChannelState, PenCommand, PenState, VariableWatcher, WatcherMode, ListWatcher, ListWatcherMode, GlideState, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, SerializedProject, SerializedStage, SerializedTarget, SerializedAssetManifest, SerializedProjectMetadata, VariableState, ListState, RuntimeAssetState, AssetLoadStatus, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, ComponentType, RuntimeComponent, PinDirection, RuntimePin, RuntimeConnection, DeviceState, WorkspaceTransform, WorkspaceComponentLayout, WirePoint, WireLayout, DevelopmentBoardType, BoardPinDefinition, BoardPinCapabilities, DevelopmentBoardDefinition, WorkspaceBoard, RenderModelType, RenderMetadata, RuntimeHALState, HardwareAddress, PinMode, PullMode, PinCapability, ProtocolState, ProtocolType, PWMChannelState, I2CBusState, SPIBusState, UARTPortState, HardwareBackendMetadata, ExecutionCommand, ExecutionCommandLifecycleState, ExecutionCommandType, ESP32RuntimeMetadata, ESP32ExecutionState, ESP32PinCapability, ESP32PinMode, ESP32InstructionMetadata, ESP32InstructionExecutionState, ESP32InstructionType, ESP32GPIOExecutionResult, ESP32GPIOExecutionStatus, ESP32PWMExecutionState, ESP32ServoExecutionState, ESP32ADCExecutionState, ESP32TouchExecutionState, ESP32PeripheralCommandExecutionResult, ESP32PeripheralCommandExecutionStatus, ProtocolCommandExecutionResult, ProtocolCommandExecutionStatus, STEMVerseVisualState, STEMVerseVisualThemeState, STEMVerseVisualType, STEMVerseBoardStatus, STEMVerseSignalFlowDirection, STEMVerseVisualThemeMode, ComponentVisualModel, ComponentVisualType, ComponentVisualCategory, PinVisualMetadata, InteractionZone, AnchorPoint, LabelPosition } from '../types';
 import { MinimalASTInterpreter, IHardwareAdapter } from '../ast/interpreter';
 import { SimulatedHardwareBackend } from '../hal';
 import { createThread, TaskQueue, PendingTask, resetThreadCounter } from './execution-context';
@@ -258,6 +258,10 @@ export class BaseRuntime implements IRuntime {
   private stemverseVisualOrder: string[] = [];
   private stemverseVisualTheme: STEMVerseVisualThemeState = { themeId: 'stemverse-default', mode: 'LIGHT', classroomMode: false, highContrast: false, metadata: {} };
 
+  // Phase 10B Component visual model registry
+  private componentVisualModelRegistry = new Map<string, ComponentVisualModel>();
+  private componentVisualModelOrder: string[] = [];
+
   // Phase 8A.1 HAL state registry (passive contracts/state only)
   private halStateRegistry = new Map<string, RuntimeHALState>();
   private halStateOrder: string[] = [];
@@ -287,6 +291,224 @@ export class BaseRuntime implements IRuntime {
   private touchOrder: string[] = [];
   private esp32PeripheralCommandExecutionResultRegistry = new Map<string, ESP32PeripheralCommandExecutionResult>();
   private esp32PeripheralCommandExecutionResultOrder: string[] = [];
+
+  private static readonly VALID_COMPONENT_VISUAL_TYPES: ComponentVisualType[] = ['LED', 'BUTTON', 'BUZZER', 'SERVO', 'ULTRASONIC', 'LCD', 'OLED', 'ESP32', 'ARDUINO_UNO', 'ARDUINO_NANO', 'RASPBERRY_PI_PICO'];
+  private static readonly VALID_COMPONENT_VISUAL_CATEGORIES: ComponentVisualCategory[] = ['OUTPUT', 'INPUT', 'DISPLAY', 'BOARD', 'SENSOR', 'ACTUATOR'];
+  private static readonly VALID_INTERACTION_ZONE_KINDS = ['hover', 'selection', 'drag', 'focus', 'click'] as const;
+
+  private static readonly DEFAULT_COMPONENT_VISUAL_MODELS: Record<string, ComponentVisualModel> = {
+    'LED': {
+      modelId: 'led-default', componentType: 'LED', displayName: 'LED', category: 'OUTPUT', defaultWidth: 20, defaultHeight: 20,
+      anchorPoints: [{ anchorId: 'center', x: 10, y: 10 }],
+      pinVisualMetadata: [
+        { pinId: 'anode', label: 'Anode (+)', type: 'power', group: 'power', position: { x: 10, y: 0 }, direction: 'up', futureActiveStateHints: {} },
+        { pinId: 'cathode', label: 'Cathode (-)', type: 'ground', group: 'ground', position: { x: 10, y: 20 }, direction: 'down', futureActiveStateHints: {} },
+      ],
+      labelPositions: [{ labelId: 'name', text: 'LED', x: 10, y: 10 }],
+      interactionZones: [{ zoneId: 'body', kind: 'hover', x: 0, y: 0, width: 20, height: 20 }],
+      futureAnimationHints: {}, futureSkinHints: {}, futureThemeHints: {},
+    },
+    'BUTTON': {
+      modelId: 'button-default', componentType: 'BUTTON', displayName: 'Button', category: 'INPUT', defaultWidth: 30, defaultHeight: 20,
+      anchorPoints: [{ anchorId: 'center', x: 15, y: 10 }],
+      pinVisualMetadata: [
+        { pinId: 'pin1', label: 'Pin 1', type: 'digital', group: 'signal', position: { x: 0, y: 10 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'pin2', label: 'Pin 2', type: 'digital', group: 'signal', position: { x: 30, y: 10 }, direction: 'right', futureActiveStateHints: {} },
+      ],
+      labelPositions: [{ labelId: 'name', text: 'BTN', x: 15, y: 10 }],
+      interactionZones: [{ zoneId: 'body', kind: 'hover', x: 0, y: 0, width: 30, height: 20 }],
+      futureAnimationHints: {}, futureSkinHints: {}, futureThemeHints: {},
+    },
+    'BUZZER': {
+      modelId: 'buzzer-default', componentType: 'BUZZER', displayName: 'Buzzer', category: 'OUTPUT', defaultWidth: 25, defaultHeight: 25,
+      anchorPoints: [{ anchorId: 'center', x: 12.5, y: 12.5 }],
+      pinVisualMetadata: [
+        { pinId: 'vcc', label: 'VCC', type: 'power', group: 'power', position: { x: 0, y: 8 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'gnd', label: 'GND', type: 'ground', group: 'ground', position: { x: 0, y: 16 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'sig', label: 'Signal', type: 'digital', group: 'signal', position: { x: 25, y: 12.5 }, direction: 'right', futureActiveStateHints: {} },
+      ],
+      labelPositions: [{ labelId: 'name', text: 'BZ', x: 12.5, y: 12.5 }],
+      interactionZones: [{ zoneId: 'body', kind: 'hover', x: 0, y: 0, width: 25, height: 25 }],
+      futureAnimationHints: {}, futureSkinHints: {}, futureThemeHints: {},
+    },
+    'SERVO': {
+      modelId: 'servo-default', componentType: 'SERVO', displayName: 'Servo Motor', category: 'ACTUATOR', defaultWidth: 40, defaultHeight: 30,
+      anchorPoints: [{ anchorId: 'center', x: 20, y: 15 }],
+      pinVisualMetadata: [
+        { pinId: 'pwm', label: 'PWM', type: 'pwm', group: 'signal', position: { x: 0, y: 5 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'vcc', label: 'VCC', type: 'power', group: 'power', position: { x: 0, y: 15 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'gnd', label: 'GND', type: 'ground', group: 'ground', position: { x: 0, y: 25 }, direction: 'left', futureActiveStateHints: {} },
+      ],
+      labelPositions: [{ labelId: 'name', text: 'SERVO', x: 20, y: 15 }],
+      interactionZones: [{ zoneId: 'body', kind: 'hover', x: 0, y: 0, width: 40, height: 30 }],
+      futureAnimationHints: {}, futureSkinHints: {}, futureThemeHints: {},
+    },
+    'ULTRASONIC': {
+      modelId: 'ultrasonic-default', componentType: 'ULTRASONIC', displayName: 'Ultrasonic Sensor', category: 'SENSOR', defaultWidth: 50, defaultHeight: 25,
+      anchorPoints: [{ anchorId: 'center', x: 25, y: 12.5 }],
+      pinVisualMetadata: [
+        { pinId: 'vcc', label: 'VCC', type: 'power', group: 'power', position: { x: 0, y: 5 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'trig', label: 'Trig', type: 'digital', group: 'signal', position: { x: 0, y: 12.5 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'echo', label: 'Echo', type: 'digital', group: 'signal', position: { x: 0, y: 20 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'gnd', label: 'GND', type: 'ground', group: 'ground', position: { x: 50, y: 12.5 }, direction: 'right', futureActiveStateHints: {} },
+      ],
+      labelPositions: [{ labelId: 'name', text: 'HC-SR04', x: 25, y: 12.5 }],
+      interactionZones: [{ zoneId: 'body', kind: 'hover', x: 0, y: 0, width: 50, height: 25 }],
+      futureAnimationHints: {}, futureSkinHints: {}, futureThemeHints: {},
+    },
+    'LCD': {
+      modelId: 'lcd-default', componentType: 'LCD', displayName: 'LCD 16x2', category: 'DISPLAY', defaultWidth: 120, defaultHeight: 60,
+      anchorPoints: [{ anchorId: 'center', x: 60, y: 30 }],
+      pinVisualMetadata: [
+        { pinId: 'vss', label: 'VSS', type: 'ground', group: 'power', position: { x: 0, y: 10 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'vdd', label: 'VDD', type: 'power', group: 'power', position: { x: 0, y: 20 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'vo', label: 'V0', type: 'analog', group: 'control', position: { x: 0, y: 30 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'rs', label: 'RS', type: 'digital', group: 'control', position: { x: 0, y: 40 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'rw', label: 'RW', type: 'digital', group: 'control', position: { x: 0, y: 50 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'en', label: 'EN', type: 'digital', group: 'control', position: { x: 120, y: 10 }, direction: 'right', futureActiveStateHints: {} },
+        { pinId: 'd4', label: 'D4', type: 'digital', group: 'data', position: { x: 120, y: 20 }, direction: 'right', futureActiveStateHints: {} },
+        { pinId: 'd5', label: 'D5', type: 'digital', group: 'data', position: { x: 120, y: 30 }, direction: 'right', futureActiveStateHints: {} },
+        { pinId: 'd6', label: 'D6', type: 'digital', group: 'data', position: { x: 120, y: 40 }, direction: 'right', futureActiveStateHints: {} },
+        { pinId: 'd7', label: 'D7', type: 'digital', group: 'data', position: { x: 120, y: 50 }, direction: 'right', futureActiveStateHints: {} },
+      ],
+      labelPositions: [{ labelId: 'name', text: 'LCD', x: 60, y: 15 }],
+      interactionZones: [{ zoneId: 'body', kind: 'hover', x: 0, y: 0, width: 120, height: 60 }],
+      futureAnimationHints: {}, futureSkinHints: {}, futureThemeHints: {},
+    },
+    'OLED': {
+      modelId: 'oled-default', componentType: 'OLED', displayName: 'OLED Display', category: 'DISPLAY', defaultWidth: 60, defaultHeight: 40,
+      anchorPoints: [{ anchorId: 'center', x: 30, y: 20 }],
+      pinVisualMetadata: [
+        { pinId: 'vcc', label: 'VCC', type: 'power', group: 'power', position: { x: 0, y: 8 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'gnd', label: 'GND', type: 'ground', group: 'ground', position: { x: 0, y: 16 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'scl', label: 'SCL', type: 'i2c', group: 'i2c', position: { x: 0, y: 24 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'sda', label: 'SDA', type: 'i2c', group: 'i2c', position: { x: 0, y: 32 }, direction: 'left', futureActiveStateHints: {} },
+      ],
+      labelPositions: [{ labelId: 'name', text: 'OLED', x: 30, y: 20 }],
+      interactionZones: [{ zoneId: 'body', kind: 'hover', x: 0, y: 0, width: 60, height: 40 }],
+      futureAnimationHints: {}, futureSkinHints: {}, futureThemeHints: {},
+    },
+    'ESP32': {
+      modelId: 'esp32-default', componentType: 'ESP32', displayName: 'ESP32 DevKit V1', category: 'BOARD', defaultWidth: 80, defaultHeight: 100,
+      anchorPoints: [
+        { anchorId: 'center', x: 40, y: 50 },
+        { anchorId: 'top', x: 40, y: 0 },
+      ],
+      pinVisualMetadata: [
+        { pinId: 'en', label: 'EN', type: 'digital', group: 'control', position: { x: 0, y: 5 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'gpio0', label: 'GPIO0', type: 'digital', group: 'gpio', position: { x: 0, y: 15 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'gpio1', label: 'GPIO1', type: 'digital', group: 'gpio', position: { x: 0, y: 25 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'gpio2', label: 'GPIO2', type: 'digital', group: 'gpio', position: { x: 0, y: 35 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'gpio3', label: 'GPIO3', type: 'digital', group: 'gpio', position: { x: 0, y: 45 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'gpio4', label: 'GPIO4', type: 'digital', group: 'gpio', position: { x: 0, y: 55 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'gpio5', label: 'GPIO5', type: 'digital', group: 'gpio', position: { x: 0, y: 65 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'gpio6', label: 'GPIO6', type: 'digital', group: 'gpio', position: { x: 0, y: 75 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'gpio7', label: 'GPIO7', type: 'digital', group: 'gpio', position: { x: 0, y: 85 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'gpio8', label: 'GPIO8', type: 'digital', group: 'gpio', position: { x: 0, y: 95 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'gpio9', label: 'GPIO9', type: 'digital', group: 'gpio', position: { x: 80, y: 5 }, direction: 'right', futureActiveStateHints: {} },
+        { pinId: 'gpio10', label: 'GPIO10', type: 'digital', group: 'gpio', position: { x: 80, y: 15 }, direction: 'right', futureActiveStateHints: {} },
+        { pinId: 'vin', label: 'VIN', type: 'power', group: 'power', position: { x: 80, y: 25 }, direction: 'right', futureActiveStateHints: {} },
+        { pinId: 'gnd', label: 'GND', type: 'ground', group: 'ground', position: { x: 80, y: 35 }, direction: 'right', futureActiveStateHints: {} },
+        { pinId: 'd13', label: 'D13', type: 'digital', group: 'gpio', position: { x: 80, y: 45 }, direction: 'right', futureActiveStateHints: {} },
+        { pinId: 'd12', label: 'D12', type: 'digital', group: 'gpio', position: { x: 80, y: 55 }, direction: 'right', futureActiveStateHints: {} },
+        { pinId: 'd14', label: 'D14', type: 'digital', group: 'gpio', position: { x: 80, y: 65 }, direction: 'right', futureActiveStateHints: {} },
+        { pinId: 'd27', label: 'D27', type: 'digital', group: 'gpio', position: { x: 80, y: 75 }, direction: 'right', futureActiveStateHints: {} },
+        { pinId: 'd26', label: 'D26', type: 'digital', group: 'gpio', position: { x: 80, y: 85 }, direction: 'right', futureActiveStateHints: {} },
+        { pinId: 'd25', label: 'D25', type: 'digital', group: 'gpio', position: { x: 80, y: 95 }, direction: 'right', futureActiveStateHints: {} },
+      ],
+      labelPositions: [{ labelId: 'name', text: 'ESP32', x: 40, y: 50 }],
+      interactionZones: [{ zoneId: 'body', kind: 'hover', x: 0, y: 0, width: 80, height: 100 }],
+      futureAnimationHints: {}, futureSkinHints: {}, futureThemeHints: {},
+    },
+    'ARDUINO_UNO': {
+      modelId: 'arduino-uno-default', componentType: 'ARDUINO_UNO', displayName: 'Arduino Uno', category: 'BOARD', defaultWidth: 100, defaultHeight: 120,
+      anchorPoints: [
+        { anchorId: 'center', x: 50, y: 60 },
+        { anchorId: 'top', x: 50, y: 0 },
+      ],
+      pinVisualMetadata: [
+        { pinId: 'd0', label: 'D0/RX', type: 'digital', group: 'gpio', position: { x: 0, y: 10 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'd1', label: 'D1/TX', type: 'digital', group: 'gpio', position: { x: 0, y: 20 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'd2', label: 'D2', type: 'digital', group: 'gpio', position: { x: 0, y: 30 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'd3', label: 'D3', type: 'pwm', group: 'gpio', position: { x: 0, y: 40 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'd4', label: 'D4', type: 'digital', group: 'gpio', position: { x: 0, y: 50 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'd5', label: 'D5', type: 'pwm', group: 'gpio', position: { x: 0, y: 60 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'd6', label: 'D6', type: 'pwm', group: 'gpio', position: { x: 0, y: 70 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'd7', label: 'D7', type: 'digital', group: 'gpio', position: { x: 0, y: 80 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'd8', label: 'D8', type: 'digital', group: 'gpio', position: { x: 0, y: 90 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'd9', label: 'D9', type: 'pwm', group: 'gpio', position: { x: 0, y: 100 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'd10', label: 'D10', type: 'pwm', group: 'gpio', position: { x: 0, y: 110 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'a0', label: 'A0', type: 'analog', group: 'analog', position: { x: 100, y: 10 }, direction: 'right', futureActiveStateHints: {} },
+        { pinId: 'a1', label: 'A1', type: 'analog', group: 'analog', position: { x: 100, y: 20 }, direction: 'right', futureActiveStateHints: {} },
+        { pinId: 'a2', label: 'A2', type: 'analog', group: 'analog', position: { x: 100, y: 30 }, direction: 'right', futureActiveStateHints: {} },
+        { pinId: 'a3', label: 'A3', type: 'analog', group: 'analog', position: { x: 100, y: 40 }, direction: 'right', futureActiveStateHints: {} },
+        { pinId: 'a4', label: 'A4', type: 'analog', group: 'analog', position: { x: 100, y: 50 }, direction: 'right', futureActiveStateHints: {} },
+        { pinId: 'a5', label: 'A5', type: 'analog', group: 'analog', position: { x: 100, y: 60 }, direction: 'right', futureActiveStateHints: {} },
+        { pinId: '5v', label: '5V', type: 'power', group: 'power', position: { x: 100, y: 70 }, direction: 'right', futureActiveStateHints: {} },
+        { pinId: '3v3', label: '3.3V', type: 'power', group: 'power', position: { x: 100, y: 80 }, direction: 'right', futureActiveStateHints: {} },
+        { pinId: 'gnd', label: 'GND', type: 'ground', group: 'ground', position: { x: 100, y: 90 }, direction: 'right', futureActiveStateHints: {} },
+        { pinId: 'vin', label: 'VIN', type: 'power', group: 'power', position: { x: 100, y: 100 }, direction: 'right', futureActiveStateHints: {} },
+        { pinId: 'rst', label: 'RST', type: 'digital', group: 'control', position: { x: 100, y: 110 }, direction: 'right', futureActiveStateHints: {} },
+      ],
+      labelPositions: [{ labelId: 'name', text: 'Arduino Uno', x: 50, y: 60 }],
+      interactionZones: [{ zoneId: 'body', kind: 'hover', x: 0, y: 0, width: 100, height: 120 }],
+      futureAnimationHints: {}, futureSkinHints: {}, futureThemeHints: {},
+    },
+    'ARDUINO_NANO': {
+      modelId: 'arduino-nano-default', componentType: 'ARDUINO_NANO', displayName: 'Arduino Nano', category: 'BOARD', defaultWidth: 50, defaultHeight: 70,
+      anchorPoints: [
+        { anchorId: 'center', x: 25, y: 35 },
+        { anchorId: 'top', x: 25, y: 0 },
+      ],
+      pinVisualMetadata: [
+        { pinId: 'd0', label: 'D0/RX', type: 'digital', group: 'gpio', position: { x: 0, y: 5 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'd1', label: 'D1/TX', type: 'digital', group: 'gpio', position: { x: 0, y: 15 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'd2', label: 'D2', type: 'digital', group: 'gpio', position: { x: 0, y: 25 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'd3', label: 'D3', type: 'pwm', group: 'gpio', position: { x: 0, y: 35 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'd4', label: 'D4', type: 'digital', group: 'gpio', position: { x: 0, y: 45 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'd5', label: 'D5', type: 'pwm', group: 'gpio', position: { x: 0, y: 55 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'd6', label: 'D6', type: 'pwm', group: 'gpio', position: { x: 0, y: 65 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'a0', label: 'A0', type: 'analog', group: 'analog', position: { x: 50, y: 5 }, direction: 'right', futureActiveStateHints: {} },
+        { pinId: 'a1', label: 'A1', type: 'analog', group: 'analog', position: { x: 50, y: 15 }, direction: 'right', futureActiveStateHints: {} },
+        { pinId: 'a2', label: 'A2', type: 'analog', group: 'analog', position: { x: 50, y: 25 }, direction: 'right', futureActiveStateHints: {} },
+        { pinId: 'a3', label: 'A3', type: 'analog', group: 'analog', position: { x: 50, y: 35 }, direction: 'right', futureActiveStateHints: {} },
+        { pinId: '5v', label: '5V', type: 'power', group: 'power', position: { x: 50, y: 45 }, direction: 'right', futureActiveStateHints: {} },
+        { pinId: '3v3', label: '3.3V', type: 'power', group: 'power', position: { x: 50, y: 55 }, direction: 'right', futureActiveStateHints: {} },
+        { pinId: 'gnd', label: 'GND', type: 'ground', group: 'ground', position: { x: 50, y: 65 }, direction: 'right', futureActiveStateHints: {} },
+      ],
+      labelPositions: [{ labelId: 'name', text: 'Nano', x: 25, y: 35 }],
+      interactionZones: [{ zoneId: 'body', kind: 'hover', x: 0, y: 0, width: 50, height: 70 }],
+      futureAnimationHints: {}, futureSkinHints: {}, futureThemeHints: {},
+    },
+    'RASPBERRY_PI_PICO': {
+      modelId: 'pico-default', componentType: 'RASPBERRY_PI_PICO', displayName: 'Raspberry Pi Pico', category: 'BOARD', defaultWidth: 40, defaultHeight: 80,
+      anchorPoints: [
+        { anchorId: 'center', x: 20, y: 40 },
+        { anchorId: 'top', x: 20, y: 0 },
+      ],
+      pinVisualMetadata: [
+        { pinId: 'gpio0', label: 'GP0', type: 'digital', group: 'gpio', position: { x: 0, y: 5 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'gpio1', label: 'GP1', type: 'digital', group: 'gpio', position: { x: 0, y: 15 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'gnd', label: 'GND', type: 'ground', group: 'ground', position: { x: 0, y: 25 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'gpio2', label: 'GP2', type: 'digital', group: 'gpio', position: { x: 0, y: 35 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'gpio3', label: 'GP3', type: 'digital', group: 'gpio', position: { x: 0, y: 45 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'gpio4', label: 'GP4', type: 'digital', group: 'gpio', position: { x: 0, y: 55 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'gpio5', label: 'GP5', type: 'digital', group: 'gpio', position: { x: 0, y: 65 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'gpio6', label: 'GP6', type: 'digital', group: 'gpio', position: { x: 0, y: 75 }, direction: 'left', futureActiveStateHints: {} },
+        { pinId: 'gpio7', label: 'GP7', type: 'digital', group: 'gpio', position: { x: 40, y: 5 }, direction: 'right', futureActiveStateHints: {} },
+        { pinId: 'gpio8', label: 'GP8', type: 'digital', group: 'gpio', position: { x: 40, y: 15 }, direction: 'right', futureActiveStateHints: {} },
+        { pinId: 'gpio9', label: 'GP9', type: 'digital', group: 'gpio', position: { x: 40, y: 25 }, direction: 'right', futureActiveStateHints: {} },
+        { pinId: 'gpio10', label: 'GP10', type: 'digital', group: 'gpio', position: { x: 40, y: 35 }, direction: 'right', futureActiveStateHints: {} },
+        { pinId: 'gpio11', label: 'GP11', type: 'digital', group: 'gpio', position: { x: 40, y: 45 }, direction: 'right', futureActiveStateHints: {} },
+        { pinId: 'gpio12', label: 'GP12', type: 'digital', group: 'gpio', position: { x: 40, y: 55 }, direction: 'right', futureActiveStateHints: {} },
+        { pinId: 'gpio13', label: 'GP13', type: 'digital', group: 'gpio', position: { x: 40, y: 65 }, direction: 'right', futureActiveStateHints: {} },
+        { pinId: 'gpio14', label: 'GP14', type: 'digital', group: 'gpio', position: { x: 40, y: 75 }, direction: 'right', futureActiveStateHints: {} },
+      ],
+      labelPositions: [{ labelId: 'name', text: 'Pico', x: 20, y: 40 }],
+      interactionZones: [{ zoneId: 'body', kind: 'hover', x: 0, y: 0, width: 40, height: 80 }],
+      futureAnimationHints: {}, futureSkinHints: {}, futureThemeHints: {},
+    },
+  };
 
   private static readonly DEFAULT_RENDER_METADATA: Record<RenderModelType, RenderMetadata> = {
     'LED': { modelType: 'LED', width: 20, height: 20, anchorX: 0.5, anchorY: 0.5, rotation: 0, visible: true },
@@ -506,6 +728,139 @@ export class BaseRuntime implements IRuntime {
 
   public getSTEMVerseVisualTheme(): STEMVerseVisualThemeState {
     return JSON.parse(JSON.stringify(this.stemverseVisualTheme));
+  }
+
+  // ─── Phase 10B: Component Visual Model Registry ────────────
+
+  private validateComponentVisualModel(model: ComponentVisualModel): boolean {
+    if (!model || typeof model.modelId !== 'string' || model.modelId.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed component visual model: Model is missing a valid modelId.');
+      return false;
+    }
+    if (!BaseRuntime.VALID_COMPONENT_VISUAL_TYPES.includes(model.componentType)) {
+      console.warn(`[Runtime Diagnostics] invalid component visual types: Model "${model.modelId}" has invalid componentType "${model.componentType}".`);
+      return false;
+    }
+    if (typeof model.displayName !== 'string' || model.displayName.length === 0) {
+      console.warn(`[Runtime Diagnostics] malformed component visual model: Model "${model.modelId}" has invalid displayName.`);
+      return false;
+    }
+    if (!BaseRuntime.VALID_COMPONENT_VISUAL_CATEGORIES.includes(model.category)) {
+      console.warn(`[Runtime Diagnostics] invalid component visual categories: Model "${model.modelId}" has invalid category "${model.category}".`);
+      return false;
+    }
+    if (typeof model.defaultWidth !== 'number' || !Number.isFinite(model.defaultWidth) || model.defaultWidth <= 0 ||
+        typeof model.defaultHeight !== 'number' || !Number.isFinite(model.defaultHeight) || model.defaultHeight <= 0) {
+      console.warn(`[Runtime Diagnostics] invalid component visual dimensions: Model "${model.modelId}" has invalid dimensions.`);
+      return false;
+    }
+    if (!Array.isArray(model.anchorPoints)) {
+      console.warn(`[Runtime Diagnostics] invalid component visual anchors: Model "${model.modelId}" has invalid anchorPoints.`);
+      return false;
+    }
+    for (const anchor of model.anchorPoints) {
+      if (!anchor || typeof anchor.anchorId !== 'string' || anchor.anchorId.length === 0 || typeof anchor.x !== 'number' || typeof anchor.y !== 'number') {
+        console.warn(`[Runtime Diagnostics] invalid component visual anchors: Model "${model.modelId}" has malformed anchor entries.`);
+        return false;
+      }
+    }
+    if (!Array.isArray(model.pinVisualMetadata)) {
+      console.warn(`[Runtime Diagnostics] invalid component visual pins: Model "${model.modelId}" has invalid pinVisualMetadata.`);
+      return false;
+    }
+    for (const pin of model.pinVisualMetadata) {
+      if (!pin || typeof pin.pinId !== 'string' || pin.pinId.length === 0 || typeof pin.label !== 'string' || pin.label.length === 0 || typeof pin.type !== 'string' || pin.type.length === 0 || typeof pin.group !== 'string' || pin.group.length === 0 || !pin.position || typeof pin.position.x !== 'number' || typeof pin.position.y !== 'number' || typeof pin.direction !== 'string' || pin.direction.length === 0) {
+        console.warn(`[Runtime Diagnostics] invalid component visual pins: Model "${model.modelId}" has malformed pin metadata.`);
+        return false;
+      }
+    }
+    if (!Array.isArray(model.labelPositions)) {
+      console.warn(`[Runtime Diagnostics] invalid component visual labels: Model "${model.modelId}" has invalid labelPositions.`);
+      return false;
+    }
+    for (const label of model.labelPositions) {
+      if (!label || typeof label.labelId !== 'string' || label.labelId.length === 0 || typeof label.text !== 'string' || label.text.length === 0 || typeof label.x !== 'number' || typeof label.y !== 'number') {
+        console.warn(`[Runtime Diagnostics] invalid component visual labels: Model "${model.modelId}" has malformed label entries.`);
+        return false;
+      }
+    }
+    if (!Array.isArray(model.interactionZones)) {
+      console.warn(`[Runtime Diagnostics] invalid component visual zones: Model "${model.modelId}" has invalid interactionZones.`);
+      return false;
+    }
+    for (const zone of model.interactionZones) {
+      if (!zone || typeof zone.zoneId !== 'string' || zone.zoneId.length === 0 || !BaseRuntime.VALID_INTERACTION_ZONE_KINDS.includes(zone.kind as any) || typeof zone.x !== 'number' || typeof zone.y !== 'number' || typeof zone.width !== 'number' || typeof zone.height !== 'number') {
+        console.warn(`[Runtime Diagnostics] invalid component visual zones: Model "${model.modelId}" has malformed interaction zone entries.`);
+        return false;
+      }
+    }
+    if (typeof model.futureAnimationHints !== 'object' || model.futureAnimationHints === null || Array.isArray(model.futureAnimationHints)) {
+      console.warn(`[Runtime Diagnostics] malformed component visual model: Model "${model.modelId}" has invalid futureAnimationHints.`);
+      return false;
+    }
+    if (typeof model.futureSkinHints !== 'object' || model.futureSkinHints === null || Array.isArray(model.futureSkinHints)) {
+      console.warn(`[Runtime Diagnostics] malformed component visual model: Model "${model.modelId}" has invalid futureSkinHints.`);
+      return false;
+    }
+    if (typeof model.futureThemeHints !== 'object' || model.futureThemeHints === null || Array.isArray(model.futureThemeHints)) {
+      console.warn(`[Runtime Diagnostics] malformed component visual model: Model "${model.modelId}" has invalid futureThemeHints.`);
+      return false;
+    }
+    return true;
+  }
+
+  public registerComponentVisualModel(model: ComponentVisualModel): void {
+    if (!this.validateComponentVisualModel(model)) return;
+    if (this.componentVisualModelRegistry.has(model.modelId)) {
+      console.warn(`[Runtime Diagnostics] duplicate component visual model IDs: Model ID "${model.modelId}" already exists.`);
+    }
+    this.componentVisualModelRegistry.set(model.modelId, JSON.parse(JSON.stringify(model)));
+    if (!this.componentVisualModelOrder.includes(model.modelId)) {
+      this.componentVisualModelOrder.push(model.modelId);
+    }
+  }
+
+  public getComponentVisualModel(id: string): ComponentVisualModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed component visual model: Model ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.componentVisualModelRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getComponentVisualModels(): ComponentVisualModel[] {
+    return this.componentVisualModelOrder
+      .map(id => this.componentVisualModelRegistry.get(id))
+      .filter((model): model is ComponentVisualModel => !!model)
+      .map(model => JSON.parse(JSON.stringify(model)));
+  }
+
+  public updateComponentVisualModel(id: string, updates: Partial<ComponentVisualModel>): void {
+    const existing = this.componentVisualModelRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing component visual model: Model "${id}" not found.`);
+      return;
+    }
+    this.registerComponentVisualModel({ ...existing, ...updates, modelId: existing.modelId, anchorPoints: updates.anchorPoints ? JSON.parse(JSON.stringify(updates.anchorPoints)) : JSON.parse(JSON.stringify(existing.anchorPoints)), pinVisualMetadata: updates.pinVisualMetadata ? JSON.parse(JSON.stringify(updates.pinVisualMetadata)) : JSON.parse(JSON.stringify(existing.pinVisualMetadata)), labelPositions: updates.labelPositions ? JSON.parse(JSON.stringify(updates.labelPositions)) : JSON.parse(JSON.stringify(existing.labelPositions)), interactionZones: updates.interactionZones ? JSON.parse(JSON.stringify(updates.interactionZones)) : JSON.parse(JSON.stringify(existing.interactionZones)), futureAnimationHints: updates.futureAnimationHints ? JSON.parse(JSON.stringify(updates.futureAnimationHints)) : JSON.parse(JSON.stringify(existing.futureAnimationHints)), futureSkinHints: updates.futureSkinHints ? JSON.parse(JSON.stringify(updates.futureSkinHints)) : JSON.parse(JSON.stringify(existing.futureSkinHints)), futureThemeHints: updates.futureThemeHints ? JSON.parse(JSON.stringify(updates.futureThemeHints)) : JSON.parse(JSON.stringify(existing.futureThemeHints)) });
+  }
+
+  public removeComponentVisualModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed component visual model: Model ID must be a non-empty string.');
+      return;
+    }
+    this.componentVisualModelRegistry.delete(id);
+    this.componentVisualModelOrder = this.componentVisualModelOrder.filter(existing => existing !== id);
+  }
+
+  public clearComponentVisualModels(): void {
+    this.componentVisualModelRegistry.clear();
+    this.componentVisualModelOrder = [];
+  }
+
+  public getComponentVisualModelKeys(): string[] {
+    return [...this.componentVisualModelOrder];
   }
 
   private static readonly VALID_PIN_MODES: PinMode[] = ['INPUT', 'OUTPUT', 'INPUT_PULLUP', 'INPUT_PULLDOWN', 'ANALOG', 'PWM'];
@@ -4123,6 +4478,9 @@ export class BaseRuntime implements IRuntime {
     this.clearSTEMVerseVisualStates();
     this.stemverseVisualTheme = { themeId: 'stemverse-default', mode: 'LIGHT', classroomMode: false, highContrast: false, metadata: {} };
 
+    // Reset Phase 10B component visual model registry
+    this.clearComponentVisualModels();
+
     // Reset Phase 8A.1 HAL state registry
     this.clearHALStates();
 
@@ -4310,6 +4668,9 @@ export class BaseRuntime implements IRuntime {
 
     this.clearSTEMVerseVisualStates();
     this.stemverseVisualTheme = { themeId: 'stemverse-default', mode: 'LIGHT', classroomMode: false, highContrast: false, metadata: {} };
+
+    // Reset Phase 10B component visual model registry
+    this.clearComponentVisualModels();
 
     // Clean up component metadata from remaining targets
     for (const target of this.targets.values()) {
@@ -5064,6 +5425,10 @@ export class BaseRuntime implements IRuntime {
         stageSnap.stemverseVisualStates = this.getSTEMVerseVisualStates();
       }
       stageSnap.stemverseVisualTheme = this.getSTEMVerseVisualTheme();
+      // Phase 10B: Attach component visual model metadata to stage snapshot entry
+      if (this.componentVisualModelRegistry.size > 0) {
+        stageSnap.componentVisualModels = this.getComponentVisualModels();
+      }
       // Phase 7R: Attach connection metadata to stage snapshot entry
       if (this.connectionRegistry.size > 0) {
         stageSnap.connections = this.getConnections();
@@ -5215,6 +5580,11 @@ export class BaseRuntime implements IRuntime {
       }
       if (isStage) {
         serializedTarget.stemverseVisualTheme = this.getSTEMVerseVisualTheme();
+      }
+
+      // Phase 10B: Serialize component visual model metadata
+      if (isStage && this.componentVisualModelRegistry.size > 0) {
+        serializedTarget.componentVisualModels = this.getComponentVisualModels();
       }
 
       // Phase 7W: Serialize board definitions & workspace boards
@@ -5612,6 +5982,12 @@ export class BaseRuntime implements IRuntime {
       }
       if (stageTarget.stemverseVisualTheme) {
         this.setSTEMVerseVisualTheme(JSON.parse(JSON.stringify(stageTarget.stemverseVisualTheme)));
+      }
+      // Phase 10B: Restore component visual model metadata from stage target
+      if (Array.isArray(stageTarget.componentVisualModels)) {
+        for (const visualModel of stageTarget.componentVisualModels) {
+          this.registerComponentVisualModel(JSON.parse(JSON.stringify(visualModel)));
+        }
       }
       // Phase 7W: Restore board definitions from stage target
       if (Array.isArray(stageTarget.boardDefinitions)) {

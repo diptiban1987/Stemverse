@@ -221,6 +221,7 @@
 | 8.58 | ESP32 Peripheral Command Execution (Phase 8G) | Runtime Architecture | ✅ | Metadata-only execution commands for PWM_WRITE, SERVO_WRITE, ADC_READ, and TOUCH_READ over existing ESP32 peripheral registries, with result metadata, diagnostics, snapshots, export/import round-trip, and 1010 command execution tests |
 | 8.59 | Protocol Command Layer Foundation (Phase 8H) | Runtime Architecture | ✅ | Metadata-only I2C_WRITE, I2C_READ, SPI_TRANSFER, UART_WRITE, and UART_READ command execution over existing protocol registries, with deterministic result payloads, execution ticks, diagnostics, snapshots, export/import round-trip, and 1200 protocol command tests |
 | 8.60 | STEMVerse Visual Simulator Engine Foundation (Phase 10A) | Runtime Architecture | ✅ | Renderer-independent STEMVerse visual metadata state model for components, boards, wires, and themes, deterministic visual registry, snapshot/export/import support, renderer metadata ingestion, validation, cleanup, clone safety, and 1740 visual simulator tests |
+| 8.61 | Component Visual Models Foundation (Phase 10B) | NEXT_PHASE_HANDOFF.md | ✅ | Deterministic metadata-only component visual models for LED, BUTTON, BUZZER, SERVO, ULTRASONIC, LCD, OLED, ESP32, ARDUINO_UNO, ARDUINO_NANO, RASPBERRY_PI_PICO, with pin visual metadata, interaction zones, anchor points, label positions, registry, serialization, snapshot sync, renderer isolation, deep-copy guarantees, clone safety, warning-only validation, and 2441 visual model tests |
 ---
 
 ## 9. Robotics Studio Workspace
@@ -434,6 +435,7 @@ Based on V3 Enterprise Spec quarterly breakdown:
 | **Phase 8G — ESP32 Peripheral Command Execution** | Q3 | Metadata-only PWM_WRITE, SERVO_WRITE, ADC_READ, and TOUCH_READ command execution over existing ESP32 peripheral registries, result diagnostics, snapshots, serialization, and cleanup boundaries | ✅ | 100% |
 | **Phase 8H — Protocol Command Layer Foundation** | Q3 | Metadata-only I2C/SPI/UART command execution over existing protocol registries, deterministic result payloads, diagnostics, execution ticks, snapshots, and serialization | ✅ | 100% |
 | **Phase 10A — STEMVerse Visual Simulator Engine Foundation** | Q3 | Renderer-independent visual metadata engine for component, board, wire, and theme state with deterministic registry, snapshots, serialization, validation, and renderer metadata ingestion | ✅ | 100% |
+| **Phase 10B — Component Visual Models Foundation** | Q3 | Deterministic metadata-only component visual models for 11 component types with pin metadata, interaction zones, anchors, labels, registry, serialization, snapshot sync, renderer isolation, and validation | ✅ | 100% |
 | **Phase 4 (Roadmap)** | Q3 | Simulator Engine + AI Studio + Advanced Blocks | 🔵 | 72% |
 | **Phase 5.1 (Roadmap)** | Q4 | Production hardening, unified streaming, Scratch runtime, E2E, OpenAPI | 🔵 | 55% |
 | **Phase 5.2A (Roadmap)** | Q4 | Object storage & asset pipeline (MinIO, presign, Asset model) | ✅ | 90% |
@@ -453,7 +455,7 @@ Based on V3 Enterprise Spec quarterly breakdown:
 | 5. Database & Data Layer | 10 | 6 | 2 | 2 | 60% |
 | 6. Blockly Engine & Block System | 13 | 11 | 0 | 2 | 85% |
 | 7. Block Implementations | 37 | 10 | 14 | 13 | 27% |
-| 8. Scratch Integration | 49 | 43 | 5 | 1 | 88% |
+| 8. Scratch Integration | 50 | 44 | 5 | 1 | 89% |
 | 9. Robotics Studio Workspace | 8 | 7 | 0 | 1 | 88% |
 | 10. Compiler Service | 7 | 2 | 1 | 4 | 29% |
 | 11. Simulator Engine | 12 | 5 | 1 | 6 | 46% |
@@ -641,6 +643,13 @@ Completed:
 - Board visual state
 - Wire visual state
 - Visual registry
+- Component visual model registry (Phase 10B)
+- Pin visual metadata (Phase 10B)
+- Interaction zones (Phase 10B)
+- Anchor points & label positions (Phase 10B)
+- Snapshot sync for visual models (Phase 10B)
+- Serialization round-trip for visual models (Phase 10B)
+- Renderer isolation for visual models (Phase 10B)
 
 Not Started:
 - Actual rendering
@@ -659,5 +668,6 @@ Not Started:
 ### Verification Metrics
 
 - **Tests Added**: 1740 unit tests for Phase 10A STEMVerse visual simulator metadata foundation
-- **Total Test Count**: 12552 tests passing successfully across 45 test files
+- **Tests Added**: 2441 unit tests for Phase 10B component visual models foundation
+- **Total Test Count**: 14992+ tests passing successfully across 46 test files
 - **Build Status**: Clean compiler run (0 errors, 0 warnings)

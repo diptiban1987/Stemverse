@@ -453,6 +453,9 @@ export interface StageSyncState {
 
   // Phase 8H: Protocol command execution result synchronization
   protocolCommandExecutionResults?: ProtocolCommandExecutionResult[];
+
+  // Phase 10B: Component visual model metadata synchronization
+  componentVisualModels?: ComponentVisualModel[];
 }
 
 /**
@@ -643,6 +646,9 @@ export interface SerializedTarget {
 
   // Phase 8H: Protocol command execution result serialization
   protocolCommandExecutionResults?: ProtocolCommandExecutionResult[];
+
+  // Phase 10B: Component visual model metadata serialization
+  componentVisualModels?: ComponentVisualModel[];
 }
 
 export interface SerializedAssetManifest {
@@ -1307,4 +1313,80 @@ export interface WorkspaceBoard {
   zIndex: number;
   groupId?: string;
   renderMetadata?: RenderMetadata;
+}
+
+// ─── Phase 10B: Component Visual Models Foundation ──────────────
+
+export type ComponentVisualType =
+  | 'LED'
+  | 'BUTTON'
+  | 'BUZZER'
+  | 'SERVO'
+  | 'ULTRASONIC'
+  | 'LCD'
+  | 'OLED'
+  | 'ESP32'
+  | 'ARDUINO_UNO'
+  | 'ARDUINO_NANO'
+  | 'RASPBERRY_PI_PICO';
+
+export type ComponentVisualCategory =
+  | 'OUTPUT'
+  | 'INPUT'
+  | 'DISPLAY'
+  | 'BOARD'
+  | 'SENSOR'
+  | 'ACTUATOR';
+
+export interface PinVisualPosition {
+  x: number;
+  y: number;
+}
+
+export interface PinVisualMetadata {
+  pinId: string;
+  label: string;
+  type: string;
+  group: string;
+  position: PinVisualPosition;
+  direction: string;
+  futureActiveStateHints: Record<string, unknown>;
+}
+
+export interface InteractionZone {
+  zoneId: string;
+  kind: 'hover' | 'selection' | 'drag' | 'focus' | 'click';
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface AnchorPoint {
+  anchorId: string;
+  x: number;
+  y: number;
+}
+
+export interface LabelPosition {
+  labelId: string;
+  text: string;
+  x: number;
+  y: number;
+}
+
+export interface ComponentVisualModel {
+  modelId: string;
+  componentType: ComponentVisualType;
+  displayName: string;
+  category: ComponentVisualCategory;
+  defaultWidth: number;
+  defaultHeight: number;
+  anchorPoints: AnchorPoint[];
+  pinVisualMetadata: PinVisualMetadata[];
+  labelPositions: LabelPosition[];
+  interactionZones: InteractionZone[];
+  futureAnimationHints: Record<string, unknown>;
+  futureSkinHints: Record<string, unknown>;
+  futureThemeHints: Record<string, unknown>;
 }
