@@ -483,6 +483,12 @@ export interface StageSyncState {
   sceneGraphs?: SceneGraphModel[];
   viewports?: ViewportModel[];
   renderPipelines?: RenderPipelineModel[];
+
+  // Phase 12B: Component rendering foundation metadata synchronization
+  componentRenderModels?: ComponentRenderModel[];
+  componentBoundsModels?: ComponentBoundsModel[];
+  componentLabelModels?: ComponentLabelModel[];
+  componentPinRenderModels?: ComponentPinRenderModel[];
 }
 
 // ─── Phase 11B: Visual Interaction Engine ──────────────────
@@ -1073,6 +1079,12 @@ export interface SerializedTarget {
   sceneGraphs?: SceneGraphModel[];
   viewports?: ViewportModel[];
   renderPipelines?: RenderPipelineModel[];
+
+  // Phase 12B: Component rendering foundation metadata serialization
+  componentRenderModels?: ComponentRenderModel[];
+  componentBoundsModels?: ComponentBoundsModel[];
+  componentLabelModels?: ComponentLabelModel[];
+  componentPinRenderModels?: ComponentPinRenderModel[];
 }
 
 export interface SerializedAssetManifest {
@@ -2161,4 +2173,57 @@ export interface CanvasRenderSnapshot {
   sceneGraphs: SceneGraphModel[];
   viewports: ViewportModel[];
   renderPipelines: RenderPipelineModel[];
+}
+
+// ─── Phase 12B: Component Rendering Foundation ──────────────
+
+export type ComponentLabelPosition = 'TOP' | 'BOTTOM' | 'LEFT' | 'RIGHT' | 'CENTER';
+
+export interface ComponentRenderModel {
+  componentRenderId: string;
+  componentId: string;
+  componentType: ComponentType;
+  displayName: string;
+  renderNodeId: string;
+  layerId: string;
+  visibilityState: VisibilityState;
+  selectionState: boolean;
+  focusState: boolean;
+  futureRendererHints: Record<string, unknown>;
+}
+
+export interface ComponentBoundsModel {
+  componentRenderId: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotation: number;
+  scale: number;
+  anchorPoints: AnchorPoint[];
+  futureLayoutHints: Record<string, unknown>;
+}
+
+export interface ComponentLabelModel {
+  labelId: string;
+  labelText: string;
+  position: ComponentLabelPosition;
+  visibility: VisibilityState;
+  futureStylingHints: Record<string, unknown>;
+}
+
+export interface ComponentPinRenderModel {
+  pinRenderId: string;
+  pinId: string;
+  pinType: string;
+  pinPosition: { x: number; y: number };
+  pinDirection: PinDirection;
+  futureConnectionHints: Record<string, unknown>;
+}
+
+export interface ComponentRenderSnapshot {
+  componentRenderModels: ComponentRenderModel[];
+  componentBoundsModels: ComponentBoundsModel[];
+  componentLabelModels: ComponentLabelModel[];
+  componentPinRenderModels: ComponentPinRenderModel[];
 }

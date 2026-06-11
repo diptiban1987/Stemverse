@@ -1,5 +1,5 @@
 import { IRuntime } from '../core';
-import { TargetId, TargetState, ASTScript, Thread, SpriteState, StageState, PendingBroadcast, BroadcastCompletionToken, ListenerEntry, BubbleState, StageSyncState, CostumeAsset, SoundAsset, BackdropAsset, ActiveSoundTrigger, SoundChannelState, PenCommand, PenState, VariableWatcher, WatcherMode, ListWatcher, ListWatcherMode, GlideState, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, SerializedProject, SerializedStage, SerializedTarget, SerializedAssetManifest, SerializedProjectMetadata, VariableState, ListState, RuntimeAssetState, AssetLoadStatus, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, ComponentType, RuntimeComponent, PinDirection, RuntimePin, RuntimeConnection, DeviceState, WorkspaceTransform, WorkspaceComponentLayout, WirePoint, WireLayout, DevelopmentBoardType, BoardPinDefinition, BoardPinCapabilities, DevelopmentBoardDefinition, WorkspaceBoard, RenderModelType, RenderMetadata, RuntimeHALState, HardwareAddress, PinMode, PullMode, PinCapability, ProtocolState, ProtocolType, PWMChannelState, I2CBusState, SPIBusState, UARTPortState, HardwareBackendMetadata, ExecutionCommand, ExecutionCommandLifecycleState, ExecutionCommandType, ESP32RuntimeMetadata, ESP32ExecutionState, ESP32PinCapability, ESP32PinMode, ESP32InstructionMetadata, ESP32InstructionExecutionState, ESP32InstructionType, ESP32GPIOExecutionResult, ESP32GPIOExecutionStatus, ESP32PWMExecutionState, ESP32ServoExecutionState, ESP32ADCExecutionState, ESP32TouchExecutionState, ESP32PeripheralCommandExecutionResult, ESP32PeripheralCommandExecutionStatus, ProtocolCommandExecutionResult, ProtocolCommandExecutionStatus, STEMVerseVisualState, STEMVerseVisualThemeState, STEMVerseVisualType, STEMVerseBoardStatus, STEMVerseSignalFlowDirection, STEMVerseVisualThemeMode, ComponentVisualModel, ComponentVisualType, ComponentVisualCategory, PinVisualMetadata, InteractionZone, AnchorPoint, LabelPosition, WireVisualRegistryEntry, WireType, WireCategory, RoutingPathType, SignalDirection, SignalActivity, SignalState, WireVisualModel, ControlPoint, WireRoutingMetadata, SignalVisualizationMetadata, InteractionZoneRect, WireInteractionMetadata, BoardVisualModel, BoardVisualType, BoardVisualCategory, BoardVisualRegistryEntry, BoardLayoutMetadata, ConnectorVisualMetadata, BoardInteractionMetadata, BoardBounds, ComponentRegion, PowerRegion, SignalRegion, ReservedRegion, BoardInteractionZone, SignalVisualModel, SignalVisualType, SignalVisualCategory, DigitalSignalMetadata, DigitalSignalLevel, DigitalSignalDirection, AnalogSignalMetadata, PWMSignalMetadata, ProtocolSignalMetadata, ProtocolSignalType, SignalVariantMetadata, SignalInteractionZone, SignalInteractionMetadata, SignalVisualRegistryEntry, AnimationType, AnimationRepeatMode, AnimationPlaybackMode, AnimationVisualModel, ComponentAnimationMetadata, WireAnimationMetadata, BoardAnimationMetadata, SignalAnimationMetadata, InteractionAnimationMetadata, AnimationRegistryEntry, InteractionMetadata, SelectionMetadata, HoverMetadata, FocusMetadata, InspectionMetadata, InteractionType, SelectionType, HoverPriority, HoverSource, FocusOwnership, InspectionTargetType, RenderNodeModel, NodeType, VisibilityState, SceneGraphModel, ViewportModel, VisibleRegion, RenderPipelineModel, PipelineType, CanvasRenderSnapshot } from '../types';
+import { TargetId, TargetState, ASTScript, Thread, SpriteState, StageState, PendingBroadcast, BroadcastCompletionToken, ListenerEntry, BubbleState, StageSyncState, CostumeAsset, SoundAsset, BackdropAsset, ActiveSoundTrigger, SoundChannelState, PenCommand, PenState, VariableWatcher, WatcherMode, ListWatcher, ListWatcherMode, GlideState, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, SerializedProject, SerializedStage, SerializedTarget, SerializedAssetManifest, SerializedProjectMetadata, VariableState, ListState, RuntimeAssetState, AssetLoadStatus, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, ComponentType, RuntimeComponent, PinDirection, RuntimePin, RuntimeConnection, DeviceState, WorkspaceTransform, WorkspaceComponentLayout, WirePoint, WireLayout, DevelopmentBoardType, BoardPinDefinition, BoardPinCapabilities, DevelopmentBoardDefinition, WorkspaceBoard, RenderModelType, RenderMetadata, RuntimeHALState, HardwareAddress, PinMode, PullMode, PinCapability, ProtocolState, ProtocolType, PWMChannelState, I2CBusState, SPIBusState, UARTPortState, HardwareBackendMetadata, ExecutionCommand, ExecutionCommandLifecycleState, ExecutionCommandType, ESP32RuntimeMetadata, ESP32ExecutionState, ESP32PinCapability, ESP32PinMode, ESP32InstructionMetadata, ESP32InstructionExecutionState, ESP32InstructionType, ESP32GPIOExecutionResult, ESP32GPIOExecutionStatus, ESP32PWMExecutionState, ESP32ServoExecutionState, ESP32ADCExecutionState, ESP32TouchExecutionState, ESP32PeripheralCommandExecutionResult, ESP32PeripheralCommandExecutionStatus, ProtocolCommandExecutionResult, ProtocolCommandExecutionStatus, STEMVerseVisualState, STEMVerseVisualThemeState, STEMVerseVisualType, STEMVerseBoardStatus, STEMVerseSignalFlowDirection, STEMVerseVisualThemeMode, ComponentVisualModel, ComponentVisualType, ComponentVisualCategory, PinVisualMetadata, InteractionZone, AnchorPoint, LabelPosition, WireVisualRegistryEntry, WireType, WireCategory, RoutingPathType, SignalDirection, SignalActivity, SignalState, WireVisualModel, ControlPoint, WireRoutingMetadata, SignalVisualizationMetadata, InteractionZoneRect, WireInteractionMetadata, BoardVisualModel, BoardVisualType, BoardVisualCategory, BoardVisualRegistryEntry, BoardLayoutMetadata, ConnectorVisualMetadata, BoardInteractionMetadata, BoardBounds, ComponentRegion, PowerRegion, SignalRegion, ReservedRegion, BoardInteractionZone, SignalVisualModel, SignalVisualType, SignalVisualCategory, DigitalSignalMetadata, DigitalSignalLevel, DigitalSignalDirection, AnalogSignalMetadata, PWMSignalMetadata, ProtocolSignalMetadata, ProtocolSignalType, SignalVariantMetadata, SignalInteractionZone, SignalInteractionMetadata, SignalVisualRegistryEntry, AnimationType, AnimationRepeatMode, AnimationPlaybackMode, AnimationVisualModel, ComponentAnimationMetadata, WireAnimationMetadata, BoardAnimationMetadata, SignalAnimationMetadata, InteractionAnimationMetadata, AnimationRegistryEntry, InteractionMetadata, SelectionMetadata, HoverMetadata, FocusMetadata, InspectionMetadata, InteractionType, SelectionType, HoverPriority, HoverSource, FocusOwnership, InspectionTargetType, RenderNodeModel, NodeType, VisibilityState, SceneGraphModel, ViewportModel, VisibleRegion, RenderPipelineModel, PipelineType, CanvasRenderSnapshot, ComponentRenderModel, ComponentBoundsModel, ComponentLabelModel, ComponentPinRenderModel, ComponentRenderSnapshot } from '../types';
 import { MinimalASTInterpreter, IHardwareAdapter } from '../ast/interpreter';
 import { SimulatedHardwareBackend } from '../hal';
 import { createThread, TaskQueue, PendingTask, resetThreadCounter } from './execution-context';
@@ -295,6 +295,16 @@ export class BaseRuntime implements IRuntime {
   private viewportModelOrder: string[] = [];
   private pipelineRegistry = new Map<string, RenderPipelineModel>();
   private pipelineOrder: string[] = [];
+
+  // Phase 12B Component Rendering Foundation registries
+  private componentRenderRegistry = new Map<string, ComponentRenderModel>();
+  private componentRenderOrder: string[] = [];
+  private componentBoundsRegistry = new Map<string, ComponentBoundsModel>();
+  private componentBoundsOrder: string[] = [];
+  private componentLabelRegistry = new Map<string, ComponentLabelModel>();
+  private componentLabelOrder: string[] = [];
+  private componentPinRenderRegistry = new Map<string, ComponentPinRenderModel>();
+  private componentPinRenderOrder: string[] = [];
 
   // Phase 8A.1 HAL state registry (passive contracts/state only)
   private halStateRegistry = new Map<string, RuntimeHALState>();
@@ -2332,6 +2342,407 @@ export class BaseRuntime implements IRuntime {
 
   public hasRenderPipeline(id: string): boolean {
     return this.pipelineRegistry.has(id);
+  }
+
+  // ─── Phase 12B: Component Rendering Registry ─────────────────
+
+  private static readonly VALID_COMPONENT_TYPES: ComponentType[] = [
+    'LED', 'BUTTON', 'SERVO', 'ULTRASONIC_SENSOR', 'DHT_SENSOR',
+    'OLED_DISPLAY', 'LCD_DISPLAY', 'BUZZER', 'ESP32', 'ARDUINO', 'CUSTOM',
+  ];
+
+  private static readonly VALID_LABEL_POSITIONS: LabelPosition[] = [
+    'TOP', 'BOTTOM', 'LEFT', 'RIGHT', 'CENTER',
+  ];
+
+  private validateComponentRenderModel(model: ComponentRenderModel): boolean {
+    if (!model || typeof model.componentRenderId !== 'string' || model.componentRenderId.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed component render: Missing a valid componentRenderId.');
+      return false;
+    }
+    if (typeof model.componentId !== 'string' || model.componentId.length === 0) {
+      console.warn(`[Runtime Diagnostics] malformed component render: Component render "${model.componentRenderId}" has invalid componentId.`);
+      return false;
+    }
+    if (!BaseRuntime.VALID_COMPONENT_TYPES.includes(model.componentType)) {
+      console.warn(`[Runtime Diagnostics] invalid component types: Component render "${model.componentRenderId}" has invalid componentType "${model.componentType}".`);
+      return false;
+    }
+    if (typeof model.displayName !== 'string' || model.displayName.length === 0) {
+      console.warn(`[Runtime Diagnostics] malformed component render: Component render "${model.componentRenderId}" has empty displayName.`);
+      return false;
+    }
+    if (typeof model.renderNodeId !== 'string' || model.renderNodeId.length === 0) {
+      console.warn(`[Runtime Diagnostics] malformed component render: Component render "${model.componentRenderId}" has invalid renderNodeId.`);
+      return false;
+    }
+    if (typeof model.layerId !== 'string' || model.layerId.length === 0) {
+      console.warn(`[Runtime Diagnostics] malformed component render: Component render "${model.componentRenderId}" has invalid layerId.`);
+      return false;
+    }
+    if (!BaseRuntime.VALID_VISIBILITY_STATES.includes(model.visibilityState)) {
+      console.warn(`[Runtime Diagnostics] invalid visibility states: Component render "${model.componentRenderId}" has invalid visibilityState "${model.visibilityState}".`);
+      return false;
+    }
+    if (typeof model.selectionState !== 'boolean') {
+      console.warn(`[Runtime Diagnostics] malformed component render: Component render "${model.componentRenderId}" selectionState must be a boolean.`);
+      return false;
+    }
+    if (typeof model.focusState !== 'boolean') {
+      console.warn(`[Runtime Diagnostics] malformed component render: Component render "${model.componentRenderId}" focusState must be a boolean.`);
+      return false;
+    }
+    if (typeof model.futureRendererHints !== 'object' || model.futureRendererHints === null || Array.isArray(model.futureRendererHints)) {
+      console.warn(`[Runtime Diagnostics] malformed component render: Component render "${model.componentRenderId}" has invalid futureRendererHints.`);
+      return false;
+    }
+    return true;
+  }
+
+  public registerComponentRenderModel(model: ComponentRenderModel): void {
+    if (!this.validateComponentRenderModel(model)) return;
+    if (this.componentRenderRegistry.has(model.componentRenderId)) {
+      console.warn(`[Runtime Diagnostics] duplicate component render IDs: ID "${model.componentRenderId}" already exists.`);
+    }
+    this.componentRenderRegistry.set(model.componentRenderId, JSON.parse(JSON.stringify(model)));
+    if (!this.componentRenderOrder.includes(model.componentRenderId)) {
+      this.componentRenderOrder.push(model.componentRenderId);
+    }
+  }
+
+  public getComponentRenderModel(id: string): ComponentRenderModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed component render: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.componentRenderRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getComponentRenderModels(): ComponentRenderModel[] {
+    return this.componentRenderOrder
+      .map(id => this.componentRenderRegistry.get(id))
+      .filter((m): m is ComponentRenderModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateComponentRenderModel(id: string, updates: Partial<ComponentRenderModel>): void {
+    const existing = this.componentRenderRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing component render: Model "${id}" not found.`);
+      return;
+    }
+    const merged: ComponentRenderModel = {
+      ...existing,
+      ...updates,
+      componentRenderId: existing.componentRenderId,
+    };
+    this.registerComponentRenderModel(merged);
+  }
+
+  public removeComponentRenderModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed component render: ID must be a non-empty string.');
+      return;
+    }
+    this.componentRenderRegistry.delete(id);
+    this.componentRenderOrder = this.componentRenderOrder.filter(existing => existing !== id);
+  }
+
+  public clearComponentRenderModels(): void {
+    this.componentRenderRegistry.clear();
+    this.componentRenderOrder = [];
+  }
+
+  public getComponentRenderModelKeys(): string[] {
+    return [...this.componentRenderOrder];
+  }
+
+  public hasComponentRenderModel(id: string): boolean {
+    return this.componentRenderRegistry.has(id);
+  }
+
+  private validateComponentBoundsModel(bounds: ComponentBoundsModel): boolean {
+    if (!bounds || typeof bounds.componentRenderId !== 'string' || bounds.componentRenderId.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed component bounds: Missing a valid componentRenderId.');
+      return false;
+    }
+    if (typeof bounds.x !== 'number' || !Number.isFinite(bounds.x)) {
+      console.warn(`[Runtime Diagnostics] invalid component bounds: Bounds for "${bounds.componentRenderId}" has invalid x.`);
+      return false;
+    }
+    if (typeof bounds.y !== 'number' || !Number.isFinite(bounds.y)) {
+      console.warn(`[Runtime Diagnostics] invalid component bounds: Bounds for "${bounds.componentRenderId}" has invalid y.`);
+      return false;
+    }
+    if (typeof bounds.width !== 'number' || !Number.isFinite(bounds.width) || bounds.width < 0) {
+      console.warn(`[Runtime Diagnostics] invalid component bounds: Bounds for "${bounds.componentRenderId}" has invalid width.`);
+      return false;
+    }
+    if (typeof bounds.height !== 'number' || !Number.isFinite(bounds.height) || bounds.height < 0) {
+      console.warn(`[Runtime Diagnostics] invalid component bounds: Bounds for "${bounds.componentRenderId}" has invalid height.`);
+      return false;
+    }
+    if (typeof bounds.rotation !== 'number' || !Number.isFinite(bounds.rotation)) {
+      console.warn(`[Runtime Diagnostics] invalid component bounds: Bounds for "${bounds.componentRenderId}" has invalid rotation.`);
+      return false;
+    }
+    if (typeof bounds.scale !== 'number' || !Number.isFinite(bounds.scale) || bounds.scale <= 0) {
+      console.warn(`[Runtime Diagnostics] invalid component bounds: Bounds for "${bounds.componentRenderId}" has invalid scale.`);
+      return false;
+    }
+    if (!Array.isArray(bounds.anchorPoints)) {
+      console.warn(`[Runtime Diagnostics] malformed component bounds: Bounds for "${bounds.componentRenderId}" has invalid anchorPoints.`);
+      return false;
+    }
+    if (typeof bounds.futureLayoutHints !== 'object' || bounds.futureLayoutHints === null || Array.isArray(bounds.futureLayoutHints)) {
+      console.warn(`[Runtime Diagnostics] malformed component bounds: Bounds for "${bounds.componentRenderId}" has invalid futureLayoutHints.`);
+      return false;
+    }
+    return true;
+  }
+
+  public registerComponentBoundsModel(bounds: ComponentBoundsModel): void {
+    if (!this.validateComponentBoundsModel(bounds)) return;
+    if (this.componentBoundsRegistry.has(bounds.componentRenderId)) {
+      console.warn(`[Runtime Diagnostics] duplicate component bounds key: ID "${bounds.componentRenderId}" already exists.`);
+    }
+    this.componentBoundsRegistry.set(bounds.componentRenderId, JSON.parse(JSON.stringify(bounds)));
+    if (!this.componentBoundsOrder.includes(bounds.componentRenderId)) {
+      this.componentBoundsOrder.push(bounds.componentRenderId);
+    }
+  }
+
+  public getComponentBoundsModel(id: string): ComponentBoundsModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed component bounds: ID must be a non-empty string.');
+      return undefined;
+    }
+    const bounds = this.componentBoundsRegistry.get(id);
+    return bounds ? JSON.parse(JSON.stringify(bounds)) : undefined;
+  }
+
+  public getComponentBoundsModels(): ComponentBoundsModel[] {
+    return this.componentBoundsOrder
+      .map(id => this.componentBoundsRegistry.get(id))
+      .filter((b): b is ComponentBoundsModel => !!b)
+      .map(b => JSON.parse(JSON.stringify(b)));
+  }
+
+  public updateComponentBoundsModel(id: string, updates: Partial<ComponentBoundsModel>): void {
+    const existing = this.componentBoundsRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing component bounds: Bounds "${id}" not found.`);
+      return;
+    }
+    const merged: ComponentBoundsModel = {
+      ...existing,
+      ...updates,
+      componentRenderId: existing.componentRenderId,
+      anchorPoints: updates.anchorPoints ? updates.anchorPoints.map(ap => ({ ...ap })) : existing.anchorPoints.map(ap => ({ ...ap })),
+    };
+    this.registerComponentBoundsModel(merged);
+  }
+
+  public removeComponentBoundsModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed component bounds: ID must be a non-empty string.');
+      return;
+    }
+    this.componentBoundsRegistry.delete(id);
+    this.componentBoundsOrder = this.componentBoundsOrder.filter(existing => existing !== id);
+  }
+
+  public clearComponentBoundsModels(): void {
+    this.componentBoundsRegistry.clear();
+    this.componentBoundsOrder = [];
+  }
+
+  public getComponentBoundsModelKeys(): string[] {
+    return [...this.componentBoundsOrder];
+  }
+
+  public hasComponentBoundsModel(id: string): boolean {
+    return this.componentBoundsRegistry.has(id);
+  }
+
+  private validateComponentLabelModel(label: ComponentLabelModel): boolean {
+    if (!label || typeof label.labelId !== 'string' || label.labelId.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed component label: Missing a valid labelId.');
+      return false;
+    }
+    if (typeof label.labelText !== 'string' || label.labelText.length === 0) {
+      console.warn(`[Runtime Diagnostics] malformed component label: Label "${label.labelId}" has empty labelText.`);
+      return false;
+    }
+    if (!BaseRuntime.VALID_LABEL_POSITIONS.includes(label.position)) {
+      console.warn(`[Runtime Diagnostics] invalid label positions: Label "${label.labelId}" has invalid position "${label.position}".`);
+      return false;
+    }
+    if (!BaseRuntime.VALID_VISIBILITY_STATES.includes(label.visibility)) {
+      console.warn(`[Runtime Diagnostics] invalid visibility states: Label "${label.labelId}" has invalid visibility "${label.visibility}".`);
+      return false;
+    }
+    if (typeof label.futureStylingHints !== 'object' || label.futureStylingHints === null || Array.isArray(label.futureStylingHints)) {
+      console.warn(`[Runtime Diagnostics] malformed component label: Label "${label.labelId}" has invalid futureStylingHints.`);
+      return false;
+    }
+    return true;
+  }
+
+  public registerComponentLabelModel(label: ComponentLabelModel): void {
+    if (!this.validateComponentLabelModel(label)) return;
+    if (this.componentLabelRegistry.has(label.labelId)) {
+      console.warn(`[Runtime Diagnostics] duplicate component label IDs: ID "${label.labelId}" already exists.`);
+    }
+    this.componentLabelRegistry.set(label.labelId, JSON.parse(JSON.stringify(label)));
+    if (!this.componentLabelOrder.includes(label.labelId)) {
+      this.componentLabelOrder.push(label.labelId);
+    }
+  }
+
+  public getComponentLabelModel(id: string): ComponentLabelModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed component label: ID must be a non-empty string.');
+      return undefined;
+    }
+    const label = this.componentLabelRegistry.get(id);
+    return label ? JSON.parse(JSON.stringify(label)) : undefined;
+  }
+
+  public getComponentLabelModels(): ComponentLabelModel[] {
+    return this.componentLabelOrder
+      .map(id => this.componentLabelRegistry.get(id))
+      .filter((l): l is ComponentLabelModel => !!l)
+      .map(l => JSON.parse(JSON.stringify(l)));
+  }
+
+  public updateComponentLabelModel(id: string, updates: Partial<ComponentLabelModel>): void {
+    const existing = this.componentLabelRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing component label: Label "${id}" not found.`);
+      return;
+    }
+    const merged: ComponentLabelModel = {
+      ...existing,
+      ...updates,
+      labelId: existing.labelId,
+    };
+    this.registerComponentLabelModel(merged);
+  }
+
+  public removeComponentLabelModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed component label: ID must be a non-empty string.');
+      return;
+    }
+    this.componentLabelRegistry.delete(id);
+    this.componentLabelOrder = this.componentLabelOrder.filter(existing => existing !== id);
+  }
+
+  public clearComponentLabelModels(): void {
+    this.componentLabelRegistry.clear();
+    this.componentLabelOrder = [];
+  }
+
+  public getComponentLabelModelKeys(): string[] {
+    return [...this.componentLabelOrder];
+  }
+
+  public hasComponentLabelModel(id: string): boolean {
+    return this.componentLabelRegistry.has(id);
+  }
+
+  private validateComponentPinRenderModel(pin: ComponentPinRenderModel): boolean {
+    if (!pin || typeof pin.pinRenderId !== 'string' || pin.pinRenderId.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed component pin render: Missing a valid pinRenderId.');
+      return false;
+    }
+    if (typeof pin.pinId !== 'string' || pin.pinId.length === 0) {
+      console.warn(`[Runtime Diagnostics] malformed component pin render: Pin render "${pin.pinRenderId}" has invalid pinId.`);
+      return false;
+    }
+    if (typeof pin.pinType !== 'string' || pin.pinType.length === 0) {
+      console.warn(`[Runtime Diagnostics] malformed component pin render: Pin render "${pin.pinRenderId}" has invalid pinType.`);
+      return false;
+    }
+    if (!pin.pinPosition || typeof pin.pinPosition.x !== 'number' || typeof pin.pinPosition.y !== 'number') {
+      console.warn(`[Runtime Diagnostics] malformed component pin render: Pin render "${pin.pinRenderId}" has invalid pinPosition.`);
+      return false;
+    }
+    if (typeof pin.pinDirection !== 'string' || !(['INPUT', 'OUTPUT', 'BIDIRECTIONAL'] as string[]).includes(pin.pinDirection)) {
+      console.warn(`[Runtime Diagnostics] invalid pin direction: Pin render "${pin.pinRenderId}" has invalid pinDirection "${pin.pinDirection}".`);
+      return false;
+    }
+    if (typeof pin.futureConnectionHints !== 'object' || pin.futureConnectionHints === null || Array.isArray(pin.futureConnectionHints)) {
+      console.warn(`[Runtime Diagnostics] malformed component pin render: Pin render "${pin.pinRenderId}" has invalid futureConnectionHints.`);
+      return false;
+    }
+    return true;
+  }
+
+  public registerComponentPinRenderModel(pin: ComponentPinRenderModel): void {
+    if (!this.validateComponentPinRenderModel(pin)) return;
+    if (this.componentPinRenderRegistry.has(pin.pinRenderId)) {
+      console.warn(`[Runtime Diagnostics] duplicate component pin render IDs: ID "${pin.pinRenderId}" already exists.`);
+    }
+    this.componentPinRenderRegistry.set(pin.pinRenderId, JSON.parse(JSON.stringify(pin)));
+    if (!this.componentPinRenderOrder.includes(pin.pinRenderId)) {
+      this.componentPinRenderOrder.push(pin.pinRenderId);
+    }
+  }
+
+  public getComponentPinRenderModel(id: string): ComponentPinRenderModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed component pin render: ID must be a non-empty string.');
+      return undefined;
+    }
+    const pin = this.componentPinRenderRegistry.get(id);
+    return pin ? JSON.parse(JSON.stringify(pin)) : undefined;
+  }
+
+  public getComponentPinRenderModels(): ComponentPinRenderModel[] {
+    return this.componentPinRenderOrder
+      .map(id => this.componentPinRenderRegistry.get(id))
+      .filter((p): p is ComponentPinRenderModel => !!p)
+      .map(p => JSON.parse(JSON.stringify(p)));
+  }
+
+  public updateComponentPinRenderModel(id: string, updates: Partial<ComponentPinRenderModel>): void {
+    const existing = this.componentPinRenderRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing component pin render: Pin "${id}" not found.`);
+      return;
+    }
+    const merged: ComponentPinRenderModel = {
+      ...existing,
+      ...updates,
+      pinRenderId: existing.pinRenderId,
+      pinPosition: updates.pinPosition ? { ...updates.pinPosition } : { ...existing.pinPosition },
+    };
+    this.registerComponentPinRenderModel(merged);
+  }
+
+  public removeComponentPinRenderModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed component pin render: ID must be a non-empty string.');
+      return;
+    }
+    this.componentPinRenderRegistry.delete(id);
+    this.componentPinRenderOrder = this.componentPinRenderOrder.filter(existing => existing !== id);
+  }
+
+  public clearComponentPinRenderModels(): void {
+    this.componentPinRenderRegistry.clear();
+    this.componentPinRenderOrder = [];
+  }
+
+  public getComponentPinRenderModelKeys(): string[] {
+    return [...this.componentPinRenderOrder];
+  }
+
+  public hasComponentPinRenderModel(id: string): boolean {
+    return this.componentPinRenderRegistry.has(id);
   }
 
   private static readonly VALID_PIN_MODES: PinMode[] = ['INPUT', 'OUTPUT', 'INPUT_PULLUP', 'INPUT_PULLDOWN', 'ANALOG', 'PWM'];
@@ -5976,6 +6387,12 @@ export class BaseRuntime implements IRuntime {
     this.clearViewportModels();
     this.clearRenderPipelines();
 
+    // Reset Phase 12B component rendering foundation registries
+    this.clearComponentRenderModels();
+    this.clearComponentBoundsModels();
+    this.clearComponentLabelModels();
+    this.clearComponentPinRenderModels();
+
     // Reset Phase 8A.1 HAL state registry
     this.clearHALStates();
 
@@ -6202,6 +6619,12 @@ export class BaseRuntime implements IRuntime {
     this.clearSceneGraphs();
     this.clearViewportModels();
     this.clearRenderPipelines();
+
+    // Reset Phase 12B component rendering foundation registries
+    this.clearComponentRenderModels();
+    this.clearComponentBoundsModels();
+    this.clearComponentLabelModels();
+    this.clearComponentPinRenderModels();
 
     // Reset Phase 8A-8F hardware and ESP32 metadata registries
     this.clearHALStates();
@@ -6986,6 +7409,19 @@ export class BaseRuntime implements IRuntime {
       if (this.pipelineRegistry.size > 0) {
         stageSnap.renderPipelines = this.getRenderPipelines();
       }
+      // Phase 12B: Attach component rendering foundation metadata to stage snapshot entry
+      if (this.componentRenderRegistry.size > 0) {
+        stageSnap.componentRenderModels = this.getComponentRenderModels();
+      }
+      if (this.componentBoundsRegistry.size > 0) {
+        stageSnap.componentBoundsModels = this.getComponentBoundsModels();
+      }
+      if (this.componentLabelRegistry.size > 0) {
+        stageSnap.componentLabelModels = this.getComponentLabelModels();
+      }
+      if (this.componentPinRenderRegistry.size > 0) {
+        stageSnap.componentPinRenderModels = this.getComponentPinRenderModels();
+      }
       // Phase 7R: Attach connection metadata to stage snapshot entry
       if (this.connectionRegistry.size > 0) {
         stageSnap.connections = this.getConnections();
@@ -7190,6 +7626,20 @@ export class BaseRuntime implements IRuntime {
       }
       if (isStage && this.pipelineRegistry.size > 0) {
         serializedTarget.renderPipelines = this.getRenderPipelines();
+      }
+
+      // Phase 12B: Serialize component rendering foundation metadata
+      if (isStage && this.componentRenderRegistry.size > 0) {
+        serializedTarget.componentRenderModels = this.getComponentRenderModels();
+      }
+      if (isStage && this.componentBoundsRegistry.size > 0) {
+        serializedTarget.componentBoundsModels = this.getComponentBoundsModels();
+      }
+      if (isStage && this.componentLabelRegistry.size > 0) {
+        serializedTarget.componentLabelModels = this.getComponentLabelModels();
+      }
+      if (isStage && this.componentPinRenderRegistry.size > 0) {
+        serializedTarget.componentPinRenderModels = this.getComponentPinRenderModels();
       }
 
       // Phase 7W: Serialize board definitions & workspace boards
@@ -7659,6 +8109,27 @@ export class BaseRuntime implements IRuntime {
       if (Array.isArray(stageTarget.renderPipelines)) {
         for (const pipe of stageTarget.renderPipelines) {
           this.registerRenderPipeline(JSON.parse(JSON.stringify(pipe)));
+        }
+      }
+      // Phase 12B: Restore component rendering foundation metadata from stage target
+      if (Array.isArray(stageTarget.componentRenderModels)) {
+        for (const model of stageTarget.componentRenderModels) {
+          this.registerComponentRenderModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.componentBoundsModels)) {
+        for (const bounds of stageTarget.componentBoundsModels) {
+          this.registerComponentBoundsModel(JSON.parse(JSON.stringify(bounds)));
+        }
+      }
+      if (Array.isArray(stageTarget.componentLabelModels)) {
+        for (const label of stageTarget.componentLabelModels) {
+          this.registerComponentLabelModel(JSON.parse(JSON.stringify(label)));
+        }
+      }
+      if (Array.isArray(stageTarget.componentPinRenderModels)) {
+        for (const pin of stageTarget.componentPinRenderModels) {
+          this.registerComponentPinRenderModel(JSON.parse(JSON.stringify(pin)));
         }
       }
       // Phase 7W: Restore board definitions from stage target
