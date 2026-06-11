@@ -462,6 +462,9 @@ export interface StageSyncState {
 
   // Phase 10D: Board visualization metadata synchronization
   boardVisualRegistry?: BoardVisualRegistryEntry[];
+
+  // Phase 10E: Signal visualization metadata synchronization
+  signalVisualRegistry?: SignalVisualRegistryEntry[];
 }
 
 // ─── Phase 10C: Wire Visualization Foundation ──────────────
@@ -646,8 +649,109 @@ export interface BoardVisualRegistryEntry {
   interaction: BoardInteractionMetadata;
 }
 
+// ─── Phase 10E: Signal Visualization Foundation ──────────────
+
+export type SignalVisualType =
+  | 'DIGITAL'
+  | 'ANALOG'
+  | 'PWM'
+  | 'PROTOCOL';
+
+export type SignalVisualCategory =
+  | 'DIGITAL_SIGNAL'
+  | 'ANALOG_SIGNAL'
+  | 'PWM_SIGNAL'
+  | 'PROTOCOL_SIGNAL'
+  | 'CUSTOM';
+
+export type DigitalSignalLevel =
+  | 'HIGH'
+  | 'LOW'
+  | 'FLOATING';
+
+export type DigitalSignalDirection =
+  | 'INPUT'
+  | 'OUTPUT'
+  | 'BIDIRECTIONAL';
+
+export type ProtocolSignalType =
+  | 'I2C'
+  | 'SPI'
+  | 'UART'
+  | 'ONEWIRE'
+  | 'CUSTOM';
+
+export interface SignalVisualModel {
+  signalVisualId: string;
+  signalType: SignalVisualType;
+  displayName: string;
+  category: SignalVisualCategory;
+  defaultStyle: string;
+  defaultThickness: number;
+  defaultColorHint: string;
+  futureThemeHints: Record<string, unknown>;
+  futureAnimationHints: Record<string, unknown>;
+}
+
+export interface DigitalSignalMetadata {
+  level: DigitalSignalLevel;
+  direction: DigitalSignalDirection;
+  futurePulseHints: Record<string, unknown>;
+}
+
+export interface AnalogSignalMetadata {
+  currentValue: number;
+  minimumValue: number;
+  maximumValue: number;
+  normalizedValue: number;
+  futureGraphHints: Record<string, unknown>;
+}
+
+export interface PWMSignalMetadata {
+  frequency: number;
+  dutyCycle: number;
+  channel: string;
+  futureWaveformHints: Record<string, unknown>;
+}
+
+export interface ProtocolSignalMetadata {
+  protocolType: ProtocolSignalType;
+  futureTrafficHints: Record<string, unknown>;
+  futurePacketHints: Record<string, unknown>;
+}
+
+export type SignalVariantMetadata =
+  | { kind: 'digital'; data: DigitalSignalMetadata }
+  | { kind: 'analog'; data: AnalogSignalMetadata }
+  | { kind: 'pwm'; data: PWMSignalMetadata }
+  | { kind: 'protocol'; data: ProtocolSignalMetadata };
+
+export interface SignalInteractionZone {
+  zoneId: string;
+  kind: 'hover' | 'selection' | 'focus' | 'inspection' | 'debug';
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface SignalInteractionMetadata {
+  hoverZones: SignalInteractionZone[];
+  selectionZones: SignalInteractionZone[];
+  focusZones: SignalInteractionZone[];
+  inspectionZones: SignalInteractionZone[];
+  futureDebuggingZones: SignalInteractionZone[];
+}
+
+export interface SignalVisualRegistryEntry {
+  signalVisualId: string;
+  visualModel: SignalVisualModel;
+  variant: SignalVariantMetadata;
+  interaction: SignalInteractionMetadata;
+}
+
 /**
- * Sprite-specific state properties extending base Target.
+ * Sprite-specific state properties extending base Target. 
  */
 export interface SpriteState extends TargetState {
   isStage: false;
@@ -843,6 +947,9 @@ export interface SerializedTarget {
 
   // Phase 10D: Board visualization metadata serialization
   boardVisualRegistry?: BoardVisualRegistryEntry[];
+
+  // Phase 10E: Signal visualization metadata serialization
+  signalVisualRegistry?: SignalVisualRegistryEntry[];
 }
 
 export interface SerializedAssetManifest {

@@ -1,4 +1,4 @@
-import { StageSyncState, BubbleState, ActiveSoundTrigger, PenState, PenCommand, VariableWatcher, ListWatcher, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, RuntimeAssetState, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, RuntimeComponent, RuntimeConnection, WorkspaceComponentLayout, WireLayout, DevelopmentBoardDefinition, WorkspaceBoard, RenderMetadata, STEMVerseVisualState, STEMVerseVisualThemeState, ComponentVisualModel, WireVisualRegistryEntry, BoardVisualRegistryEntry } from '../types';
+import { StageSyncState, BubbleState, ActiveSoundTrigger, PenState, PenCommand, VariableWatcher, ListWatcher, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, RuntimeAssetState, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, RuntimeComponent, RuntimeConnection, WorkspaceComponentLayout, WireLayout, DevelopmentBoardDefinition, WorkspaceBoard, RenderMetadata, STEMVerseVisualState, STEMVerseVisualThemeState, ComponentVisualModel, WireVisualRegistryEntry, BoardVisualRegistryEntry, SignalVisualRegistryEntry } from '../types';
 
 /**
  * Representation of individual target properties inside the renderer memory.
@@ -54,6 +54,7 @@ export interface IRenderTarget {
   componentVisualModels?: ComponentVisualModel[];
   wireVisualRegistry?: WireVisualRegistryEntry[];
   boardVisualRegistry?: BoardVisualRegistryEntry[];
+  signalVisualRegistry?: SignalVisualRegistryEntry[];
 }
 
 /**
@@ -220,6 +221,7 @@ export class InMemoryRendererAdapter implements IRendererAdapter {
         target.componentVisualModels = snap.componentVisualModels ? JSON.parse(JSON.stringify(snap.componentVisualModels)) : undefined;
         target.wireVisualRegistry = snap.wireVisualRegistry ? JSON.parse(JSON.stringify(snap.wireVisualRegistry)) : undefined;
         target.boardVisualRegistry = snap.boardVisualRegistry ? JSON.parse(JSON.stringify(snap.boardVisualRegistry)) : undefined;
+        target.signalVisualRegistry = snap.signalVisualRegistry ? JSON.parse(JSON.stringify(snap.signalVisualRegistry)) : undefined;
       } else {
         target = {
           id: snap.targetId,
@@ -275,6 +277,7 @@ export class InMemoryRendererAdapter implements IRendererAdapter {
           componentVisualModels: snap.componentVisualModels ? JSON.parse(JSON.stringify(snap.componentVisualModels)) : undefined,
           wireVisualRegistry: snap.wireVisualRegistry ? JSON.parse(JSON.stringify(snap.wireVisualRegistry)) : undefined,
           boardVisualRegistry: snap.boardVisualRegistry ? JSON.parse(JSON.stringify(snap.boardVisualRegistry)) : undefined,
+          signalVisualRegistry: snap.signalVisualRegistry ? JSON.parse(JSON.stringify(snap.signalVisualRegistry)) : undefined,
         };
         this.targets.set(snap.targetId, target);
       }

@@ -1,5 +1,5 @@
 import { IRuntime } from '../core';
-import { TargetId, TargetState, ASTScript, Thread, SpriteState, StageState, PendingBroadcast, BroadcastCompletionToken, ListenerEntry, BubbleState, StageSyncState, CostumeAsset, SoundAsset, BackdropAsset, ActiveSoundTrigger, SoundChannelState, PenCommand, PenState, VariableWatcher, WatcherMode, ListWatcher, ListWatcherMode, GlideState, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, SerializedProject, SerializedStage, SerializedTarget, SerializedAssetManifest, SerializedProjectMetadata, VariableState, ListState, RuntimeAssetState, AssetLoadStatus, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, ComponentType, RuntimeComponent, PinDirection, RuntimePin, RuntimeConnection, DeviceState, WorkspaceTransform, WorkspaceComponentLayout, WirePoint, WireLayout, DevelopmentBoardType, BoardPinDefinition, BoardPinCapabilities, DevelopmentBoardDefinition, WorkspaceBoard, RenderModelType, RenderMetadata, RuntimeHALState, HardwareAddress, PinMode, PullMode, PinCapability, ProtocolState, ProtocolType, PWMChannelState, I2CBusState, SPIBusState, UARTPortState, HardwareBackendMetadata, ExecutionCommand, ExecutionCommandLifecycleState, ExecutionCommandType, ESP32RuntimeMetadata, ESP32ExecutionState, ESP32PinCapability, ESP32PinMode, ESP32InstructionMetadata, ESP32InstructionExecutionState, ESP32InstructionType, ESP32GPIOExecutionResult, ESP32GPIOExecutionStatus, ESP32PWMExecutionState, ESP32ServoExecutionState, ESP32ADCExecutionState, ESP32TouchExecutionState, ESP32PeripheralCommandExecutionResult, ESP32PeripheralCommandExecutionStatus, ProtocolCommandExecutionResult, ProtocolCommandExecutionStatus, STEMVerseVisualState, STEMVerseVisualThemeState, STEMVerseVisualType, STEMVerseBoardStatus, STEMVerseSignalFlowDirection, STEMVerseVisualThemeMode, ComponentVisualModel, ComponentVisualType, ComponentVisualCategory, PinVisualMetadata, InteractionZone, AnchorPoint, LabelPosition, WireVisualRegistryEntry, WireType, WireCategory, RoutingPathType, SignalDirection, SignalActivity, SignalState, WireVisualModel, ControlPoint, WireRoutingMetadata, SignalVisualizationMetadata, InteractionZoneRect, WireInteractionMetadata, BoardVisualModel, BoardVisualType, BoardVisualCategory, BoardVisualRegistryEntry, BoardLayoutMetadata, ConnectorVisualMetadata, BoardInteractionMetadata, BoardBounds, ComponentRegion, PowerRegion, SignalRegion, ReservedRegion, BoardInteractionZone } from '../types';
+import { TargetId, TargetState, ASTScript, Thread, SpriteState, StageState, PendingBroadcast, BroadcastCompletionToken, ListenerEntry, BubbleState, StageSyncState, CostumeAsset, SoundAsset, BackdropAsset, ActiveSoundTrigger, SoundChannelState, PenCommand, PenState, VariableWatcher, WatcherMode, ListWatcher, ListWatcherMode, GlideState, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, SerializedProject, SerializedStage, SerializedTarget, SerializedAssetManifest, SerializedProjectMetadata, VariableState, ListState, RuntimeAssetState, AssetLoadStatus, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, ComponentType, RuntimeComponent, PinDirection, RuntimePin, RuntimeConnection, DeviceState, WorkspaceTransform, WorkspaceComponentLayout, WirePoint, WireLayout, DevelopmentBoardType, BoardPinDefinition, BoardPinCapabilities, DevelopmentBoardDefinition, WorkspaceBoard, RenderModelType, RenderMetadata, RuntimeHALState, HardwareAddress, PinMode, PullMode, PinCapability, ProtocolState, ProtocolType, PWMChannelState, I2CBusState, SPIBusState, UARTPortState, HardwareBackendMetadata, ExecutionCommand, ExecutionCommandLifecycleState, ExecutionCommandType, ESP32RuntimeMetadata, ESP32ExecutionState, ESP32PinCapability, ESP32PinMode, ESP32InstructionMetadata, ESP32InstructionExecutionState, ESP32InstructionType, ESP32GPIOExecutionResult, ESP32GPIOExecutionStatus, ESP32PWMExecutionState, ESP32ServoExecutionState, ESP32ADCExecutionState, ESP32TouchExecutionState, ESP32PeripheralCommandExecutionResult, ESP32PeripheralCommandExecutionStatus, ProtocolCommandExecutionResult, ProtocolCommandExecutionStatus, STEMVerseVisualState, STEMVerseVisualThemeState, STEMVerseVisualType, STEMVerseBoardStatus, STEMVerseSignalFlowDirection, STEMVerseVisualThemeMode, ComponentVisualModel, ComponentVisualType, ComponentVisualCategory, PinVisualMetadata, InteractionZone, AnchorPoint, LabelPosition, WireVisualRegistryEntry, WireType, WireCategory, RoutingPathType, SignalDirection, SignalActivity, SignalState, WireVisualModel, ControlPoint, WireRoutingMetadata, SignalVisualizationMetadata, InteractionZoneRect, WireInteractionMetadata, BoardVisualModel, BoardVisualType, BoardVisualCategory, BoardVisualRegistryEntry, BoardLayoutMetadata, ConnectorVisualMetadata, BoardInteractionMetadata, BoardBounds, ComponentRegion, PowerRegion, SignalRegion, ReservedRegion, BoardInteractionZone, SignalVisualModel, SignalVisualType, SignalVisualCategory, DigitalSignalMetadata, DigitalSignalLevel, DigitalSignalDirection, AnalogSignalMetadata, PWMSignalMetadata, ProtocolSignalMetadata, ProtocolSignalType, SignalVariantMetadata, SignalInteractionZone, SignalInteractionMetadata, SignalVisualRegistryEntry } from '../types';
 import { MinimalASTInterpreter, IHardwareAdapter } from '../ast/interpreter';
 import { SimulatedHardwareBackend } from '../hal';
 import { createThread, TaskQueue, PendingTask, resetThreadCounter } from './execution-context';
@@ -270,6 +270,10 @@ export class BaseRuntime implements IRuntime {
   private boardVisualRegistry = new Map<string, BoardVisualRegistryEntry>();
   private boardVisualOrder: string[] = [];
 
+  // Phase 10E Signal visual registry
+  private signalVisualRegistry = new Map<string, SignalVisualRegistryEntry>();
+  private signalVisualOrder: string[] = [];
+
   // Phase 8A.1 HAL state registry (passive contracts/state only)
   private halStateRegistry = new Map<string, RuntimeHALState>();
   private halStateOrder: string[] = [];
@@ -317,6 +321,14 @@ export class BaseRuntime implements IRuntime {
   private static readonly VALID_BOARD_VISUAL_TYPES: BoardVisualType[] = ['BREADBOARD', 'PERFBOARD', 'PCB', 'CUSTOM'];
   private static readonly VALID_BOARD_VISUAL_CATEGORIES: BoardVisualCategory[] = ['PROTOTYPING', 'DEVELOPMENT', 'SHIELD', 'CUSTOM'];
   private static readonly VALID_BOARD_INTERACTION_ZONE_KINDS = ['hover', 'selection', 'drag', 'focus', 'edit'] as const;
+
+  // Phase 10E Signal visualization valid constants
+  private static readonly VALID_SIGNAL_VISUAL_TYPES: SignalVisualType[] = ['DIGITAL', 'ANALOG', 'PWM', 'PROTOCOL'];
+  private static readonly VALID_SIGNAL_VISUAL_CATEGORIES: SignalVisualCategory[] = ['DIGITAL_SIGNAL', 'ANALOG_SIGNAL', 'PWM_SIGNAL', 'PROTOCOL_SIGNAL', 'CUSTOM'];
+  private static readonly VALID_DIGITAL_SIGNAL_LEVELS: DigitalSignalLevel[] = ['HIGH', 'LOW', 'FLOATING'];
+  private static readonly VALID_DIGITAL_SIGNAL_DIRECTIONS: DigitalSignalDirection[] = ['INPUT', 'OUTPUT', 'BIDIRECTIONAL'];
+  private static readonly VALID_PROTOCOL_SIGNAL_TYPES: ProtocolSignalType[] = ['I2C', 'SPI', 'UART', 'ONEWIRE', 'CUSTOM'];
+  private static readonly VALID_SIGNAL_INTERACTION_ZONE_KINDS = ['hover', 'selection', 'focus', 'inspection', 'debug'] as const;
 
   private static readonly DEFAULT_COMPONENT_VISUAL_MODELS: Record<string, ComponentVisualModel> = {
     'LED': {
@@ -1302,6 +1314,263 @@ export class BaseRuntime implements IRuntime {
 
   public hasBoardVisual(id: string): boolean {
     return this.boardVisualRegistry.has(id);
+  }
+
+  // ─── Phase 10E: Signal Visual Registry ────────────
+
+  private validateSignalVisualModel(model: SignalVisualModel): boolean {
+    if (!model || typeof model.signalVisualId !== 'string' || model.signalVisualId.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed signal visual model: Model is missing a valid signalVisualId.');
+      return false;
+    }
+    if (!BaseRuntime.VALID_SIGNAL_VISUAL_TYPES.includes(model.signalType)) {
+      console.warn(`[Runtime Diagnostics] invalid signal visual types: Model "${model.signalVisualId}" has invalid signalType "${model.signalType}".`);
+      return false;
+    }
+    if (typeof model.displayName !== 'string' || model.displayName.length === 0) {
+      console.warn(`[Runtime Diagnostics] malformed signal visual model: Model "${model.signalVisualId}" has invalid displayName.`);
+      return false;
+    }
+    if (!BaseRuntime.VALID_SIGNAL_VISUAL_CATEGORIES.includes(model.category)) {
+      console.warn(`[Runtime Diagnostics] invalid signal visual categories: Model "${model.signalVisualId}" has invalid category "${model.category}".`);
+      return false;
+    }
+    if (typeof model.defaultStyle !== 'string' || model.defaultStyle.length === 0) {
+      console.warn(`[Runtime Diagnostics] malformed signal visual model: Model "${model.signalVisualId}" has invalid defaultStyle.`);
+      return false;
+    }
+    if (typeof model.defaultThickness !== 'number' || !Number.isFinite(model.defaultThickness) || model.defaultThickness <= 0) {
+      console.warn(`[Runtime Diagnostics] invalid signal thickness: Model "${model.signalVisualId}" has invalid defaultThickness "${model.defaultThickness}".`);
+      return false;
+    }
+    if (typeof model.defaultColorHint !== 'string' || model.defaultColorHint.length === 0) {
+      console.warn(`[Runtime Diagnostics] malformed signal visual model: Model "${model.signalVisualId}" has invalid defaultColorHint.`);
+      return false;
+    }
+    if (!this.validatePlainObject(model.futureThemeHints)) {
+      console.warn(`[Runtime Diagnostics] malformed signal visual model: Model "${model.signalVisualId}" has invalid futureThemeHints.`);
+      return false;
+    }
+    if (!this.validatePlainObject(model.futureAnimationHints)) {
+      console.warn(`[Runtime Diagnostics] malformed signal visual model: Model "${model.signalVisualId}" has invalid futureAnimationHints.`);
+      return false;
+    }
+    return true;
+  }
+
+  private validateDigitalSignalMetadata(data: DigitalSignalMetadata, signalVisualId: string): boolean {
+    if (!data || typeof data !== 'object') {
+      console.warn(`[Runtime Diagnostics] malformed digital signal metadata: Signal "${signalVisualId}" has invalid digital metadata.`);
+      return false;
+    }
+    if (!BaseRuntime.VALID_DIGITAL_SIGNAL_LEVELS.includes(data.level)) {
+      console.warn(`[Runtime Diagnostics] invalid digital signal levels: Signal "${signalVisualId}" has invalid level "${data.level}".`);
+      return false;
+    }
+    if (!BaseRuntime.VALID_DIGITAL_SIGNAL_DIRECTIONS.includes(data.direction)) {
+      console.warn(`[Runtime Diagnostics] invalid digital signal directions: Signal "${signalVisualId}" has invalid direction "${data.direction}".`);
+      return false;
+    }
+    if (!this.validatePlainObject(data.futurePulseHints)) {
+      console.warn(`[Runtime Diagnostics] malformed digital signal metadata: Signal "${signalVisualId}" has invalid futurePulseHints.`);
+      return false;
+    }
+    return true;
+  }
+
+  private validateAnalogSignalMetadata(data: AnalogSignalMetadata, signalVisualId: string): boolean {
+    if (!data || typeof data !== 'object') {
+      console.warn(`[Runtime Diagnostics] malformed analog signal metadata: Signal "${signalVisualId}" has invalid analog metadata.`);
+      return false;
+    }
+    if (typeof data.currentValue !== 'number' || !Number.isFinite(data.currentValue) ||
+        typeof data.minimumValue !== 'number' || !Number.isFinite(data.minimumValue) ||
+        typeof data.maximumValue !== 'number' || !Number.isFinite(data.maximumValue)) {
+      console.warn(`[Runtime Diagnostics] invalid analog signal ranges: Signal "${signalVisualId}" has invalid numeric values.`);
+      return false;
+    }
+    if (data.maximumValue <= data.minimumValue) {
+      console.warn(`[Runtime Diagnostics] invalid analog signal ranges: Signal "${signalVisualId}" has maximum <= minimum.`);
+      return false;
+    }
+    if (data.currentValue < data.minimumValue || data.currentValue > data.maximumValue) {
+      console.warn(`[Runtime Diagnostics] invalid analog signal ranges: Signal "${signalVisualId}" has currentValue out of range.`);
+      return false;
+    }
+    if (typeof data.normalizedValue !== 'number' || !Number.isFinite(data.normalizedValue) || data.normalizedValue < 0 || data.normalizedValue > 1) {
+      console.warn(`[Runtime Diagnostics] invalid analog signal metadata: Signal "${signalVisualId}" has invalid normalizedValue.`);
+      return false;
+    }
+    if (!this.validatePlainObject(data.futureGraphHints)) {
+      console.warn(`[Runtime Diagnostics] malformed analog signal metadata: Signal "${signalVisualId}" has invalid futureGraphHints.`);
+      return false;
+    }
+    return true;
+  }
+
+  private validatePWMSignalMetadata(data: PWMSignalMetadata, signalVisualId: string): boolean {
+    if (!data || typeof data !== 'object') {
+      console.warn(`[Runtime Diagnostics] malformed PWM signal metadata: Signal "${signalVisualId}" has invalid PWM metadata.`);
+      return false;
+    }
+    if (typeof data.frequency !== 'number' || !Number.isFinite(data.frequency) || data.frequency <= 0) {
+      console.warn(`[Runtime Diagnostics] invalid PWM signal metadata: Signal "${signalVisualId}" has invalid frequency.`);
+      return false;
+    }
+    if (typeof data.dutyCycle !== 'number' || !Number.isFinite(data.dutyCycle) || data.dutyCycle < 0 || data.dutyCycle > 100) {
+      console.warn(`[Runtime Diagnostics] invalid PWM signal metadata: Signal "${signalVisualId}" has invalid dutyCycle.`);
+      return false;
+    }
+    if (typeof data.channel !== 'string' || data.channel.length === 0) {
+      console.warn(`[Runtime Diagnostics] invalid PWM signal metadata: Signal "${signalVisualId}" has invalid channel.`);
+      return false;
+    }
+    if (!this.validatePlainObject(data.futureWaveformHints)) {
+      console.warn(`[Runtime Diagnostics] malformed PWM signal metadata: Signal "${signalVisualId}" has invalid futureWaveformHints.`);
+      return false;
+    }
+    return true;
+  }
+
+  private validateProtocolSignalMetadata(data: ProtocolSignalMetadata, signalVisualId: string): boolean {
+    if (!data || typeof data !== 'object') {
+      console.warn(`[Runtime Diagnostics] malformed protocol signal metadata: Signal "${signalVisualId}" has invalid protocol metadata.`);
+      return false;
+    }
+    if (!BaseRuntime.VALID_PROTOCOL_SIGNAL_TYPES.includes(data.protocolType)) {
+      console.warn(`[Runtime Diagnostics] invalid protocol signal types: Signal "${signalVisualId}" has invalid protocolType "${data.protocolType}".`);
+      return false;
+    }
+    if (!this.validatePlainObject(data.futureTrafficHints)) {
+      console.warn(`[Runtime Diagnostics] malformed protocol signal metadata: Signal "${signalVisualId}" has invalid futureTrafficHints.`);
+      return false;
+    }
+    if (!this.validatePlainObject(data.futurePacketHints)) {
+      console.warn(`[Runtime Diagnostics] malformed protocol signal metadata: Signal "${signalVisualId}" has invalid futurePacketHints.`);
+      return false;
+    }
+    return true;
+  }
+
+  private validateSignalVariantMetadata(variant: SignalVariantMetadata, signalVisualId: string): boolean {
+    if (!variant || typeof variant.kind !== 'string') {
+      console.warn(`[Runtime Diagnostics] malformed signal variant metadata: Signal "${signalVisualId}" has invalid variant kind.`);
+      return false;
+    }
+    switch (variant.kind) {
+      case 'digital': return this.validateDigitalSignalMetadata(variant.data, signalVisualId);
+      case 'analog': return this.validateAnalogSignalMetadata(variant.data, signalVisualId);
+      case 'pwm': return this.validatePWMSignalMetadata(variant.data, signalVisualId);
+      case 'protocol': return this.validateProtocolSignalMetadata(variant.data, signalVisualId);
+      default:
+        console.warn(`[Runtime Diagnostics] invalid signal variant kinds: Signal "${signalVisualId}" has unknown variant kind "${variant.kind}".`);
+        return false;
+    }
+  }
+
+  private validateSignalInteractionZones(zones: SignalInteractionZone[], label: string, signalVisualId: string): boolean {
+    if (!Array.isArray(zones)) {
+      console.warn(`[Runtime Diagnostics] invalid signal interaction zones: Signal "${signalVisualId}" has non-array ${label}.`);
+      return false;
+    }
+    for (let i = 0; i < zones.length; i++) {
+      const z = zones[i];
+      if (!z || typeof z.zoneId !== 'string' || z.zoneId.length === 0 || !BaseRuntime.VALID_SIGNAL_INTERACTION_ZONE_KINDS.includes(z.kind as any) || typeof z.x !== 'number' || typeof z.y !== 'number' || typeof z.width !== 'number' || typeof z.height !== 'number') {
+        console.warn(`[Runtime Diagnostics] invalid signal interaction zones: Signal "${signalVisualId}" has invalid ${label} entry at index ${i}.`);
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private validateSignalInteractionMetadata(interaction: SignalInteractionMetadata, signalVisualId: string): boolean {
+    if (!interaction || typeof interaction !== 'object') {
+      console.warn(`[Runtime Diagnostics] malformed signal interaction: Signal "${signalVisualId}" has invalid interaction metadata.`);
+      return false;
+    }
+    if (!this.validateSignalInteractionZones(interaction.hoverZones, 'hoverZones', signalVisualId)) return false;
+    if (!this.validateSignalInteractionZones(interaction.selectionZones, 'selectionZones', signalVisualId)) return false;
+    if (!this.validateSignalInteractionZones(interaction.focusZones, 'focusZones', signalVisualId)) return false;
+    if (!this.validateSignalInteractionZones(interaction.inspectionZones, 'inspectionZones', signalVisualId)) return false;
+    if (!this.validateSignalInteractionZones(interaction.futureDebuggingZones, 'futureDebuggingZones', signalVisualId)) return false;
+    return true;
+  }
+
+  private validateSignalVisualRegistryEntry(entry: SignalVisualRegistryEntry): boolean {
+    if (!entry || typeof entry.signalVisualId !== 'string' || entry.signalVisualId.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed signal visual registry entry: Entry is missing a valid signalVisualId.');
+      return false;
+    }
+    if (!this.validateSignalVisualModel(entry.visualModel)) return false;
+    if (!this.validateSignalVariantMetadata(entry.variant, entry.signalVisualId)) return false;
+    if (!this.validateSignalInteractionMetadata(entry.interaction, entry.signalVisualId)) return false;
+    return true;
+  }
+
+  public registerSignalVisualEntry(entry: SignalVisualRegistryEntry): void {
+    if (!this.validateSignalVisualRegistryEntry(entry)) return;
+    if (this.signalVisualRegistry.has(entry.signalVisualId)) {
+      console.warn(`[Runtime Diagnostics] duplicate signal visual entry IDs: Signal ID "${entry.signalVisualId}" already exists.`);
+    }
+    this.signalVisualRegistry.set(entry.signalVisualId, JSON.parse(JSON.stringify(entry)));
+    if (!this.signalVisualOrder.includes(entry.signalVisualId)) {
+      this.signalVisualOrder.push(entry.signalVisualId);
+    }
+  }
+
+  public getSignalVisualEntry(id: string): SignalVisualRegistryEntry | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed signal visual entry: Signal ID must be a non-empty string.');
+      return undefined;
+    }
+    const entry = this.signalVisualRegistry.get(id);
+    return entry ? JSON.parse(JSON.stringify(entry)) : undefined;
+  }
+
+  public getSignalVisualEntries(): SignalVisualRegistryEntry[] {
+    return this.signalVisualOrder
+      .map(id => this.signalVisualRegistry.get(id))
+      .filter((entry): entry is SignalVisualRegistryEntry => !!entry)
+      .map(entry => JSON.parse(JSON.stringify(entry)));
+  }
+
+  public updateSignalVisualEntry(id: string, updates: Partial<SignalVisualRegistryEntry>): void {
+    const existing = this.signalVisualRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing signal visual entry: Signal "${id}" not found.`);
+      return;
+    }
+    const merged: SignalVisualRegistryEntry = {
+      ...existing,
+      ...updates,
+      signalVisualId: existing.signalVisualId,
+      visualModel: updates.visualModel ? { ...existing.visualModel, ...updates.visualModel } : { ...existing.visualModel },
+      variant: updates.variant ? JSON.parse(JSON.stringify(updates.variant)) : JSON.parse(JSON.stringify(existing.variant)),
+      interaction: updates.interaction ? { ...existing.interaction, ...updates.interaction } : { ...existing.interaction },
+    };
+    this.registerSignalVisualEntry(merged);
+  }
+
+  public removeSignalVisualEntry(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed signal visual entry: Signal ID must be a non-empty string.');
+      return;
+    }
+    this.signalVisualRegistry.delete(id);
+    this.signalVisualOrder = this.signalVisualOrder.filter(existing => existing !== id);
+  }
+
+  public clearSignalVisualRegistry(): void {
+    this.signalVisualRegistry.clear();
+    this.signalVisualOrder = [];
+  }
+
+  public getSignalVisualKeys(): string[] {
+    return [...this.signalVisualOrder];
+  }
+
+  public hasSignalVisual(id: string): boolean {
+    return this.signalVisualRegistry.has(id);
   }
 
   private static readonly VALID_PIN_MODES: PinMode[] = ['INPUT', 'OUTPUT', 'INPUT_PULLUP', 'INPUT_PULLDOWN', 'ANALOG', 'PWM'];
@@ -4928,6 +5197,9 @@ export class BaseRuntime implements IRuntime {
     // Reset Phase 10D board visual registry
     this.clearBoardVisualRegistry();
 
+    // Reset Phase 10E signal visual registry
+    this.clearSignalVisualRegistry();
+
     // Reset Phase 8A.1 HAL state registry
     this.clearHALStates();
 
@@ -5124,6 +5396,9 @@ export class BaseRuntime implements IRuntime {
 
     // Reset Phase 10D board visual registry
     this.clearBoardVisualRegistry();
+
+    // Reset Phase 10E signal visual registry
+    this.clearSignalVisualRegistry();
 
     // Clean up component metadata from remaining targets
     for (const target of this.targets.values()) {
@@ -5890,6 +6165,10 @@ export class BaseRuntime implements IRuntime {
       if (this.boardVisualRegistry.size > 0) {
         stageSnap.boardVisualRegistry = this.getBoardVisualEntries();
       }
+      // Phase 10E: Attach signal visualization registry metadata to stage snapshot entry
+      if (this.signalVisualRegistry.size > 0) {
+        stageSnap.signalVisualRegistry = this.getSignalVisualEntries();
+      }
       // Phase 7R: Attach connection metadata to stage snapshot entry
       if (this.connectionRegistry.size > 0) {
         stageSnap.connections = this.getConnections();
@@ -6056,6 +6335,11 @@ export class BaseRuntime implements IRuntime {
       // Phase 10D: Serialize board visualization registry metadata
       if (isStage && this.boardVisualRegistry.size > 0) {
         serializedTarget.boardVisualRegistry = this.getBoardVisualEntries();
+      }
+
+      // Phase 10E: Serialize signal visualization registry metadata
+      if (isStage && this.signalVisualRegistry.size > 0) {
+        serializedTarget.signalVisualRegistry = this.getSignalVisualEntries();
       }
 
       // Phase 7W: Serialize board definitions & workspace boards
@@ -6470,6 +6754,12 @@ export class BaseRuntime implements IRuntime {
       if (Array.isArray(stageTarget.boardVisualRegistry)) {
         for (const entry of stageTarget.boardVisualRegistry) {
           this.registerBoardVisualEntry(JSON.parse(JSON.stringify(entry)));
+        }
+      }
+      // Phase 10E: Restore signal visualization registry metadata from stage target
+      if (Array.isArray(stageTarget.signalVisualRegistry)) {
+        for (const entry of stageTarget.signalVisualRegistry) {
+          this.registerSignalVisualEntry(JSON.parse(JSON.stringify(entry)));
         }
       }
       // Phase 7W: Restore board definitions from stage target
