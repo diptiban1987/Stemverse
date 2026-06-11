@@ -495,6 +495,12 @@ export interface StageSyncState {
   wirePathModels?: WirePathModel[];
   wireSegmentModels?: WireSegmentModel[];
   wireAnchorModels?: WireAnchorModel[];
+
+  // Phase 12D: Board rendering foundation metadata synchronization
+  boardRenderModels?: BoardRenderModel[];
+  boardBoundsModels?: BoardBoundsModel[];
+  boardConnectorModels?: BoardConnectorModel[];
+  boardRegionModels?: BoardRegionModel[];
 }
 
 // ─── Phase 11B: Visual Interaction Engine ──────────────────
@@ -1097,6 +1103,12 @@ export interface SerializedTarget {
   wirePathModels?: WirePathModel[];
   wireSegmentModels?: WireSegmentModel[];
   wireAnchorModels?: WireAnchorModel[];
+
+  // Phase 12D: Board rendering foundation metadata serialization
+  boardRenderModels?: BoardRenderModel[];
+  boardBoundsModels?: BoardBoundsModel[];
+  boardConnectorModels?: BoardConnectorModel[];
+  boardRegionModels?: BoardRegionModel[];
 }
 
 export interface SerializedAssetManifest {
@@ -2285,4 +2297,62 @@ export interface WireRenderSnapshot {
   wirePathModels: WirePathModel[];
   wireSegmentModels: WireSegmentModel[];
   wireAnchorModels: WireAnchorModel[];
+}
+
+// ─── Phase 12D: Board Rendering Foundation ─────────────────
+
+export interface BoardRenderModel {
+  boardRenderId: string;
+  boardId: string;
+  boardType: string;
+  displayName: string;
+  renderNodeId: string;
+  layerId: string;
+  visibilityState: VisibilityState;
+  selectionState: boolean;
+  focusState: boolean;
+  futureRendererHints: Record<string, unknown>;
+}
+
+export interface BoardBoundsModel {
+  boundsId: string;
+  boardId: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotation: number;
+  scale: number;
+  boardOutline: Array<{ x: number; y: number }>;
+  mountingPoints: Array<{ id: string; x: number; y: number }>;
+  silkscreenBounds?: { x: number; y: number; width: number; height: number };
+  keepoutRegions?: Array<{ id: string; x: number; y: number; width: number; height: number }>;
+  futureLayoutHints: Record<string, unknown>;
+}
+
+export interface BoardConnectorModel {
+  connectorId: string;
+  boardId: string;
+  connectorType: string;
+  connectorPosition: { x: number; y: number };
+  connectorLabel: string;
+  connectorOwner: string;
+  connectorSide: 'TOP' | 'BOTTOM' | 'LEFT' | 'RIGHT' | 'INTERNAL';
+  futureConnectionHints: Record<string, unknown>;
+}
+
+export interface BoardRegionModel {
+  regionId: string;
+  boardId: string;
+  regionType: 'POWER' | 'GPIO' | 'ANALOG' | 'COMMUNICATION' | 'PROGRAMMING' | 'MOUNTING' | string;
+  regionBounds: { x: number; y: number; width: number; height: number };
+  interactionMetadata: Record<string, unknown>;
+  futurePlacementHints: Record<string, unknown>;
+}
+
+export interface BoardRenderSnapshot {
+  boardRenderModels: BoardRenderModel[];
+  boardBoundsModels: BoardBoundsModel[];
+  boardConnectorModels: BoardConnectorModel[];
+  boardRegionModels: BoardRegionModel[];
 }

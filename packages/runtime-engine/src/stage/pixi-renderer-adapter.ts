@@ -249,6 +249,10 @@ export class PixiRendererAdapter implements IRendererAdapter {
         target.wirePathModels = snap.wirePathModels ? JSON.parse(JSON.stringify(snap.wirePathModels)) : undefined;
         target.wireSegmentModels = snap.wireSegmentModels ? JSON.parse(JSON.stringify(snap.wireSegmentModels)) : undefined;
         target.wireAnchorModels = snap.wireAnchorModels ? JSON.parse(JSON.stringify(snap.wireAnchorModels)) : undefined;
+        target.boardRenderModels = snap.boardRenderModels ? JSON.parse(JSON.stringify(snap.boardRenderModels)) : undefined;
+        target.boardBoundsModels = snap.boardBoundsModels ? JSON.parse(JSON.stringify(snap.boardBoundsModels)) : undefined;
+        target.boardConnectorModels = snap.boardConnectorModels ? JSON.parse(JSON.stringify(snap.boardConnectorModels)) : undefined;
+        target.boardRegionModels = snap.boardRegionModels ? JSON.parse(JSON.stringify(snap.boardRegionModels)) : undefined;
       } else {
         target = {
           id: snap.targetId,
@@ -323,6 +327,10 @@ export class PixiRendererAdapter implements IRendererAdapter {
           wirePathModels: snap.wirePathModels ? JSON.parse(JSON.stringify(snap.wirePathModels)) : undefined,
           wireSegmentModels: snap.wireSegmentModels ? JSON.parse(JSON.stringify(snap.wireSegmentModels)) : undefined,
           wireAnchorModels: snap.wireAnchorModels ? JSON.parse(JSON.stringify(snap.wireAnchorModels)) : undefined,
+          boardRenderModels: snap.boardRenderModels ? JSON.parse(JSON.stringify(snap.boardRenderModels)) : undefined,
+          boardBoundsModels: snap.boardBoundsModels ? JSON.parse(JSON.stringify(snap.boardBoundsModels)) : undefined,
+          boardConnectorModels: snap.boardConnectorModels ? JSON.parse(JSON.stringify(snap.boardConnectorModels)) : undefined,
+          boardRegionModels: snap.boardRegionModels ? JSON.parse(JSON.stringify(snap.boardRegionModels)) : undefined,
         };
         this.targets.set(snap.targetId, target);
       }
