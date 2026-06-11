@@ -343,6 +343,9 @@ export interface TargetState {
 
   // Phase 7Q: Component & electronics device properties
   components?: RuntimeComponent[];
+
+  // Phase 7Z: Render metadata property
+  renderMetadata?: RenderMetadata;
 }
 
 /**
@@ -406,6 +409,18 @@ export interface StageSyncState {
   // Phase 7W: Board definition & workspace board metadata synchronization
   boardDefinitions?: DevelopmentBoardDefinition[];
   workspaceBoards?: WorkspaceBoard[];
+
+  // Phase 7Z: Render metadata synchronization
+  renderMetadata?: RenderMetadata;
+
+  // Phase 8A.1: HAL state synchronization
+  halState?: RuntimeHALState[];
+
+  // Phase 8A.5: Protocol shell metadata synchronization
+  pwmChannels?: PWMChannelState[];
+  i2cBuses?: I2CBusState[];
+  spiBuses?: SPIBusState[];
+  uartPorts?: UARTPortState[];
 }
 
 /**
@@ -552,6 +567,18 @@ export interface SerializedTarget {
   wireLayouts?: WireLayout[];
   boardDefinitions?: DevelopmentBoardDefinition[];
   workspaceBoards?: WorkspaceBoard[];
+
+  // Phase 7Z: Render metadata serialization
+  renderMetadata?: RenderMetadata;
+
+  // Phase 8A.1: HAL state serialization
+  halState?: RuntimeHALState[];
+
+  // Phase 8A.5: Protocol shell metadata serialization
+  pwmChannels?: PWMChannelState[];
+  i2cBuses?: I2CBusState[];
+  spiBuses?: SPIBusState[];
+  uartPorts?: UARTPortState[];
 }
 
 export interface SerializedAssetManifest {
@@ -624,6 +651,32 @@ export type DeviceState =
   | BuzzerDeviceState
   | Record<string, unknown>;
 
+export type RenderModelType =
+  | 'LED'
+  | 'BUTTON'
+  | 'SERVO'
+  | 'BUZZER'
+  | 'ULTRASONIC'
+  | 'DHT'
+  | 'LCD'
+  | 'OLED'
+  | 'ESP32_DEVKIT_V1'
+  | 'ARDUINO_UNO'
+  | 'ARDUINO_NANO'
+  | 'RASPBERRY_PI_PICO'
+  | 'BREADBOARD'
+  | 'PCB';
+
+export interface RenderMetadata {
+  modelType: RenderModelType;
+  width: number;
+  height: number;
+  anchorX: number;
+  anchorY: number;
+  rotation: number;
+  visible: boolean;
+}
+
 export interface RuntimeComponent {
   id: string;
   type: ComponentType;
@@ -632,9 +685,105 @@ export interface RuntimeComponent {
   metadata: Record<string, unknown>;
   pins?: RuntimePin[];
   deviceState?: Record<string, unknown>;
+  renderMetadata?: RenderMetadata;
 }
 
 export type PinDirection = 'INPUT' | 'OUTPUT' | 'BIDIRECTIONAL';
+
+// ─── Phase 8A.1: Hardware Abstraction Layer Contracts ──────────────
+
+export type PinMode =
+  | 'INPUT'
+  | 'OUTPUT'
+  | 'INPUT_PULLUP'
+  | 'INPUT_PULLDOWN'
+  | 'ANALOG'
+  | 'PWM';
+
+export type PullMode = 'NONE' | 'UP' | 'DOWN';
+
+export interface HardwareAddress {
+  targetId?: string;
+  componentId?: string;
+  pinId?: string;
+  boardId?: string;
+  channelId?: string;
+}
+
+export interface ComponentAddress extends HardwareAddress {
+  componentId: string;
+}
+
+export interface PinAddress extends ComponentAddress {
+  pinId: string;
+}
+
+export interface BusAddress extends HardwareAddress {
+  boardId?: string;
+  busId: string;
+  protocol: 'I2C' | 'SPI' | 'UART';
+}
+
+export interface PinSignalState {
+  digitalValue: boolean;
+  analogValue: number;
+  pwmValue: number;
+  mode: PinMode;
+  pullMode: PullMode;
+}
+
+export interface RuntimeHALState {
+  id: string;
+  address: HardwareAddress;
+  signal: PinSignalState;
+  metadata?: Record<string, unknown>;
+}
+
+// ─── Phase 8A.5: Protocol Shell Metadata ──────────────
+
+export type ProtocolType = 'PWM' | 'I2C' | 'SPI' | 'UART';
+
+export interface ProtocolDefinition {
+  protocolId: string;
+  protocolType: ProtocolType;
+  boardId: string;
+  enabled: boolean;
+  metadata: Record<string, unknown>;
+}
+
+export interface PWMChannelState extends ProtocolDefinition {
+  protocolType: 'PWM';
+  channelId: string;
+  pinId?: string;
+  frequencyHz?: number;
+  dutyCycle?: number;
+}
+
+export interface I2CBusState extends ProtocolDefinition {
+  protocolType: 'I2C';
+  busId: string;
+  sdaPinId?: string;
+  sclPinId?: string;
+  clockHz?: number;
+}
+
+export interface SPIBusState extends ProtocolDefinition {
+  protocolType: 'SPI';
+  busId: string;
+  mosiPinId?: string;
+  misoPinId?: string;
+  sckPinId?: string;
+  csPinId?: string;
+  clockHz?: number;
+}
+
+export interface UARTPortState extends ProtocolDefinition {
+  protocolType: 'UART';
+  portId: string;
+  txPinId?: string;
+  rxPinId?: string;
+  baudRate?: number;
+}
 
 export interface RuntimePin {
   id: string;
@@ -691,10 +840,30 @@ export type DevelopmentBoardType =
   | 'ARDUINO_NANO'
   | 'RASPBERRY_PI_PICO';
 
+export type PinCapability =
+  | 'DIGITAL_INPUT'
+  | 'DIGITAL_OUTPUT'
+  | 'ANALOG_INPUT'
+  | 'ANALOG_OUTPUT'
+  | 'PWM'
+  | 'DAC'
+  | 'TOUCH'
+  | 'I2C'
+  | 'SPI'
+  | 'UART';
+
+export interface BoardPinCapabilities {
+  pinId: string;
+  capabilities: PinCapability[];
+  supportsInput: boolean;
+  supportsOutput: boolean;
+}
+
 export interface BoardPinDefinition {
   id: string;
   label: string;
   capabilities: string[];
+  capabilityMetadata?: BoardPinCapabilities;
 }
 
 export interface DevelopmentBoardDefinition {
@@ -711,4 +880,5 @@ export interface WorkspaceBoard {
   transform: WorkspaceTransform;
   zIndex: number;
   groupId?: string;
+  renderMetadata?: RenderMetadata;
 }

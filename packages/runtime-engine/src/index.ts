@@ -10,6 +10,6 @@ export * from './runtime';
 export * from './runtime/execution-context';
 export * from './events';
 export * from './stage';
+export type { IHardwareBackend } from './hal';
 export * from './store';
 export * from './simulator';
-

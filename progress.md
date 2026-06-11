@@ -180,20 +180,37 @@
 | 8.17 | Opcode Dispatch Table + Runtime Error Isolation (Phase 6D.5) | PRD With Scratch | 🔶 | Refactored sequential interpreter to utilize deterministic opcode/reporter registries, small isolated helper functions, safe try-catch exception boundaries, lightweight warning diagnostics, 114 unit tests passing — runtime execution architecture foundation, NOT production-ready |
 | 8.18 | Clone & Dynamic Target Foundation (Phase 6E) | PRD With Scratch | 🔶 | Synchronous clone/target lifecycles, parent-clone registry, copy boundaries, event_whencloned triggers, thread sweeps, 126 unit tests passing — runtime clone foundation, NOT production-ready |
 | 8.19 | Event System & Broadcast Scheduler Stabilization (Phase 6F) | PRD With Scratch | 🔶 | Isolated pendingBroadcasts queue, deterministic FIFO ordering, recursive broadcast overflow protection (limit 300), case-insensitive matching, broadcast_and_wait BLOCKED status + token polling, clone target snapshotting, listener registries update on target add/remove, 142 unit tests passing — runtime event stabilization foundation, NOT production-ready |
-| 8.20 | Runtime ↔ Stage Synchronization Foundation (Phase 7A) | PRD With Scratch | 🔶 | Serializable StageSyncState, BubbleState, looks opcodes (show/hide, costume index/name with modulo wrapping, say/think timed bubbles using tick WAITING delay, deterministic layerOrderList shift logic, deep-cloned sorted snapshots, clone visual inheritance/independence, 161 unit tests passing) — runtime-stage synchronization foundation, NOT production-ready |
-| 8.21 | Renderer Adapter Foundation (Phase 7B) | PRD With Scratch | 🔶 | Serializable IRenderTarget and IRendererAdapter boundaries, InMemoryRendererAdapter pipeline, incremental diffing logic (diff safety), non-throwing warnings diagnostics, orphan target cleanup, 173 unit tests passing — renderer adapter foundation, NOT production-ready |
-| 8.22 | Asset & Costume Runtime Foundation (Phase 7C) | PRD With Scratch | 🔶 | Serializable RuntimeAsset/CostumeAsset/SoundAsset/BackdropAsset interfaces, global asset registries, backdrop switch/next looks opcodes, clone asset reference sharing, snapshot metadata sync, 189 unit tests passing — asset & costume runtime foundation, NOT production-ready |
-| 8.23 | Minimal PixiJS Renderer Bridge (Phase 7D) | PRD With Scratch | 🔶 | PixiRendererAdapter concrete bridge implementation, independent sprite/stage Containers, colored rounded rect/large dark bg placeholders, coordinate translation, direction to radians mapping, incremental diff safety updates, say/think text bubble placeholders, sweeping orphan safety cleanup, stable layer sequence stacking, 201 unit tests passing — minimal PixiJS renderer bridge, NOT production-ready |
-| 8.24 | Audio & Music Runtime Integration (Phase 7E) | PRD With Scratch | 🔶 | Serializable ActiveSoundTrigger/SoundChannelState structures, waitingOnSoundId Thread property, sound statement opcodes (sound_play, sound_playuntildone, sound_stopallsounds, sound_changevolumeby, sound_setvolumeto) + sound_volume reporter, deterministic tick durations, immediate/centralized Sweeps, clone sound isolation, 217 unit tests passing — minimal audio runtime, NOT production-ready |
-| 8.25 | Pen Layer & Vector Drawing Foundation (Phase 7F) | PRD With Scratch | 🔶 | Serializable PenCommand, PenCommandType, and PenState structures, registered 6 pen statement opcodes, side-effect coordinates-movement tracking in all 6 motion opcodes, clone pen property inheritance, penCommand targetId isolation, retention of commands after clone deletion, deep-copied global penCommands in stage snapshots, metadata synchronization across IRenderTarget, InMemoryRendererAdapter, and PixiRendererAdapter, console warnings without throwing, 235 unit tests passing — minimal pen runtime, NOT production-ready |
-| 8.26 | Variable Watcher / Monitor Foundation (Phase 7G) | PRD With Scratch | 🔶 | Serializable VariableWatcher and WatcherMode types, extended StageSyncState and IRenderTarget with watchers lists, registered interpreter callback onVariableChanged, synchronous target-level variable mutations triggers, clone watcher isolation and dynamic spawning, deep-copied watcher snapshots, metadata-only Pixi and in-memory adapter ingestion, lightweight console warnings without throwing, 253 unit tests passing — minimal watcher runtime, NOT production-ready |
-| 8.27 | Deterministic Runtime Stabilization (Phase 7G.1) | PRD With Scratch | 🔶 | Seeded deterministic LCG PRNG in BaseRuntime and bound to interpreter, strict deterministic randomness safety callback with 0.5 fallback, snapshot isolation with deep copy for penCommands and variableWatchers, traverse() budget safety with MAX_BLOCKS_PER_TICK, synchronous evaluateScript() signature conversion, and Set.has() sound trigger sweeps optimization, 253 unit tests passing — deterministic runtime stabilization foundation, NOT production-ready |
-| 8.28 | List Runtime & List Watcher Foundation (Phase 7H) | PRD With Scratch | 🔶 | Serializable ListWatcherMode and ListWatcher interfaces, extended StageSyncState and IRenderTarget with listWatchers, registered interpreter callback onListChanged, registered 5 statement and 4 reporter list opcodes, Scratch 1-based index semantics and string parameter parsing ("last", "all"), bounds safety, clone list watcher isolation and dynamic spawning, deep-copied list watcher snapshots, metadata Pixi and in-memory adapter ingestion, lightweight console warnings without throwing, 280 unit tests passing — minimal list runtime, NOT production-ready |
-| 8.29 | Motion Runtime & Coordinate System Stabilization Audit Fixes (Phase 7I) | PRD With Scratch | 🔶 | Applied audited low-risk fixes to address WAITING status override in stepThread() preventing terminal wait/glide blocks from stalling, added console.warn checks for non-finite coordinates in executeMotionGotoXY/executeMotionSetX/executeMotionSetY/executeMotionChangeXBy/executeMotionChangeYBy/executeMotionMoveSteps, implemented Infinity-conversion in coerceToNumber() to return 0, and centralized stage boundary constants, with 311 unit tests passing — partial stabilization fixes, NOT production-ready |
-| 8.30 | Sensing Runtime Foundation (Phase 7J) | PRD With Scratch | 🔶 | Deterministic sensing metadata: KeyboardState/MouseState types, tick-driven runtimeTimerMs accumulator, sensing statement handler (sensing_resettimer) and 7 reporter handlers (sensing_timer, sensing_mousex, sensing_mousey, sensing_mousedown, sensing_keypressed, sensing_touchingedge, sensing_touchingobject), interpreter callback wiring (onResetTimer/onGetTimerMs/onGetMouseState/onGetKeyboardState/onIsTouchingEdge/onIsTouchingObject), case-insensitive key matching, duplicate-safe key registry, bounding-box object overlap approximation, renderer-safe sensing metadata in snapshots (keyboardState/mouseState on stage entry), InMemoryRendererAdapter and PixiRendererAdapter ingestion, initialize/stop sensing state cleanup, 346 unit tests passing — sensing runtime foundation, NOT production-ready |
-| 8.31 | Interaction Runtime Foundation (Phase 7K) | PRD With Scratch | 🔶 | Deterministic ask/answer: RuntimeQuestion/RuntimeAnswerState types, sensing_askandwait statement handler, tick-driven question queue, answer state management, BLOCKED thread question wait, interpreter callback wiring, renderer-safe metadata in snapshots, InMemoryRendererAdapter and PixiRendererAdapter ingestion, initialize/stop interaction state cleanup, 364 unit tests passing — interaction runtime foundation, NOT production-ready |
-| 8.32 | Project Serialization (Phase 7L) | PRD With Scratch | 🔶 | Deterministic exportProject()/importProject() with deep-copy guarantees, clone exclusion, runtime metadata exclusion (no activeThreads/BLOCKED/clones/renderer/penCommands/pendingQuestions in output), initialize-before-import safety, import cleanup (null/malformed/invalid gracefully skipped), deterministic replay safety (export-import-export identical), renderer independence, watcher + asset round-trip preservation, 36 deterministic unit tests (400 total passing) — project serialization foundation, NOT production-ready |
-| 8.33 | Runtime Asset Loading & Deferred Resource Resolution (Phase 7M) | PRD With Scratch | 🔶 | Deterministic asset availability metadata: AssetLoadStatus type (UNLOADED/LOADING/READY/MISSING/FAILED), RuntimeAssetState interface, runtime asset state registry with O(1) lookup, deterministic state transition validation (UNLOADED→LOADING, LOADING→READY, LOADING→FAILED, UNLOADED→MISSING, FAILED→LOADING), warning-only diagnostics for invalid transitions, default UNLOADED registration on costume/sound/backdrop registration, fallback semantics (MISSING/FAILED/unresolved assets preserve execution), deep-copied assetStates in snapshots, renderer-safe metadata-only ingestion (InMemoryRendererAdapter + PixiRendererAdapter), import/export runtimeState round-trip persistence, centralized sweep cleanup (initialize/stop), clone-safe asset state inheritance, 60 deterministic unit tests (460 total passing) — runtime asset loading foundation, NOT production-ready |
+| 8.20 | Runtime ↔ Stage Synchronization Foundation (Phase 7A) | PRD With Scratch | ✅ | Serializable StageSyncState, BubbleState, looks opcodes, layerOrderList, deep-cloned snapshots, clone visual independence, and 161 unit tests passing |
+| 8.21 | Renderer Adapter Foundation (Phase 7B) | PRD With Scratch | ✅ | Decoupled renderer boundaries, InMemoryRendererAdapter, incremental diffing, orphan target cleanup, clone layer mapping, and 173 unit tests passing |
+| 8.22 | Asset & Costume Runtime Foundation (Phase 7C) | PRD With Scratch | ✅ | RuntimeAsset/CostumeAsset/SoundAsset/BackdropAsset registries, looks opcodes, snapshot metadata sync, and 189 unit tests passing |
+| 8.23 | Minimal PixiJS Renderer Bridge (Phase 7D) | PRD With Scratch | ✅ | Headless-ready PixiRendererAdapter, rounded rect sprites, coordinate translation, direction to radians, say/think text bubble placeholders, and 201 unit tests passing |
+| 8.24 | Audio & Music Runtime Integration (Phase 7E) | PRD With Scratch | ✅ | ActiveSoundTrigger/SoundChannelState audio scheduling, 5 sound statement opcodes + 1 reporter, tick delay countdowns, channel volume isolation, and 217 unit tests passing |
+| 8.25 | Pen Layer & Vector Drawing Foundation (Phase 7F) | PRD With Scratch | ✅ | PenCommand/PenState vector drawing, 6 pen opcodes, clone pen property inheritance, penCommand targetId isolation, coordinates-movement tracking in motion opcodes, and 235 unit tests passing |
+| 8.26 | Variable Watcher / Monitor Foundation (Phase 7G) | PRD With Scratch | ✅ | VariableWatcher/WatcherMode structures, StageSyncState integration, variable mutation triggers, clone watcher isolation, and 253 unit tests passing |
+| 8.27 | Deterministic Runtime Stabilization (Phase 7G.1) | PRD With Scratch | ✅ | Seeded deterministic LCG PRNG, snapshot array/object isolation, local budget safety limits, synchronous evaluateScript() signature conversion, and 253 unit tests passing |
+| 8.28 | List Runtime & List Watcher Foundation (Phase 7H) | PRD With Scratch | ✅ | ListWatcher/ListWatcherMode structures, 5 statement and 4 reporter list opcodes, 1-based Scratch index semantics, clone list isolation, and 280 unit tests passing |
+| 8.29 | Motion Runtime & Coordinate System Stabilization Audit Fixes (Phase 7I) | PRD With Scratch | ✅ | WAITING thread status override bugfix, non-finite coordinate check warnings, Infinity conversion, stage boundaries centralization, and 311 unit tests passing |
+| 8.30 | Sensing Runtime Foundation (Phase 7J) | PRD With Scratch | ✅ | Deterministic sensing metadata, keyboard/mouse input states, runtimeTimerMs, 1 statement + 7 reporter opcodes, case-insensitive key matching, object overlap bounding-box checks, and 346 unit tests passing |
+| 8.31 | Interaction Runtime Foundation (Phase 7K) | PRD With Scratch | ✅ | Ask/answer question queue, sensing_askandwait statement opcode, BLOCKED thread question wait, answer state, and 364 unit tests passing |
+| 8.32 | Project Serialization (Phase 7L) | PRD With Scratch | ✅ | exportProject()/importProject() with deep-copy, clone exclusion, transient runtime state pruning, replay safety, and 36 serialization tests passing (400 total) |
+| 8.33 | Runtime Asset Loading & Deferred Resource Resolution (Phase 7M) | PRD With Scratch | ✅ | AssetLoadStatus loading state registry, transition validation, default UNLOADED fallback, deep-copied assetStates in snapshots, and 60 asset loading tests passing (460 total) |
+| 8.34 | Runtime Scene Graph & Transform Hierarchy Foundation (Phase 7N) | PRD With Scratch | ✅ | Target-level transform hierarchy registry with local/world transform calculation, child/parent tree traversal, and unit tests passing |
+| 8.35 | Camera, Viewport & Stage Transform Foundation (Phase 7O) | PRD With Scratch | ✅ | Global camera state, viewport bounds, screen-space target coordinate projection, and unit tests passing |
+| 8.36 | Runtime Constraint & Physics Metadata Foundation (Phase 7P) | PRD With Scratch | ✅ | Velocity, acceleration, collision bounds, constraints metadata on target states, and unit tests passing |
+| 8.37 | Component & Electronics Device Foundation (Phase 7Q) | PRD With Scratch | ✅ | RuntimeComponent state registry, default metadata merging, buzzer/dht device state management, and unit tests passing |
+| 8.38 | GPIO, Pin Mapping & Signal Metadata Foundation (Phase 7R) | PRD With Scratch | ✅ | RuntimePin registry, connection mapping, default pin maps for components, signal propagation, and unit tests passing |
+| 8.39 | Virtual Sensor & Actuator Runtime Foundation (Phase 7S) | PRD With Scratch | ✅ | Virtual sensor/actuator metadata, value conversion, and unit tests passing |
+| 8.40 | Visual Electronics Workspace Foundation (Phase 7T) | PRD With Scratch | ✅ | WorkspaceComponentLayout layout registry, position/scale/rotation/zIndex updates, clone isolation, and unit tests passing |
+| 8.41 | Visual Wire & Connection Layout Foundation (Phase 7U) | PRD With Scratch | ✅ | WireLayout wire geometry, color/thickness metadata, visibility controls, and unit tests passing |
+| 8.42 | Clone Registry & Orphan Cleanup (Phase 7V.1) | PRD With Scratch | ✅ | Clone registry sweeps, orphan target memory leak cleanup, and unit tests passing |
+| 8.43 | Development Board Visual Board Foundation (Phase 7W) | PRD With Scratch | ✅ | DevelopmentBoardDefinition and WorkspaceBoard registries, default board pins/capabilities, and unit tests passing |
+| 8.44 | Electronics Blocks Runtime (Phase 7X) | PRD With Scratch | ✅ | Opcodes for pin high/low, read pin, servo angle, ultrasonic distance, dht temp/humidity, oled/lcd text, and buzzer on/off |
+| 8.45 | GPIO Ownership & Compatibility Hardening (Phase 7Y) | PRD With Scratch | ✅ | Strict pin state ownership validation, boundary safety, and compatibility hardening |
+| 8.46 | Visual Simulator Rendering Foundation (Phase 7Z) | PRD With Scratch | ✅ | RenderModelType and RenderMetadata, renderModelRegistry, defaults, snapshot sync, adapter sync, and 185 tests passing |
+| 8.47 | HAL Contracts & State Model (Phase 8A.1) | Runtime Architecture | ✅ | HardwareAddress/ComponentAddress/PinAddress/BusAddress, PinMode/PullMode/PinSignalState, passive HAL state registry, snapshot/export/import foundations, and 260 HAL contract tests |
+| 8.48 | Simulated HAL Backend Integration (Phase 8A.2) | Runtime Architecture | ✅ | SimulatedHardwareBackend routes existing electronics behavior through HAL while preserving runtime registries, snapshots, serialization, clone behavior, and device compatibility |
+| 8.49 | Compatibility Projection & Rich Pin State (Phase 8A.3) | Runtime Architecture | ✅ | Rich HAL pin state ownership for digital/analog/PWM/mode/pull metadata while preserving RuntimePin.signalState as the boolean digital compatibility projection |
+| 8.50 | Board Pin Mapping & Capability Model (Phase 8A.4) | Runtime Architecture | ✅ | Board pin capability metadata for ESP32, Arduino Uno/Nano, and Raspberry Pi Pico with deterministic lookup, snapshots, serialization, and warning-only validation |
 ---
 
 ## 9. Robotics Studio Workspace
@@ -392,6 +409,11 @@ Based on V3 Enterprise Spec quarterly breakdown:
 | **Phase 5 — LMS Foundation** | Q2/Q3 | Courses, tracks, quizzes, progress, certificates, /academy UI | ✅ | 100% |
 | **Phase 3 — ESP32 + IoT Foundation** | Q2/Q3 | ESP-IDF generator, IoT blocks, Serial Monitor, Compiler scaffold | ✅ | 100% |
 | **Phase 7 — Simulator MVP** | Q3 | Virtual boards, 5 components, Three.js, `/simulator` workspace | ✅ | 100% |
+| **Phase 7Z — Visual Simulator Rendering Foundation** | Q3 | Rendering metadata ownership, defaults, snapshot sync, validation | ✅ | 100% |
+| **Phase 8A.1 — HAL Contracts & State Model** | Q3 | HAL address/signal contracts, passive state registry, serialization foundations | ✅ | 100% |
+| **Phase 8A.2 — Simulated HAL Backend Integration** | Q3 | HAL routing for existing simulated electronics behavior | ✅ | 100% |
+| **Phase 8A.3 — Compatibility Projection & Rich Pin State** | Q3 | Rich pin state storage with boolean GPIO compatibility projection | ✅ | 100% |
+| **Phase 8A.4 — Board Pin Mapping & Capability Model** | Q3 | Deterministic board pin capability metadata and HAL lookup APIs | ✅ | 100% |
 | **Phase 4 (Roadmap)** | Q3 | Simulator Engine + AI Studio + Advanced Blocks | 🔵 | 72% |
 | **Phase 5.1 (Roadmap)** | Q4 | Production hardening, unified streaming, Scratch runtime, E2E, OpenAPI | 🔵 | 55% |
 | **Phase 5.2A (Roadmap)** | Q4 | Object storage & asset pipeline (MinIO, presign, Asset model) | ✅ | 90% |
@@ -411,7 +433,7 @@ Based on V3 Enterprise Spec quarterly breakdown:
 | 5. Database & Data Layer | 10 | 6 | 2 | 2 | 60% |
 | 6. Blockly Engine & Block System | 13 | 11 | 0 | 2 | 85% |
 | 7. Block Implementations | 37 | 10 | 14 | 13 | 27% |
-| 8. Scratch Integration | 21 | 0 | 20 | 1 | 50% |
+| 8. Scratch Integration | 48 | 42 | 5 | 1 | 88% |
 | 9. Robotics Studio Workspace | 8 | 7 | 0 | 1 | 88% |
 | 10. Compiler Service | 7 | 2 | 1 | 4 | 29% |
 | 11. Simulator Engine | 12 | 5 | 1 | 6 | 46% |
@@ -424,7 +446,7 @@ Based on V3 Enterprise Spec quarterly breakdown:
 | 18. Enterprise Features | 6 | 0 | 0 | 6 | 0% |
 | 19. Documentation Portal | 6 | 0 | 4 | 2 | 33% |
 | 20. SEO & Content | 3 | 0 | 3 | 0 | 50% |
-| **TOTAL** | **203** | **84** | **62** | **57** | **51%** |
+| **TOTAL** | **230** | **126** | **47** | **57** | **55%** |
 
 ---
 
@@ -500,4 +522,45 @@ Based on V3 Enterprise Spec quarterly breakdown:
 | 2026-06-02 | 8 | Phase 7K — Interaction Runtime Foundation: Implemented deterministic ask/answer system with RuntimeQuestion/RuntimeAnswerState types, sensing_askandwait handler, tick-driven question queue, answer state management, BLOCKED thread question wait, renderer-safe metadata in snapshots, 364 unit tests passing — interaction runtime foundation, NOT production-ready | Antigravity |
 | 2026-06-02 | 8 | Phase 7L — Project Serialization: Implemented deterministic exportProject()/importProject() with deep-copy guarantees (variables, lists, scripts), clone exclusion from export, runtime metadata exclusion (no activeThreads/BLOCKED/clones/renderer/penCommands/pendingQuestions in output), initialize-before-import safety (clean slate), import cleanup (null/malformed/invalid gracefully skipped), deterministic replay safety (export-import-export produces identical outputs), renderer independence, watcher + asset round-trip preservation, 36 deterministic serialization unit tests, 400 total unit tests passing — project serialization foundation, NOT production-ready | Antigravity |
 | 2026-06-02 | 8 | Phase 7M — Runtime Asset Loading & Deferred Resource Resolution Foundation: Implemented deterministic asset availability tracking with AssetLoadStatus type (UNLOADED/LOADING/READY/MISSING/FAILED), RuntimeAssetState interface, runtime asset state registry with O(1) lookup, deterministic state transition validation (5 allowed transitions, invalid transitions warn-only), default UNLOADED registration on costume/sound/backdrop registration, fallback semantics (MISSING/FAILED/unresolved assets preserve execution without crashes), deep-copied assetStates in snapshots, renderer-safe metadata-only ingestion (InMemoryRendererAdapter + PixiRendererAdapter), import/export runtimeState round-trip persistence, centralized sweep cleanup (initialize/stop), clone-safe asset state inheritance, 60 deterministic unit tests, 460 total unit tests passing — runtime asset loading foundation, NOT production-ready | Antigravity |
+| 2026-06-03 | 8 | Phase 7N — Runtime Scene Graph & Transform Hierarchy Foundation: Implemented transform hierarchy registry with local/world transform calculation. | Antigravity |
+| 2026-06-04 | 8 | Phase 7O — Camera, Viewport & Stage Transform Foundation: Implemented global camera state, viewport bounds, and coordinate projection. | Antigravity |
+| 2026-06-05 | 8 | Phase 7P — Runtime Constraint & Physics Metadata Foundation: Implemented velocity, acceleration, collision bounds, and constraints metadata. | Antigravity |
+| 2026-06-06 | 8 | Phase 7Q — Component & Electronics Device Foundation: Implemented component registry, default metadata merging, and virtual device states. | Antigravity |
+| 2026-06-07 | 8 | Phase 7R — GPIO, Pin Mapping & Signal Metadata Foundation: Implemented pin registry, connection mapping, and signal propagation. | Antigravity |
+| 2026-06-08 | 8 | Phase 7S — Virtual Sensor & Actuator Runtime Foundation: Implemented value conversions and virtual sensor/actuator metadata. | Antigravity |
+| 2026-06-09 | 8 | Phase 7T — Visual Electronics Workspace Foundation: Implemented position, scale, rotation, and zIndex layout metadata. | Antigravity |
+| 2026-06-10 | 8 | Phase 7U — Visual Wire & Connection Layout Foundation: Implemented wire geometry, color, thickness, and visibility metadata. | Antigravity |
+| 2026-06-10 | 8 | Phase 7V.1 — Clone Registry & Orphan Cleanup: Implemented clone registry sweeps and orphan target memory leak cleanup. | Antigravity |
+| 2026-06-10 | 8 | Phase 7W — Development Board Visual Board Foundation: Implemented board definitions and workspace board registries. | Antigravity |
+| 2026-06-11 | 8 | Phase 7X — Electronics Blocks Runtime: Implemented opcodes for pin access, sensors, servo, displays, and buzzer. | Antigravity |
+| 2026-06-11 | 8 | Phase 7Y — GPIO Ownership & Compatibility Hardening: Implemented strict pin state ownership validation and boundary safety. | Antigravity |
+| 2026-06-11 | 8 | Phase 7Z — Visual Simulator Rendering Foundation: Implemented RenderModelType, RenderMetadata, renderModelRegistry, defaults, snapshot sync, adapter sync, and 185 tests passing. | Antigravity |
+| 2026-06-11 | 8 | Phase 8A.1 — HAL Contracts & State Model: Added HAL address/signal types, conceptual adapter/backend interfaces, passive HAL state registry, snapshot/export/import foundations, and 260 HAL contract tests. | Kilo |
+| 2026-06-11 | 8 | Phase 8A.2 — Simulated HAL Backend Integration: Added SimulatedHardwareBackend and routed existing electronics callbacks through HAL while preserving runtime registry ownership and behavior. | Kilo |
+| 2026-06-11 | 8 | Phase 8A.3 — Compatibility Projection & Rich Pin State: Added backend-owned rich pin state for digital/analog/PWM/mode/pull metadata, preserved RuntimePin.signalState as digitalValue projection, and added 250 compatibility tests. | Kilo |
+| 2026-06-11 | 8 | Phase 8A.4 — Board Pin Mapping & Capability Model: Added typed board pin capabilities, deterministic capability lookup APIs, metadata normalization, snapshot/export/import preservation, and 325 board capability tests. | Kilo |
 
+---
+
+## Remaining Runtime Gaps
+
+As per visual simulator rendering foundation design decisions, the following visual/execution engines are deferred and remain unimplemented at this phase:
+
+- **Pixi Rendering**: Defer actual graphic and visual rendering container setup in Pixi.js (metadata synchronization only).
+- **SVG Rendering**: Defer SVG element generation and DOM-based SVG path rendering.
+- **React Rendering**: Defer visual UI components rendering in React workspace views.
+- **DOM Rendering**: Defer HTML elements/DOM node representation updates for simulator targets.
+- **WebGL Rendering**: Defer custom WebGL shader-based drawings and canvas renders.
+- **ESP32 Execution**: Defer actual microcontroller target execution simulation (GPIO metadata-only).
+- **Arduino Execution**: Defer Arduino hardware instruction execution emulator.
+- **MicroPython**: Defer Python virtual execution runtime or MicroPython runtime interpreters.
+- **Python Runtime**: Defer standard Python script evaluation inside the simulator engine.
+- **HAL Backends**: Simulated runtime backend is integrated with rich pin state and board pin capability metadata; ESP32, Arduino, MicroPython, Python, async operations, and physical hardware backend implementations remain deferred.
+
+---
+
+### Verification Metrics
+
+- **Tests Added**: 325 unit tests for Phase 8A.4 (Board Pin Mapping & Capability Model)
+- **Total Test Count**: 3148 tests passing successfully
+- **Build Status**: Clean compiler run (0 errors, 0 warnings)

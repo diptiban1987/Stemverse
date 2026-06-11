@@ -172,7 +172,7 @@ describe('Phase 7K — Ask/Answer & Runtime Interaction Foundation', () => {
       expect(questions[1].answered).toBe(false);
 
       runtime.submitAnswer('Answer2');
-      expect(questions[1].answered).toBe(true);
+      expect(runtime.getPendingQuestions()[1].answered).toBe(true);
     });
   });
 

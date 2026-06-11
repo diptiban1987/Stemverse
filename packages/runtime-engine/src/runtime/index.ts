@@ -1,6 +1,7 @@
 import { IRuntime } from '../core';
-import { TargetId, TargetState, ASTScript, Thread, SpriteState, StageState, PendingBroadcast, BroadcastCompletionToken, ListenerEntry, BubbleState, StageSyncState, CostumeAsset, SoundAsset, BackdropAsset, ActiveSoundTrigger, SoundChannelState, PenCommand, PenState, VariableWatcher, WatcherMode, ListWatcher, ListWatcherMode, GlideState, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, SerializedProject, SerializedStage, SerializedTarget, SerializedAssetManifest, SerializedProjectMetadata, VariableState, ListState, RuntimeAssetState, AssetLoadStatus, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, ComponentType, RuntimeComponent, PinDirection, RuntimePin, RuntimeConnection, DeviceState, WorkspaceTransform, WorkspaceComponentLayout, WirePoint, WireLayout, DevelopmentBoardType, BoardPinDefinition, DevelopmentBoardDefinition, WorkspaceBoard } from '../types';
+import { TargetId, TargetState, ASTScript, Thread, SpriteState, StageState, PendingBroadcast, BroadcastCompletionToken, ListenerEntry, BubbleState, StageSyncState, CostumeAsset, SoundAsset, BackdropAsset, ActiveSoundTrigger, SoundChannelState, PenCommand, PenState, VariableWatcher, WatcherMode, ListWatcher, ListWatcherMode, GlideState, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, SerializedProject, SerializedStage, SerializedTarget, SerializedAssetManifest, SerializedProjectMetadata, VariableState, ListState, RuntimeAssetState, AssetLoadStatus, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, ComponentType, RuntimeComponent, PinDirection, RuntimePin, RuntimeConnection, DeviceState, WorkspaceTransform, WorkspaceComponentLayout, WirePoint, WireLayout, DevelopmentBoardType, BoardPinDefinition, BoardPinCapabilities, DevelopmentBoardDefinition, WorkspaceBoard, RenderModelType, RenderMetadata, RuntimeHALState, HardwareAddress, PinMode, PullMode, PinCapability } from '../types';
 import { MinimalASTInterpreter, IHardwareAdapter } from '../ast/interpreter';
+import { SimulatedHardwareBackend } from '../hal';
 import { createThread, TaskQueue, PendingTask, resetThreadCounter } from './execution-context';
 
 /**
@@ -115,7 +116,7 @@ export class BaseRuntime implements IRuntime {
   }
 
   public getKeyboardState(): KeyboardState {
-    return this.keyboardState;
+    return { pressedKeys: [...this.keyboardState.pressedKeys] };
   }
 
   public setMousePosition(x: number, y: number): void {
@@ -136,7 +137,7 @@ export class BaseRuntime implements IRuntime {
   }
 
   public getMouseState(): MouseState {
-    return this.mouseState;
+    return { x: this.mouseState.x, y: this.mouseState.y, isDown: this.mouseState.isDown };
   }
 
   public getTimerMs(): number {
@@ -194,11 +195,11 @@ export class BaseRuntime implements IRuntime {
   }
 
   public getPendingQuestions(): RuntimeQuestion[] {
-    return this.pendingQuestions;
+    return this.pendingQuestions.map(q => ({ ...q }));
   }
 
   public getAnswerState(): RuntimeAnswerState {
-    return this.answerState;
+    return { currentAnswer: this.answerState.currentAnswer };
   }
 
   /**
@@ -250,47 +251,294 @@ export class BaseRuntime implements IRuntime {
   // Phase 7W Workspace board registry
   private workspaceBoardRegistry = new Map<string, WorkspaceBoard>();
 
+  // Phase 7Z Render Model state
+  public readonly renderModelRegistry = new Map<RenderModelType, RenderMetadata>();
+  private renderModelOrder: RenderModelType[] = [];
+
+  // Phase 8A.1 HAL state registry (passive contracts/state only)
+  private halStateRegistry = new Map<string, RuntimeHALState>();
+  private halStateOrder: string[] = [];
+  private simulatedHardwareBackend: SimulatedHardwareBackend;
+
+  private static readonly DEFAULT_RENDER_METADATA: Record<RenderModelType, RenderMetadata> = {
+    'LED': { modelType: 'LED', width: 20, height: 20, anchorX: 0.5, anchorY: 0.5, rotation: 0, visible: true },
+    'BUTTON': { modelType: 'BUTTON', width: 30, height: 30, anchorX: 0.5, anchorY: 0.5, rotation: 0, visible: true },
+    'SERVO': { modelType: 'SERVO', width: 40, height: 30, anchorX: 0.5, anchorY: 0.5, rotation: 0, visible: true },
+    'BUZZER': { modelType: 'BUZZER', width: 25, height: 25, anchorX: 0.5, anchorY: 0.5, rotation: 0, visible: true },
+    'ULTRASONIC': { modelType: 'ULTRASONIC', width: 50, height: 25, anchorX: 0.5, anchorY: 0.5, rotation: 0, visible: true },
+    'DHT': { modelType: 'DHT', width: 25, height: 35, anchorX: 0.5, anchorY: 0.5, rotation: 0, visible: true },
+    'LCD': { modelType: 'LCD', width: 120, height: 60, anchorX: 0.5, anchorY: 0.5, rotation: 0, visible: true },
+    'OLED': { modelType: 'OLED', width: 60, height: 40, anchorX: 0.5, anchorY: 0.5, rotation: 0, visible: true },
+    'ESP32_DEVKIT_V1': { modelType: 'ESP32_DEVKIT_V1', width: 80, height: 100, anchorX: 0.5, anchorY: 0.5, rotation: 0, visible: true },
+    'ARDUINO_UNO': { modelType: 'ARDUINO_UNO', width: 100, height: 120, anchorX: 0.5, anchorY: 0.5, rotation: 0, visible: true },
+    'ARDUINO_NANO': { modelType: 'ARDUINO_NANO', width: 50, height: 70, anchorX: 0.5, anchorY: 0.5, rotation: 0, visible: true },
+    'RASPBERRY_PI_PICO': { modelType: 'RASPBERRY_PI_PICO', width: 40, height: 80, anchorX: 0.5, anchorY: 0.5, rotation: 0, visible: true },
+    'BREADBOARD': { modelType: 'BREADBOARD', width: 200, height: 150, anchorX: 0.5, anchorY: 0.5, rotation: 0, visible: true },
+    'PCB': { modelType: 'PCB', width: 150, height: 150, anchorX: 0.5, anchorY: 0.5, rotation: 0, visible: true }
+  };
+
+  private static getRenderModelForComponentType(type: ComponentType): RenderModelType {
+    switch (type) {
+      case 'LED': return 'LED';
+      case 'BUTTON': return 'BUTTON';
+      case 'SERVO': return 'SERVO';
+      case 'BUZZER': return 'BUZZER';
+      case 'ULTRASONIC_SENSOR': return 'ULTRASONIC';
+      case 'DHT_SENSOR': return 'DHT';
+      case 'LCD_DISPLAY': return 'LCD';
+      case 'OLED_DISPLAY': return 'OLED';
+      case 'ESP32': return 'ESP32_DEVKIT_V1';
+      case 'ARDUINO': return 'ARDUINO_UNO';
+      default: return 'PCB';
+    }
+  }
+
+  private static getRenderModelForBoardType(type: string): RenderModelType {
+    switch (type) {
+      case 'ESP32_DEVKIT_V1': return 'ESP32_DEVKIT_V1';
+      case 'ARDUINO_UNO': return 'ARDUINO_UNO';
+      case 'ARDUINO_NANO': return 'ARDUINO_NANO';
+      case 'RASPBERRY_PI_PICO': return 'RASPBERRY_PI_PICO';
+      default: return 'BREADBOARD';
+    }
+  }
+
+  private validateRenderMetadata(meta: any, contextStr: string): void {
+    if (!meta) return;
+    const VALID_MODEL_TYPES: RenderModelType[] = [
+      'LED', 'BUTTON', 'SERVO', 'BUZZER', 'ULTRASONIC', 'DHT', 'LCD', 'OLED',
+      'ESP32_DEVKIT_V1', 'ARDUINO_UNO', 'ARDUINO_NANO', 'RASPBERRY_PI_PICO',
+      'BREADBOARD', 'PCB'
+    ];
+    if (!VALID_MODEL_TYPES.includes(meta.modelType)) {
+      console.warn(`[Runtime Diagnostics] invalid model types: ${contextStr} has invalid model type "${meta.modelType}".`);
+    }
+    if (typeof meta.width !== 'number' || !Number.isFinite(meta.width) || meta.width <= 0 ||
+        typeof meta.height !== 'number' || !Number.isFinite(meta.height) || meta.height <= 0) {
+      console.warn(`[Runtime Diagnostics] malformed dimensions: ${contextStr} has invalid dimensions width "${meta.width}" and height "${meta.height}".`);
+    }
+    if (typeof meta.anchorX !== 'number' || !Number.isFinite(meta.anchorX) || meta.anchorX < 0 || meta.anchorX > 1 ||
+        typeof meta.anchorY !== 'number' || !Number.isFinite(meta.anchorY) || meta.anchorY < 0 || meta.anchorY > 1) {
+      console.warn(`[Runtime Diagnostics] invalid anchors: ${contextStr} has invalid anchors anchorX "${meta.anchorX}" and anchorY "${meta.anchorY}".`);
+    }
+  }
+
+  public registerRenderMetadata(metadata: RenderMetadata): void {
+    if (!metadata || typeof metadata.modelType !== 'string') {
+      console.warn('[Runtime Diagnostics] malformed render metadata: Metadata is missing a valid modelType.');
+      return;
+    }
+    const VALID_MODEL_TYPES: RenderModelType[] = [
+      'LED', 'BUTTON', 'SERVO', 'BUZZER', 'ULTRASONIC', 'DHT', 'LCD', 'OLED',
+      'ESP32_DEVKIT_V1', 'ARDUINO_UNO', 'ARDUINO_NANO', 'RASPBERRY_PI_PICO',
+      'BREADBOARD', 'PCB'
+    ];
+    if (!VALID_MODEL_TYPES.includes(metadata.modelType)) {
+      console.warn(`[Runtime Diagnostics] invalid model types: Render metadata has invalid model type "${metadata.modelType}".`);
+    }
+    if (typeof metadata.width !== 'number' || !Number.isFinite(metadata.width) || metadata.width <= 0 ||
+        typeof metadata.height !== 'number' || !Number.isFinite(metadata.height) || metadata.height <= 0) {
+      console.warn(`[Runtime Diagnostics] malformed dimensions: Render metadata for "${metadata.modelType}" has invalid dimensions width "${metadata.width}" and height "${metadata.height}".`);
+    }
+    if (typeof metadata.anchorX !== 'number' || !Number.isFinite(metadata.anchorX) || metadata.anchorX < 0 || metadata.anchorX > 1 ||
+        typeof metadata.anchorY !== 'number' || !Number.isFinite(metadata.anchorY) || metadata.anchorY < 0 || metadata.anchorY > 1) {
+      console.warn(`[Runtime Diagnostics] invalid anchors: Render metadata for "${metadata.modelType}" has invalid anchors anchorX "${metadata.anchorX}" and anchorY "${metadata.anchorY}".`);
+    }
+    if (this.renderModelRegistry.has(metadata.modelType)) {
+      console.warn(`[Runtime Diagnostics] duplicate render metadata: Render metadata for model type "${metadata.modelType}" already exists.`);
+    }
+
+    this.renderModelRegistry.set(metadata.modelType, JSON.parse(JSON.stringify(metadata)));
+    if (!this.renderModelOrder.includes(metadata.modelType)) {
+      this.renderModelOrder.push(metadata.modelType);
+    }
+  }
+
+  public getRenderMetadata(modelType: RenderModelType): RenderMetadata | undefined {
+    const meta = this.renderModelRegistry.get(modelType);
+    return meta ? JSON.parse(JSON.stringify(meta)) : undefined;
+  }
+
+  public removeRenderMetadata(modelType: RenderModelType): void {
+    if (this.renderModelRegistry.has(modelType)) {
+      this.renderModelRegistry.delete(modelType);
+      this.renderModelOrder = this.renderModelOrder.filter(t => t !== modelType);
+    }
+  }
+
+  public getRenderMetadataKeys(): RenderModelType[] {
+    return [...this.renderModelOrder];
+  }
+
+  private static readonly VALID_PIN_MODES: PinMode[] = ['INPUT', 'OUTPUT', 'INPUT_PULLUP', 'INPUT_PULLDOWN', 'ANALOG', 'PWM'];
+  private static readonly VALID_PULL_MODES: PullMode[] = ['NONE', 'UP', 'DOWN'];
+
+  private validateHardwareAddress(address: HardwareAddress | undefined, contextStr: string): boolean {
+    if (!address || typeof address !== 'object') {
+      console.warn(`[Runtime Diagnostics] malformed hardware address: ${contextStr} is missing an address object.`);
+      return false;
+    }
+    const stringFields: (keyof HardwareAddress)[] = ['targetId', 'componentId', 'pinId', 'boardId', 'channelId'];
+    let hasIdentifier = false;
+    for (const field of stringFields) {
+      const value = address[field];
+      if (value !== undefined) {
+        if (typeof value !== 'string' || value.length === 0) {
+          console.warn(`[Runtime Diagnostics] malformed hardware address: ${contextStr} has invalid ${field}.`);
+          return false;
+        }
+        hasIdentifier = true;
+      }
+    }
+    if (!hasIdentifier) {
+      console.warn(`[Runtime Diagnostics] malformed hardware address: ${contextStr} must include at least one identifier.`);
+      return false;
+    }
+    return true;
+  }
+
+  private validateHALState(state: RuntimeHALState): boolean {
+    if (!state || typeof state.id !== 'string' || state.id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed HAL state: State is missing a valid id.');
+      return false;
+    }
+    if (!this.validateHardwareAddress(state.address, `HAL state "${state.id}"`)) {
+      return false;
+    }
+    if (!state.signal || typeof state.signal !== 'object') {
+      console.warn(`[Runtime Diagnostics] malformed HAL state: State "${state.id}" is missing signal state.`);
+      return false;
+    }
+    if (typeof state.signal.digitalValue !== 'boolean') {
+      console.warn(`[Runtime Diagnostics] malformed HAL state: State "${state.id}" has invalid digitalValue.`);
+      return false;
+    }
+    if (typeof state.signal.analogValue !== 'number' || !Number.isFinite(state.signal.analogValue)) {
+      console.warn(`[Runtime Diagnostics] malformed HAL state: State "${state.id}" has invalid analogValue.`);
+      return false;
+    }
+    if (typeof state.signal.pwmValue !== 'number' || !Number.isFinite(state.signal.pwmValue)) {
+      console.warn(`[Runtime Diagnostics] malformed HAL state: State "${state.id}" has invalid pwmValue.`);
+      return false;
+    }
+    if (!BaseRuntime.VALID_PIN_MODES.includes(state.signal.mode)) {
+      console.warn(`[Runtime Diagnostics] invalid HAL pin modes: State "${state.id}" has invalid mode "${state.signal.mode}".`);
+      return false;
+    }
+    if (!BaseRuntime.VALID_PULL_MODES.includes(state.signal.pullMode)) {
+      console.warn(`[Runtime Diagnostics] invalid HAL pull modes: State "${state.id}" has invalid pullMode "${state.signal.pullMode}".`);
+      return false;
+    }
+    if (state.metadata !== undefined && (typeof state.metadata !== 'object' || state.metadata === null || Array.isArray(state.metadata))) {
+      console.warn(`[Runtime Diagnostics] malformed HAL state: State "${state.id}" has invalid metadata.`);
+      return false;
+    }
+    return true;
+  }
+
+  public registerHALState(state: RuntimeHALState): void {
+    if (!this.validateHALState(state)) return;
+    if (this.halStateRegistry.has(state.id)) {
+      console.warn(`[Runtime Diagnostics] duplicate HAL state IDs: State ID "${state.id}" already exists.`);
+    }
+    this.halStateRegistry.set(state.id, JSON.parse(JSON.stringify(state)));
+    if (!this.halStateOrder.includes(state.id)) {
+      this.halStateOrder.push(state.id);
+    }
+  }
+
+  public getHALState(id: string): RuntimeHALState | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed HAL state: State ID must be a non-empty string.');
+      return undefined;
+    }
+    const state = this.halStateRegistry.get(id);
+    return state ? JSON.parse(JSON.stringify(state)) : undefined;
+  }
+
+  public getHALStates(): RuntimeHALState[] {
+    return this.halStateOrder
+      .map(id => this.halStateRegistry.get(id))
+      .filter((state): state is RuntimeHALState => !!state)
+      .map(state => JSON.parse(JSON.stringify(state)));
+  }
+
+  public removeHALState(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed HAL state: State ID must be a non-empty string.');
+      return;
+    }
+    this.halStateRegistry.delete(id);
+    this.halStateOrder = this.halStateOrder.filter(existing => existing !== id);
+  }
+
+  public clearHALStates(): void {
+    this.halStateRegistry.clear();
+    this.halStateOrder = [];
+  }
+
   private static readonly VALID_BOARD_TYPES: DevelopmentBoardType[] = [
     'ESP32_DEVKIT_V1', 'ARDUINO_UNO', 'ARDUINO_NANO', 'RASPBERRY_PI_PICO',
   ];
+
+  private static readonly VALID_PIN_CAPABILITIES: PinCapability[] = [
+    'DIGITAL_INPUT', 'DIGITAL_OUTPUT', 'ANALOG_INPUT', 'ANALOG_OUTPUT',
+    'PWM', 'DAC', 'TOUCH', 'I2C', 'SPI', 'UART',
+  ];
+
+  private static legacyPinCapabilities(capabilities: string[]): PinCapability[] {
+    const mapped: PinCapability[] = [];
+    for (const capability of capabilities) {
+      if (capability === 'INPUT') mapped.push('DIGITAL_INPUT');
+      else if (capability === 'OUTPUT') mapped.push('DIGITAL_OUTPUT');
+      else if (capability === 'ANALOG' || capability === 'ADC') mapped.push('ANALOG_INPUT');
+      else if (BaseRuntime.VALID_PIN_CAPABILITIES.includes(capability as PinCapability)) mapped.push(capability as PinCapability);
+    }
+    return Array.from(new Set(mapped));
+  }
+
+  private static boardPin(id: string, label: string, capabilities: string[], typedCapabilities = BaseRuntime.legacyPinCapabilities(capabilities)): BoardPinDefinition {
+    return {
+      id,
+      label,
+      capabilities,
+      capabilityMetadata: {
+        pinId: id,
+        capabilities: typedCapabilities,
+        supportsInput: typedCapabilities.includes('DIGITAL_INPUT') || typedCapabilities.includes('ANALOG_INPUT'),
+        supportsOutput: typedCapabilities.includes('DIGITAL_OUTPUT') || typedCapabilities.includes('ANALOG_OUTPUT') || typedCapabilities.includes('PWM') || typedCapabilities.includes('DAC'),
+      },
+    };
+  }
 
   private static readonly DEFAULT_BOARD_DEFINITIONS: DevelopmentBoardDefinition[] = [
     {
       id: 'esp32_devkit_v1',
       type: 'ESP32_DEVKIT_V1',
       name: 'ESP32 DevKit V1',
-      pins: Array.from({ length: 40 }, (_, i) => ({
-        id: `esp32_gpio${i}`,
-        label: `GPIO${i}`,
-        capabilities: i === 0 ? ['INPUT', 'OUTPUT', 'PULL_UP'] :
-                      i === 1 ? ['INPUT', 'OUTPUT'] :
-                      i === 2 ? ['INPUT', 'OUTPUT', 'TOUCH'] :
-                      i === 3 ? ['INPUT', 'OUTPUT', 'TOUCH'] :
-                      i === 4 ? ['INPUT', 'OUTPUT', 'TOUCH'] :
-                      i === 5 ? ['INPUT', 'OUTPUT', 'TOUCH'] :
-                      i >= 12 && i <= 19 ? ['INPUT', 'OUTPUT', 'TOUCH'] :
-                      i >= 21 && i <= 23 ? ['INPUT', 'OUTPUT', 'TOUCH'] :
-                      i >= 25 && i <= 27 ? ['INPUT', 'OUTPUT', 'TOUCH'] :
-                      i >= 32 && i <= 39 ? ['INPUT', 'OUTPUT', 'TOUCH'] :
-                      ['INPUT', 'OUTPUT'],
-      })),
+      pins: Array.from({ length: 40 }, (_, i) => BaseRuntime.boardPin(
+        `esp32_gpio${i}`,
+        `GPIO${i}`,
+        i === 0 ? ['INPUT', 'OUTPUT', 'PULL_UP'] :
+        i === 1 ? ['INPUT', 'OUTPUT'] :
+        i === 2 ? ['INPUT', 'OUTPUT', 'TOUCH'] :
+        i === 3 ? ['INPUT', 'OUTPUT', 'TOUCH'] :
+        i === 4 ? ['INPUT', 'OUTPUT', 'TOUCH'] :
+        i === 5 ? ['INPUT', 'OUTPUT', 'TOUCH'] :
+        i >= 12 && i <= 19 ? ['INPUT', 'OUTPUT', 'TOUCH'] :
+        i >= 21 && i <= 23 ? ['INPUT', 'OUTPUT', 'TOUCH'] :
+        i >= 25 && i <= 27 ? ['INPUT', 'OUTPUT', 'TOUCH', 'DAC'] :
+        i >= 32 && i <= 39 ? ['INPUT', 'OUTPUT', 'TOUCH', 'ANALOG'] :
+        ['INPUT', 'OUTPUT'],
+      )),
     },
     {
       id: 'arduino_uno',
       type: 'ARDUINO_UNO',
       name: 'Arduino Uno',
       pins: [
-        ...Array.from({ length: 14 }, (_, i) => ({
-          id: `uno_d${i}`,
-          label: `D${i}`,
-          capabilities: i === 3 || i === 5 || i === 6 || i === 9 || i === 10 || i === 11
-            ? ['INPUT', 'OUTPUT', 'PWM'] : ['INPUT', 'OUTPUT'],
-        })),
-        ...Array.from({ length: 6 }, (_, i) => ({
-          id: `uno_a${i}`,
-          label: `A${i}`,
-          capabilities: ['INPUT', 'ANALOG'],
-        })),
+        ...Array.from({ length: 14 }, (_, i) => BaseRuntime.boardPin(`uno_d${i}`, `D${i}`, i === 3 || i === 5 || i === 6 || i === 9 || i === 10 || i === 11 ? ['INPUT', 'OUTPUT', 'PWM'] : ['INPUT', 'OUTPUT'])),
+        ...Array.from({ length: 6 }, (_, i) => BaseRuntime.boardPin(`uno_a${i}`, `A${i}`, ['INPUT', 'ANALOG'])),
       ],
     },
     {
@@ -298,28 +546,15 @@ export class BaseRuntime implements IRuntime {
       type: 'ARDUINO_NANO',
       name: 'Arduino Nano',
       pins: [
-        ...Array.from({ length: 14 }, (_, i) => ({
-          id: `nano_d${i}`,
-          label: `D${i}`,
-          capabilities: i === 3 || i === 5 || i === 6 || i === 9 || i === 10 || i === 11
-            ? ['INPUT', 'OUTPUT', 'PWM'] : ['INPUT', 'OUTPUT'],
-        })),
-        ...Array.from({ length: 8 }, (_, i) => ({
-          id: `nano_a${i}`,
-          label: `A${i}`,
-          capabilities: ['INPUT', 'ANALOG'],
-        })),
+        ...Array.from({ length: 14 }, (_, i) => BaseRuntime.boardPin(`nano_d${i}`, `D${i}`, i === 3 || i === 5 || i === 6 || i === 9 || i === 10 || i === 11 ? ['INPUT', 'OUTPUT', 'PWM'] : ['INPUT', 'OUTPUT'])),
+        ...Array.from({ length: 8 }, (_, i) => BaseRuntime.boardPin(`nano_a${i}`, `A${i}`, ['INPUT', 'ANALOG'])),
       ],
     },
     {
       id: 'raspberry_pi_pico',
       type: 'RASPBERRY_PI_PICO',
       name: 'Raspberry Pi Pico',
-      pins: Array.from({ length: 29 }, (_, i) => ({
-        id: `pico_gp${i}`,
-        label: `GP${i}`,
-        capabilities: ['INPUT', 'OUTPUT', 'PWM', 'ADC'],
-      })),
+      pins: Array.from({ length: 29 }, (_, i) => BaseRuntime.boardPin(`pico_gp${i}`, `GP${i}`, ['INPUT', 'OUTPUT', 'PWM', 'ADC'])),
     },
   ];
 
@@ -531,6 +766,19 @@ export class BaseRuntime implements IRuntime {
     if (this.componentRegistry.has(component.id)) {
       console.warn(`[Runtime Diagnostics] duplicate component IDs: Component ID "${component.id}" already exists.`);
     }
+
+    let renderMetadata: RenderMetadata | undefined = undefined;
+    if (component.renderMetadata) {
+      renderMetadata = JSON.parse(JSON.stringify(component.renderMetadata));
+    } else {
+      const defaultModelType = BaseRuntime.getRenderModelForComponentType(component.type);
+      const defaultMeta = this.getRenderMetadata(defaultModelType);
+      if (defaultMeta) {
+        renderMetadata = JSON.parse(JSON.stringify(defaultMeta));
+      }
+    }
+    this.validateRenderMetadata(renderMetadata, `Component "${component.id}"`);
+
     const defaults = BaseRuntime.COMPONENT_DEFAULTS[component.type] ?? {};
     const mergedMetadata = { ...defaults, ...(component.metadata ?? {}) };
     const deviceStateDefaults = BaseRuntime.DEVICE_STATE_DEFAULTS[component.type] ?? {};
@@ -542,6 +790,7 @@ export class BaseRuntime implements IRuntime {
       enabled: component.enabled,
       metadata: JSON.parse(JSON.stringify(mergedMetadata)),
       deviceState: JSON.parse(JSON.stringify(mergedDeviceState)),
+      renderMetadata,
     });
   }
 
@@ -970,26 +1219,44 @@ export class BaseRuntime implements IRuntime {
       return;
     }
     const pinLabels = new Set<string>();
+    const pinIds = new Set<string>();
+    const normalizedDefinition: DevelopmentBoardDefinition = JSON.parse(JSON.stringify(definition));
     for (let i = 0; i < definition.pins.length; i++) {
       const pin = definition.pins[i];
       if (!pin || typeof pin.id !== 'string' || !pin.id) {
         console.warn(`[Runtime Diagnostics] malformed board definition: Pin at index ${i} in board "${definition.id}" is missing a valid ID.`);
+        continue;
       }
       if (typeof pin.label !== 'string' || !pin.label) {
         console.warn(`[Runtime Diagnostics] malformed board definition: Pin "${pin?.id}" in board "${definition.id}" is missing a valid label.`);
       }
       if (!Array.isArray(pin.capabilities)) {
         console.warn(`[Runtime Diagnostics] malformed board definition: Pin "${pin?.id}" in board "${definition.id}" has invalid capabilities.`);
+      } else {
+        const legacySet = new Set<string>();
+        for (const capability of pin.capabilities) {
+          if (typeof capability !== 'string' || !capability) {
+            console.warn(`[Runtime Diagnostics] malformed capabilities: Pin "${pin.id}" in board "${definition.id}" has invalid capability entry.`);
+          } else if (legacySet.has(capability)) {
+            console.warn(`[Runtime Diagnostics] duplicate capability entries: Pin "${pin.id}" in board "${definition.id}" repeats capability "${capability}".`);
+          }
+          legacySet.add(capability);
+        }
       }
+      if (pinIds.has(pin.id)) {
+        console.warn(`[Runtime Diagnostics] duplicate pin definitions: Pin ID "${pin.id}" is duplicated in board "${definition.id}".`);
+      }
+      pinIds.add(pin.id);
       if (pinLabels.has(pin.label)) {
         console.warn(`[Runtime Diagnostics] duplicate pin labels: Pin label "${pin.label}" is duplicated in board "${definition.id}".`);
       }
       pinLabels.add(pin.label);
+      normalizedDefinition.pins[i] = this.normalizeBoardPinCapabilities(definition.id, pin);
     }
     if (this.boardDefinitionRegistry.has(definition.id)) {
       console.warn(`[Runtime Diagnostics] duplicate board definitions: Board definition ID "${definition.id}" already exists.`);
     }
-    this.boardDefinitionRegistry.set(definition.id, JSON.parse(JSON.stringify(definition)));
+    this.boardDefinitionRegistry.set(definition.id, normalizedDefinition);
   }
 
   public removeBoardDefinition(id: string): void {
@@ -1007,6 +1274,79 @@ export class BaseRuntime implements IRuntime {
 
   public getBoardDefinitions(): DevelopmentBoardDefinition[] {
     return Array.from(this.boardDefinitionRegistry.values()).map(d => JSON.parse(JSON.stringify(d)));
+  }
+
+  public getBoardPinCapabilities(boardDefinitionId: string, pinId: string): BoardPinCapabilities | undefined {
+    if (typeof boardDefinitionId !== 'string' || !boardDefinitionId) {
+      console.warn('[Runtime Diagnostics] malformed board definition: Board definition ID must be a non-empty string.');
+      return undefined;
+    }
+    if (typeof pinId !== 'string' || !pinId) {
+      console.warn('[Runtime Diagnostics] malformed board definition: Pin ID must be a non-empty string.');
+      return undefined;
+    }
+    const definition = this.boardDefinitionRegistry.get(boardDefinitionId);
+    if (!definition) {
+      console.warn(`[Runtime Diagnostics] missing board definitions: Board definition "${boardDefinitionId}" not found.`);
+      return undefined;
+    }
+    const pin = definition.pins.find(p => p.id === pinId || p.label === pinId);
+    if (!pin) {
+      console.warn(`[Runtime Diagnostics] missing board pins: Pin "${pinId}" not found in board "${boardDefinitionId}".`);
+      return undefined;
+    }
+    const metadata = pin.capabilityMetadata ?? this.normalizeBoardPinCapabilities(boardDefinitionId, pin).capabilityMetadata!;
+    return JSON.parse(JSON.stringify(metadata));
+  }
+
+  public supportsCapability(boardDefinitionId: string, pinId: string, capability: PinCapability): boolean {
+    if (!BaseRuntime.VALID_PIN_CAPABILITIES.includes(capability)) {
+      console.warn(`[Runtime Diagnostics] malformed capabilities: Capability "${capability}" is invalid.`);
+      return false;
+    }
+    const metadata = this.getBoardPinCapabilities(boardDefinitionId, pinId);
+    return metadata ? metadata.capabilities.includes(capability) : false;
+  }
+
+  private normalizeBoardPinCapabilities(boardDefinitionId: string, pin: BoardPinDefinition): BoardPinDefinition {
+    const legacyCapabilities = Array.isArray(pin.capabilities) ? pin.capabilities : [];
+    let typedCapabilities = BaseRuntime.legacyPinCapabilities(legacyCapabilities);
+    const metadata = pin.capabilityMetadata;
+    if (metadata !== undefined) {
+      if (!metadata || typeof metadata !== 'object') {
+        console.warn(`[Runtime Diagnostics] malformed capabilities: Pin "${pin.id}" in board "${boardDefinitionId}" has invalid capability metadata.`);
+      } else {
+        if (metadata.pinId !== pin.id) {
+          console.warn(`[Runtime Diagnostics] malformed capabilities: Capability metadata for pin "${pin.id}" in board "${boardDefinitionId}" has mismatched pinId.`);
+        }
+        if (!Array.isArray(metadata.capabilities)) {
+          console.warn(`[Runtime Diagnostics] malformed capabilities: Pin "${pin.id}" in board "${boardDefinitionId}" has invalid typed capabilities.`);
+        } else {
+          const seen = new Set<PinCapability>();
+          const validated: PinCapability[] = [];
+          for (const capability of metadata.capabilities) {
+            if (!BaseRuntime.VALID_PIN_CAPABILITIES.includes(capability)) {
+              console.warn(`[Runtime Diagnostics] malformed capabilities: Pin "${pin.id}" in board "${boardDefinitionId}" has invalid typed capability "${capability}".`);
+              continue;
+            }
+            if (seen.has(capability)) {
+              console.warn(`[Runtime Diagnostics] duplicate capability entries: Pin "${pin.id}" in board "${boardDefinitionId}" repeats typed capability "${capability}".`);
+              continue;
+            }
+            seen.add(capability);
+            validated.push(capability);
+          }
+          if (validated.length > 0) typedCapabilities = validated;
+        }
+        if (typeof metadata.supportsInput !== 'boolean') {
+          console.warn(`[Runtime Diagnostics] malformed capabilities: Pin "${pin.id}" in board "${boardDefinitionId}" has invalid supportsInput.`);
+        }
+        if (typeof metadata.supportsOutput !== 'boolean') {
+          console.warn(`[Runtime Diagnostics] malformed capabilities: Pin "${pin.id}" in board "${boardDefinitionId}" has invalid supportsOutput.`);
+        }
+      }
+    }
+    return BaseRuntime.boardPin(pin.id, pin.label, legacyCapabilities, typedCapabilities);
   }
 
   public registerDefaultBoardDefinitions(): void {
@@ -1041,6 +1381,25 @@ export class BaseRuntime implements IRuntime {
     if (this.workspaceBoardRegistry.has(board.id)) {
       console.warn(`[Runtime Diagnostics] duplicate workspace boards: Board ID "${board.id}" already exists.`);
     }
+
+    let renderMetadata: RenderMetadata | undefined = undefined;
+    if (board.renderMetadata) {
+      renderMetadata = JSON.parse(JSON.stringify(board.renderMetadata));
+    } else {
+      let defaultModelType: RenderModelType = 'BREADBOARD';
+      if (board.boardDefinitionId) {
+        const def = this.getBoardDefinition(board.boardDefinitionId);
+        if (def) {
+          defaultModelType = BaseRuntime.getRenderModelForBoardType(def.type);
+        }
+      }
+      const defaultMeta = this.getRenderMetadata(defaultModelType);
+      if (defaultMeta) {
+        renderMetadata = JSON.parse(JSON.stringify(defaultMeta));
+      }
+    }
+    this.validateRenderMetadata(renderMetadata, `Board "${board.id}"`);
+
     this.workspaceBoardRegistry.set(board.id, {
       id: board.id,
       name: board.name,
@@ -1048,6 +1407,7 @@ export class BaseRuntime implements IRuntime {
       transform: { ...board.transform },
       zIndex: board.zIndex,
       groupId: board.groupId,
+      renderMetadata,
     });
   }
 
@@ -1061,13 +1421,18 @@ export class BaseRuntime implements IRuntime {
 
   public getWorkspaceBoard(id: string): WorkspaceBoard | undefined {
     const board = this.workspaceBoardRegistry.get(id);
-    return board ? { ...board, transform: { ...board.transform } } : undefined;
+    return board ? {
+      ...board,
+      transform: { ...board.transform },
+      renderMetadata: board.renderMetadata ? { ...board.renderMetadata } : undefined
+    } : undefined;
   }
 
   public getWorkspaceBoards(): WorkspaceBoard[] {
     return Array.from(this.workspaceBoardRegistry.values()).map(b => ({
       ...b,
       transform: { ...b.transform },
+      renderMetadata: b.renderMetadata ? { ...b.renderMetadata } : undefined
     }));
   }
 
@@ -1210,6 +1575,12 @@ export class BaseRuntime implements IRuntime {
   // ─── Phase 7R: Signal Propagation ────────────────────────────────
 
   public propagateSignals(): void {
+    const pinStates = new Map<string, boolean>();
+    for (const [pinId, pin] of this.pinRegistry) {
+      pinStates.set(pinId, pin.signalState);
+    }
+
+    const nextPinStates = new Map(pinStates);
     for (const connection of this.connectionRegistry.values()) {
       if (!connection.enabled) continue;
       const sourcePin = this.pinRegistry.get(connection.sourcePinId);
@@ -1217,10 +1588,16 @@ export class BaseRuntime implements IRuntime {
       if (!sourcePin || !targetPin) continue;
       if (sourcePin.direction === 'OUTPUT' || sourcePin.direction === 'BIDIRECTIONAL') {
         if (targetPin.direction === 'INPUT' || targetPin.direction === 'BIDIRECTIONAL') {
-          targetPin.signalState = sourcePin.signalState;
+          nextPinStates.set(targetPin.id, pinStates.get(sourcePin.id) ?? sourcePin.signalState);
         }
       }
     }
+
+    for (const [pinId, signalState] of nextPinStates) {
+      const pin = this.pinRegistry.get(pinId);
+      if (pin) pin.signalState = signalState;
+    }
+
     for (const target of this.targets.values()) {
       if (target.components) {
         for (const component of target.components) {
@@ -2068,6 +2445,14 @@ export class BaseRuntime implements IRuntime {
 
   constructor(hardwareAdapter?: IHardwareAdapter) {
     this.interpreter = new MinimalASTInterpreter(hardwareAdapter);
+    this.simulatedHardwareBackend = new SimulatedHardwareBackend({
+      findComponentById: (componentId: string) => this.findComponentById(componentId),
+      getRegistryComponent: (componentId: string) => this.componentRegistry.get(componentId),
+      getPin: (pinId: string) => this.pinRegistry.get(pinId),
+      setServoAngle: (componentId: string, angle: number) => this.setServoAngle(componentId, angle),
+      setLCDText: (componentId: string, text: string) => this.setLCDText(componentId, text),
+      setOLEDText: (componentId: string, text: string) => this.setOLEDText(componentId, text),
+    });
 
     // Register deterministic stop callbacks
     this.interpreter.onStopAll = () => {
@@ -2256,156 +2641,44 @@ export class BaseRuntime implements IRuntime {
 
     // Phase 7X: Electronics block callbacks
     this.interpreter.onSetPinState = (componentId: string, pinId: string, high: boolean) => {
-      if (typeof componentId !== 'string' || !componentId) {
-        console.warn('[Runtime Diagnostics] missing component IDs: Component ID must be a non-empty string.');
-        return;
-      }
-      if (typeof pinId !== 'string' || !pinId) {
-        console.warn('[Runtime Diagnostics] missing pins: Pin ID must be a non-empty string.');
-        return;
-      }
-      const component = this.findComponentById(componentId);
-      if (!component) {
-        console.warn(`[Runtime Diagnostics] missing component references: Component "${componentId}" not found.`);
-        return;
-      }
-      if (component.pins) {
-        const pin = component.pins.find(p => p.id === pinId || p.name === pinId);
-        if (pin) {
-          pin.signalState = high;
-          const globalPin = this.pinRegistry.get(pin.id);
-          if (globalPin) {
-            globalPin.signalState = high;
-          }
-        } else {
-          console.warn(`[Runtime Diagnostics] missing pins: Pin "${pinId}" not found in component "${componentId}".`);
-        }
-      } else {
-        console.warn(`[Runtime Diagnostics] missing pins: Component "${componentId}" has no pins.`);
-      }
-      const regComp = this.componentRegistry.get(componentId);
-      if (regComp) {
-        if (!regComp.deviceState) {
-          const defaults = BaseRuntime.DEVICE_STATE_DEFAULTS[regComp.type as ComponentType] ?? {};
-          regComp.deviceState = JSON.parse(JSON.stringify(defaults));
-        }
-        if (regComp.type === 'LED') {
-          regComp.deviceState.isOn = high;
-        } else if (regComp.type === 'BUZZER') {
-          regComp.deviceState.active = high;
-        }
-      }
+      this.simulatedHardwareBackend.digitalWrite({ componentId, pinId }, high);
     };
 
     this.interpreter.onGetPinState = (componentId: string, pinId: string): boolean => {
-      if (typeof componentId !== 'string' || !componentId) return false;
-      if (typeof pinId !== 'string' || !pinId) return false;
-      const component = this.findComponentById(componentId);
-      if (!component) return false;
-      if (component.pins) {
-        const pin = component.pins.find(p => p.id === pinId || p.name === pinId);
-        if (pin) return pin.signalState;
-      }
-      return false;
+      return this.simulatedHardwareBackend.digitalRead({ componentId, pinId });
     };
 
     this.interpreter.onSetServoAngle = (componentId: string, angle: number) => {
-      this.setServoAngle(componentId, angle);
+      this.simulatedHardwareBackend.servoWrite({ componentId }, angle);
     };
 
     this.interpreter.onGetUltrasonicDistance = (componentId: string): number => {
-      if (typeof componentId !== 'string' || !componentId) return 0;
-      const component = this.findComponentById(componentId);
-      if (!component) {
-        console.warn(`[Runtime Diagnostics] missing component references: Component "${componentId}" not found.`);
-        return 0;
-      }
-      if (component.type !== 'ULTRASONIC_SENSOR') {
-        console.warn(`[Runtime Diagnostics] invalid device state transitions: Component "${componentId}" is not an ULTRASONIC_SENSOR.`);
-        return 0;
-      }
-      if (component.deviceState && typeof (component.deviceState as any).distanceCm === 'number') {
-        return (component.deviceState as any).distanceCm;
-      }
-      return 0;
+      return Number(this.simulatedHardwareBackend.readSensor({ componentId }, 'distanceCm')) || 0;
     };
 
     this.interpreter.onGetTemperature = (componentId: string): number => {
-      if (typeof componentId !== 'string' || !componentId) return 0;
-      const component = this.findComponentById(componentId);
-      if (!component) {
-        console.warn(`[Runtime Diagnostics] missing component references: Component "${componentId}" not found.`);
-        return 0;
-      }
-      if (component.type !== 'DHT_SENSOR') {
-        console.warn(`[Runtime Diagnostics] invalid device state transitions: Component "${componentId}" is not a DHT_SENSOR.`);
-        return 0;
-      }
-      if (component.deviceState && typeof (component.deviceState as any).temperature === 'number') {
-        return (component.deviceState as any).temperature;
-      }
-      return 0;
+      return Number(this.simulatedHardwareBackend.readSensor({ componentId }, 'temperature')) || 0;
     };
 
     this.interpreter.onGetHumidity = (componentId: string): number => {
-      if (typeof componentId !== 'string' || !componentId) return 0;
-      const component = this.findComponentById(componentId);
-      if (!component) {
-        console.warn(`[Runtime Diagnostics] missing component references: Component "${componentId}" not found.`);
-        return 0;
-      }
-      if (component.type !== 'DHT_SENSOR') {
-        console.warn(`[Runtime Diagnostics] invalid device state transitions: Component "${componentId}" is not a DHT_SENSOR.`);
-        return 0;
-      }
-      if (component.deviceState && typeof (component.deviceState as any).humidity === 'number') {
-        return (component.deviceState as any).humidity;
-      }
-      return 0;
+      return Number(this.simulatedHardwareBackend.readSensor({ componentId }, 'humidity')) || 0;
     };
 
     this.interpreter.onSetLCDText = (componentId: string, text: string) => {
-      this.setLCDText(componentId, text);
+      this.simulatedHardwareBackend.writeDisplay({ componentId }, { text });
     };
 
     this.interpreter.onSetOLEDText = (componentId: string, text: string) => {
-      this.setOLEDText(componentId, text);
+      this.simulatedHardwareBackend.writeDisplay({ componentId }, { text });
     };
 
     this.interpreter.onSetBuzzerState = (componentId: string, active: boolean) => {
-      if (typeof componentId !== 'string' || !componentId) {
-        console.warn('[Runtime Diagnostics] missing component IDs: Component ID must be a non-empty string.');
-        return;
-      }
-      const component = this.findComponentById(componentId);
-      if (!component) {
-        console.warn(`[Runtime Diagnostics] missing component references: Component "${componentId}" not found.`);
-        return;
-      }
-      if (component.type !== 'BUZZER') {
-        console.warn(`[Runtime Diagnostics] invalid device state transitions: Component "${componentId}" is not a BUZZER.`);
-        return;
-      }
-      if (!component.deviceState) {
-        component.deviceState = { active: false };
-      }
-      (component.deviceState as any).active = !!active;
-      if (component.pins) {
-        const inputPin = component.pins.find(p => p.name === 'INPUT' && p.direction === 'INPUT');
-        if (inputPin) {
-          inputPin.signalState = !!active;
-          const globalPin = this.pinRegistry.get(inputPin.id);
-          if (globalPin) {
-            globalPin.signalState = !!active;
-          }
-        }
-      }
-      const regComp = this.componentRegistry.get(componentId);
-      if (regComp) {
-        if (!regComp.deviceState) regComp.deviceState = { active: false };
-        (regComp.deviceState as any).active = !!active;
-      }
+      this.simulatedHardwareBackend.setBuzzerState(componentId, active);
     };
+  }
+
+  public getHardwareBackend(): SimulatedHardwareBackend {
+    return this.simulatedHardwareBackend;
   }
 
   /**
@@ -2494,6 +2767,16 @@ export class BaseRuntime implements IRuntime {
     this.boardDefinitionRegistry.clear();
     this.workspaceBoardRegistry.clear();
     this.boardCounter = 0;
+
+    // Reset Phase 7Z Render Model state and register defaults
+    this.renderModelRegistry.clear();
+    this.renderModelOrder = [];
+    for (const type of Object.keys(BaseRuntime.DEFAULT_RENDER_METADATA) as RenderModelType[]) {
+      this.registerRenderMetadata(BaseRuntime.DEFAULT_RENDER_METADATA[type]);
+    }
+
+    // Reset Phase 8A.1 HAL state registry
+    this.clearHALStates();
   }
 
   public start(): void {
@@ -2640,9 +2923,17 @@ export class BaseRuntime implements IRuntime {
     this.workspaceBoardRegistry.clear();
     this.boardCounter = 0;
 
+    // Reset Phase 7Z Render Model state and register defaults
+    this.renderModelRegistry.clear();
+    this.renderModelOrder = [];
+    for (const type of Object.keys(BaseRuntime.DEFAULT_RENDER_METADATA) as RenderModelType[]) {
+      this.registerRenderMetadata(BaseRuntime.DEFAULT_RENDER_METADATA[type]);
+    }
+
     // Clean up component metadata from remaining targets
     for (const target of this.targets.values()) {
       delete target.components;
+      delete target.renderMetadata;
     }
 
     // Clean up pin metadata from remaining targets
@@ -2876,6 +3167,9 @@ export class BaseRuntime implements IRuntime {
     // Phase 4: Centralized sweep cleanup
     this.activeThreads = this.activeThreads.filter(t => t.status !== 'DONE' && !t.isKilled);
 
+    // Phase 7Y: Formal GPIO propagation phase after script execution and before device derivation.
+    this.propagateSignals();
+
     // Phase 7S: Update virtual device states after signal propagation
     this.updateDeviceStates();
 
@@ -2949,6 +3243,19 @@ export class BaseRuntime implements IRuntime {
         if (!list.includes(target.id)) {
           list.push(target.id);
           this.clonesByParent.set(target.parentTargetId, list);
+        }
+      }
+
+      if (target.isClone && target.components) {
+        for (const component of target.components) {
+          this.registerComponent(component);
+          if (component.pins) {
+            for (const pin of component.pins) {
+              if (!this.pinRegistry.has(pin.id)) {
+                this.registerPin({ ...pin });
+              }
+            }
+          }
         }
       }
 
@@ -3238,7 +3545,8 @@ export class BaseRuntime implements IRuntime {
           height: w.height,
           mode: w.mode,
           value: Array.isArray(w.value) ? JSON.parse(JSON.stringify(w.value)) : []
-        }))
+        })),
+        renderMetadata: target.renderMetadata ? { ...target.renderMetadata } : undefined,
       });
     }
 
@@ -3308,6 +3616,10 @@ export class BaseRuntime implements IRuntime {
     if (stageSnap) {
       stageSnap.camera = { ...this.cameraState };
       stageSnap.viewport = { ...this.viewportState };
+      // Phase 8A.1: Attach passive HAL state metadata
+      if (this.halStateRegistry.size > 0) {
+        stageSnap.halState = this.getHALStates();
+      }
       // Phase 7R: Attach connection metadata to stage snapshot entry
       if (this.connectionRegistry.size > 0) {
         stageSnap.connections = this.getConnections();
@@ -3362,6 +3674,7 @@ export class BaseRuntime implements IRuntime {
         isStage: target.isStage,
         currentCostumeIndex: target.currentCostumeIndex,
         volume: target.volume,
+        renderMetadata: target.renderMetadata ? JSON.parse(JSON.stringify(target.renderMetadata)) : undefined,
       };
 
       if (sprite) {
@@ -3458,6 +3771,11 @@ export class BaseRuntime implements IRuntime {
       }
       if (isStage && this.workspaceBoardRegistry.size > 0) {
         serializedTarget.workspaceBoards = this.getWorkspaceBoards();
+      }
+
+      // Phase 8A.1: Serialize passive HAL state registry
+      if (isStage && this.halStateRegistry.size > 0) {
+        serializedTarget.halState = this.getHALStates();
       }
 
       const targetWatchers = Array.from(this.variableWatchers.values())
@@ -3675,6 +3993,7 @@ export class BaseRuntime implements IRuntime {
           tempo: serializedTarget.tempo ?? 60,
           videoState: serializedTarget.videoState ?? 'off',
           backdrops: project.assets?.backdrops ? project.assets.backdrops.map(b => ({ ...b })) : [],
+          renderMetadata: serializedTarget.renderMetadata ? { ...serializedTarget.renderMetadata } : undefined,
         };
         if (project.stage && project.stage.stageTargetId === serializedTarget.id) {
           stage.currentBackdropIndex = project.stage.currentBackdropIndex ?? 0;
@@ -3706,6 +4025,7 @@ export class BaseRuntime implements IRuntime {
           collisionBounds: serializedTarget.collisionBounds ? { ...serializedTarget.collisionBounds } : undefined,
           constraints: serializedTarget.constraints ? { ...serializedTarget.constraints } : undefined,
           components: serializedTarget.components ? JSON.parse(JSON.stringify(serializedTarget.components)) : undefined,
+          renderMetadata: serializedTarget.renderMetadata ? { ...serializedTarget.renderMetadata } : undefined,
         };
         this.addTarget(sprite);
       }
@@ -3806,6 +4126,12 @@ export class BaseRuntime implements IRuntime {
             ...board,
             transform: board.transform ? { ...board.transform } : { x: 0, y: 0, rotation: 0, scale: 1 },
           });
+        }
+      }
+      // Phase 8A.1: Restore passive HAL state from stage target
+      if (Array.isArray(stageTarget.halState)) {
+        for (const halState of stageTarget.halState) {
+          this.registerHALState(JSON.parse(JSON.stringify(halState)));
         }
       }
     }
@@ -3951,9 +4277,13 @@ export class BaseRuntime implements IRuntime {
       }
     }
 
-    // Phase 7R: Spawn clone-isolated pins for cloned components
+    // Phase 7Y: Runtime component IDs are global. Clone-owned components are rewritten
+    // to deterministic clone-scoped IDs so component lookup remains unambiguous.
     if (cloneTarget.components) {
       for (const component of cloneTarget.components) {
+        const sourceComponentId = component.id;
+        component.id = `${sourceComponentId}_clone_${cloneId}`;
+        this.registerComponent(component);
         if (component.pins) {
           for (const pin of component.pins) {
             const clonePinId = `${pin.id}_clone_${cloneId}`;
@@ -4025,6 +4355,11 @@ export class BaseRuntime implements IRuntime {
    */
   public getTargetById(targetId: TargetId): TargetState | undefined {
     return this.targets.get(targetId);
+  }
+
+  public getTargetSnapshotById(targetId: TargetId): TargetState | undefined {
+    const target = this.targets.get(targetId);
+    return target ? JSON.parse(JSON.stringify(target)) : undefined;
   }
 
   public getTransformHierarchy(): TransformHierarchyEntry[] {

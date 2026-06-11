@@ -1,5 +1,5 @@
 import { Application, Container, Graphics, Text } from 'pixi.js';
-import { StageSyncState, PenState, PenCommand, VariableWatcher, ListWatcher, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, RuntimeAssetState, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, RuntimeComponent, RuntimeConnection, WorkspaceComponentLayout, WireLayout, DevelopmentBoardDefinition, WorkspaceBoard } from '../types';
+import { StageSyncState, PenState, PenCommand, VariableWatcher, ListWatcher, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, RuntimeAssetState, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, RuntimeComponent, RuntimeConnection, WorkspaceComponentLayout, WireLayout, DevelopmentBoardDefinition, WorkspaceBoard, RenderMetadata } from '../types';
 import { IRendererAdapter, IRenderTarget } from './renderer-adapter';
 
 /**
@@ -219,7 +219,12 @@ export class PixiRendererAdapter implements IRendererAdapter {
         target.workspaceLayouts = snap.workspaceLayouts ? snap.workspaceLayouts.map(l => ({ ...l, transform: { ...l.transform } })) : undefined;
         target.wireLayouts = snap.wireLayouts ? snap.wireLayouts.map(wl => ({ ...wl, points: wl.points.map(p => ({ ...p })) })) : undefined;
         target.boardDefinitions = snap.boardDefinitions ? JSON.parse(JSON.stringify(snap.boardDefinitions)) : undefined;
-        target.workspaceBoards = snap.workspaceBoards ? snap.workspaceBoards.map(b => ({ ...b, transform: { ...b.transform } })) : undefined;
+        target.workspaceBoards = snap.workspaceBoards ? snap.workspaceBoards.map(b => ({
+          ...b,
+          transform: { ...b.transform },
+          renderMetadata: b.renderMetadata ? { ...b.renderMetadata } : undefined
+        })) : undefined;
+        target.renderMetadata = snap.renderMetadata ? { ...snap.renderMetadata } : undefined;
       } else {
         target = {
           id: snap.targetId,
@@ -264,7 +269,12 @@ export class PixiRendererAdapter implements IRendererAdapter {
           workspaceLayouts: snap.workspaceLayouts ? snap.workspaceLayouts.map(l => ({ ...l, transform: { ...l.transform } })) : undefined,
           wireLayouts: snap.wireLayouts ? snap.wireLayouts.map(wl => ({ ...wl, points: wl.points.map(p => ({ ...p })) })) : undefined,
           boardDefinitions: snap.boardDefinitions ? JSON.parse(JSON.stringify(snap.boardDefinitions)) : undefined,
-          workspaceBoards: snap.workspaceBoards ? snap.workspaceBoards.map(b => ({ ...b, transform: { ...b.transform } })) : undefined,
+          workspaceBoards: snap.workspaceBoards ? snap.workspaceBoards.map(b => ({
+            ...b,
+            transform: { ...b.transform },
+            renderMetadata: b.renderMetadata ? { ...b.renderMetadata } : undefined
+          })) : undefined,
+          renderMetadata: snap.renderMetadata ? { ...snap.renderMetadata } : undefined,
         };
         this.targets.set(snap.targetId, target);
       }
