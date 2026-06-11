@@ -434,6 +434,9 @@ export interface StageSyncState {
 
   // Phase 8D: ESP32 instruction metadata synchronization
   esp32Instructions?: ESP32InstructionMetadata[];
+
+  // Phase 8E: ESP32 GPIO execution result synchronization
+  esp32GPIOExecutionResults?: ESP32GPIOExecutionResult[];
 }
 
 /**
@@ -605,6 +608,9 @@ export interface SerializedTarget {
 
   // Phase 8D: ESP32 instruction metadata serialization
   esp32Instructions?: ESP32InstructionMetadata[];
+
+  // Phase 8E: ESP32 GPIO execution result serialization
+  esp32GPIOExecutionResults?: ESP32GPIOExecutionResult[];
 }
 
 export interface SerializedAssetManifest {
@@ -865,6 +871,9 @@ export interface ESP32ExecutionContext {
   instructionCount?: number;
   instructionExecutionState?: ESP32InstructionExecutionState;
   diagnostics?: ESP32InstructionDiagnostics;
+  executedInstructionCount?: number;
+  lastExecutedInstructionId?: string;
+  executionResult?: ESP32GPIOExecutionResult;
   metadata: Record<string, unknown>;
 }
 
@@ -904,6 +913,25 @@ export interface ESP32InstructionMetadata {
   executionState: ESP32InstructionExecutionState;
   address: HardwareAddress;
   operands: Record<string, unknown>;
+  diagnostics: ESP32InstructionDiagnostics;
+  metadata: Record<string, unknown>;
+}
+
+// ─── Phase 8E: ESP32 GPIO Execution Result Metadata ──────────────
+
+export type ESP32GPIOExecutionStatus = 'SKIPPED' | 'COMPLETED' | 'FAILED';
+
+export interface ESP32GPIOExecutionResult {
+  resultId: string;
+  runtimeId: string;
+  instructionId: string;
+  instructionType: ESP32InstructionType;
+  status: ESP32GPIOExecutionStatus;
+  gpio?: number;
+  pinId?: string;
+  mode?: ESP32PinMode;
+  digitalValue?: boolean;
+  readValue?: boolean;
   diagnostics: ESP32InstructionDiagnostics;
   metadata: Record<string, unknown>;
 }

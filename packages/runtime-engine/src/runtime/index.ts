@@ -1,5 +1,5 @@
 import { IRuntime } from '../core';
-import { TargetId, TargetState, ASTScript, Thread, SpriteState, StageState, PendingBroadcast, BroadcastCompletionToken, ListenerEntry, BubbleState, StageSyncState, CostumeAsset, SoundAsset, BackdropAsset, ActiveSoundTrigger, SoundChannelState, PenCommand, PenState, VariableWatcher, WatcherMode, ListWatcher, ListWatcherMode, GlideState, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, SerializedProject, SerializedStage, SerializedTarget, SerializedAssetManifest, SerializedProjectMetadata, VariableState, ListState, RuntimeAssetState, AssetLoadStatus, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, ComponentType, RuntimeComponent, PinDirection, RuntimePin, RuntimeConnection, DeviceState, WorkspaceTransform, WorkspaceComponentLayout, WirePoint, WireLayout, DevelopmentBoardType, BoardPinDefinition, BoardPinCapabilities, DevelopmentBoardDefinition, WorkspaceBoard, RenderModelType, RenderMetadata, RuntimeHALState, HardwareAddress, PinMode, PullMode, PinCapability, ProtocolState, ProtocolType, PWMChannelState, I2CBusState, SPIBusState, UARTPortState, HardwareBackendMetadata, ExecutionCommand, ExecutionCommandLifecycleState, ExecutionCommandType, ESP32RuntimeMetadata, ESP32ExecutionState, ESP32PinCapability, ESP32PinMode, ESP32InstructionMetadata, ESP32InstructionExecutionState, ESP32InstructionType } from '../types';
+import { TargetId, TargetState, ASTScript, Thread, SpriteState, StageState, PendingBroadcast, BroadcastCompletionToken, ListenerEntry, BubbleState, StageSyncState, CostumeAsset, SoundAsset, BackdropAsset, ActiveSoundTrigger, SoundChannelState, PenCommand, PenState, VariableWatcher, WatcherMode, ListWatcher, ListWatcherMode, GlideState, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, SerializedProject, SerializedStage, SerializedTarget, SerializedAssetManifest, SerializedProjectMetadata, VariableState, ListState, RuntimeAssetState, AssetLoadStatus, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, ComponentType, RuntimeComponent, PinDirection, RuntimePin, RuntimeConnection, DeviceState, WorkspaceTransform, WorkspaceComponentLayout, WirePoint, WireLayout, DevelopmentBoardType, BoardPinDefinition, BoardPinCapabilities, DevelopmentBoardDefinition, WorkspaceBoard, RenderModelType, RenderMetadata, RuntimeHALState, HardwareAddress, PinMode, PullMode, PinCapability, ProtocolState, ProtocolType, PWMChannelState, I2CBusState, SPIBusState, UARTPortState, HardwareBackendMetadata, ExecutionCommand, ExecutionCommandLifecycleState, ExecutionCommandType, ESP32RuntimeMetadata, ESP32ExecutionState, ESP32PinCapability, ESP32PinMode, ESP32InstructionMetadata, ESP32InstructionExecutionState, ESP32InstructionType, ESP32GPIOExecutionResult, ESP32GPIOExecutionStatus } from '../types';
 import { MinimalASTInterpreter, IHardwareAdapter } from '../ast/interpreter';
 import { SimulatedHardwareBackend } from '../hal';
 import { createThread, TaskQueue, PendingTask, resetThreadCounter } from './execution-context';
@@ -270,6 +270,8 @@ export class BaseRuntime implements IRuntime {
   private esp32RuntimeOrder: string[] = [];
   private esp32InstructionRegistry = new Map<string, ESP32InstructionMetadata>();
   private esp32InstructionOrder: string[] = [];
+  private esp32GPIOExecutionResultRegistry = new Map<string, ESP32GPIOExecutionResult>();
+  private esp32GPIOExecutionResultOrder: string[] = [];
 
   private static readonly DEFAULT_RENDER_METADATA: Record<RenderModelType, RenderMetadata> = {
     'LED': { modelType: 'LED', width: 20, height: 20, anchorX: 0.5, anchorY: 0.5, rotation: 0, visible: true },
@@ -1041,6 +1043,186 @@ export class BaseRuntime implements IRuntime {
     instruction.executionState = state;
     const runtime = this.esp32RuntimeRegistry.get(instruction.runtimeId);
     if (runtime) runtime.executionContext.instructionExecutionState = state;
+  }
+
+  private static readonly VALID_ESP32_GPIO_EXECUTION_STATUSES: ESP32GPIOExecutionStatus[] = ['SKIPPED', 'COMPLETED', 'FAILED'];
+
+  private validateGPIOPinNumber(gpio: unknown, instructionId: string): gpio is number {
+    if (typeof gpio !== 'number' || !Number.isInteger(gpio) || gpio < 0 || gpio > 39) {
+      console.warn(`[Runtime Diagnostics] invalid ESP32 GPIO execution pin numbers: Instruction "${instructionId}" has invalid GPIO "${gpio}".`);
+      return false;
+    }
+    return true;
+  }
+
+  private mapESP32PinMode(mode: ESP32PinMode): PinMode {
+    return mode;
+  }
+
+  private createESP32GPIOExecutionResult(instruction: ESP32InstructionMetadata, status: ESP32GPIOExecutionStatus, overrides: Partial<ESP32GPIOExecutionResult> = {}): ESP32GPIOExecutionResult {
+    return {
+      resultId: `${instruction.instructionId}:${this.esp32GPIOExecutionResultOrder.length}`,
+      runtimeId: instruction.runtimeId,
+      instructionId: instruction.instructionId,
+      instructionType: instruction.instructionType,
+      status,
+      diagnostics: JSON.parse(JSON.stringify(instruction.diagnostics)),
+      metadata: {},
+      ...overrides,
+    };
+  }
+
+  private validateESP32GPIOExecutionResult(result: ESP32GPIOExecutionResult): boolean {
+    if (!result || typeof result.resultId !== 'string' || result.resultId.length === 0 || typeof result.runtimeId !== 'string' || result.runtimeId.length === 0 || typeof result.instructionId !== 'string' || result.instructionId.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed ESP32 GPIO execution result: Result is missing required identifiers.');
+      return false;
+    }
+    if (!BaseRuntime.VALID_ESP32_INSTRUCTION_TYPES.includes(result.instructionType)) {
+      console.warn(`[Runtime Diagnostics] malformed ESP32 GPIO execution result: Result "${result.resultId}" has invalid instruction type.`);
+      return false;
+    }
+    if (!BaseRuntime.VALID_ESP32_GPIO_EXECUTION_STATUSES.includes(result.status)) {
+      console.warn(`[Runtime Diagnostics] malformed ESP32 GPIO execution result: Result "${result.resultId}" has invalid status.`);
+      return false;
+    }
+    if (result.gpio !== undefined && !this.validateGPIOPinNumber(result.gpio, result.instructionId)) return false;
+    if (result.pinId !== undefined && typeof result.pinId !== 'string') {
+      console.warn(`[Runtime Diagnostics] malformed ESP32 GPIO execution result: Result "${result.resultId}" has invalid pinId.`);
+      return false;
+    }
+    if (result.mode !== undefined && !BaseRuntime.VALID_ESP32_PIN_MODES.includes(result.mode)) {
+      console.warn(`[Runtime Diagnostics] unsupported ESP32 GPIO pin modes: Result "${result.resultId}" has invalid mode "${result.mode}".`);
+      return false;
+    }
+    if (result.digitalValue !== undefined && typeof result.digitalValue !== 'boolean') {
+      console.warn(`[Runtime Diagnostics] malformed ESP32 GPIO execution result: Result "${result.resultId}" has invalid digitalValue.`);
+      return false;
+    }
+    if (result.readValue !== undefined && typeof result.readValue !== 'boolean') {
+      console.warn(`[Runtime Diagnostics] malformed ESP32 GPIO execution result: Result "${result.resultId}" has invalid readValue.`);
+      return false;
+    }
+    if (!this.validatePlainObject(result.diagnostics) || !Array.isArray(result.diagnostics.warnings) || !Array.isArray(result.diagnostics.errors) || !this.validatePlainObject(result.diagnostics.metadata) || !this.validatePlainObject(result.metadata)) {
+      console.warn(`[Runtime Diagnostics] malformed ESP32 GPIO execution result: Result "${result.resultId}" has invalid diagnostics or metadata.`);
+      return false;
+    }
+    return true;
+  }
+
+  public registerESP32GPIOExecutionResult(result: ESP32GPIOExecutionResult): void {
+    if (!this.validateESP32GPIOExecutionResult(result)) return;
+    if (this.esp32GPIOExecutionResultRegistry.has(result.resultId)) {
+      console.warn(`[Runtime Diagnostics] duplicate ESP32 GPIO execution result IDs: Result ID "${result.resultId}" already exists.`);
+    }
+    this.esp32GPIOExecutionResultRegistry.set(result.resultId, JSON.parse(JSON.stringify(result)));
+    if (!this.esp32GPIOExecutionResultOrder.includes(result.resultId)) this.esp32GPIOExecutionResultOrder.push(result.resultId);
+  }
+
+  public getESP32GPIOExecutionResult(id: string): ESP32GPIOExecutionResult | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed ESP32 GPIO execution result: Result ID must be a non-empty string.');
+      return undefined;
+    }
+    const result = this.esp32GPIOExecutionResultRegistry.get(id);
+    return result ? JSON.parse(JSON.stringify(result)) : undefined;
+  }
+
+  public getESP32GPIOExecutionResults(): ESP32GPIOExecutionResult[] {
+    return this.esp32GPIOExecutionResultOrder
+      .map(id => this.esp32GPIOExecutionResultRegistry.get(id))
+      .filter((result): result is ESP32GPIOExecutionResult => !!result)
+      .map(result => JSON.parse(JSON.stringify(result)));
+  }
+
+  public clearESP32GPIOExecutionResults(): void {
+    this.esp32GPIOExecutionResultRegistry.clear();
+    this.esp32GPIOExecutionResultOrder = [];
+  }
+
+  public executeESP32Instruction(id: string): ESP32GPIOExecutionResult | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed ESP32 instruction metadata: Instruction ID must be a non-empty string.');
+      return undefined;
+    }
+    const instruction = this.esp32InstructionRegistry.get(id);
+    if (!instruction || !this.validateESP32InstructionMetadata(instruction)) return undefined;
+
+    const runtime = this.esp32RuntimeRegistry.get(instruction.runtimeId);
+    if (!runtime || !this.validateESP32RuntimeMetadata(runtime)) {
+      console.warn(`[Runtime Diagnostics] invalid ESP32 execution context: Instruction "${instruction.instructionId}" references missing or invalid runtime "${instruction.runtimeId}".`);
+      return undefined;
+    }
+
+    const complete = (result: ESP32GPIOExecutionResult): ESP32GPIOExecutionResult => {
+      this.registerESP32GPIOExecutionResult(result);
+      instruction.executionState = result.status === 'FAILED' ? 'FAILED' : 'COMPLETED';
+      runtime.executionContext.currentInstructionId = instruction.instructionId;
+      runtime.executionContext.lastExecutedInstructionId = instruction.instructionId;
+      runtime.executionContext.executedInstructionCount = (runtime.executionContext.executedInstructionCount ?? 0) + (result.status === 'SKIPPED' ? 0 : 1);
+      runtime.executionContext.instructionExecutionState = instruction.executionState;
+      runtime.executionContext.diagnostics = JSON.parse(JSON.stringify(result.diagnostics));
+      runtime.executionContext.executionResult = JSON.parse(JSON.stringify(result));
+      return JSON.parse(JSON.stringify(result));
+    };
+
+    if (instruction.instructionType === 'DELAY') {
+      return complete(this.createESP32GPIOExecutionResult(instruction, 'SKIPPED', { metadata: { reason: 'metadata-only-delay' } }));
+    }
+    if (instruction.instructionType === 'NOP') {
+      return complete(this.createESP32GPIOExecutionResult(instruction, 'COMPLETED', { metadata: { reason: 'nop' } }));
+    }
+    if (!['PIN_MODE', 'DIGITAL_WRITE', 'DIGITAL_READ'].includes(instruction.instructionType)) {
+      return complete(this.createESP32GPIOExecutionResult(instruction, 'SKIPPED', { metadata: { reason: 'non-gpio-instruction' } }));
+    }
+
+    const gpio = instruction.operands.gpio ?? instruction.operands.pin ?? instruction.operands.pinNumber;
+    if (!this.validateGPIOPinNumber(gpio, instruction.instructionId)) {
+      return complete(this.createESP32GPIOExecutionResult(instruction, 'FAILED', { diagnostics: { warnings: [...instruction.diagnostics.warnings], errors: [...instruction.diagnostics.errors, 'Invalid GPIO pin number'], metadata: { ...instruction.diagnostics.metadata } } }));
+    }
+    const pinId = typeof instruction.operands.pinId === 'string' ? instruction.operands.pinId : `GPIO${gpio}`;
+    const pinState = runtime.pinStates.find(pin => pin.gpio === gpio || pin.pinId === pinId);
+    if (!pinState) {
+      return complete(this.createESP32GPIOExecutionResult(instruction, 'FAILED', { gpio, pinId, diagnostics: { warnings: [...instruction.diagnostics.warnings], errors: [...instruction.diagnostics.errors, 'GPIO pin is not owned by runtime'], metadata: { ...instruction.diagnostics.metadata } } }));
+    }
+
+    const halId = `${instruction.runtimeId}:${pinId}`;
+    const existingHAL = this.halStateRegistry.get(halId);
+    const currentMode = existingHAL?.signal.mode ?? this.mapESP32PinMode(pinState.mode);
+    const currentDigital = existingHAL?.signal.digitalValue ?? false;
+    let mode: ESP32PinMode = pinState.mode;
+    let digitalValue = currentDigital;
+    let readValue: boolean | undefined;
+
+    if (instruction.instructionType === 'PIN_MODE') {
+      const requestedMode = instruction.operands.mode;
+      if (!BaseRuntime.VALID_ESP32_PIN_MODES.includes(requestedMode as ESP32PinMode)) {
+        return complete(this.createESP32GPIOExecutionResult(instruction, 'FAILED', { gpio, pinId, diagnostics: { warnings: [...instruction.diagnostics.warnings], errors: [...instruction.diagnostics.errors, 'Unsupported ESP32 pin mode'], metadata: { ...instruction.diagnostics.metadata } } }));
+      }
+      mode = requestedMode as ESP32PinMode;
+      pinState.mode = mode;
+    }
+
+    if (instruction.instructionType === 'DIGITAL_WRITE') {
+      if (typeof instruction.operands.value !== 'boolean') {
+        return complete(this.createESP32GPIOExecutionResult(instruction, 'FAILED', { gpio, pinId, diagnostics: { warnings: [...instruction.diagnostics.warnings], errors: [...instruction.diagnostics.errors, 'Digital write value must be boolean'], metadata: { ...instruction.diagnostics.metadata } } }));
+      }
+      digitalValue = instruction.operands.value;
+    }
+
+    if (instruction.instructionType === 'DIGITAL_READ') {
+      readValue = currentDigital;
+      digitalValue = currentDigital;
+    }
+
+    this.registerHALState({
+      id: halId,
+      address: { targetId: instruction.address.targetId, componentId: instruction.address.componentId, boardId: instruction.address.boardId ?? runtime.boardBinding.workspaceBoardId, pinId },
+      signal: { digitalValue, analogValue: existingHAL?.signal.analogValue ?? 0, pwmValue: existingHAL?.signal.pwmValue ?? 0, mode: instruction.instructionType === 'PIN_MODE' ? this.mapESP32PinMode(mode) : currentMode, pullMode: existingHAL?.signal.pullMode ?? 'NONE' },
+      metadata: { runtimeId: instruction.runtimeId, instructionId: instruction.instructionId, gpio },
+    });
+    pinState.metadata = { ...pinState.metadata, digitalValue, lastInstructionId: instruction.instructionId };
+
+    return complete(this.createESP32GPIOExecutionResult(instruction, 'COMPLETED', { gpio, pinId, mode, digitalValue, readValue }));
   }
 
   private static readonly VALID_BOARD_TYPES: DevelopmentBoardType[] = [
@@ -3359,6 +3541,9 @@ export class BaseRuntime implements IRuntime {
 
     // Reset Phase 8D ESP32 instruction metadata registry
     this.clearESP32Instructions();
+
+    // Reset Phase 8E ESP32 GPIO execution result registry
+    this.clearESP32GPIOExecutionResults();
   }
 
   public start(): void {
@@ -4223,6 +4408,9 @@ export class BaseRuntime implements IRuntime {
       if (this.esp32InstructionRegistry.size > 0) {
         stageSnap.esp32Instructions = this.getESP32Instructions();
       }
+      if (this.esp32GPIOExecutionResultRegistry.size > 0) {
+        stageSnap.esp32GPIOExecutionResults = this.getESP32GPIOExecutionResults();
+      }
       // Phase 7R: Attach connection metadata to stage snapshot entry
       if (this.connectionRegistry.size > 0) {
         stageSnap.connections = this.getConnections();
@@ -4408,6 +4596,11 @@ export class BaseRuntime implements IRuntime {
       // Phase 8D: Serialize ESP32 instruction metadata registry
       if (isStage && this.esp32InstructionRegistry.size > 0) {
         serializedTarget.esp32Instructions = this.getESP32Instructions();
+      }
+
+      // Phase 8E: Serialize ESP32 GPIO execution results
+      if (isStage && this.esp32GPIOExecutionResultRegistry.size > 0) {
+        serializedTarget.esp32GPIOExecutionResults = this.getESP32GPIOExecutionResults();
       }
 
       const targetWatchers = Array.from(this.variableWatchers.values())
@@ -4805,6 +4998,12 @@ export class BaseRuntime implements IRuntime {
       if (Array.isArray(stageTarget.esp32Instructions)) {
         for (const instruction of stageTarget.esp32Instructions) {
           this.registerESP32Instruction(JSON.parse(JSON.stringify(instruction)));
+        }
+      }
+      // Phase 8E: Restore ESP32 GPIO execution results from stage target
+      if (Array.isArray(stageTarget.esp32GPIOExecutionResults)) {
+        for (const result of stageTarget.esp32GPIOExecutionResults) {
+          this.registerESP32GPIOExecutionResult(JSON.parse(JSON.stringify(result)));
         }
       }
     }
