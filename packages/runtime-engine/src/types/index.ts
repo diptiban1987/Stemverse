@@ -459,6 +459,9 @@ export interface StageSyncState {
 
   // Phase 10C: Wire visualization metadata synchronization
   wireVisualRegistry?: WireVisualRegistryEntry[];
+
+  // Phase 10D: Board visualization metadata synchronization
+  boardVisualRegistry?: BoardVisualRegistryEntry[];
 }
 
 // ─── Phase 10C: Wire Visualization Foundation ──────────────
@@ -528,6 +531,119 @@ export interface WireVisualRegistryEntry {
   routing: WireRoutingMetadata;
   signal: SignalVisualizationMetadata;
   interaction: WireInteractionMetadata;
+}
+
+// ─── Phase 10D: Board Visualization Foundation ──────────────
+
+export type BoardVisualType =
+  | 'BREADBOARD'
+  | 'PERFBOARD'
+  | 'PCB'
+  | 'CUSTOM';
+
+export type BoardVisualCategory =
+  | 'PROTOTYPING'
+  | 'DEVELOPMENT'
+  | 'SHIELD'
+  | 'CUSTOM';
+
+export interface ConnectorVisualPosition {
+  x: number;
+  y: number;
+}
+
+export interface ConnectorVisualMetadata {
+  connectorId: string;
+  connectorType: string;
+  position: ConnectorVisualPosition;
+  direction: string;
+  label: string;
+  group: string;
+  futureSignalHints: Record<string, unknown>;
+  futureInteractionHints: Record<string, unknown>;
+}
+
+export interface BoardBounds {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface ComponentRegion {
+  regionId: string;
+  bounds: BoardBounds;
+  label: string;
+  allowedComponentTypes: string[];
+}
+
+export interface PowerRegion {
+  regionId: string;
+  bounds: BoardBounds;
+  label: string;
+  voltage: string;
+}
+
+export interface SignalRegion {
+  regionId: string;
+  bounds: BoardBounds;
+  label: string;
+  signalType: string;
+}
+
+export interface ReservedRegion {
+  regionId: string;
+  bounds: BoardBounds;
+  label: string;
+  purpose: string;
+}
+
+export interface BoardLayoutMetadata {
+  boardBounds: BoardBounds;
+  componentRegions: ComponentRegion[];
+  powerRegions: PowerRegion[];
+  signalRegions: SignalRegion[];
+  reservedRegions: ReservedRegion[];
+  futurePlacementHints: Record<string, unknown>;
+}
+
+export interface BoardInteractionZone {
+  zoneId: string;
+  kind: 'hover' | 'selection' | 'drag' | 'focus' | 'edit';
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface BoardInteractionMetadata {
+  hoverZones: BoardInteractionZone[];
+  selectionZones: BoardInteractionZone[];
+  dragZones: BoardInteractionZone[];
+  focusZones: BoardInteractionZone[];
+  futureEditingZones: BoardInteractionZone[];
+}
+
+export interface BoardVisualModel {
+  boardVisualId: string;
+  boardType: BoardVisualType;
+  displayName: string;
+  category: BoardVisualCategory;
+  defaultWidth: number;
+  defaultHeight: number;
+  outlineMetadata: Record<string, unknown>;
+  mountingMetadata: Record<string, unknown>;
+  connectorMetadata: ConnectorVisualMetadata[];
+  labelMetadata: Record<string, unknown>;
+  futureThemeHints: Record<string, unknown>;
+  futureAnimationHints: Record<string, unknown>;
+}
+
+export interface BoardVisualRegistryEntry {
+  boardVisualId: string;
+  visualModel: BoardVisualModel;
+  layout: BoardLayoutMetadata;
+  interaction: BoardInteractionMetadata;
 }
 
 /**
@@ -724,6 +840,9 @@ export interface SerializedTarget {
 
   // Phase 10C: Wire visualization metadata serialization
   wireVisualRegistry?: WireVisualRegistryEntry[];
+
+  // Phase 10D: Board visualization metadata serialization
+  boardVisualRegistry?: BoardVisualRegistryEntry[];
 }
 
 export interface SerializedAssetManifest {

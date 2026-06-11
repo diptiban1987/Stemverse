@@ -10,8 +10,8 @@ Repository maturity is HIGH.
 
 This repository contains:
 
-* 14993 passing tests
-* 46 passing test files
+* 21057 passing tests
+* 48 passing test files
 * Clean build
 
 You are NOT designing a new architecture.
@@ -104,11 +104,11 @@ backup-phase7Z-to-8A4
 
 Latest Stable Tag:
 
-phase-10B-stable
+phase-10D-stable
 
 Recommended Recovery Tag:
 
-phase-10B-stable
+phase-10D-stable
 
 ---
 
@@ -124,9 +124,9 @@ PASS
 
 Verification Metrics:
 
-14993 tests passing
+21057 tests passing
 
-46 test files passing
+48 test files passing
 
 Build clean
 
@@ -141,9 +141,9 @@ pnpm --filter @stemverse/runtime-engine build
 Expected:
 
 ```text
-Test Files 46 passed
+Test Files 48 passed
 
-Tests 14993 passed
+Tests 21057 passed
 
 Build clean
 
@@ -249,6 +249,12 @@ Visual Simulator Foundation
 Phase 10B
 Component Visual Models Foundation
 
+Phase 10C
+Wire Visualization Foundation
+
+Phase 10D
+Board Visualization Foundation
+
 Completed.
 
 ---
@@ -324,11 +330,11 @@ COMPLETED
 
 ✓ Component Visual Models
 
+✓ Wire Visualization
+
+✓ Board Visualization Metadata
+
 NOT STARTED
-
-✗ Wire Visualization
-
-✗ Board Visualization
 
 ✗ Signal Visualization
 
@@ -340,23 +346,19 @@ NOT STARTED
 
 ✗ Component Skins
 
-✗ Wire Routing Visualization
-
-✗ Board Rendering
-
 ---
 
 # NEXT PHASE
 
-PHASE 10C
+PHASE 10E
 
-Wire Visualization Foundation
+Signal Visualization Foundation
 
 ---
 
-# PHASE 10C GOAL
+# PHASE 10E GOAL
 
-Create deterministic metadata-only wire visualization models.
+Create deterministic metadata-only signal visualization models.
 
 Renderer consumes metadata only.
 
@@ -380,53 +382,13 @@ NO WebGL.
 
 # REQUIREMENTS
 
-## 1. WIRE VISUAL MODEL
+## 1. SIGNAL VISUALIZATION METADATA
 
-Create metadata definitions for:
+Create metadata for:
 
-wireId
+signalId
 
-wireType
-
-displayName
-
-category
-
-defaultStyle
-
-defaultThickness
-
-defaultRoutingMode
-
-futureAnimationHints
-
-futureSignalHints
-
-futureThemeHints
-
----
-
-## 2. WIRE ROUTING METADATA
-
-Track:
-
-sourceAnchor
-
-targetAnchor
-
-controlPoints
-
-routingHints
-
-preferredPathType
-
-futureAutoRoutingHints
-
----
-
-## 3. SIGNAL VISUALIZATION METADATA
-
-Track:
+signalType
 
 signalDirection
 
@@ -434,29 +396,43 @@ signalActivity
 
 signalState
 
+propagationDelay
+
+visualizationHints
+
 futureFlowAnimationHints
 
 futurePulseHints
 
+futureThemeHints
+
 ---
 
-## 4. WIRE INTERACTION METADATA
+## 2. SIGNAL PROBE METADATA
 
 Track:
 
-hover zones
+probeId
 
-selection zones
+probeType
 
-drag handles
+sourceConnectorId
 
-routing handles
+targetConnectorId
 
-focus regions
+position
+
+label
+
+color
+
+visibility
+
+futureProbeHints
 
 ---
 
-## 5. WIRE VISUAL REGISTRY
+## 3. SIGNAL REGISTRY
 
 Must support:
 
@@ -483,7 +459,7 @@ Requirements:
 
 ---
 
-## 6. SNAPSHOT INTEGRATION
+## 4. SNAPSHOT INTEGRATION
 
 Expose through:
 
@@ -493,7 +469,7 @@ Renderer receives metadata only.
 
 ---
 
-## 7. SERIALIZATION
+## 5. SERIALIZATION
 
 Support:
 
@@ -505,7 +481,7 @@ Round-trip preservation required.
 
 ---
 
-## 8. VALIDATION
+## 6. VALIDATION
 
 Warning-only.
 
@@ -515,15 +491,11 @@ Validate:
 
 duplicate IDs
 
-invalid routing metadata
+invalid signal types
 
-invalid control points
+invalid signal states
 
-invalid interaction metadata
-
-invalid wire styles
-
-invalid wire types
+invalid probe metadata
 
 ---
 
@@ -543,6 +515,10 @@ Board Metadata
 
 Component Visual Models
 
+Wire Visualization
+
+Board Visualization
+
 Renderer Architecture
 
 Clone Architecture
@@ -553,11 +529,11 @@ Clone Architecture
 
 Create:
 
-tests/wire-visualization-runtime.test.ts
+tests/signal-visualization-runtime.test.ts
 
 Target:
 
-2000+ deterministic tests
+2500+ deterministic tests
 
 Cover:
 
@@ -581,9 +557,7 @@ clone safety
 
 cleanup
 
-routing metadata
-
-interaction metadata
+probe metadata
 
 duplicate IDs
 
@@ -624,9 +598,9 @@ ONLY AFTER:
 
 Add:
 
-Phase 10C
+Phase 10E
 
-Wire Visualization Foundation
+Signal Visualization Foundation
 
 Update:
 
@@ -645,10 +619,10 @@ Completed:
 * visual themes
 * component visual models
 * wire visualization metadata
+* board visualization metadata
 
 Not Started:
 
-* board visualization
 * signal visualization
 * rendering
 * animations
@@ -668,6 +642,17 @@ pnpm --filter @stemverse/runtime-engine build
 ```
 
 Both MUST pass.
+
+---
+
+# ROADMAP
+
+10A Visual Simulator Foundation ✅
+10B Component Visual Models ✅
+10C Wire Visualization ✅
+10D Board Visualization ✅
+10E Signal Visualization
+10F Animation Metadata
 
 ---
 

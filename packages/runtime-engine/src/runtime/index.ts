@@ -1,5 +1,5 @@
 import { IRuntime } from '../core';
-import { TargetId, TargetState, ASTScript, Thread, SpriteState, StageState, PendingBroadcast, BroadcastCompletionToken, ListenerEntry, BubbleState, StageSyncState, CostumeAsset, SoundAsset, BackdropAsset, ActiveSoundTrigger, SoundChannelState, PenCommand, PenState, VariableWatcher, WatcherMode, ListWatcher, ListWatcherMode, GlideState, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, SerializedProject, SerializedStage, SerializedTarget, SerializedAssetManifest, SerializedProjectMetadata, VariableState, ListState, RuntimeAssetState, AssetLoadStatus, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, ComponentType, RuntimeComponent, PinDirection, RuntimePin, RuntimeConnection, DeviceState, WorkspaceTransform, WorkspaceComponentLayout, WirePoint, WireLayout, DevelopmentBoardType, BoardPinDefinition, BoardPinCapabilities, DevelopmentBoardDefinition, WorkspaceBoard, RenderModelType, RenderMetadata, RuntimeHALState, HardwareAddress, PinMode, PullMode, PinCapability, ProtocolState, ProtocolType, PWMChannelState, I2CBusState, SPIBusState, UARTPortState, HardwareBackendMetadata, ExecutionCommand, ExecutionCommandLifecycleState, ExecutionCommandType, ESP32RuntimeMetadata, ESP32ExecutionState, ESP32PinCapability, ESP32PinMode, ESP32InstructionMetadata, ESP32InstructionExecutionState, ESP32InstructionType, ESP32GPIOExecutionResult, ESP32GPIOExecutionStatus, ESP32PWMExecutionState, ESP32ServoExecutionState, ESP32ADCExecutionState, ESP32TouchExecutionState, ESP32PeripheralCommandExecutionResult, ESP32PeripheralCommandExecutionStatus, ProtocolCommandExecutionResult, ProtocolCommandExecutionStatus, STEMVerseVisualState, STEMVerseVisualThemeState, STEMVerseVisualType, STEMVerseBoardStatus, STEMVerseSignalFlowDirection, STEMVerseVisualThemeMode, ComponentVisualModel, ComponentVisualType, ComponentVisualCategory, PinVisualMetadata, InteractionZone, AnchorPoint, LabelPosition, WireVisualRegistryEntry, WireType, WireCategory, RoutingPathType, SignalDirection, SignalActivity, SignalState, WireVisualModel, ControlPoint, WireRoutingMetadata, SignalVisualizationMetadata, InteractionZoneRect, WireInteractionMetadata } from '../types';
+import { TargetId, TargetState, ASTScript, Thread, SpriteState, StageState, PendingBroadcast, BroadcastCompletionToken, ListenerEntry, BubbleState, StageSyncState, CostumeAsset, SoundAsset, BackdropAsset, ActiveSoundTrigger, SoundChannelState, PenCommand, PenState, VariableWatcher, WatcherMode, ListWatcher, ListWatcherMode, GlideState, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, SerializedProject, SerializedStage, SerializedTarget, SerializedAssetManifest, SerializedProjectMetadata, VariableState, ListState, RuntimeAssetState, AssetLoadStatus, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, ComponentType, RuntimeComponent, PinDirection, RuntimePin, RuntimeConnection, DeviceState, WorkspaceTransform, WorkspaceComponentLayout, WirePoint, WireLayout, DevelopmentBoardType, BoardPinDefinition, BoardPinCapabilities, DevelopmentBoardDefinition, WorkspaceBoard, RenderModelType, RenderMetadata, RuntimeHALState, HardwareAddress, PinMode, PullMode, PinCapability, ProtocolState, ProtocolType, PWMChannelState, I2CBusState, SPIBusState, UARTPortState, HardwareBackendMetadata, ExecutionCommand, ExecutionCommandLifecycleState, ExecutionCommandType, ESP32RuntimeMetadata, ESP32ExecutionState, ESP32PinCapability, ESP32PinMode, ESP32InstructionMetadata, ESP32InstructionExecutionState, ESP32InstructionType, ESP32GPIOExecutionResult, ESP32GPIOExecutionStatus, ESP32PWMExecutionState, ESP32ServoExecutionState, ESP32ADCExecutionState, ESP32TouchExecutionState, ESP32PeripheralCommandExecutionResult, ESP32PeripheralCommandExecutionStatus, ProtocolCommandExecutionResult, ProtocolCommandExecutionStatus, STEMVerseVisualState, STEMVerseVisualThemeState, STEMVerseVisualType, STEMVerseBoardStatus, STEMVerseSignalFlowDirection, STEMVerseVisualThemeMode, ComponentVisualModel, ComponentVisualType, ComponentVisualCategory, PinVisualMetadata, InteractionZone, AnchorPoint, LabelPosition, WireVisualRegistryEntry, WireType, WireCategory, RoutingPathType, SignalDirection, SignalActivity, SignalState, WireVisualModel, ControlPoint, WireRoutingMetadata, SignalVisualizationMetadata, InteractionZoneRect, WireInteractionMetadata, BoardVisualModel, BoardVisualType, BoardVisualCategory, BoardVisualRegistryEntry, BoardLayoutMetadata, ConnectorVisualMetadata, BoardInteractionMetadata, BoardBounds, ComponentRegion, PowerRegion, SignalRegion, ReservedRegion, BoardInteractionZone } from '../types';
 import { MinimalASTInterpreter, IHardwareAdapter } from '../ast/interpreter';
 import { SimulatedHardwareBackend } from '../hal';
 import { createThread, TaskQueue, PendingTask, resetThreadCounter } from './execution-context';
@@ -266,6 +266,10 @@ export class BaseRuntime implements IRuntime {
   private wireVisualRegistry = new Map<string, WireVisualRegistryEntry>();
   private wireVisualOrder: string[] = [];
 
+  // Phase 10D Board visual registry
+  private boardVisualRegistry = new Map<string, BoardVisualRegistryEntry>();
+  private boardVisualOrder: string[] = [];
+
   // Phase 8A.1 HAL state registry (passive contracts/state only)
   private halStateRegistry = new Map<string, RuntimeHALState>();
   private halStateOrder: string[] = [];
@@ -308,6 +312,11 @@ export class BaseRuntime implements IRuntime {
   private static readonly VALID_SIGNAL_ACTIVITIES: SignalActivity[] = ['IDLE', 'ACTIVE', 'PULSING', 'ERROR'];
   private static readonly VALID_SIGNAL_STATES: SignalState[] = ['LOW', 'HIGH', 'PWM', 'ANALOG', 'UNKNOWN'];
   private static readonly VALID_INTERACTION_ZONE_RECT_KINDS = ['hover', 'selection', 'drag', 'routing', 'focus'] as const;
+
+  // Phase 10D Board visualization valid constants
+  private static readonly VALID_BOARD_VISUAL_TYPES: BoardVisualType[] = ['BREADBOARD', 'PERFBOARD', 'PCB', 'CUSTOM'];
+  private static readonly VALID_BOARD_VISUAL_CATEGORIES: BoardVisualCategory[] = ['PROTOTYPING', 'DEVELOPMENT', 'SHIELD', 'CUSTOM'];
+  private static readonly VALID_BOARD_INTERACTION_ZONE_KINDS = ['hover', 'selection', 'drag', 'focus', 'edit'] as const;
 
   private static readonly DEFAULT_COMPONENT_VISUAL_MODELS: Record<string, ComponentVisualModel> = {
     'LED': {
@@ -1099,6 +1108,200 @@ export class BaseRuntime implements IRuntime {
 
   public hasWireVisual(id: string): boolean {
     return this.wireVisualRegistry.has(id);
+  }
+
+  // ─── Phase 10D: Board Visual Registry ────────────
+
+  private validateBoardLayoutMetadata(layout: BoardLayoutMetadata, boardVisualId: string): boolean {
+    if (!layout || typeof layout !== 'object') {
+      console.warn(`[Runtime Diagnostics] malformed board layout: Board "${boardVisualId}" has invalid layout.`);
+      return false;
+    }
+    if (!layout.boardBounds || typeof layout.boardBounds.x !== 'number' || typeof layout.boardBounds.y !== 'number' || typeof layout.boardBounds.width !== 'number' || typeof layout.boardBounds.height !== 'number') {
+      console.warn(`[Runtime Diagnostics] malformed board layout: Board "${boardVisualId}" has invalid boardBounds.`);
+      return false;
+    }
+    if (!Array.isArray(layout.componentRegions)) {
+      console.warn(`[Runtime Diagnostics] malformed board layout: Board "${boardVisualId}" has invalid componentRegions.`);
+      return false;
+    }
+    if (!Array.isArray(layout.powerRegions)) {
+      console.warn(`[Runtime Diagnostics] malformed board layout: Board "${boardVisualId}" has invalid powerRegions.`);
+      return false;
+    }
+    if (!Array.isArray(layout.signalRegions)) {
+      console.warn(`[Runtime Diagnostics] malformed board layout: Board "${boardVisualId}" has invalid signalRegions.`);
+      return false;
+    }
+    if (!Array.isArray(layout.reservedRegions)) {
+      console.warn(`[Runtime Diagnostics] malformed board layout: Board "${boardVisualId}" has invalid reservedRegions.`);
+      return false;
+    }
+    if (!this.validatePlainObject(layout.futurePlacementHints)) {
+      console.warn(`[Runtime Diagnostics] malformed board layout: Board "${boardVisualId}" has invalid futurePlacementHints.`);
+      return false;
+    }
+    return true;
+  }
+
+  private validateBoardInteractionMetadata(interaction: BoardInteractionMetadata, boardVisualId: string): boolean {
+    if (!interaction || typeof interaction !== 'object') {
+      console.warn(`[Runtime Diagnostics] malformed board interaction: Board "${boardVisualId}" has invalid interaction metadata.`);
+      return false;
+    }
+    if (!this.validateBoardInteractionZones(interaction.hoverZones, 'hoverZones', boardVisualId)) return false;
+    if (!this.validateBoardInteractionZones(interaction.selectionZones, 'selectionZones', boardVisualId)) return false;
+    if (!this.validateBoardInteractionZones(interaction.dragZones, 'dragZones', boardVisualId)) return false;
+    if (!this.validateBoardInteractionZones(interaction.focusZones, 'focusZones', boardVisualId)) return false;
+    if (!this.validateBoardInteractionZones(interaction.futureEditingZones, 'futureEditingZones', boardVisualId)) return false;
+    return true;
+  }
+
+  private validateBoardInteractionZones(zones: BoardInteractionZone[], label: string, boardVisualId: string): boolean {
+    if (!Array.isArray(zones)) {
+      console.warn(`[Runtime Diagnostics] invalid board interaction zones: Board "${boardVisualId}" has non-array ${label}.`);
+      return false;
+    }
+    for (let i = 0; i < zones.length; i++) {
+      const z = zones[i];
+      if (!z || typeof z.zoneId !== 'string' || z.zoneId.length === 0 || !BaseRuntime.VALID_BOARD_INTERACTION_ZONE_KINDS.includes(z.kind as any) || typeof z.x !== 'number' || typeof z.y !== 'number' || typeof z.width !== 'number' || typeof z.height !== 'number') {
+        console.warn(`[Runtime Diagnostics] invalid board interaction zones: Board "${boardVisualId}" has invalid ${label} entry at index ${i}.`);
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private validateBoardVisualModel(model: BoardVisualModel): boolean {
+    if (!model || typeof model.boardVisualId !== 'string' || model.boardVisualId.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed board visual model: Model is missing a valid boardVisualId.');
+      return false;
+    }
+    if (!BaseRuntime.VALID_BOARD_VISUAL_TYPES.includes(model.boardType)) {
+      console.warn(`[Runtime Diagnostics] invalid board visual types: Model "${model.boardVisualId}" has invalid boardType "${model.boardType}".`);
+      return false;
+    }
+    if (typeof model.displayName !== 'string' || model.displayName.length === 0) {
+      console.warn(`[Runtime Diagnostics] malformed board visual model: Model "${model.boardVisualId}" has invalid displayName.`);
+      return false;
+    }
+    if (!BaseRuntime.VALID_BOARD_VISUAL_CATEGORIES.includes(model.category)) {
+      console.warn(`[Runtime Diagnostics] invalid board visual categories: Model "${model.boardVisualId}" has invalid category "${model.category}".`);
+      return false;
+    }
+    if (typeof model.defaultWidth !== 'number' || !Number.isFinite(model.defaultWidth) || model.defaultWidth <= 0 ||
+        typeof model.defaultHeight !== 'number' || !Number.isFinite(model.defaultHeight) || model.defaultHeight <= 0) {
+      console.warn(`[Runtime Diagnostics] invalid board visual dimensions: Model "${model.boardVisualId}" has invalid dimensions.`);
+      return false;
+    }
+    if (!this.validatePlainObject(model.outlineMetadata)) {
+      console.warn(`[Runtime Diagnostics] malformed board visual model: Model "${model.boardVisualId}" has invalid outlineMetadata.`);
+      return false;
+    }
+    if (!this.validatePlainObject(model.mountingMetadata)) {
+      console.warn(`[Runtime Diagnostics] malformed board visual model: Model "${model.boardVisualId}" has invalid mountingMetadata.`);
+      return false;
+    }
+    if (!Array.isArray(model.connectorMetadata)) {
+      console.warn(`[Runtime Diagnostics] malformed board visual model: Model "${model.boardVisualId}" has invalid connectorMetadata.`);
+      return false;
+    }
+    for (const conn of model.connectorMetadata) {
+      if (!conn || typeof conn.connectorId !== 'string' || conn.connectorId.length === 0 || typeof conn.connectorType !== 'string' || conn.connectorType.length === 0 || !conn.position || typeof conn.position.x !== 'number' || typeof conn.position.y !== 'number' || typeof conn.direction !== 'string' || conn.direction.length === 0 || typeof conn.label !== 'string' || typeof conn.group !== 'string') {
+        console.warn(`[Runtime Diagnostics] invalid board visual connectors: Model "${model.boardVisualId}" has malformed connector entry.`);
+        return false;
+      }
+    }
+    if (!this.validatePlainObject(model.labelMetadata)) {
+      console.warn(`[Runtime Diagnostics] malformed board visual model: Model "${model.boardVisualId}" has invalid labelMetadata.`);
+      return false;
+    }
+    if (!this.validatePlainObject(model.futureThemeHints)) {
+      console.warn(`[Runtime Diagnostics] malformed board visual model: Model "${model.boardVisualId}" has invalid futureThemeHints.`);
+      return false;
+    }
+    if (!this.validatePlainObject(model.futureAnimationHints)) {
+      console.warn(`[Runtime Diagnostics] malformed board visual model: Model "${model.boardVisualId}" has invalid futureAnimationHints.`);
+      return false;
+    }
+    return true;
+  }
+
+  private validateBoardVisualRegistryEntry(entry: BoardVisualRegistryEntry): boolean {
+    if (!entry || typeof entry.boardVisualId !== 'string' || entry.boardVisualId.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed board visual registry entry: Entry is missing a valid boardVisualId.');
+      return false;
+    }
+    if (!this.validateBoardVisualModel(entry.visualModel)) return false;
+    if (!this.validateBoardLayoutMetadata(entry.layout, entry.boardVisualId)) return false;
+    if (!this.validateBoardInteractionMetadata(entry.interaction, entry.boardVisualId)) return false;
+    return true;
+  }
+
+  public registerBoardVisualEntry(entry: BoardVisualRegistryEntry): void {
+    if (!this.validateBoardVisualRegistryEntry(entry)) return;
+    if (this.boardVisualRegistry.has(entry.boardVisualId)) {
+      console.warn(`[Runtime Diagnostics] duplicate board visual entry IDs: Board ID "${entry.boardVisualId}" already exists.`);
+    }
+    this.boardVisualRegistry.set(entry.boardVisualId, JSON.parse(JSON.stringify(entry)));
+    if (!this.boardVisualOrder.includes(entry.boardVisualId)) {
+      this.boardVisualOrder.push(entry.boardVisualId);
+    }
+  }
+
+  public getBoardVisualEntry(id: string): BoardVisualRegistryEntry | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed board visual entry: Board ID must be a non-empty string.');
+      return undefined;
+    }
+    const entry = this.boardVisualRegistry.get(id);
+    return entry ? JSON.parse(JSON.stringify(entry)) : undefined;
+  }
+
+  public getBoardVisualEntries(): BoardVisualRegistryEntry[] {
+    return this.boardVisualOrder
+      .map(id => this.boardVisualRegistry.get(id))
+      .filter((entry): entry is BoardVisualRegistryEntry => !!entry)
+      .map(entry => JSON.parse(JSON.stringify(entry)));
+  }
+
+  public updateBoardVisualEntry(id: string, updates: Partial<BoardVisualRegistryEntry>): void {
+    const existing = this.boardVisualRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing board visual entry: Board "${id}" not found.`);
+      return;
+    }
+    const merged: BoardVisualRegistryEntry = {
+      ...existing,
+      ...updates,
+      boardVisualId: existing.boardVisualId,
+      visualModel: updates.visualModel ? { ...existing.visualModel, ...updates.visualModel, connectorMetadata: updates.visualModel.connectorMetadata ? JSON.parse(JSON.stringify(updates.visualModel.connectorMetadata)) : JSON.parse(JSON.stringify(existing.visualModel.connectorMetadata)) } : { ...existing.visualModel, connectorMetadata: JSON.parse(JSON.stringify(existing.visualModel.connectorMetadata)) },
+      layout: updates.layout ? { ...existing.layout, ...updates.layout, componentRegions: updates.layout.componentRegions ? JSON.parse(JSON.stringify(updates.layout.componentRegions)) : JSON.parse(JSON.stringify(existing.layout.componentRegions)), powerRegions: updates.layout.powerRegions ? JSON.parse(JSON.stringify(updates.layout.powerRegions)) : JSON.parse(JSON.stringify(existing.layout.powerRegions)), signalRegions: updates.layout.signalRegions ? JSON.parse(JSON.stringify(updates.layout.signalRegions)) : JSON.parse(JSON.stringify(existing.layout.signalRegions)), reservedRegions: updates.layout.reservedRegions ? JSON.parse(JSON.stringify(updates.layout.reservedRegions)) : JSON.parse(JSON.stringify(existing.layout.reservedRegions)) } : { ...existing.layout, componentRegions: JSON.parse(JSON.stringify(existing.layout.componentRegions)), powerRegions: JSON.parse(JSON.stringify(existing.layout.powerRegions)), signalRegions: JSON.parse(JSON.stringify(existing.layout.signalRegions)), reservedRegions: JSON.parse(JSON.stringify(existing.layout.reservedRegions)) },
+      interaction: updates.interaction ? { ...existing.interaction, ...updates.interaction } : { ...existing.interaction },
+    };
+    this.registerBoardVisualEntry(merged);
+  }
+
+  public removeBoardVisualEntry(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed board visual entry: Board ID must be a non-empty string.');
+      return;
+    }
+    this.boardVisualRegistry.delete(id);
+    this.boardVisualOrder = this.boardVisualOrder.filter(existing => existing !== id);
+  }
+
+  public clearBoardVisualRegistry(): void {
+    this.boardVisualRegistry.clear();
+    this.boardVisualOrder = [];
+  }
+
+  public getBoardVisualKeys(): string[] {
+    return [...this.boardVisualOrder];
+  }
+
+  public hasBoardVisual(id: string): boolean {
+    return this.boardVisualRegistry.has(id);
   }
 
   private static readonly VALID_PIN_MODES: PinMode[] = ['INPUT', 'OUTPUT', 'INPUT_PULLUP', 'INPUT_PULLDOWN', 'ANALOG', 'PWM'];
@@ -4722,6 +4925,9 @@ export class BaseRuntime implements IRuntime {
     // Reset Phase 10C wire visual registry
     this.clearWireVisualRegistry();
 
+    // Reset Phase 10D board visual registry
+    this.clearBoardVisualRegistry();
+
     // Reset Phase 8A.1 HAL state registry
     this.clearHALStates();
 
@@ -4915,6 +5121,9 @@ export class BaseRuntime implements IRuntime {
 
     // Reset Phase 10C wire visual registry
     this.clearWireVisualRegistry();
+
+    // Reset Phase 10D board visual registry
+    this.clearBoardVisualRegistry();
 
     // Clean up component metadata from remaining targets
     for (const target of this.targets.values()) {
@@ -5677,6 +5886,10 @@ export class BaseRuntime implements IRuntime {
       if (this.wireVisualRegistry.size > 0) {
         stageSnap.wireVisualRegistry = this.getWireVisualEntries();
       }
+      // Phase 10D: Attach board visualization registry metadata to stage snapshot entry
+      if (this.boardVisualRegistry.size > 0) {
+        stageSnap.boardVisualRegistry = this.getBoardVisualEntries();
+      }
       // Phase 7R: Attach connection metadata to stage snapshot entry
       if (this.connectionRegistry.size > 0) {
         stageSnap.connections = this.getConnections();
@@ -5838,6 +6051,11 @@ export class BaseRuntime implements IRuntime {
       // Phase 10C: Serialize wire visualization registry metadata
       if (isStage && this.wireVisualRegistry.size > 0) {
         serializedTarget.wireVisualRegistry = this.getWireVisualEntries();
+      }
+
+      // Phase 10D: Serialize board visualization registry metadata
+      if (isStage && this.boardVisualRegistry.size > 0) {
+        serializedTarget.boardVisualRegistry = this.getBoardVisualEntries();
       }
 
       // Phase 7W: Serialize board definitions & workspace boards
@@ -6246,6 +6464,12 @@ export class BaseRuntime implements IRuntime {
       if (Array.isArray(stageTarget.wireVisualRegistry)) {
         for (const entry of stageTarget.wireVisualRegistry) {
           this.registerWireVisualEntry(JSON.parse(JSON.stringify(entry)));
+        }
+      }
+      // Phase 10D: Restore board visualization registry metadata from stage target
+      if (Array.isArray(stageTarget.boardVisualRegistry)) {
+        for (const entry of stageTarget.boardVisualRegistry) {
+          this.registerBoardVisualEntry(JSON.parse(JSON.stringify(entry)));
         }
       }
       // Phase 7W: Restore board definitions from stage target
