@@ -1,79 +1,114 @@
-CRITICAL
+# STEMVerse Runtime Engine — MASTER HANDOFF DOCUMENT
 
-Repository has 12,552+ passing tests.
+# For DeepSeek V4 Flash / GPT-5.5 / GLM 5.1
+
+---
+
+# CRITICAL INSTRUCTIONS
+
+Repository maturity is HIGH.
+
+This repository contains:
+
+* 14993 passing tests
+* 46 passing test files
+* Clean build
+
+You are NOT designing a new architecture.
 
 You are extending an existing architecture.
 
+Any architecture drift is considered a failure.
+
+---
+
+# DO NOT REDESIGN
+
 DO NOT redesign:
 
-- Runtime
-- HAL
-- GPIO
-- Execution Layer
-- Renderer Adapters
-- Snapshot Model
-- Serialization Model
+* Runtime
+* HAL
+* GPIO
+* Protocol Layer
+* Execution Layer
+* Snapshot Model
+* Serialization Model
+* Renderer Adapters
+* Board System
+* Component System
+* Clone Architecture
+* Validation Model
+
+---
+
+# DO NOT INTRODUCE
 
 DO NOT introduce:
 
-- ECS
-- Event Bus
-- Scene Manager
-- Service Container
-- Redux
-- React Rendering
-- Pixi Rendering
-- SVG Rendering
-- Canvas Rendering
-- WebGL Rendering
+* ECS
+* Redux
+* Event Bus
+* Observer Frameworks
+* Service Containers
+* Dependency Injection
+* Plugin Systems
+* State Machines
+* Command Bus
+* Scene Manager
+* React Rendering
+* Pixi Rendering
+* Canvas Rendering
+* SVG Rendering
+* WebGL Rendering
+* 3D Rendering
 
-Follow existing repository patterns exactly.
+---
 
-Before coding:
+# REQUIRED IMPLEMENTATION STYLE
+
+Before implementing anything:
 
 Read:
 
-- runtime/index.ts
-- types/index.ts
-- renderer-adapter.ts
-- pixi-renderer-adapter.ts
-- progress.md
+* packages/runtime-engine/src/runtime/index.ts
+* packages/runtime-engine/src/types/index.ts
+* packages/runtime-engine/src/stage/renderer-adapter.ts
+* packages/runtime-engine/src/stage/pixi-renderer-adapter.ts
+* progress.md
 
-Mirror existing:
+Follow existing patterns exactly.
 
-- registry patterns
-- cleanup patterns
-- validation patterns
-- snapshot patterns
-- serialization patterns
-- test patterns
+Mirror:
 
-Renderer consumes metadata only.
+* Registry patterns
+* Validation patterns
+* Cleanup patterns
+* Snapshot patterns
+* Serialization patterns
+* Deep-copy patterns
+* Testing patterns
 
-No rendering.
+Do NOT invent new patterns.
 
-No artwork.
+---
 
-No animations.
+# PROJECT INFORMATION
 
-No UI.
+Repository:
 
-progress.md must be updated after validation passes.
-# STEMVerse Runtime Engine — Master Handoff Document
-
-## Repository
-
-GitHub:
 https://github.com/diptiban1987/Stemverse.git
 
-Active Development Branch:
+Development Branch:
+
 backup-phase7Z-to-8A4
 
-Latest Verified Tag:
-phase-10A-stable
+Latest Stable Tag:
+
+phase-10B-stable
 
 Recommended Recovery Tag:
-phase-10A-verified
+
+phase-10B-stable
 
 ---
 
@@ -81,16 +116,21 @@ phase-10A-verified
 
 Current Verified Build Status:
 
-* Build: PASS
-* Tests: PASS
+PASS
 
-Verification:
+Current Verified Test Status:
 
-* 12552 tests passing
-* 45 test files passing
-* Runtime engine builds clean
+PASS
 
-Commands:
+Verification Metrics:
+
+14993 tests passing
+
+46 test files passing
+
+Build clean
+
+Verification Commands:
 
 ```bash
 pnpm --filter @stemverse/runtime-engine test
@@ -101,10 +141,12 @@ pnpm --filter @stemverse/runtime-engine build
 Expected:
 
 ```text
-Test Files 45 passed
-Tests 12552 passed
+Test Files 46 passed
+
+Tests 14993 passed
 
 Build clean
+
 tsc --noEmit
 ```
 
@@ -112,7 +154,7 @@ tsc --noEmit
 
 # COMPLETED PHASES
 
-## Runtime
+## Runtime Foundation
 
 Phase 7Q
 Component Runtime Foundation
@@ -149,7 +191,7 @@ Render Metadata Foundation
 
 ---
 
-## HAL
+## HAL Foundation
 
 Phase 8A.1
 HAL Contracts
@@ -204,13 +246,16 @@ Protocol Integration
 Phase 10A
 Visual Simulator Foundation
 
+Phase 10B
+Component Visual Models Foundation
+
 Completed.
 
 ---
 
 # CURRENT ARCHITECTURE
 
-The project follows:
+Architecture Flow:
 
 Runtime
 → HAL
@@ -228,37 +273,13 @@ All state must remain:
 * clone-safe
 * deep-copy safe
 * serialization safe
-* JSON compatible
+* JSON safe
 
 ---
 
-# IMPORTANT CONSTRAINTS
+# VISUAL SIMULATOR VISION
 
-DO NOT:
-
-* redesign runtime architecture
-* redesign HAL
-* redesign GPIO
-* redesign snapshots
-* redesign renderer adapters
-* redesign execution layer
-* introduce ECS
-* introduce Redux
-* introduce service containers
-* introduce event sourcing
-* introduce React rendering
-* introduce Pixi rendering
-* introduce SVG rendering
-* introduce Canvas rendering
-* introduce WebGL rendering
-
----
-
-# VISUAL SIMULATOR GOAL
-
-Target Experience:
-
-Comparable in quality to:
+STEMVerse should eventually feel comparable in quality to:
 
 * Wokwi
 * Tinkercad Circuits
@@ -268,130 +289,158 @@ Comparable in quality to:
 
 BUT:
 
-Do NOT copy:
+DO NOT COPY:
 
 * UI
 * artwork
-* branding
 * assets
+* branding
 * layouts
 * rendering implementation
 
-STEMVerse must have its own architecture.
+Create a STEMVerse-native architecture.
+
+Goal:
+
+A student should feel:
+
+"I am building a real electronics project."
+
+An educator should feel:
+
+"This is a professional STEM laboratory."
+
+---
+
+# CURRENT STATUS
+
+COMPLETED
+
+✓ Visual Metadata
+
+✓ Visual Registry
+
+✓ Visual Themes
+
+✓ Component Visual Models
+
+NOT STARTED
+
+✗ Wire Visualization
+
+✗ Board Visualization
+
+✗ Signal Visualization
+
+✗ Animation Metadata
+
+✗ Rendering
+
+✗ Artwork
+
+✗ Component Skins
+
+✗ Wire Routing Visualization
+
+✗ Board Rendering
 
 ---
 
 # NEXT PHASE
 
-Phase 10B
+PHASE 10C
 
-Component Visual Models Foundation
+Wire Visualization Foundation
 
 ---
 
-# PHASE 10B REQUIREMENTS
+# PHASE 10C GOAL
 
-Create deterministic metadata-only visual models.
+Create deterministic metadata-only wire visualization models.
+
+Renderer consumes metadata only.
 
 NO rendering.
 
+NO drawing.
+
 NO artwork.
-
-NO images.
-
-NO animation engine.
-
-NO Pixi.
 
 NO SVG.
 
 NO Canvas.
 
-NO DOM.
+NO Pixi.
 
 NO React.
 
----
-
-## Components
-
-Support:
-
-LED
-
-BUTTON
-
-BUZZER
-
-SERVO
-
-ULTRASONIC
-
-LCD
-
-OLED
-
-ESP32
-
-ARDUINO_UNO
-
-ARDUINO_NANO
-
-RASPBERRY_PI_PICO
+NO WebGL.
 
 ---
 
-## Visual Model Metadata
+# REQUIREMENTS
 
-Track:
+## 1. WIRE VISUAL MODEL
 
-modelId
+Create metadata definitions for:
 
-componentType
+wireId
+
+wireType
 
 displayName
 
 category
 
-defaultWidth
+defaultStyle
 
-defaultHeight
+defaultThickness
 
-anchorPoints
-
-pinVisualMetadata
-
-labelPositions
-
-interactionZones
+defaultRoutingMode
 
 futureAnimationHints
 
-futureSkinHints
+futureSignalHints
 
 futureThemeHints
 
 ---
 
-## Pin Visual Metadata
+## 2. WIRE ROUTING METADATA
 
 Track:
 
-pin position
+sourceAnchor
 
-pin label
+targetAnchor
 
-pin type
+controlPoints
 
-pin group
+routingHints
 
-visual direction
+preferredPathType
 
-future active-state hints
+futureAutoRoutingHints
 
 ---
 
-## Interaction Metadata
+## 3. SIGNAL VISUALIZATION METADATA
+
+Track:
+
+signalDirection
+
+signalActivity
+
+signalState
+
+futureFlowAnimationHints
+
+futurePulseHints
+
+---
+
+## 4. WIRE INTERACTION METADATA
 
 Track:
 
@@ -399,34 +448,42 @@ hover zones
 
 selection zones
 
-drag zones
+drag handles
 
-focus zones
+routing handles
 
-future click zones
+focus regions
 
 ---
 
-## Registry Requirements
+## 5. WIRE VISUAL REGISTRY
 
 Must support:
 
-* register
-* lookup
-* update
-* removal
+register
 
-Must be:
+lookup
+
+update
+
+remove
+
+clear
+
+getAll
+
+Requirements:
 
 * O(1) lookup
-* deterministic
+* deterministic ordering
 * clone safe
+* deep-copy safe
 * serialization safe
 * snapshot safe
 
 ---
 
-## Snapshot Integration
+## 6. SNAPSHOT INTEGRATION
 
 Expose through:
 
@@ -436,7 +493,7 @@ Renderer receives metadata only.
 
 ---
 
-## Serialization
+## 7. SERIALIZATION
 
 Support:
 
@@ -448,7 +505,7 @@ Round-trip preservation required.
 
 ---
 
-## Validation
+## 8. VALIDATION
 
 Warning-only.
 
@@ -458,13 +515,37 @@ Validate:
 
 duplicate IDs
 
-invalid dimensions
+invalid routing metadata
 
-invalid anchors
-
-invalid pins
+invalid control points
 
 invalid interaction metadata
+
+invalid wire styles
+
+invalid wire types
+
+---
+
+# DO NOT MODIFY
+
+scheduler
+
+HAL
+
+GPIO
+
+Protocol Layer
+
+Execution Layer
+
+Board Metadata
+
+Component Visual Models
+
+Renderer Architecture
+
+Clone Architecture
 
 ---
 
@@ -472,11 +553,11 @@ invalid interaction metadata
 
 Create:
 
-tests/component-visual-model-runtime.test.ts
+tests/wire-visualization-runtime.test.ts
 
 Target:
 
-1800+ deterministic tests
+2000+ deterministic tests
 
 Cover:
 
@@ -500,9 +581,35 @@ clone safety
 
 cleanup
 
+routing metadata
+
+interaction metadata
+
 duplicate IDs
 
 invalid metadata
+
+validation warnings
+
+ordering guarantees
+
+---
+
+# TEST RULES
+
+Tests are authoritative.
+
+Generate deterministic tests only.
+
+NO randomization.
+
+NO timers.
+
+NO wall-clock dependence.
+
+NO async delays.
+
+Follow existing repository testing style.
 
 ---
 
@@ -510,16 +617,21 @@ invalid metadata
 
 MUST UPDATE
 
+ONLY AFTER:
+
+1. Tests pass
+2. Build passes
+
 Add:
 
-Phase 10B
+Phase 10C
 
-Component Visual Models Foundation
+Wire Visualization Foundation
 
 Update:
 
 * roadmap
-* completion %
+* completion percentage
 * changelog
 * verification metrics
 * visual simulator status
@@ -532,16 +644,16 @@ Completed:
 * visual registry
 * visual themes
 * component visual models
+* wire visualization metadata
 
 Not Started:
 
+* board visualization
+* signal visualization
 * rendering
 * animations
-* board rendering
-* wire rendering
-* signal visualization
-* component skins
 * artwork
+* component skins
 
 ---
 
@@ -555,11 +667,11 @@ pnpm --filter @stemverse/runtime-engine test
 pnpm --filter @stemverse/runtime-engine build
 ```
 
-Both must pass.
+Both MUST pass.
 
 ---
 
-# REQUIRED OUTPUT
+# REQUIRED OUTPUT FORMAT
 
 Return ONLY:
 
@@ -575,4 +687,8 @@ No walkthroughs.
 
 No code dumps.
 
-No architectural redesign proposals.
+No architecture proposals.
+
+No future roadmap suggestions.
+
+No redesign recommendations.
