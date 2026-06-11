@@ -1,5 +1,5 @@
 import { IRuntime } from '../core';
-import { TargetId, TargetState, ASTScript, Thread, SpriteState, StageState, PendingBroadcast, BroadcastCompletionToken, ListenerEntry, BubbleState, StageSyncState, CostumeAsset, SoundAsset, BackdropAsset, ActiveSoundTrigger, SoundChannelState, PenCommand, PenState, VariableWatcher, WatcherMode, ListWatcher, ListWatcherMode, GlideState, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, SerializedProject, SerializedStage, SerializedTarget, SerializedAssetManifest, SerializedProjectMetadata, VariableState, ListState, RuntimeAssetState, AssetLoadStatus, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, ComponentType, RuntimeComponent, PinDirection, RuntimePin, RuntimeConnection, DeviceState, WorkspaceTransform, WorkspaceComponentLayout, WirePoint, WireLayout, DevelopmentBoardType, BoardPinDefinition, BoardPinCapabilities, DevelopmentBoardDefinition, WorkspaceBoard, RenderModelType, RenderMetadata, RuntimeHALState, HardwareAddress, PinMode, PullMode, PinCapability, ProtocolState, ProtocolType, PWMChannelState, I2CBusState, SPIBusState, UARTPortState, HardwareBackendMetadata, ExecutionCommand, ExecutionCommandLifecycleState, ExecutionCommandType, ESP32RuntimeMetadata, ESP32ExecutionState, ESP32PinCapability, ESP32PinMode, ESP32InstructionMetadata, ESP32InstructionExecutionState, ESP32InstructionType, ESP32GPIOExecutionResult, ESP32GPIOExecutionStatus, ESP32PWMExecutionState, ESP32ServoExecutionState, ESP32ADCExecutionState, ESP32TouchExecutionState } from '../types';
+import { TargetId, TargetState, ASTScript, Thread, SpriteState, StageState, PendingBroadcast, BroadcastCompletionToken, ListenerEntry, BubbleState, StageSyncState, CostumeAsset, SoundAsset, BackdropAsset, ActiveSoundTrigger, SoundChannelState, PenCommand, PenState, VariableWatcher, WatcherMode, ListWatcher, ListWatcherMode, GlideState, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, SerializedProject, SerializedStage, SerializedTarget, SerializedAssetManifest, SerializedProjectMetadata, VariableState, ListState, RuntimeAssetState, AssetLoadStatus, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, ComponentType, RuntimeComponent, PinDirection, RuntimePin, RuntimeConnection, DeviceState, WorkspaceTransform, WorkspaceComponentLayout, WirePoint, WireLayout, DevelopmentBoardType, BoardPinDefinition, BoardPinCapabilities, DevelopmentBoardDefinition, WorkspaceBoard, RenderModelType, RenderMetadata, RuntimeHALState, HardwareAddress, PinMode, PullMode, PinCapability, ProtocolState, ProtocolType, PWMChannelState, I2CBusState, SPIBusState, UARTPortState, HardwareBackendMetadata, ExecutionCommand, ExecutionCommandLifecycleState, ExecutionCommandType, ESP32RuntimeMetadata, ESP32ExecutionState, ESP32PinCapability, ESP32PinMode, ESP32InstructionMetadata, ESP32InstructionExecutionState, ESP32InstructionType, ESP32GPIOExecutionResult, ESP32GPIOExecutionStatus, ESP32PWMExecutionState, ESP32ServoExecutionState, ESP32ADCExecutionState, ESP32TouchExecutionState, ESP32PeripheralCommandExecutionResult, ESP32PeripheralCommandExecutionStatus } from '../types';
 import { MinimalASTInterpreter, IHardwareAdapter } from '../ast/interpreter';
 import { SimulatedHardwareBackend } from '../hal';
 import { createThread, TaskQueue, PendingTask, resetThreadCounter } from './execution-context';
@@ -280,6 +280,8 @@ export class BaseRuntime implements IRuntime {
   private adcOrder: string[] = [];
   private touchRegistry = new Map<string, ESP32TouchExecutionState>();
   private touchOrder: string[] = [];
+  private esp32PeripheralCommandExecutionResultRegistry = new Map<string, ESP32PeripheralCommandExecutionResult>();
+  private esp32PeripheralCommandExecutionResultOrder: string[] = [];
 
   private static readonly DEFAULT_RENDER_METADATA: Record<RenderModelType, RenderMetadata> = {
     'LED': { modelType: 'LED', width: 20, height: 20, anchorX: 0.5, anchorY: 0.5, rotation: 0, visible: true },
@@ -705,7 +707,7 @@ export class BaseRuntime implements IRuntime {
 
   private static readonly VALID_EXECUTION_COMMAND_TYPES: ExecutionCommandType[] = [
     'DIGITAL_WRITE', 'DIGITAL_READ', 'ANALOG_WRITE', 'ANALOG_READ', 'PWM_WRITE',
-    'SERVO_WRITE', 'LCD_WRITE', 'OLED_WRITE', 'SENSOR_READ', 'I2C_READ', 'I2C_WRITE',
+    'SERVO_WRITE', 'ADC_READ', 'TOUCH_READ', 'LCD_WRITE', 'OLED_WRITE', 'SENSOR_READ', 'I2C_READ', 'I2C_WRITE',
     'SPI_TRANSFER', 'UART_READ', 'UART_WRITE'
   ];
 
@@ -1053,6 +1055,66 @@ export class BaseRuntime implements IRuntime {
     if (runtime) runtime.executionContext.instructionExecutionState = state;
   }
 
+  private static readonly VALID_ESP32_PERIPHERAL_COMMAND_STATUSES: ESP32PeripheralCommandExecutionStatus[] = ['COMPLETED', 'FAILED', 'SKIPPED'];
+
+  private validateESP32PeripheralCommandExecutionResult(result: ESP32PeripheralCommandExecutionResult): boolean {
+    if (!result || typeof result.resultId !== 'string' || result.resultId.length === 0 || typeof result.commandId !== 'string' || result.commandId.length === 0 || typeof result.runtimeId !== 'string' || result.runtimeId.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed ESP32 peripheral command execution result: Result is missing required identifiers.');
+      return false;
+    }
+    if (!BaseRuntime.VALID_EXECUTION_COMMAND_TYPES.includes(result.commandType)) {
+      console.warn(`[Runtime Diagnostics] unsupported ESP32 peripheral command result types: Result "${result.resultId}" has unsupported command type "${(result as any).commandType}".`);
+      return false;
+    }
+    if (!BaseRuntime.VALID_ESP32_PERIPHERAL_COMMAND_STATUSES.includes(result.status)) {
+      console.warn(`[Runtime Diagnostics] malformed ESP32 peripheral command execution result: Result "${result.resultId}" has invalid status.`);
+      return false;
+    }
+    if (result.peripheralId !== undefined && typeof result.peripheralId !== 'string') {
+      console.warn(`[Runtime Diagnostics] malformed ESP32 peripheral command execution result: Result "${result.resultId}" has invalid peripheralId.`);
+      return false;
+    }
+    if (result.value !== undefined && typeof result.value !== 'number' && typeof result.value !== 'boolean') {
+      console.warn(`[Runtime Diagnostics] malformed ESP32 peripheral command execution result: Result "${result.resultId}" has invalid value.`);
+      return false;
+    }
+    if (!this.validatePlainObject(result.diagnostics) || !Array.isArray(result.diagnostics.warnings) || !Array.isArray(result.diagnostics.errors) || !this.validatePlainObject(result.diagnostics.metadata) || !this.validatePlainObject(result.metadata)) {
+      console.warn(`[Runtime Diagnostics] malformed ESP32 peripheral command execution result: Result "${result.resultId}" has invalid diagnostics or metadata.`);
+      return false;
+    }
+    return true;
+  }
+
+  public registerESP32PeripheralCommandExecutionResult(result: ESP32PeripheralCommandExecutionResult): void {
+    if (!this.validateESP32PeripheralCommandExecutionResult(result)) return;
+    if (this.esp32PeripheralCommandExecutionResultRegistry.has(result.resultId)) {
+      console.warn(`[Runtime Diagnostics] duplicate ESP32 peripheral command execution result IDs: Result ID "${result.resultId}" already exists.`);
+    }
+    this.esp32PeripheralCommandExecutionResultRegistry.set(result.resultId, JSON.parse(JSON.stringify(result)));
+    if (!this.esp32PeripheralCommandExecutionResultOrder.includes(result.resultId)) this.esp32PeripheralCommandExecutionResultOrder.push(result.resultId);
+  }
+
+  public getESP32PeripheralCommandExecutionResult(id: string): ESP32PeripheralCommandExecutionResult | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed ESP32 peripheral command execution result: Result ID must be a non-empty string.');
+      return undefined;
+    }
+    const result = this.esp32PeripheralCommandExecutionResultRegistry.get(id);
+    return result ? JSON.parse(JSON.stringify(result)) : undefined;
+  }
+
+  public getESP32PeripheralCommandExecutionResults(): ESP32PeripheralCommandExecutionResult[] {
+    return this.esp32PeripheralCommandExecutionResultOrder
+      .map(id => this.esp32PeripheralCommandExecutionResultRegistry.get(id))
+      .filter((result): result is ESP32PeripheralCommandExecutionResult => !!result)
+      .map(result => JSON.parse(JSON.stringify(result)));
+  }
+
+  public clearESP32PeripheralCommandExecutionResults(): void {
+    this.esp32PeripheralCommandExecutionResultRegistry.clear();
+    this.esp32PeripheralCommandExecutionResultOrder = [];
+  }
+
   private static readonly VALID_ESP32_GPIO_EXECUTION_STATUSES: ESP32GPIOExecutionStatus[] = ['SKIPPED', 'COMPLETED', 'FAILED'];
 
   private validateGPIOPinNumber(gpio: unknown, instructionId: string): gpio is number {
@@ -1261,6 +1323,120 @@ export class BaseRuntime implements IRuntime {
     for (const state of this.getServoExecutionStates()) if (owns(state)) this.removeServoExecutionState(state.servoId);
     for (const state of this.getADCExecutionStates()) if (owns(state)) this.removeADCExecutionState(state.adcId);
     for (const state of this.getTouchExecutionStates()) if (owns(state)) this.removeTouchExecutionState(state.touchId);
+  }
+
+  private createESP32PeripheralCommandResult(command: ExecutionCommand, status: ESP32PeripheralCommandExecutionStatus, overrides: Partial<ESP32PeripheralCommandExecutionResult> = {}): ESP32PeripheralCommandExecutionResult {
+    return {
+      resultId: `${command.commandId}:${this.esp32PeripheralCommandExecutionResultOrder.length}`,
+      commandId: command.commandId,
+      runtimeId: command.address.boardId ?? command.address.targetId ?? command.address.componentId ?? 'unknown-runtime',
+      commandType: command.commandType,
+      status,
+      diagnostics: { warnings: [], errors: [], metadata: {} },
+      metadata: {},
+      ...overrides,
+    };
+  }
+
+  private completeESP32PeripheralCommand(command: ExecutionCommand, result: ESP32PeripheralCommandExecutionResult): ESP32PeripheralCommandExecutionResult {
+    this.registerESP32PeripheralCommandExecutionResult(result);
+    command.lifecycle = result.status === 'FAILED' ? 'FAILED' : 'COMPLETED';
+    const runtime = this.esp32RuntimeRegistry.get(result.runtimeId);
+    if (runtime) {
+      runtime.executionContext.lastPeripheralCommandId = command.commandId;
+      runtime.executionContext.peripheralCommandCount = (runtime.executionContext.peripheralCommandCount ?? 0) + (result.status === 'SKIPPED' ? 0 : 1);
+      runtime.executionContext.peripheralExecutionResult = JSON.parse(JSON.stringify(result));
+      runtime.executionContext.diagnostics = JSON.parse(JSON.stringify(result.diagnostics));
+    }
+    return JSON.parse(JSON.stringify(result));
+  }
+
+  public executeESP32PeripheralCommand(id: string): ESP32PeripheralCommandExecutionResult | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed execution command: Command ID must be a non-empty string.');
+      return undefined;
+    }
+    const command = this.executionCommandRegistry.get(id);
+    if (!command || !this.validateExecutionCommand(command)) return undefined;
+
+    const runtimeId = command.address.boardId ?? command.address.targetId ?? command.address.componentId;
+    if (typeof runtimeId !== 'string' || runtimeId.length === 0) {
+      const result = this.createESP32PeripheralCommandResult(command, 'FAILED', { runtimeId: 'unknown-runtime', diagnostics: { warnings: [], errors: ['Missing ESP32 runtime identifier'], metadata: {} }, metadata: { reason: 'missing-runtime-id' } });
+      return this.completeESP32PeripheralCommand(command, result);
+    }
+
+    if (!this.esp32RuntimeRegistry.has(runtimeId)) {
+      console.warn(`[Runtime Diagnostics] missing ESP32 runtime references: Command "${command.commandId}" references missing runtime "${runtimeId}".`);
+      const result = this.createESP32PeripheralCommandResult(command, 'FAILED', { runtimeId, diagnostics: { warnings: [], errors: ['Missing ESP32 runtime'], metadata: {} }, metadata: { reason: 'missing-runtime' } });
+      return this.completeESP32PeripheralCommand(command, result);
+    }
+
+    if (!['PWM_WRITE', 'SERVO_WRITE', 'ADC_READ', 'TOUCH_READ'].includes(command.commandType)) {
+      console.warn(`[Runtime Diagnostics] unsupported ESP32 peripheral commands: Command "${command.commandId}" has unsupported type "${command.commandType}".`);
+      const result = this.createESP32PeripheralCommandResult(command, 'SKIPPED', { runtimeId, diagnostics: { warnings: ['Unsupported ESP32 peripheral command'], errors: [], metadata: {} }, metadata: { reason: 'unsupported-command' } });
+      return this.completeESP32PeripheralCommand(command, result);
+    }
+
+    const peripheralId = typeof command.payload.peripheralId === 'string' ? command.payload.peripheralId : typeof command.address.channelId === 'string' ? command.address.channelId : typeof command.address.pinId === 'string' ? command.address.pinId : undefined;
+    if (!peripheralId) {
+      console.warn(`[Runtime Diagnostics] malformed execution command: Command "${command.commandId}" is missing peripheralId metadata.`);
+      const result = this.createESP32PeripheralCommandResult(command, 'FAILED', { runtimeId, diagnostics: { warnings: [], errors: ['Missing peripheralId'], metadata: {} }, metadata: { reason: 'missing-peripheral-id' } });
+      return this.completeESP32PeripheralCommand(command, result);
+    }
+
+    if (command.commandType === 'PWM_WRITE') {
+      const state = this.pwmRegistry.get(peripheralId);
+      if (!state) {
+        console.warn(`[Runtime Diagnostics] missing ESP32 peripheral references: PWM "${peripheralId}" is not registered.`);
+        return this.completeESP32PeripheralCommand(command, this.createESP32PeripheralCommandResult(command, 'FAILED', { runtimeId, peripheralId, diagnostics: { warnings: [], errors: ['Missing PWM peripheral'], metadata: {} }, metadata: { reason: 'missing-pwm' } }));
+      }
+      const dutyCycle = command.payload.dutyCycle ?? command.payload.value;
+      if (typeof dutyCycle !== 'number' || !Number.isFinite(dutyCycle)) {
+        console.warn(`[Runtime Diagnostics] malformed execution command: Command "${command.commandId}" has invalid PWM dutyCycle.`);
+        return this.completeESP32PeripheralCommand(command, this.createESP32PeripheralCommandResult(command, 'FAILED', { runtimeId, peripheralId, diagnostics: { warnings: [], errors: ['Invalid PWM duty cycle'], metadata: {} }, metadata: { reason: 'invalid-duty-cycle' } }));
+      }
+      this.updatePWMDutyCycle(peripheralId, dutyCycle);
+      const updated = this.pwmRegistry.get(peripheralId);
+      if (!updated || updated.dutyCycle !== dutyCycle) {
+        return this.completeESP32PeripheralCommand(command, this.createESP32PeripheralCommandResult(command, 'FAILED', { runtimeId, peripheralId, diagnostics: { warnings: [], errors: ['Invalid PWM duty cycle'], metadata: {} }, metadata: { reason: 'invalid-duty-cycle' } }));
+      }
+      return this.completeESP32PeripheralCommand(command, this.createESP32PeripheralCommandResult(command, 'COMPLETED', { runtimeId, peripheralId, value: dutyCycle, metadata: { dutyCycle } }));
+    }
+
+    if (command.commandType === 'SERVO_WRITE') {
+      const state = this.servoRegistry.get(peripheralId);
+      if (!state) {
+        console.warn(`[Runtime Diagnostics] missing ESP32 peripheral references: Servo "${peripheralId}" is not registered.`);
+        return this.completeESP32PeripheralCommand(command, this.createESP32PeripheralCommandResult(command, 'FAILED', { runtimeId, peripheralId, diagnostics: { warnings: [], errors: ['Missing servo peripheral'], metadata: {} }, metadata: { reason: 'missing-servo' } }));
+      }
+      const angle = command.payload.angle ?? command.payload.value;
+      if (typeof angle !== 'number' || !Number.isFinite(angle)) {
+        console.warn(`[Runtime Diagnostics] malformed execution command: Command "${command.commandId}" has invalid servo angle.`);
+        return this.completeESP32PeripheralCommand(command, this.createESP32PeripheralCommandResult(command, 'FAILED', { runtimeId, peripheralId, diagnostics: { warnings: [], errors: ['Invalid servo angle'], metadata: {} }, metadata: { reason: 'invalid-servo-angle' } }));
+      }
+      this.updateServoAngle(peripheralId, angle);
+      const updated = this.servoRegistry.get(peripheralId);
+      if (!updated || updated.angle !== angle) {
+        return this.completeESP32PeripheralCommand(command, this.createESP32PeripheralCommandResult(command, 'FAILED', { runtimeId, peripheralId, diagnostics: { warnings: [], errors: ['Invalid servo angle'], metadata: {} }, metadata: { reason: 'invalid-servo-angle' } }));
+      }
+      return this.completeESP32PeripheralCommand(command, this.createESP32PeripheralCommandResult(command, 'COMPLETED', { runtimeId, peripheralId, value: angle, metadata: { angle } }));
+    }
+
+    if (command.commandType === 'ADC_READ') {
+      const state = this.adcRegistry.get(peripheralId);
+      if (!state) {
+        console.warn(`[Runtime Diagnostics] missing ESP32 peripheral references: ADC "${peripheralId}" is not registered.`);
+        return this.completeESP32PeripheralCommand(command, this.createESP32PeripheralCommandResult(command, 'FAILED', { runtimeId, peripheralId, diagnostics: { warnings: [], errors: ['Missing ADC peripheral'], metadata: {} }, metadata: { reason: 'missing-adc' } }));
+      }
+      return this.completeESP32PeripheralCommand(command, this.createESP32PeripheralCommandResult(command, 'COMPLETED', { runtimeId, peripheralId, value: state.currentValue, metadata: { currentValue: state.currentValue, minValue: state.minValue, maxValue: state.maxValue, resolutionBits: state.resolutionBits } }));
+    }
+
+    const state = this.touchRegistry.get(peripheralId);
+    if (!state) {
+      console.warn(`[Runtime Diagnostics] missing ESP32 peripheral references: Touch "${peripheralId}" is not registered.`);
+      return this.completeESP32PeripheralCommand(command, this.createESP32PeripheralCommandResult(command, 'FAILED', { runtimeId, peripheralId, diagnostics: { warnings: [], errors: ['Missing touch peripheral'], metadata: {} }, metadata: { reason: 'missing-touch' } }));
+    }
+    return this.completeESP32PeripheralCommand(command, this.createESP32PeripheralCommandResult(command, 'COMPLETED', { runtimeId, peripheralId, value: state.touched, metadata: { touched: state.touched, threshold: state.threshold, touchCapable: state.touchCapable } }));
   }
 
   public executeESP32Instruction(id: string): ESP32GPIOExecutionResult | undefined {
@@ -3674,6 +3850,9 @@ export class BaseRuntime implements IRuntime {
     this.clearServoExecutionStates();
     this.clearADCExecutionStates();
     this.clearTouchExecutionStates();
+
+    // Reset Phase 8G ESP32 peripheral command execution results
+    this.clearESP32PeripheralCommandExecutionResults();
   }
 
   public start(): void {
@@ -3854,6 +4033,7 @@ export class BaseRuntime implements IRuntime {
     this.clearServoExecutionStates();
     this.clearADCExecutionStates();
     this.clearTouchExecutionStates();
+    this.clearESP32PeripheralCommandExecutionResults();
   }
 
   /**
@@ -4568,6 +4748,9 @@ export class BaseRuntime implements IRuntime {
       if (this.touchRegistry.size > 0) {
         stageSnap.touchRegistry = this.getTouchExecutionStates();
       }
+      if (this.esp32PeripheralCommandExecutionResultRegistry.size > 0) {
+        stageSnap.esp32PeripheralCommandExecutionResults = this.getESP32PeripheralCommandExecutionResults();
+      }
       // Phase 7R: Attach connection metadata to stage snapshot entry
       if (this.connectionRegistry.size > 0) {
         stageSnap.connections = this.getConnections();
@@ -4765,6 +4948,11 @@ export class BaseRuntime implements IRuntime {
       if (isStage && this.servoRegistry.size > 0) serializedTarget.servoRegistry = this.getServoExecutionStates();
       if (isStage && this.adcRegistry.size > 0) serializedTarget.adcRegistry = this.getADCExecutionStates();
       if (isStage && this.touchRegistry.size > 0) serializedTarget.touchRegistry = this.getTouchExecutionStates();
+
+      // Phase 8G: Serialize ESP32 peripheral command execution results
+      if (isStage && this.esp32PeripheralCommandExecutionResultRegistry.size > 0) {
+        serializedTarget.esp32PeripheralCommandExecutionResults = this.getESP32PeripheralCommandExecutionResults();
+      }
 
       const targetWatchers = Array.from(this.variableWatchers.values())
         .filter(w => w.targetId === target.id || (!w.targetId && isStage));
@@ -5181,6 +5369,12 @@ export class BaseRuntime implements IRuntime {
       }
       if (Array.isArray(stageTarget.touchRegistry)) {
         for (const state of stageTarget.touchRegistry) this.registerTouchExecutionState(JSON.parse(JSON.stringify(state)));
+      }
+      // Phase 8G: Restore ESP32 peripheral command execution results from stage target
+      if (Array.isArray(stageTarget.esp32PeripheralCommandExecutionResults)) {
+        for (const result of stageTarget.esp32PeripheralCommandExecutionResults) {
+          this.registerESP32PeripheralCommandExecutionResult(JSON.parse(JSON.stringify(result)));
+        }
       }
     }
     // Restore pins from component pin data

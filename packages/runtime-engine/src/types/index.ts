@@ -443,6 +443,9 @@ export interface StageSyncState {
   servoRegistry?: ESP32ServoExecutionState[];
   adcRegistry?: ESP32ADCExecutionState[];
   touchRegistry?: ESP32TouchExecutionState[];
+
+  // Phase 8G: ESP32 peripheral command execution result synchronization
+  esp32PeripheralCommandExecutionResults?: ESP32PeripheralCommandExecutionResult[];
 }
 
 /**
@@ -623,6 +626,9 @@ export interface SerializedTarget {
   servoRegistry?: ESP32ServoExecutionState[];
   adcRegistry?: ESP32ADCExecutionState[];
   touchRegistry?: ESP32TouchExecutionState[];
+
+  // Phase 8G: ESP32 peripheral command execution result serialization
+  esp32PeripheralCommandExecutionResults?: ESP32PeripheralCommandExecutionResult[];
 }
 
 export interface SerializedAssetManifest {
@@ -813,6 +819,8 @@ export type ExecutionCommandType =
   | 'ANALOG_READ'
   | 'PWM_WRITE'
   | 'SERVO_WRITE'
+  | 'ADC_READ'
+  | 'TOUCH_READ'
   | 'LCD_WRITE'
   | 'OLED_WRITE'
   | 'SENSOR_READ'
@@ -886,6 +894,9 @@ export interface ESP32ExecutionContext {
   executedInstructionCount?: number;
   lastExecutedInstructionId?: string;
   executionResult?: ESP32GPIOExecutionResult;
+  lastPeripheralCommandId?: string;
+  peripheralCommandCount?: number;
+  peripheralExecutionResult?: ESP32PeripheralCommandExecutionResult;
   metadata: Record<string, unknown>;
 }
 
@@ -1007,6 +1018,22 @@ export interface ESP32TouchExecutionState {
   threshold: number;
   targetId?: string;
   componentId?: string;
+  metadata: Record<string, unknown>;
+}
+
+// ─── Phase 8G: ESP32 Peripheral Command Execution Metadata ──────────────
+
+export type ESP32PeripheralCommandExecutionStatus = 'COMPLETED' | 'FAILED' | 'SKIPPED';
+
+export interface ESP32PeripheralCommandExecutionResult {
+  resultId: string;
+  commandId: string;
+  runtimeId: string;
+  commandType: ExecutionCommandType;
+  status: ESP32PeripheralCommandExecutionStatus;
+  peripheralId?: string;
+  value?: number | boolean;
+  diagnostics: ESP32InstructionDiagnostics;
   metadata: Record<string, unknown>;
 }
 
