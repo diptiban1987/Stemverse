@@ -428,6 +428,9 @@ export interface StageSyncState {
 
   // Phase 8B: Execution command metadata synchronization
   executionCommands?: ExecutionCommand[];
+
+  // Phase 8C: ESP32 runtime metadata synchronization
+  esp32Runtimes?: ESP32RuntimeMetadata[];
 }
 
 /**
@@ -593,6 +596,9 @@ export interface SerializedTarget {
 
   // Phase 8B: Execution command metadata serialization
   executionCommands?: ExecutionCommand[];
+
+  // Phase 8C: ESP32 runtime metadata serialization
+  esp32Runtimes?: ESP32RuntimeMetadata[];
 }
 
 export interface SerializedAssetManifest {
@@ -806,6 +812,58 @@ export interface ExecutionCommand {
   lifecycle: ExecutionCommandLifecycleState;
   address: ExecutionCommandAddress;
   payload: Record<string, unknown>;
+  metadata: Record<string, unknown>;
+}
+
+// ─── Phase 8C: ESP32 Runtime Foundation Metadata ──────────────
+
+export type ESP32ExecutionState = 'BOOT' | 'READY' | 'RUNNING' | 'STOPPED' | 'FAULTED';
+
+export type ESP32PinMode = 'INPUT' | 'OUTPUT' | 'INPUT_PULLUP' | 'INPUT_PULLDOWN';
+
+export type ESP32PinCapability = 'DIGITAL' | 'ANALOG' | 'PWM' | 'TOUCH' | 'UART' | 'I2C' | 'SPI';
+
+export interface ESP32PinDefinition {
+  gpio: number;
+  pinId: string;
+  mode: ESP32PinMode;
+  capabilities: ESP32PinCapability[];
+  ownerId?: string;
+  metadata: Record<string, unknown>;
+}
+
+export interface ESP32PinState {
+  gpio: number;
+  pinId: string;
+  mode: ESP32PinMode;
+  ownerId?: string;
+  metadata: Record<string, unknown>;
+}
+
+export interface ESP32CapabilitySet {
+  pins: ESP32PinDefinition[];
+  metadata: Record<string, unknown>;
+}
+
+export interface ESP32BoardBinding {
+  workspaceBoardId: string;
+  boardDefinitionId: DevelopmentBoardType | string;
+  componentId?: string;
+  metadata: Record<string, unknown>;
+}
+
+export interface ESP32ExecutionContext {
+  contextId: string;
+  state: ESP32ExecutionState;
+  metadata: Record<string, unknown>;
+}
+
+export interface ESP32RuntimeMetadata {
+  runtimeId: string;
+  boardBinding: ESP32BoardBinding;
+  executionContext: ESP32ExecutionContext;
+  capabilitySet: ESP32CapabilitySet;
+  pinStates: ESP32PinState[];
   metadata: Record<string, unknown>;
 }
 

@@ -1,5 +1,5 @@
 import { IRuntime } from '../core';
-import { TargetId, TargetState, ASTScript, Thread, SpriteState, StageState, PendingBroadcast, BroadcastCompletionToken, ListenerEntry, BubbleState, StageSyncState, CostumeAsset, SoundAsset, BackdropAsset, ActiveSoundTrigger, SoundChannelState, PenCommand, PenState, VariableWatcher, WatcherMode, ListWatcher, ListWatcherMode, GlideState, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, SerializedProject, SerializedStage, SerializedTarget, SerializedAssetManifest, SerializedProjectMetadata, VariableState, ListState, RuntimeAssetState, AssetLoadStatus, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, ComponentType, RuntimeComponent, PinDirection, RuntimePin, RuntimeConnection, DeviceState, WorkspaceTransform, WorkspaceComponentLayout, WirePoint, WireLayout, DevelopmentBoardType, BoardPinDefinition, BoardPinCapabilities, DevelopmentBoardDefinition, WorkspaceBoard, RenderModelType, RenderMetadata, RuntimeHALState, HardwareAddress, PinMode, PullMode, PinCapability, ProtocolState, ProtocolType, PWMChannelState, I2CBusState, SPIBusState, UARTPortState, HardwareBackendMetadata, ExecutionCommand, ExecutionCommandLifecycleState, ExecutionCommandType } from '../types';
+import { TargetId, TargetState, ASTScript, Thread, SpriteState, StageState, PendingBroadcast, BroadcastCompletionToken, ListenerEntry, BubbleState, StageSyncState, CostumeAsset, SoundAsset, BackdropAsset, ActiveSoundTrigger, SoundChannelState, PenCommand, PenState, VariableWatcher, WatcherMode, ListWatcher, ListWatcherMode, GlideState, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, SerializedProject, SerializedStage, SerializedTarget, SerializedAssetManifest, SerializedProjectMetadata, VariableState, ListState, RuntimeAssetState, AssetLoadStatus, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, ComponentType, RuntimeComponent, PinDirection, RuntimePin, RuntimeConnection, DeviceState, WorkspaceTransform, WorkspaceComponentLayout, WirePoint, WireLayout, DevelopmentBoardType, BoardPinDefinition, BoardPinCapabilities, DevelopmentBoardDefinition, WorkspaceBoard, RenderModelType, RenderMetadata, RuntimeHALState, HardwareAddress, PinMode, PullMode, PinCapability, ProtocolState, ProtocolType, PWMChannelState, I2CBusState, SPIBusState, UARTPortState, HardwareBackendMetadata, ExecutionCommand, ExecutionCommandLifecycleState, ExecutionCommandType, ESP32RuntimeMetadata, ESP32ExecutionState, ESP32PinCapability, ESP32PinMode } from '../types';
 import { MinimalASTInterpreter, IHardwareAdapter } from '../ast/interpreter';
 import { SimulatedHardwareBackend } from '../hal';
 import { createThread, TaskQueue, PendingTask, resetThreadCounter } from './execution-context';
@@ -266,6 +266,8 @@ export class BaseRuntime implements IRuntime {
   private activeHardwareBackendId = 'simulated-runtime';
   private executionCommandRegistry = new Map<string, ExecutionCommand>();
   private executionCommandOrder: string[] = [];
+  private esp32RuntimeRegistry = new Map<string, ESP32RuntimeMetadata>();
+  private esp32RuntimeOrder: string[] = [];
 
   private static readonly DEFAULT_RENDER_METADATA: Record<RenderModelType, RenderMetadata> = {
     'LED': { modelType: 'LED', width: 20, height: 20, anchorX: 0.5, anchorY: 0.5, rotation: 0, visible: true },
@@ -787,6 +789,140 @@ export class BaseRuntime implements IRuntime {
       return;
     }
     command.lifecycle = lifecycle;
+  }
+
+  private static readonly VALID_ESP32_EXECUTION_STATES: ESP32ExecutionState[] = ['BOOT', 'READY', 'RUNNING', 'STOPPED', 'FAULTED'];
+  private static readonly VALID_ESP32_PIN_MODES: ESP32PinMode[] = ['INPUT', 'OUTPUT', 'INPUT_PULLUP', 'INPUT_PULLDOWN'];
+  private static readonly VALID_ESP32_PIN_CAPABILITIES: ESP32PinCapability[] = ['DIGITAL', 'ANALOG', 'PWM', 'TOUCH', 'UART', 'I2C', 'SPI'];
+
+  private validatePlainObject(value: unknown): boolean {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+  }
+
+  private validateESP32RuntimeMetadata(metadata: ESP32RuntimeMetadata): boolean {
+    if (!metadata || typeof metadata.runtimeId !== 'string' || metadata.runtimeId.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed ESP32 runtime metadata: Runtime is missing a valid runtimeId.');
+      return false;
+    }
+    if (!this.validatePlainObject(metadata.boardBinding)) {
+      console.warn(`[Runtime Diagnostics] malformed board bindings: ESP32 runtime "${metadata.runtimeId}" has invalid board binding.`);
+      return false;
+    }
+    if (typeof metadata.boardBinding.workspaceBoardId !== 'string' || metadata.boardBinding.workspaceBoardId.length === 0 || typeof metadata.boardBinding.boardDefinitionId !== 'string' || metadata.boardBinding.boardDefinitionId.length === 0 || !this.validatePlainObject(metadata.boardBinding.metadata)) {
+      console.warn(`[Runtime Diagnostics] malformed board bindings: ESP32 runtime "${metadata.runtimeId}" has incomplete board binding metadata.`);
+      return false;
+    }
+    if (metadata.boardBinding.componentId !== undefined && typeof metadata.boardBinding.componentId !== 'string') {
+      console.warn(`[Runtime Diagnostics] malformed board bindings: ESP32 runtime "${metadata.runtimeId}" has invalid componentId.`);
+      return false;
+    }
+    if (!this.validatePlainObject(metadata.executionContext) || typeof metadata.executionContext.contextId !== 'string' || metadata.executionContext.contextId.length === 0) {
+      console.warn(`[Runtime Diagnostics] malformed ESP32 runtime metadata: ESP32 runtime "${metadata.runtimeId}" has invalid execution context.`);
+      return false;
+    }
+    if (!BaseRuntime.VALID_ESP32_EXECUTION_STATES.includes(metadata.executionContext.state)) {
+      console.warn(`[Runtime Diagnostics] invalid ESP32 execution states: ESP32 runtime "${metadata.runtimeId}" has invalid state "${(metadata.executionContext as any).state}".`);
+      return false;
+    }
+    if (!this.validatePlainObject(metadata.executionContext.metadata) || !this.validatePlainObject(metadata.metadata)) {
+      console.warn(`[Runtime Diagnostics] malformed ESP32 runtime metadata: ESP32 runtime "${metadata.runtimeId}" has invalid metadata.`);
+      return false;
+    }
+    if (!this.validatePlainObject(metadata.capabilitySet) || !Array.isArray(metadata.capabilitySet.pins) || !this.validatePlainObject(metadata.capabilitySet.metadata)) {
+      console.warn(`[Runtime Diagnostics] malformed ESP32 runtime metadata: ESP32 runtime "${metadata.runtimeId}" has invalid capability set.`);
+      return false;
+    }
+    for (const pin of metadata.capabilitySet.pins) {
+      if (!pin || typeof pin.gpio !== 'number' || !Number.isInteger(pin.gpio) || pin.gpio < 0 || pin.gpio > 39 || typeof pin.pinId !== 'string' || pin.pinId.length === 0) {
+        console.warn(`[Runtime Diagnostics] unsupported ESP32 pin definitions: ESP32 runtime "${metadata.runtimeId}" has invalid GPIO definition.`);
+        return false;
+      }
+      if (!BaseRuntime.VALID_ESP32_PIN_MODES.includes(pin.mode) || !Array.isArray(pin.capabilities) || !this.validatePlainObject(pin.metadata)) {
+        console.warn(`[Runtime Diagnostics] unsupported ESP32 pin definitions: ESP32 runtime "${metadata.runtimeId}" has invalid GPIO${pin.gpio} capability metadata.`);
+        return false;
+      }
+      for (const capability of pin.capabilities) {
+        if (!BaseRuntime.VALID_ESP32_PIN_CAPABILITIES.includes(capability)) {
+          console.warn(`[Runtime Diagnostics] unsupported ESP32 pin definitions: ESP32 runtime "${metadata.runtimeId}" has unsupported capability "${capability}".`);
+          return false;
+        }
+      }
+      if (pin.ownerId !== undefined && typeof pin.ownerId !== 'string') {
+        console.warn(`[Runtime Diagnostics] unsupported ESP32 pin definitions: ESP32 runtime "${metadata.runtimeId}" has invalid owner metadata.`);
+        return false;
+      }
+    }
+    if (!Array.isArray(metadata.pinStates)) {
+      console.warn(`[Runtime Diagnostics] malformed ESP32 runtime metadata: ESP32 runtime "${metadata.runtimeId}" has invalid pin states.`);
+      return false;
+    }
+    for (const pin of metadata.pinStates) {
+      if (!pin || typeof pin.gpio !== 'number' || !Number.isInteger(pin.gpio) || pin.gpio < 0 || pin.gpio > 39 || typeof pin.pinId !== 'string' || pin.pinId.length === 0 || !BaseRuntime.VALID_ESP32_PIN_MODES.includes(pin.mode) || !this.validatePlainObject(pin.metadata)) {
+        console.warn(`[Runtime Diagnostics] unsupported ESP32 pin definitions: ESP32 runtime "${metadata.runtimeId}" has invalid GPIO state.`);
+        return false;
+      }
+      if (pin.ownerId !== undefined && typeof pin.ownerId !== 'string') {
+        console.warn(`[Runtime Diagnostics] unsupported ESP32 pin definitions: ESP32 runtime "${metadata.runtimeId}" has invalid pin state owner.`);
+        return false;
+      }
+    }
+    return true;
+  }
+
+  public registerESP32Runtime(metadata: ESP32RuntimeMetadata): void {
+    if (!this.validateESP32RuntimeMetadata(metadata)) return;
+    if (this.esp32RuntimeRegistry.has(metadata.runtimeId)) {
+      console.warn(`[Runtime Diagnostics] duplicate ESP32 runtime IDs: ESP32 runtime ID "${metadata.runtimeId}" already exists.`);
+    }
+    this.esp32RuntimeRegistry.set(metadata.runtimeId, JSON.parse(JSON.stringify(metadata)));
+    if (!this.esp32RuntimeOrder.includes(metadata.runtimeId)) this.esp32RuntimeOrder.push(metadata.runtimeId);
+  }
+
+  public getESP32Runtime(id: string): ESP32RuntimeMetadata | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed ESP32 runtime metadata: Runtime ID must be a non-empty string.');
+      return undefined;
+    }
+    const metadata = this.esp32RuntimeRegistry.get(id);
+    return metadata ? JSON.parse(JSON.stringify(metadata)) : undefined;
+  }
+
+  public getESP32Runtimes(): ESP32RuntimeMetadata[] {
+    return this.esp32RuntimeOrder
+      .map(id => this.esp32RuntimeRegistry.get(id))
+      .filter((metadata): metadata is ESP32RuntimeMetadata => !!metadata)
+      .map(metadata => JSON.parse(JSON.stringify(metadata)));
+  }
+
+  public removeESP32Runtime(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed ESP32 runtime metadata: Runtime ID must be a non-empty string.');
+      return;
+    }
+    this.esp32RuntimeRegistry.delete(id);
+    this.esp32RuntimeOrder = this.esp32RuntimeOrder.filter(existing => existing !== id);
+  }
+
+  public clearESP32Runtimes(): void {
+    this.esp32RuntimeRegistry.clear();
+    this.esp32RuntimeOrder = [];
+  }
+
+  public setESP32ExecutionState(id: string, state: ESP32ExecutionState): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed ESP32 runtime metadata: Runtime ID must be a non-empty string.');
+      return;
+    }
+    if (!BaseRuntime.VALID_ESP32_EXECUTION_STATES.includes(state)) {
+      console.warn(`[Runtime Diagnostics] invalid ESP32 execution states: State "${state}" is invalid.`);
+      return;
+    }
+    const metadata = this.esp32RuntimeRegistry.get(id);
+    if (!metadata) {
+      console.warn(`[Runtime Diagnostics] malformed ESP32 runtime metadata: ESP32 runtime "${id}" is not registered.`);
+      return;
+    }
+    metadata.executionContext.state = state;
   }
 
   private static readonly VALID_BOARD_TYPES: DevelopmentBoardType[] = [
@@ -3099,6 +3235,9 @@ export class BaseRuntime implements IRuntime {
 
     // Reset Phase 8B execution command metadata registry
     this.clearExecutionCommands();
+
+    // Reset Phase 8C ESP32 runtime metadata registry
+    this.clearESP32Runtimes();
   }
 
   public start(): void {
@@ -3957,6 +4096,9 @@ export class BaseRuntime implements IRuntime {
       if (this.executionCommandRegistry.size > 0) {
         stageSnap.executionCommands = this.getExecutionCommands();
       }
+      if (this.esp32RuntimeRegistry.size > 0) {
+        stageSnap.esp32Runtimes = this.getESP32Runtimes();
+      }
       // Phase 7R: Attach connection metadata to stage snapshot entry
       if (this.connectionRegistry.size > 0) {
         stageSnap.connections = this.getConnections();
@@ -4132,6 +4274,11 @@ export class BaseRuntime implements IRuntime {
       // Phase 8B: Serialize execution command metadata registry
       if (isStage && this.executionCommandRegistry.size > 0) {
         serializedTarget.executionCommands = this.getExecutionCommands();
+      }
+
+      // Phase 8C: Serialize ESP32 runtime metadata registry
+      if (isStage && this.esp32RuntimeRegistry.size > 0) {
+        serializedTarget.esp32Runtimes = this.getESP32Runtimes();
       }
 
       const targetWatchers = Array.from(this.variableWatchers.values())
@@ -4517,6 +4664,12 @@ export class BaseRuntime implements IRuntime {
       if (Array.isArray(stageTarget.executionCommands)) {
         for (const command of stageTarget.executionCommands) {
           this.registerExecutionCommand(JSON.parse(JSON.stringify(command)));
+        }
+      }
+      // Phase 8C: Restore ESP32 runtime metadata from stage target
+      if (Array.isArray(stageTarget.esp32Runtimes)) {
+        for (const esp32Runtime of stageTarget.esp32Runtimes) {
+          this.registerESP32Runtime(JSON.parse(JSON.stringify(esp32Runtime)));
         }
       }
     }
