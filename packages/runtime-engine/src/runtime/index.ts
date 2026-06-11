@@ -1,5 +1,5 @@
 import { IRuntime } from '../core';
-import { TargetId, TargetState, ASTScript, Thread, SpriteState, StageState, PendingBroadcast, BroadcastCompletionToken, ListenerEntry, BubbleState, StageSyncState, CostumeAsset, SoundAsset, BackdropAsset, ActiveSoundTrigger, SoundChannelState, PenCommand, PenState, VariableWatcher, WatcherMode, ListWatcher, ListWatcherMode, GlideState, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, SerializedProject, SerializedStage, SerializedTarget, SerializedAssetManifest, SerializedProjectMetadata, VariableState, ListState, RuntimeAssetState, AssetLoadStatus, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, ComponentType, RuntimeComponent, PinDirection, RuntimePin, RuntimeConnection, DeviceState, WorkspaceTransform, WorkspaceComponentLayout, WirePoint, WireLayout, DevelopmentBoardType, BoardPinDefinition, BoardPinCapabilities, DevelopmentBoardDefinition, WorkspaceBoard, RenderModelType, RenderMetadata, RuntimeHALState, HardwareAddress, PinMode, PullMode, PinCapability, ProtocolState, ProtocolType, PWMChannelState, I2CBusState, SPIBusState, UARTPortState, HardwareBackendMetadata, ExecutionCommand, ExecutionCommandLifecycleState, ExecutionCommandType, ESP32RuntimeMetadata, ESP32ExecutionState, ESP32PinCapability, ESP32PinMode, ESP32InstructionMetadata, ESP32InstructionExecutionState, ESP32InstructionType, ESP32GPIOExecutionResult, ESP32GPIOExecutionStatus, ESP32PWMExecutionState, ESP32ServoExecutionState, ESP32ADCExecutionState, ESP32TouchExecutionState, ESP32PeripheralCommandExecutionResult, ESP32PeripheralCommandExecutionStatus, ProtocolCommandExecutionResult, ProtocolCommandExecutionStatus } from '../types';
+import { TargetId, TargetState, ASTScript, Thread, SpriteState, StageState, PendingBroadcast, BroadcastCompletionToken, ListenerEntry, BubbleState, StageSyncState, CostumeAsset, SoundAsset, BackdropAsset, ActiveSoundTrigger, SoundChannelState, PenCommand, PenState, VariableWatcher, WatcherMode, ListWatcher, ListWatcherMode, GlideState, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, SerializedProject, SerializedStage, SerializedTarget, SerializedAssetManifest, SerializedProjectMetadata, VariableState, ListState, RuntimeAssetState, AssetLoadStatus, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, ComponentType, RuntimeComponent, PinDirection, RuntimePin, RuntimeConnection, DeviceState, WorkspaceTransform, WorkspaceComponentLayout, WirePoint, WireLayout, DevelopmentBoardType, BoardPinDefinition, BoardPinCapabilities, DevelopmentBoardDefinition, WorkspaceBoard, RenderModelType, RenderMetadata, RuntimeHALState, HardwareAddress, PinMode, PullMode, PinCapability, ProtocolState, ProtocolType, PWMChannelState, I2CBusState, SPIBusState, UARTPortState, HardwareBackendMetadata, ExecutionCommand, ExecutionCommandLifecycleState, ExecutionCommandType, ESP32RuntimeMetadata, ESP32ExecutionState, ESP32PinCapability, ESP32PinMode, ESP32InstructionMetadata, ESP32InstructionExecutionState, ESP32InstructionType, ESP32GPIOExecutionResult, ESP32GPIOExecutionStatus, ESP32PWMExecutionState, ESP32ServoExecutionState, ESP32ADCExecutionState, ESP32TouchExecutionState, ESP32PeripheralCommandExecutionResult, ESP32PeripheralCommandExecutionStatus, ProtocolCommandExecutionResult, ProtocolCommandExecutionStatus, STEMVerseVisualState, STEMVerseVisualThemeState, STEMVerseVisualType, STEMVerseBoardStatus, STEMVerseSignalFlowDirection, STEMVerseVisualThemeMode } from '../types';
 import { MinimalASTInterpreter, IHardwareAdapter } from '../ast/interpreter';
 import { SimulatedHardwareBackend } from '../hal';
 import { createThread, TaskQueue, PendingTask, resetThreadCounter } from './execution-context';
@@ -254,6 +254,9 @@ export class BaseRuntime implements IRuntime {
   // Phase 7Z Render Model state
   public readonly renderModelRegistry = new Map<RenderModelType, RenderMetadata>();
   private renderModelOrder: RenderModelType[] = [];
+  private stemverseVisualRegistry = new Map<string, STEMVerseVisualState>();
+  private stemverseVisualOrder: string[] = [];
+  private stemverseVisualTheme: STEMVerseVisualThemeState = { themeId: 'stemverse-default', mode: 'LIGHT', classroomMode: false, highContrast: false, metadata: {} };
 
   // Phase 8A.1 HAL state registry (passive contracts/state only)
   private halStateRegistry = new Map<string, RuntimeHALState>();
@@ -393,6 +396,116 @@ export class BaseRuntime implements IRuntime {
 
   public getRenderMetadataKeys(): RenderModelType[] {
     return [...this.renderModelOrder];
+  }
+
+  private static readonly VALID_STEMVERSE_VISUAL_TYPES: STEMVerseVisualType[] = ['LED', 'BUTTON', 'BUZZER', 'SERVO', 'ULTRASONIC', 'LCD', 'OLED', 'ESP32', 'ARDUINO_UNO', 'ARDUINO_NANO', 'RASPBERRY_PI_PICO', 'BREADBOARD', 'SENSOR', 'ACTUATOR', 'MOTOR', 'RELAY', 'DISPLAY'];
+  private static readonly VALID_STEMVERSE_BOARD_STATUSES: STEMVerseBoardStatus[] = ['IDLE', 'ACTIVE', 'WARNING', 'ERROR', 'DISABLED'];
+  private static readonly VALID_STEMVERSE_SIGNAL_DIRECTIONS: STEMVerseSignalFlowDirection[] = ['NONE', 'FORWARD', 'REVERSE', 'BIDIRECTIONAL'];
+  private static readonly VALID_STEMVERSE_THEME_MODES: STEMVerseVisualThemeMode[] = ['LIGHT', 'DARK', 'HIGH_CONTRAST', 'CLASSROOM'];
+
+  private validateStringArray(value: unknown): value is string[] {
+    return Array.isArray(value) && value.every(entry => typeof entry === 'string');
+  }
+
+  private validateStemverseVisualState(state: STEMVerseVisualState): boolean {
+    if (!state || typeof state.visualId !== 'string' || state.visualId.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed STEMVerse visual metadata: Visual state is missing a valid visualId.');
+      return false;
+    }
+    if (!BaseRuntime.VALID_STEMVERSE_VISUAL_TYPES.includes(state.visualType)) {
+      console.warn(`[Runtime Diagnostics] invalid STEMVerse visual types: Visual state "${state.visualId}" has invalid type "${(state as any).visualType}".`);
+      return false;
+    }
+    for (const field of ['visibility', 'selected', 'hovered', 'active', 'highlighted', 'disabled'] as const) {
+      if (typeof state[field] !== 'boolean') {
+        console.warn(`[Runtime Diagnostics] malformed STEMVerse visual metadata: Visual state "${state.visualId}" has invalid ${field}.`);
+        return false;
+      }
+    }
+    if (!state.transform || typeof state.transform.x !== 'number' || typeof state.transform.y !== 'number' || typeof state.transform.rotation !== 'number' || typeof state.transform.scale !== 'number' || !Number.isFinite(state.transform.x) || !Number.isFinite(state.transform.y) || !Number.isFinite(state.transform.rotation) || !Number.isFinite(state.transform.scale)) {
+      console.warn(`[Runtime Diagnostics] invalid STEMVerse visual coordinates: Visual state "${state.visualId}" has invalid transform.`);
+      return false;
+    }
+    if (state.transform.scale <= 0) {
+      console.warn(`[Runtime Diagnostics] invalid STEMVerse visual scales: Visual state "${state.visualId}" has non-positive scale.`);
+      return false;
+    }
+    if (typeof state.layer !== 'string' || state.layer.length === 0 || typeof state.zIndex !== 'number' || !Number.isFinite(state.zIndex)) {
+      console.warn(`[Runtime Diagnostics] invalid STEMVerse visual layers: Visual state "${state.visualId}" has invalid layer metadata.`);
+      return false;
+    }
+    if (state.futureModelType !== undefined && typeof state.futureModelType !== 'string') return false;
+    if (state.futureSkinType !== undefined && typeof state.futureSkinType !== 'string') return false;
+    if (!this.validatePlainObject(state.metadata)) {
+      console.warn(`[Runtime Diagnostics] malformed STEMVerse visual metadata: Visual state "${state.visualId}" has invalid metadata.`);
+      return false;
+    }
+    if (state.boardVisual) {
+      if (!this.validateStringArray(state.boardVisual.activePins) || !this.validateStringArray(state.boardVisual.highlightedPins) || !this.validateStringArray(state.boardVisual.hoveredPins) || !this.validateStringArray(state.boardVisual.selectedPins) || !BaseRuntime.VALID_STEMVERSE_BOARD_STATUSES.includes(state.boardVisual.boardStatus) || !Array.isArray(state.boardVisual.futureExpansionZones)) {
+        console.warn(`[Runtime Diagnostics] malformed STEMVerse board visual metadata: Visual state "${state.visualId}" has invalid board visual state.`);
+        return false;
+      }
+    }
+    if (state.wireVisual) {
+      if (typeof state.wireVisual.wireSelected !== 'boolean' || typeof state.wireVisual.wireHighlighted !== 'boolean' || typeof state.wireVisual.wireActive !== 'boolean' || !BaseRuntime.VALID_STEMVERSE_SIGNAL_DIRECTIONS.includes(state.wireVisual.signalFlowDirection) || !this.validatePlainObject(state.wireVisual.futureAnimationHints)) {
+        console.warn(`[Runtime Diagnostics] malformed STEMVerse wire visual metadata: Visual state "${state.visualId}" has invalid wire visual state.`);
+        return false;
+      }
+    }
+    return true;
+  }
+
+  public registerSTEMVerseVisualState(state: STEMVerseVisualState): void {
+    if (!this.validateStemverseVisualState(state)) return;
+    if (this.stemverseVisualRegistry.has(state.visualId)) {
+      console.warn(`[Runtime Diagnostics] duplicate STEMVerse visual IDs: Visual ID "${state.visualId}" already exists.`);
+    }
+    this.stemverseVisualRegistry.set(state.visualId, JSON.parse(JSON.stringify(state)));
+    if (!this.stemverseVisualOrder.includes(state.visualId)) this.stemverseVisualOrder.push(state.visualId);
+  }
+
+  public updateSTEMVerseVisualState(id: string, updates: Partial<STEMVerseVisualState>): void {
+    const existing = this.stemverseVisualRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing STEMVerse visual metadata: Visual state "${id}" not found.`);
+      return;
+    }
+    this.registerSTEMVerseVisualState({ ...existing, ...updates, visualId: existing.visualId, transform: updates.transform ? { ...updates.transform } : { ...existing.transform }, metadata: updates.metadata ? JSON.parse(JSON.stringify(updates.metadata)) : JSON.parse(JSON.stringify(existing.metadata)) });
+  }
+
+  public removeSTEMVerseVisualState(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed STEMVerse visual metadata: Visual ID must be a non-empty string.');
+      return;
+    }
+    this.stemverseVisualRegistry.delete(id);
+    this.stemverseVisualOrder = this.stemverseVisualOrder.filter(existing => existing !== id);
+  }
+
+  public getSTEMVerseVisualState(id: string): STEMVerseVisualState | undefined {
+    const state = this.stemverseVisualRegistry.get(id);
+    return state ? JSON.parse(JSON.stringify(state)) : undefined;
+  }
+
+  public getSTEMVerseVisualStates(): STEMVerseVisualState[] {
+    return this.stemverseVisualOrder.map(id => this.stemverseVisualRegistry.get(id)).filter((state): state is STEMVerseVisualState => !!state).map(state => JSON.parse(JSON.stringify(state)));
+  }
+
+  public clearSTEMVerseVisualStates(): void {
+    this.stemverseVisualRegistry.clear();
+    this.stemverseVisualOrder = [];
+  }
+
+  public setSTEMVerseVisualTheme(theme: STEMVerseVisualThemeState): void {
+    if (!theme || typeof theme.themeId !== 'string' || theme.themeId.length === 0 || !BaseRuntime.VALID_STEMVERSE_THEME_MODES.includes(theme.mode) || typeof theme.classroomMode !== 'boolean' || typeof theme.highContrast !== 'boolean' || !this.validatePlainObject(theme.metadata)) {
+      console.warn('[Runtime Diagnostics] malformed STEMVerse visual theme metadata: Theme is invalid.');
+      return;
+    }
+    this.stemverseVisualTheme = JSON.parse(JSON.stringify(theme));
+  }
+
+  public getSTEMVerseVisualTheme(): STEMVerseVisualThemeState {
+    return JSON.parse(JSON.stringify(this.stemverseVisualTheme));
   }
 
   private static readonly VALID_PIN_MODES: PinMode[] = ['INPUT', 'OUTPUT', 'INPUT_PULLUP', 'INPUT_PULLDOWN', 'ANALOG', 'PWM'];
@@ -4006,6 +4119,10 @@ export class BaseRuntime implements IRuntime {
       this.registerRenderMetadata(BaseRuntime.DEFAULT_RENDER_METADATA[type]);
     }
 
+    // Reset Phase 10A STEMVerse visual simulator metadata
+    this.clearSTEMVerseVisualStates();
+    this.stemverseVisualTheme = { themeId: 'stemverse-default', mode: 'LIGHT', classroomMode: false, highContrast: false, metadata: {} };
+
     // Reset Phase 8A.1 HAL state registry
     this.clearHALStates();
 
@@ -4190,6 +4307,9 @@ export class BaseRuntime implements IRuntime {
     for (const type of Object.keys(BaseRuntime.DEFAULT_RENDER_METADATA) as RenderModelType[]) {
       this.registerRenderMetadata(BaseRuntime.DEFAULT_RENDER_METADATA[type]);
     }
+
+    this.clearSTEMVerseVisualStates();
+    this.stemverseVisualTheme = { themeId: 'stemverse-default', mode: 'LIGHT', classroomMode: false, highContrast: false, metadata: {} };
 
     // Clean up component metadata from remaining targets
     for (const target of this.targets.values()) {
@@ -4940,6 +5060,10 @@ export class BaseRuntime implements IRuntime {
       if (this.protocolCommandExecutionResultRegistry.size > 0) {
         stageSnap.protocolCommandExecutionResults = this.getProtocolCommandExecutionResults();
       }
+      if (this.stemverseVisualRegistry.size > 0) {
+        stageSnap.stemverseVisualStates = this.getSTEMVerseVisualStates();
+      }
+      stageSnap.stemverseVisualTheme = this.getSTEMVerseVisualTheme();
       // Phase 7R: Attach connection metadata to stage snapshot entry
       if (this.connectionRegistry.size > 0) {
         stageSnap.connections = this.getConnections();
@@ -5083,6 +5207,14 @@ export class BaseRuntime implements IRuntime {
       // Phase 7U: Serialize wire layouts (global wire layout registry)
       if (isStage && this.wireLayoutRegistry.size > 0) {
         serializedTarget.wireLayouts = this.getWireLayouts();
+      }
+
+      // Phase 10A: Serialize STEMVerse visual simulator metadata
+      if (isStage && this.stemverseVisualRegistry.size > 0) {
+        serializedTarget.stemverseVisualStates = this.getSTEMVerseVisualStates();
+      }
+      if (isStage) {
+        serializedTarget.stemverseVisualTheme = this.getSTEMVerseVisualTheme();
       }
 
       // Phase 7W: Serialize board definitions & workspace boards
@@ -5471,6 +5603,15 @@ export class BaseRuntime implements IRuntime {
             points: Array.isArray(wl.points) ? wl.points.map(p => ({ ...p })) : [],
           });
         }
+      }
+      // Phase 10A: Restore STEMVerse visual simulator metadata from stage target
+      if (Array.isArray(stageTarget.stemverseVisualStates)) {
+        for (const visualState of stageTarget.stemverseVisualStates) {
+          this.registerSTEMVerseVisualState(JSON.parse(JSON.stringify(visualState)));
+        }
+      }
+      if (stageTarget.stemverseVisualTheme) {
+        this.setSTEMVerseVisualTheme(JSON.parse(JSON.stringify(stageTarget.stemverseVisualTheme)));
       }
       // Phase 7W: Restore board definitions from stage target
       if (Array.isArray(stageTarget.boardDefinitions)) {

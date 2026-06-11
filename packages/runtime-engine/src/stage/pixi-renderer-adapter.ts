@@ -225,6 +225,8 @@ export class PixiRendererAdapter implements IRendererAdapter {
           renderMetadata: b.renderMetadata ? { ...b.renderMetadata } : undefined
         })) : undefined;
         target.renderMetadata = snap.renderMetadata ? { ...snap.renderMetadata } : undefined;
+        target.stemverseVisualStates = snap.stemverseVisualStates ? JSON.parse(JSON.stringify(snap.stemverseVisualStates)) : undefined;
+        target.stemverseVisualTheme = snap.stemverseVisualTheme ? JSON.parse(JSON.stringify(snap.stemverseVisualTheme)) : undefined;
       } else {
         target = {
           id: snap.targetId,
@@ -275,6 +277,8 @@ export class PixiRendererAdapter implements IRendererAdapter {
             renderMetadata: b.renderMetadata ? { ...b.renderMetadata } : undefined
           })) : undefined,
           renderMetadata: snap.renderMetadata ? { ...snap.renderMetadata } : undefined,
+          stemverseVisualStates: snap.stemverseVisualStates ? JSON.parse(JSON.stringify(snap.stemverseVisualStates)) : undefined,
+          stemverseVisualTheme: snap.stemverseVisualTheme ? JSON.parse(JSON.stringify(snap.stemverseVisualTheme)) : undefined,
         };
         this.targets.set(snap.targetId, target);
       }

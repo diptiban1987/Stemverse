@@ -1,4 +1,4 @@
-import { StageSyncState, BubbleState, ActiveSoundTrigger, PenState, PenCommand, VariableWatcher, ListWatcher, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, RuntimeAssetState, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, RuntimeComponent, RuntimeConnection, WorkspaceComponentLayout, WireLayout, DevelopmentBoardDefinition, WorkspaceBoard, RenderMetadata } from '../types';
+import { StageSyncState, BubbleState, ActiveSoundTrigger, PenState, PenCommand, VariableWatcher, ListWatcher, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, RuntimeAssetState, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, RuntimeComponent, RuntimeConnection, WorkspaceComponentLayout, WireLayout, DevelopmentBoardDefinition, WorkspaceBoard, RenderMetadata, STEMVerseVisualState, STEMVerseVisualThemeState } from '../types';
 
 /**
  * Representation of individual target properties inside the renderer memory.
@@ -49,6 +49,8 @@ export interface IRenderTarget {
   boardDefinitions?: DevelopmentBoardDefinition[];
   workspaceBoards?: WorkspaceBoard[];
   renderMetadata?: RenderMetadata;
+  stemverseVisualStates?: STEMVerseVisualState[];
+  stemverseVisualTheme?: STEMVerseVisualThemeState;
 }
 
 /**
@@ -210,6 +212,8 @@ export class InMemoryRendererAdapter implements IRendererAdapter {
           renderMetadata: b.renderMetadata ? { ...b.renderMetadata } : undefined
         })) : undefined;
         target.renderMetadata = snap.renderMetadata ? { ...snap.renderMetadata } : undefined;
+        target.stemverseVisualStates = snap.stemverseVisualStates ? JSON.parse(JSON.stringify(snap.stemverseVisualStates)) : undefined;
+        target.stemverseVisualTheme = snap.stemverseVisualTheme ? JSON.parse(JSON.stringify(snap.stemverseVisualTheme)) : undefined;
       } else {
         target = {
           id: snap.targetId,
@@ -260,6 +264,8 @@ export class InMemoryRendererAdapter implements IRendererAdapter {
             renderMetadata: b.renderMetadata ? { ...b.renderMetadata } : undefined
           })) : undefined,
           renderMetadata: snap.renderMetadata ? { ...snap.renderMetadata } : undefined,
+          stemverseVisualStates: snap.stemverseVisualStates ? JSON.parse(JSON.stringify(snap.stemverseVisualStates)) : undefined,
+          stemverseVisualTheme: snap.stemverseVisualTheme ? JSON.parse(JSON.stringify(snap.stemverseVisualTheme)) : undefined,
         };
         this.targets.set(snap.targetId, target);
       }

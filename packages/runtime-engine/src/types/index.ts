@@ -413,6 +413,10 @@ export interface StageSyncState {
   // Phase 7Z: Render metadata synchronization
   renderMetadata?: RenderMetadata;
 
+  // Phase 10A: STEMVerse visual simulator metadata synchronization
+  stemverseVisualStates?: STEMVerseVisualState[];
+  stemverseVisualTheme?: STEMVerseVisualThemeState;
+
   // Phase 8A.1: HAL state synchronization
   halState?: RuntimeHALState[];
 
@@ -598,6 +602,10 @@ export interface SerializedTarget {
 
   // Phase 7Z: Render metadata serialization
   renderMetadata?: RenderMetadata;
+
+  // Phase 10A: STEMVerse visual simulator metadata serialization
+  stemverseVisualStates?: STEMVerseVisualState[];
+  stemverseVisualTheme?: STEMVerseVisualThemeState;
 
   // Phase 8A.1: HAL state serialization
   halState?: RuntimeHALState[];
@@ -1168,6 +1176,86 @@ export interface WireLayout {
   color?: string;
   thickness?: number;
   visible: boolean;
+}
+
+// ─── Phase 10A: STEMVerse Visual Simulator Engine Foundation ──────────────
+
+export type STEMVerseVisualType =
+  | 'LED'
+  | 'BUTTON'
+  | 'BUZZER'
+  | 'SERVO'
+  | 'ULTRASONIC'
+  | 'LCD'
+  | 'OLED'
+  | 'ESP32'
+  | 'ARDUINO_UNO'
+  | 'ARDUINO_NANO'
+  | 'RASPBERRY_PI_PICO'
+  | 'BREADBOARD'
+  | 'SENSOR'
+  | 'ACTUATOR'
+  | 'MOTOR'
+  | 'RELAY'
+  | 'DISPLAY';
+
+export type STEMVerseVisualThemeMode = 'LIGHT' | 'DARK' | 'HIGH_CONTRAST' | 'CLASSROOM';
+export type STEMVerseBoardStatus = 'IDLE' | 'ACTIVE' | 'WARNING' | 'ERROR' | 'DISABLED';
+export type STEMVerseSignalFlowDirection = 'NONE' | 'FORWARD' | 'REVERSE' | 'BIDIRECTIONAL';
+
+export interface STEMVerseVisualTransform {
+  x: number;
+  y: number;
+  rotation: number;
+  scale: number;
+}
+
+export interface STEMVerseBoardVisualState {
+  activePins: string[];
+  highlightedPins: string[];
+  hoveredPins: string[];
+  selectedPins: string[];
+  boardStatus: STEMVerseBoardStatus;
+  futureExpansionZones: Record<string, unknown>[];
+}
+
+export interface STEMVerseWireVisualState {
+  wireSelected: boolean;
+  wireHighlighted: boolean;
+  wireActive: boolean;
+  signalFlowDirection: STEMVerseSignalFlowDirection;
+  futureAnimationHints: Record<string, unknown>;
+}
+
+export interface STEMVerseVisualState {
+  visualId: string;
+  targetId?: string;
+  componentId?: string;
+  boardId?: string;
+  wireId?: string;
+  visualType: STEMVerseVisualType;
+  visibility: boolean;
+  selected: boolean;
+  hovered: boolean;
+  active: boolean;
+  highlighted: boolean;
+  disabled: boolean;
+  transform: STEMVerseVisualTransform;
+  layer: string;
+  zIndex: number;
+  futureModelType?: string;
+  futureSkinType?: string;
+  boardVisual?: STEMVerseBoardVisualState;
+  wireVisual?: STEMVerseWireVisualState;
+  metadata: Record<string, unknown>;
+}
+
+export interface STEMVerseVisualThemeState {
+  themeId: string;
+  mode: STEMVerseVisualThemeMode;
+  classroomMode: boolean;
+  highContrast: boolean;
+  metadata: Record<string, unknown>;
 }
 
 // ─── Phase 7W: Development Board Visual Board Foundation ──────────────
