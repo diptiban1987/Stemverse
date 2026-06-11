@@ -446,6 +446,9 @@ export interface StageSyncState {
 
   // Phase 8G: ESP32 peripheral command execution result synchronization
   esp32PeripheralCommandExecutionResults?: ESP32PeripheralCommandExecutionResult[];
+
+  // Phase 8H: Protocol command execution result synchronization
+  protocolCommandExecutionResults?: ProtocolCommandExecutionResult[];
 }
 
 /**
@@ -629,6 +632,9 @@ export interface SerializedTarget {
 
   // Phase 8G: ESP32 peripheral command execution result serialization
   esp32PeripheralCommandExecutionResults?: ESP32PeripheralCommandExecutionResult[];
+
+  // Phase 8H: Protocol command execution result serialization
+  protocolCommandExecutionResults?: ProtocolCommandExecutionResult[];
 }
 
 export interface SerializedAssetManifest {
@@ -897,6 +903,9 @@ export interface ESP32ExecutionContext {
   lastPeripheralCommandId?: string;
   peripheralCommandCount?: number;
   peripheralExecutionResult?: ESP32PeripheralCommandExecutionResult;
+  lastProtocolCommandId?: string;
+  protocolCommandCount?: number;
+  protocolExecutionResult?: ProtocolCommandExecutionResult;
   metadata: Record<string, unknown>;
 }
 
@@ -1033,6 +1042,24 @@ export interface ESP32PeripheralCommandExecutionResult {
   status: ESP32PeripheralCommandExecutionStatus;
   peripheralId?: string;
   value?: number | boolean;
+  diagnostics: ESP32InstructionDiagnostics;
+  metadata: Record<string, unknown>;
+}
+
+// ─── Phase 8H: Protocol Command Execution Metadata ──────────────
+
+export type ProtocolCommandExecutionStatus = 'COMPLETED' | 'FAILED' | 'SKIPPED';
+
+export interface ProtocolCommandExecutionResult {
+  resultId: string;
+  commandId: string;
+  runtimeId: string;
+  protocolId?: string;
+  protocolType: ProtocolType;
+  commandType: ExecutionCommandType;
+  status: ProtocolCommandExecutionStatus;
+  resultPayload: Record<string, unknown>;
+  executionTick: number;
   diagnostics: ESP32InstructionDiagnostics;
   metadata: Record<string, unknown>;
 }

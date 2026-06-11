@@ -1,5 +1,5 @@
 import { IRuntime } from '../core';
-import { TargetId, TargetState, ASTScript, Thread, SpriteState, StageState, PendingBroadcast, BroadcastCompletionToken, ListenerEntry, BubbleState, StageSyncState, CostumeAsset, SoundAsset, BackdropAsset, ActiveSoundTrigger, SoundChannelState, PenCommand, PenState, VariableWatcher, WatcherMode, ListWatcher, ListWatcherMode, GlideState, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, SerializedProject, SerializedStage, SerializedTarget, SerializedAssetManifest, SerializedProjectMetadata, VariableState, ListState, RuntimeAssetState, AssetLoadStatus, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, ComponentType, RuntimeComponent, PinDirection, RuntimePin, RuntimeConnection, DeviceState, WorkspaceTransform, WorkspaceComponentLayout, WirePoint, WireLayout, DevelopmentBoardType, BoardPinDefinition, BoardPinCapabilities, DevelopmentBoardDefinition, WorkspaceBoard, RenderModelType, RenderMetadata, RuntimeHALState, HardwareAddress, PinMode, PullMode, PinCapability, ProtocolState, ProtocolType, PWMChannelState, I2CBusState, SPIBusState, UARTPortState, HardwareBackendMetadata, ExecutionCommand, ExecutionCommandLifecycleState, ExecutionCommandType, ESP32RuntimeMetadata, ESP32ExecutionState, ESP32PinCapability, ESP32PinMode, ESP32InstructionMetadata, ESP32InstructionExecutionState, ESP32InstructionType, ESP32GPIOExecutionResult, ESP32GPIOExecutionStatus, ESP32PWMExecutionState, ESP32ServoExecutionState, ESP32ADCExecutionState, ESP32TouchExecutionState, ESP32PeripheralCommandExecutionResult, ESP32PeripheralCommandExecutionStatus } from '../types';
+import { TargetId, TargetState, ASTScript, Thread, SpriteState, StageState, PendingBroadcast, BroadcastCompletionToken, ListenerEntry, BubbleState, StageSyncState, CostumeAsset, SoundAsset, BackdropAsset, ActiveSoundTrigger, SoundChannelState, PenCommand, PenState, VariableWatcher, WatcherMode, ListWatcher, ListWatcherMode, GlideState, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, SerializedProject, SerializedStage, SerializedTarget, SerializedAssetManifest, SerializedProjectMetadata, VariableState, ListState, RuntimeAssetState, AssetLoadStatus, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, ComponentType, RuntimeComponent, PinDirection, RuntimePin, RuntimeConnection, DeviceState, WorkspaceTransform, WorkspaceComponentLayout, WirePoint, WireLayout, DevelopmentBoardType, BoardPinDefinition, BoardPinCapabilities, DevelopmentBoardDefinition, WorkspaceBoard, RenderModelType, RenderMetadata, RuntimeHALState, HardwareAddress, PinMode, PullMode, PinCapability, ProtocolState, ProtocolType, PWMChannelState, I2CBusState, SPIBusState, UARTPortState, HardwareBackendMetadata, ExecutionCommand, ExecutionCommandLifecycleState, ExecutionCommandType, ESP32RuntimeMetadata, ESP32ExecutionState, ESP32PinCapability, ESP32PinMode, ESP32InstructionMetadata, ESP32InstructionExecutionState, ESP32InstructionType, ESP32GPIOExecutionResult, ESP32GPIOExecutionStatus, ESP32PWMExecutionState, ESP32ServoExecutionState, ESP32ADCExecutionState, ESP32TouchExecutionState, ESP32PeripheralCommandExecutionResult, ESP32PeripheralCommandExecutionStatus, ProtocolCommandExecutionResult, ProtocolCommandExecutionStatus } from '../types';
 import { MinimalASTInterpreter, IHardwareAdapter } from '../ast/interpreter';
 import { SimulatedHardwareBackend } from '../hal';
 import { createThread, TaskQueue, PendingTask, resetThreadCounter } from './execution-context';
@@ -261,6 +261,8 @@ export class BaseRuntime implements IRuntime {
   private simulatedHardwareBackend: SimulatedHardwareBackend;
   private protocolRegistry = new Map<string, ProtocolState>();
   private protocolOrder: string[] = [];
+  private protocolCommandExecutionResultRegistry = new Map<string, ProtocolCommandExecutionResult>();
+  private protocolCommandExecutionResultOrder: string[] = [];
   private backendMetadataRegistry = new Map<string, HardwareBackendMetadata>();
   private backendMetadataOrder: string[] = [];
   private activeHardwareBackendId = 'simulated-runtime';
@@ -587,6 +589,70 @@ export class BaseRuntime implements IRuntime {
   public getI2CBuses(): I2CBusState[] { return this.getProtocolStates('I2C') as I2CBusState[]; }
   public getSPIBuses(): SPIBusState[] { return this.getProtocolStates('SPI') as SPIBusState[]; }
   public getUARTPorts(): UARTPortState[] { return this.getProtocolStates('UART') as UARTPortState[]; }
+
+  private static readonly VALID_PROTOCOL_COMMAND_STATUSES: ProtocolCommandExecutionStatus[] = ['COMPLETED', 'FAILED', 'SKIPPED'];
+
+  private validateProtocolCommandExecutionResult(result: ProtocolCommandExecutionResult): boolean {
+    if (!result || typeof result.resultId !== 'string' || result.resultId.length === 0 || typeof result.commandId !== 'string' || result.commandId.length === 0 || typeof result.runtimeId !== 'string' || result.runtimeId.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed protocol command execution result: Result is missing required identifiers.');
+      return false;
+    }
+    if (!BaseRuntime.VALID_PROTOCOL_TYPES.includes(result.protocolType)) {
+      console.warn(`[Runtime Diagnostics] unsupported protocol command result types: Result "${result.resultId}" has unsupported protocol type "${(result as any).protocolType}".`);
+      return false;
+    }
+    if (!BaseRuntime.VALID_EXECUTION_COMMAND_TYPES.includes(result.commandType)) {
+      console.warn(`[Runtime Diagnostics] unsupported protocol command result types: Result "${result.resultId}" has unsupported command type "${(result as any).commandType}".`);
+      return false;
+    }
+    if (!BaseRuntime.VALID_PROTOCOL_COMMAND_STATUSES.includes(result.status)) {
+      console.warn(`[Runtime Diagnostics] malformed protocol command execution result: Result "${result.resultId}" has invalid status.`);
+      return false;
+    }
+    if (result.protocolId !== undefined && typeof result.protocolId !== 'string') {
+      console.warn(`[Runtime Diagnostics] malformed protocol command execution result: Result "${result.resultId}" has invalid protocolId.`);
+      return false;
+    }
+    if (typeof result.executionTick !== 'number' || !Number.isFinite(result.executionTick) || result.executionTick < 0) {
+      console.warn(`[Runtime Diagnostics] malformed protocol command execution result: Result "${result.resultId}" has invalid executionTick.`);
+      return false;
+    }
+    if (!this.validatePlainObject(result.resultPayload) || !this.validatePlainObject(result.diagnostics) || !Array.isArray(result.diagnostics.warnings) || !Array.isArray(result.diagnostics.errors) || !this.validatePlainObject(result.diagnostics.metadata) || !this.validatePlainObject(result.metadata)) {
+      console.warn(`[Runtime Diagnostics] malformed protocol command execution result: Result "${result.resultId}" has invalid payload, diagnostics, or metadata.`);
+      return false;
+    }
+    return true;
+  }
+
+  public registerProtocolCommandExecutionResult(result: ProtocolCommandExecutionResult): void {
+    if (!this.validateProtocolCommandExecutionResult(result)) return;
+    if (this.protocolCommandExecutionResultRegistry.has(result.resultId)) {
+      console.warn(`[Runtime Diagnostics] duplicate protocol command execution result IDs: Result ID "${result.resultId}" already exists.`);
+    }
+    this.protocolCommandExecutionResultRegistry.set(result.resultId, JSON.parse(JSON.stringify(result)));
+    if (!this.protocolCommandExecutionResultOrder.includes(result.resultId)) this.protocolCommandExecutionResultOrder.push(result.resultId);
+  }
+
+  public getProtocolCommandExecutionResult(id: string): ProtocolCommandExecutionResult | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed protocol command execution result: Result ID must be a non-empty string.');
+      return undefined;
+    }
+    const result = this.protocolCommandExecutionResultRegistry.get(id);
+    return result ? JSON.parse(JSON.stringify(result)) : undefined;
+  }
+
+  public getProtocolCommandExecutionResults(): ProtocolCommandExecutionResult[] {
+    return this.protocolCommandExecutionResultOrder
+      .map(id => this.protocolCommandExecutionResultRegistry.get(id))
+      .filter((result): result is ProtocolCommandExecutionResult => !!result)
+      .map(result => JSON.parse(JSON.stringify(result)));
+  }
+
+  public clearProtocolCommandExecutionResults(): void {
+    this.protocolCommandExecutionResultRegistry.clear();
+    this.protocolCommandExecutionResultOrder = [];
+  }
 
   private static readonly VALID_BACKEND_TYPES = ['SIMULATED', 'CUSTOM'] as const;
 
@@ -1336,6 +1402,122 @@ export class BaseRuntime implements IRuntime {
       metadata: {},
       ...overrides,
     };
+  }
+
+  private resolveProtocolCommandRuntimeId(command: ExecutionCommand): string {
+    return command.address.boardId ?? command.address.targetId ?? command.address.componentId ?? 'unknown-runtime';
+  }
+
+  private resolveProtocolCommandProtocolId(command: ExecutionCommand): string | undefined {
+    return typeof command.payload.protocolId === 'string' ? command.payload.protocolId : command.address.protocolId ?? command.address.busId ?? command.address.portId;
+  }
+
+  private createProtocolCommandResult(command: ExecutionCommand, protocolType: ProtocolType, status: ProtocolCommandExecutionStatus, overrides: Partial<ProtocolCommandExecutionResult> = {}): ProtocolCommandExecutionResult {
+    return {
+      resultId: `${command.commandId}:${this.protocolCommandExecutionResultOrder.length}`,
+      commandId: command.commandId,
+      runtimeId: this.resolveProtocolCommandRuntimeId(command),
+      protocolType,
+      commandType: command.commandType,
+      status,
+      resultPayload: {},
+      executionTick: this.protocolCommandExecutionResultOrder.length,
+      diagnostics: { warnings: [], errors: [], metadata: {} },
+      metadata: {},
+      ...overrides,
+    };
+  }
+
+  private completeProtocolCommand(command: ExecutionCommand, result: ProtocolCommandExecutionResult): ProtocolCommandExecutionResult {
+    this.registerProtocolCommandExecutionResult(result);
+    command.lifecycle = result.status === 'FAILED' ? 'FAILED' : 'COMPLETED';
+    const runtime = this.esp32RuntimeRegistry.get(result.runtimeId);
+    if (runtime) {
+      runtime.executionContext.lastProtocolCommandId = command.commandId;
+      runtime.executionContext.protocolCommandCount = (runtime.executionContext.protocolCommandCount ?? 0) + (result.status === 'SKIPPED' ? 0 : 1);
+      runtime.executionContext.protocolExecutionResult = JSON.parse(JSON.stringify(result));
+      runtime.executionContext.diagnostics = JSON.parse(JSON.stringify(result.diagnostics));
+    }
+    return JSON.parse(JSON.stringify(result));
+  }
+
+  public executeProtocolCommand(id: string): ProtocolCommandExecutionResult | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed execution command: Command ID must be a non-empty string.');
+      return undefined;
+    }
+    const command = this.executionCommandRegistry.get(id);
+    if (!command || !this.validateExecutionCommand(command)) return undefined;
+
+    const runtimeId = this.resolveProtocolCommandRuntimeId(command);
+    const protocolId = this.resolveProtocolCommandProtocolId(command);
+    const supportedTypes: ExecutionCommandType[] = ['I2C_WRITE', 'I2C_READ', 'SPI_TRANSFER', 'UART_WRITE', 'UART_READ'];
+    const expectedProtocolType: ProtocolType = command.commandType.startsWith('I2C') ? 'I2C' : command.commandType.startsWith('SPI') ? 'SPI' : command.commandType.startsWith('UART') ? 'UART' : 'I2C';
+
+    if (!supportedTypes.includes(command.commandType)) {
+      console.warn(`[Runtime Diagnostics] unsupported protocol commands: Command "${command.commandId}" has unsupported type "${command.commandType}".`);
+      return this.completeProtocolCommand(command, this.createProtocolCommandResult(command, expectedProtocolType, 'SKIPPED', { runtimeId, diagnostics: { warnings: ['Unsupported protocol command'], errors: [], metadata: {} }, metadata: { reason: 'unsupported-command' } }));
+    }
+
+    if (runtimeId === 'unknown-runtime' || !this.esp32RuntimeRegistry.has(runtimeId)) {
+      console.warn(`[Runtime Diagnostics] missing ESP32 runtime references: Command "${command.commandId}" references missing runtime "${runtimeId}".`);
+      return this.completeProtocolCommand(command, this.createProtocolCommandResult(command, expectedProtocolType, 'FAILED', { runtimeId, protocolId, diagnostics: { warnings: [], errors: ['Missing ESP32 runtime'], metadata: {} }, metadata: { reason: 'missing-runtime' } }));
+    }
+
+    if (!protocolId) {
+      console.warn(`[Runtime Diagnostics] malformed execution command: Command "${command.commandId}" is missing protocolId metadata.`);
+      return this.completeProtocolCommand(command, this.createProtocolCommandResult(command, expectedProtocolType, 'FAILED', { runtimeId, diagnostics: { warnings: [], errors: ['Missing protocolId'], metadata: {} }, metadata: { reason: 'missing-protocol-id' } }));
+    }
+
+    const protocol = this.protocolRegistry.get(protocolId);
+    if (!protocol || protocol.protocolType !== expectedProtocolType) {
+      console.warn(`[Runtime Diagnostics] missing protocol references: Command "${command.commandId}" references missing ${expectedProtocolType} protocol "${protocolId}".`);
+      return this.completeProtocolCommand(command, this.createProtocolCommandResult(command, expectedProtocolType, 'FAILED', { runtimeId, protocolId, diagnostics: { warnings: [], errors: ['Missing protocol'], metadata: {} }, metadata: { reason: 'missing-protocol' } }));
+    }
+
+    if (command.commandType === 'I2C_WRITE') {
+      const payload = command.payload.bytes;
+      if (!Array.isArray(payload) || payload.some(byte => typeof byte !== 'number' || !Number.isInteger(byte) || byte < 0 || byte > 255)) {
+        console.warn(`[Runtime Diagnostics] malformed execution command: Command "${command.commandId}" has invalid I2C write bytes.`);
+        return this.completeProtocolCommand(command, this.createProtocolCommandResult(command, 'I2C', 'FAILED', { runtimeId, protocolId, diagnostics: { warnings: [], errors: ['Invalid I2C write payload'], metadata: {} }, metadata: { reason: 'invalid-i2c-write-payload' } }));
+      }
+      return this.completeProtocolCommand(command, this.createProtocolCommandResult(command, 'I2C', 'COMPLETED', { runtimeId, protocolId, resultPayload: { bytesWritten: payload.length, address: command.payload.address ?? null }, metadata: { operation: 'write' } }));
+    }
+
+    if (command.commandType === 'I2C_READ') {
+      const length = command.payload.length ?? command.payload.byteLength ?? 0;
+      if (typeof length !== 'number' || !Number.isInteger(length) || length < 0) {
+        console.warn(`[Runtime Diagnostics] malformed execution command: Command "${command.commandId}" has invalid I2C read length.`);
+        return this.completeProtocolCommand(command, this.createProtocolCommandResult(command, 'I2C', 'FAILED', { runtimeId, protocolId, diagnostics: { warnings: [], errors: ['Invalid I2C read length'], metadata: {} }, metadata: { reason: 'invalid-i2c-read-length' } }));
+      }
+      return this.completeProtocolCommand(command, this.createProtocolCommandResult(command, 'I2C', 'COMPLETED', { runtimeId, protocolId, resultPayload: { bytesRead: length, data: Array.from({ length }, () => 0), address: command.payload.address ?? null }, metadata: { operation: 'read' } }));
+    }
+
+    if (command.commandType === 'SPI_TRANSFER') {
+      const payload = command.payload.bytes ?? command.payload.txBytes;
+      if (!Array.isArray(payload) || payload.some(byte => typeof byte !== 'number' || !Number.isInteger(byte) || byte < 0 || byte > 255)) {
+        console.warn(`[Runtime Diagnostics] malformed execution command: Command "${command.commandId}" has invalid SPI transfer bytes.`);
+        return this.completeProtocolCommand(command, this.createProtocolCommandResult(command, 'SPI', 'FAILED', { runtimeId, protocolId, diagnostics: { warnings: [], errors: ['Invalid SPI transfer payload'], metadata: {} }, metadata: { reason: 'invalid-spi-transfer-payload' } }));
+      }
+      return this.completeProtocolCommand(command, this.createProtocolCommandResult(command, 'SPI', 'COMPLETED', { runtimeId, protocolId, resultPayload: { bytesTransferred: payload.length, rxBytes: payload.map(() => 0) }, metadata: { operation: 'transfer' } }));
+    }
+
+    if (command.commandType === 'UART_WRITE') {
+      const data = command.payload.data;
+      if (typeof data !== 'string' && !Array.isArray(data)) {
+        console.warn(`[Runtime Diagnostics] malformed execution command: Command "${command.commandId}" has invalid UART write data.`);
+        return this.completeProtocolCommand(command, this.createProtocolCommandResult(command, 'UART', 'FAILED', { runtimeId, protocolId, diagnostics: { warnings: [], errors: ['Invalid UART write payload'], metadata: {} }, metadata: { reason: 'invalid-uart-write-payload' } }));
+      }
+      const byteLength = typeof data === 'string' ? data.length : data.length;
+      return this.completeProtocolCommand(command, this.createProtocolCommandResult(command, 'UART', 'COMPLETED', { runtimeId, protocolId, resultPayload: { bytesWritten: byteLength, bufferLength: byteLength }, metadata: { operation: 'write' } }));
+    }
+
+    const length = command.payload.length ?? command.payload.byteLength ?? 0;
+    if (typeof length !== 'number' || !Number.isInteger(length) || length < 0) {
+      console.warn(`[Runtime Diagnostics] malformed execution command: Command "${command.commandId}" has invalid UART read length.`);
+      return this.completeProtocolCommand(command, this.createProtocolCommandResult(command, 'UART', 'FAILED', { runtimeId, protocolId, diagnostics: { warnings: [], errors: ['Invalid UART read length'], metadata: {} }, metadata: { reason: 'invalid-uart-read-length' } }));
+    }
+    return this.completeProtocolCommand(command, this.createProtocolCommandResult(command, 'UART', 'COMPLETED', { runtimeId, protocolId, resultPayload: { bytesRead: length, buffer: Array.from({ length }, () => 0), bufferLength: length }, metadata: { operation: 'read' } }));
   }
 
   private completeESP32PeripheralCommand(command: ExecutionCommand, result: ESP32PeripheralCommandExecutionResult): ESP32PeripheralCommandExecutionResult {
@@ -3853,6 +4035,9 @@ export class BaseRuntime implements IRuntime {
 
     // Reset Phase 8G ESP32 peripheral command execution results
     this.clearESP32PeripheralCommandExecutionResults();
+
+    // Reset Phase 8H protocol command execution results
+    this.clearProtocolCommandExecutionResults();
   }
 
   public start(): void {
@@ -4034,6 +4219,7 @@ export class BaseRuntime implements IRuntime {
     this.clearADCExecutionStates();
     this.clearTouchExecutionStates();
     this.clearESP32PeripheralCommandExecutionResults();
+    this.clearProtocolCommandExecutionResults();
   }
 
   /**
@@ -4751,6 +4937,9 @@ export class BaseRuntime implements IRuntime {
       if (this.esp32PeripheralCommandExecutionResultRegistry.size > 0) {
         stageSnap.esp32PeripheralCommandExecutionResults = this.getESP32PeripheralCommandExecutionResults();
       }
+      if (this.protocolCommandExecutionResultRegistry.size > 0) {
+        stageSnap.protocolCommandExecutionResults = this.getProtocolCommandExecutionResults();
+      }
       // Phase 7R: Attach connection metadata to stage snapshot entry
       if (this.connectionRegistry.size > 0) {
         stageSnap.connections = this.getConnections();
@@ -4952,6 +5141,11 @@ export class BaseRuntime implements IRuntime {
       // Phase 8G: Serialize ESP32 peripheral command execution results
       if (isStage && this.esp32PeripheralCommandExecutionResultRegistry.size > 0) {
         serializedTarget.esp32PeripheralCommandExecutionResults = this.getESP32PeripheralCommandExecutionResults();
+      }
+
+      // Phase 8H: Serialize protocol command execution results
+      if (isStage && this.protocolCommandExecutionResultRegistry.size > 0) {
+        serializedTarget.protocolCommandExecutionResults = this.getProtocolCommandExecutionResults();
       }
 
       const targetWatchers = Array.from(this.variableWatchers.values())
@@ -5374,6 +5568,12 @@ export class BaseRuntime implements IRuntime {
       if (Array.isArray(stageTarget.esp32PeripheralCommandExecutionResults)) {
         for (const result of stageTarget.esp32PeripheralCommandExecutionResults) {
           this.registerESP32PeripheralCommandExecutionResult(JSON.parse(JSON.stringify(result)));
+        }
+      }
+      // Phase 8H: Restore protocol command execution results from stage target
+      if (Array.isArray(stageTarget.protocolCommandExecutionResults)) {
+        for (const result of stageTarget.protocolCommandExecutionResults) {
+          this.registerProtocolCommandExecutionResult(JSON.parse(JSON.stringify(result)));
         }
       }
     }

@@ -219,6 +219,7 @@
 | 8.56 | ESP32 GPIO Execution Layer (Phase 8E) | Runtime Architecture | ✅ | Deterministic GPIO-only execution for PIN_MODE, DIGITAL_WRITE, DIGITAL_READ, NOP, HAL-routed pin state updates, execution result metadata, snapshot/export/import round-trip, and 1104 GPIO execution tests |
 | 8.57 | ESP32 Peripheral Execution Foundation (Phase 8F) | Runtime Architecture | ✅ | Deterministic metadata-only PWM, servo, ADC, and touch execution registries with HAL compatibility, snapshot/export/import round-trip, cleanup, validation, 725 peripheral tests, plus Phase 8F.1 ownership hardening for touch updates and HAL/protocol cleanup invariants |
 | 8.58 | ESP32 Peripheral Command Execution (Phase 8G) | Runtime Architecture | ✅ | Metadata-only execution commands for PWM_WRITE, SERVO_WRITE, ADC_READ, and TOUCH_READ over existing ESP32 peripheral registries, with result metadata, diagnostics, snapshots, export/import round-trip, and 1010 command execution tests |
+| 8.59 | Protocol Command Layer Foundation (Phase 8H) | Runtime Architecture | ✅ | Metadata-only I2C_WRITE, I2C_READ, SPI_TRANSFER, UART_WRITE, and UART_READ command execution over existing protocol registries, with deterministic result payloads, execution ticks, diagnostics, snapshots, export/import round-trip, and 1200 protocol command tests |
 ---
 
 ## 9. Robotics Studio Workspace
@@ -430,6 +431,7 @@ Based on V3 Enterprise Spec quarterly breakdown:
 | **Phase 8E — ESP32 GPIO Execution Layer** | Q3 | Deterministic GPIO-only execution for PIN_MODE, DIGITAL_WRITE, DIGITAL_READ, and NOP through HAL | ✅ | 100% |
 | **Phase 8F — ESP32 Peripheral Execution Foundation** | Q3 | Metadata-only PWM, servo, ADC, and touch execution state registries with snapshots, serialization, validation, cleanup, and Phase 8F.1 ownership hardening | ✅ | 100% |
 | **Phase 8G — ESP32 Peripheral Command Execution** | Q3 | Metadata-only PWM_WRITE, SERVO_WRITE, ADC_READ, and TOUCH_READ command execution over existing ESP32 peripheral registries, result diagnostics, snapshots, serialization, and cleanup boundaries | ✅ | 100% |
+| **Phase 8H — Protocol Command Layer Foundation** | Q3 | Metadata-only I2C/SPI/UART command execution over existing protocol registries, deterministic result payloads, diagnostics, execution ticks, snapshots, and serialization | ✅ | 100% |
 | **Phase 4 (Roadmap)** | Q3 | Simulator Engine + AI Studio + Advanced Blocks | 🔵 | 72% |
 | **Phase 5.1 (Roadmap)** | Q4 | Production hardening, unified streaming, Scratch runtime, E2E, OpenAPI | 🔵 | 55% |
 | **Phase 5.2A (Roadmap)** | Q4 | Object storage & asset pipeline (MinIO, presign, Asset model) | ✅ | 90% |
@@ -564,6 +566,7 @@ Based on V3 Enterprise Spec quarterly breakdown:
 | 2026-06-11 | 8 | Phase 8F — ESP32 Peripheral Execution Foundation: Added runtime-owned PWM, servo, ADC, and touch execution metadata registries, warning-only validation, HAL compatibility projection, deterministic ordering, target/clone cleanup, snapshot/export/import support, renderer isolation, and 725 peripheral tests. | Kilo |
 | 2026-06-11 | 8 | Phase 8F.1 ownership hardening: Added touch state update accessor, fixed PWM/servo/ADC/touch HAL cleanup on remove/clear/target/clone/initialize/stop paths, verified protocol cleanup invariants, and added 350 hardening tests. | Kilo |
 | 2026-06-11 | 8 | Phase 8G — ESP32 Peripheral Command Execution: Added deterministic metadata-only PWM_WRITE, SERVO_WRITE, ADC_READ, and TOUCH_READ command execution against existing ESP32 peripheral state registries, command result metadata, warning-only diagnostics, context result tracking, snapshot/export/import round-trip support, and 1010 command execution tests. | Kilo |
+| 2026-06-11 | 8 | Phase 8H — Protocol Command Layer Foundation: Added deterministic metadata-only I2C_WRITE, I2C_READ, SPI_TRANSFER, UART_WRITE, and UART_READ execution against existing protocol registries, protocol command result registry, execution ticks, warning-only diagnostics, ESP32 context protocol result tracking, snapshot/export/import round-trip support, and 1200 protocol command tests. | Kilo |
 
 ---
 
@@ -580,9 +583,9 @@ As per visual simulator rendering foundation design decisions, the following vis
 - **Arduino Execution**: Defer Arduino hardware instruction execution emulator.
 - **MicroPython**: Defer Python virtual execution runtime or MicroPython runtime interpreters.
 - **Python Runtime**: Defer standard Python script evaluation inside the simulator engine.
-- **Execution Commands**: Command definitions are metadata-only with registry, lifecycle state tracking, snapshots, serialization, and ESP32 GPIO/peripheral command result metadata; no ESP32/Arduino/MicroPython/Python execution, async scheduling, firmware simulation, code generation, transport, or physical hardware effects are implemented.
-- **ESP32 Runtime**: ESP32 runtime identity, GPIO0-GPIO39 pin ownership metadata, board binding, capability metadata, execution context states, instruction metadata, diagnostics metadata, deterministic GPIO-only execution, metadata-only PWM/servo/ADC/touch execution state, and metadata-only PWM_WRITE/SERVO_WRITE/ADC_READ/TOUCH_READ command execution results are implemented; WiFi, Bluetooth, FreeRTOS, tasks, threads, timers, interrupts, MicroPython, firmware simulation, physical hardware execution, USB, UART transport, SPI transport, and I2C transport remain deferred.
-- **HAL Backends**: Simulated runtime backend is integrated with rich pin state, board pin capability metadata, protocol shell metadata, runtime-owned backend metadata registry, active backend ownership, deterministic lifecycle wrappers, metadata-only execution command definitions, metadata-only ESP32 runtime foundation, metadata-only ESP32 instruction definitions, HAL-routed ESP32 GPIO execution, metadata-only ESP32 peripheral state compatibility, and ESP32 peripheral command result metadata; ESP32 CPU execution, Arduino, MicroPython, Python, async operations, serial/USB/network transport, and physical hardware backend implementations remain deferred.
+- **Execution Commands**: Command definitions are metadata-only with registry, lifecycle state tracking, snapshots, serialization, ESP32 GPIO/peripheral command result metadata, and protocol command result metadata; no ESP32/Arduino/MicroPython/Python execution, async scheduling, firmware simulation, code generation, transport, networking, or physical hardware effects are implemented.
+- **ESP32 Runtime**: ESP32 runtime identity, GPIO0-GPIO39 pin ownership metadata, board binding, capability metadata, execution context states, instruction metadata, diagnostics metadata, deterministic GPIO-only execution, metadata-only PWM/servo/ADC/touch execution state, metadata-only PWM_WRITE/SERVO_WRITE/ADC_READ/TOUCH_READ command execution results, and metadata-only I2C/SPI/UART protocol command execution results are implemented; WiFi, Bluetooth, FreeRTOS, tasks, threads, timers, interrupts, MicroPython, firmware simulation, physical hardware execution, networking, USB, UART transport, SPI transport, and I2C transport remain deferred.
+- **HAL Backends**: Simulated runtime backend is integrated with rich pin state, board pin capability metadata, protocol shell metadata, runtime-owned backend metadata registry, active backend ownership, deterministic lifecycle wrappers, metadata-only execution command definitions, metadata-only ESP32 runtime foundation, metadata-only ESP32 instruction definitions, HAL-routed ESP32 GPIO execution, metadata-only ESP32 peripheral state compatibility, ESP32 peripheral command result metadata, and protocol command result metadata; ESP32 CPU execution, Arduino, MicroPython, Python, async operations, serial/USB/network transport, networking, and physical hardware backend implementations remain deferred.
 
 ## ESP32 Runtime Status
 
@@ -601,10 +604,16 @@ Completed:
 - SERVO_WRITE command execution metadata
 - ADC_READ command execution metadata
 - TOUCH_READ command execution metadata
+- I2C_WRITE command execution metadata
+- I2C_READ command execution metadata
+- SPI_TRANSFER command execution metadata
+- UART_WRITE command execution metadata
+- UART_READ command execution metadata
 
 Not Started:
 - WiFi
 - Bluetooth
+- Networking
 - FreeRTOS
 - Tasks
 - Threads
@@ -622,6 +631,6 @@ Not Started:
 
 ### Verification Metrics
 
-- **Tests Added**: 1010 unit tests for Phase 8G ESP32 peripheral command execution
-- **Total Test Count**: 9372 tests passing successfully across 43 test files
+- **Tests Added**: 1200 unit tests for Phase 8H protocol command execution
+- **Total Test Count**: 10812 tests passing successfully across 44 test files
 - **Build Status**: Clean compiler run (0 errors, 0 warnings)
