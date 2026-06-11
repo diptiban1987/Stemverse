@@ -1782,3 +1782,59 @@ export interface AnimationRegistryEntry {
   signalAnimation: SignalAnimationMetadata;
   interactionAnimation: InteractionAnimationMetadata;
 }
+
+// ─── Phase 11A: Renderer Foundation ───────────────────────────────
+
+export type RenderSceneType = 'BREADBOARD' | 'PCB' | 'WIRING' | 'COMPONENT_PREVIEW' | 'FULL_BOARD' | 'CUSTOM';
+
+export type RenderLayerType = 'COMPONENT' | 'WIRE' | 'BOARD' | 'SIGNAL' | 'GRID' | 'OVERLAY' | 'BACKGROUND' | 'CUSTOM';
+
+export interface ViewportMetadata {
+  width: number;
+  height: number;
+  scaleMode: string;
+  backgroundColor: string;
+  futureResizeHints: Record<string, unknown>;
+}
+
+export interface CameraMetadata {
+  zoom: number;
+  panX: number;
+  panY: number;
+  viewport: ViewportState;
+  futureNavigationHints: Record<string, unknown>;
+}
+
+export interface RenderLayerModel {
+  layerId: string;
+  layerType: RenderLayerType;
+  displayName: string;
+  visibility: boolean;
+  zIndex: number;
+  futureThemeHints: Record<string, unknown>;
+}
+
+export interface RenderSceneModel {
+  sceneId: string;
+  sceneType: RenderSceneType;
+  displayName: string;
+  layerIds: string[];
+  cameraMetadata: CameraMetadata;
+  viewportMetadata: ViewportMetadata;
+  futureRendererHints: Record<string, unknown>;
+}
+
+export interface SceneSyncSnapshot {
+  scene: RenderSceneModel;
+  layers: RenderLayerModel[];
+  componentVisualModels: ComponentVisualModel[];
+  wireVisualRegistry: WireVisualRegistryEntry[];
+  boardVisualRegistry: BoardVisualRegistryEntry[];
+  signalVisualRegistry: SignalVisualRegistryEntry[];
+  animationRegistry: AnimationRegistryEntry[];
+}
+
+export interface RenderRegistryEntry<T> {
+  key: string;
+  value: T;
+}

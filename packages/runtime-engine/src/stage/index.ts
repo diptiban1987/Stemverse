@@ -61,3 +61,5 @@ export interface ISpriteInfo {
 
 export * from './renderer-adapter';
 export * from './pixi-renderer-adapter';
+export * from './render-registry';
+export * from './scene-model';
