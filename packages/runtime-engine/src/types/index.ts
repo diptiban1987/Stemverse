@@ -468,6 +468,96 @@ export interface StageSyncState {
 
   // Phase 10F: Animation metadata registry synchronization
   animationRegistry?: AnimationRegistryEntry[];
+
+  // Phase 11B: Interaction metadata synchronization
+  interactionMetadata?: InteractionMetadata[];
+}
+
+// ─── Phase 11B: Visual Interaction Engine ──────────────────
+
+export type InteractionType =
+  | 'SELECTION'
+  | 'HOVER'
+  | 'FOCUS'
+  | 'INSPECTION'
+  | 'EDIT';
+
+export type SelectionType =
+  | 'SINGLE'
+  | 'MULTI'
+  | 'RANGE'
+  | 'GROUP'
+  | 'LASSO';
+
+export type HoverPriority = 'HIGH' | 'MEDIUM' | 'LOW';
+
+export type HoverSource = 'POINTER' | 'KEYBOARD' | 'TOUCH' | 'PROGRAMMATIC';
+
+export type FocusOwnership = 'USER' | 'SYSTEM' | 'PROGRAMMATIC';
+
+export type InspectionTargetType =
+  | 'PROPERTY'
+  | 'COMPONENT'
+  | 'BOARD'
+  | 'WIRE'
+  | 'SIGNAL';
+
+export interface SelectionMetadata {
+  selectionType: SelectionType;
+  selectedIds: string[];
+  anchorId?: string;
+  rangeStartId?: string;
+  rangeEndId?: string;
+  groupIds?: string[];
+  futureLassoPoints?: Array<{ x: number; y: number }>;
+}
+
+export interface HoverMetadata {
+  hoverTargetIds: string[];
+  priority: HoverPriority;
+  source: HoverSource;
+  regions: Array<{ regionId: string; x: number; y: number; width: number; height: number }>;
+}
+
+export interface FocusMetadata {
+  focusTargetIds: string[];
+  focusChain: string[];
+  ownership: FocusOwnership;
+}
+
+export interface InspectionMetadata {
+  inspectionTargetType: InspectionTargetType;
+  targetId: string;
+  metadata: Record<string, unknown>;
+  futureInspectionHints: Record<string, unknown>;
+}
+
+export interface InteractionState {
+  interactionId: string;
+  interactionType: InteractionType;
+  targetId: string;
+  componentId?: string;
+  boardId?: string;
+  wireId?: string;
+  selectionState: SelectionMetadata;
+  hoverState: HoverMetadata;
+  focusState: FocusMetadata;
+  inspectionState: InspectionMetadata[];
+  futureEditState?: Record<string, unknown>;
+}
+
+export interface InteractionMetadata {
+  interactionId: string;
+  interactionType: InteractionType;
+  targetId: string;
+  componentId?: string;
+  boardId?: string;
+  wireId?: string;
+  selectionState: SelectionMetadata;
+  hoverState: HoverMetadata;
+  focusState: FocusMetadata;
+  inspectionState: InspectionMetadata[];
+  futureEditState?: Record<string, unknown>;
 }
 
 // ─── Phase 10C: Wire Visualization Foundation ──────────────
@@ -956,6 +1046,9 @@ export interface SerializedTarget {
 
   // Phase 10F: Animation metadata registry serialization
   animationRegistry?: AnimationRegistryEntry[];
+
+  // Phase 11B: Interaction metadata serialization
+  interactionMetadata?: InteractionMetadata[];
 }
 
 export interface SerializedAssetManifest {
@@ -1832,6 +1925,7 @@ export interface SceneSyncSnapshot {
   boardVisualRegistry: BoardVisualRegistryEntry[];
   signalVisualRegistry: SignalVisualRegistryEntry[];
   animationRegistry: AnimationRegistryEntry[];
+  interactionMetadata?: InteractionMetadata[];
 }
 
 export interface RenderRegistryEntry<T> {

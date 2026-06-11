@@ -1,5 +1,5 @@
 import { IRuntime } from '../core';
-import { TargetId, TargetState, ASTScript, Thread, SpriteState, StageState, PendingBroadcast, BroadcastCompletionToken, ListenerEntry, BubbleState, StageSyncState, CostumeAsset, SoundAsset, BackdropAsset, ActiveSoundTrigger, SoundChannelState, PenCommand, PenState, VariableWatcher, WatcherMode, ListWatcher, ListWatcherMode, GlideState, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, SerializedProject, SerializedStage, SerializedTarget, SerializedAssetManifest, SerializedProjectMetadata, VariableState, ListState, RuntimeAssetState, AssetLoadStatus, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, ComponentType, RuntimeComponent, PinDirection, RuntimePin, RuntimeConnection, DeviceState, WorkspaceTransform, WorkspaceComponentLayout, WirePoint, WireLayout, DevelopmentBoardType, BoardPinDefinition, BoardPinCapabilities, DevelopmentBoardDefinition, WorkspaceBoard, RenderModelType, RenderMetadata, RuntimeHALState, HardwareAddress, PinMode, PullMode, PinCapability, ProtocolState, ProtocolType, PWMChannelState, I2CBusState, SPIBusState, UARTPortState, HardwareBackendMetadata, ExecutionCommand, ExecutionCommandLifecycleState, ExecutionCommandType, ESP32RuntimeMetadata, ESP32ExecutionState, ESP32PinCapability, ESP32PinMode, ESP32InstructionMetadata, ESP32InstructionExecutionState, ESP32InstructionType, ESP32GPIOExecutionResult, ESP32GPIOExecutionStatus, ESP32PWMExecutionState, ESP32ServoExecutionState, ESP32ADCExecutionState, ESP32TouchExecutionState, ESP32PeripheralCommandExecutionResult, ESP32PeripheralCommandExecutionStatus, ProtocolCommandExecutionResult, ProtocolCommandExecutionStatus, STEMVerseVisualState, STEMVerseVisualThemeState, STEMVerseVisualType, STEMVerseBoardStatus, STEMVerseSignalFlowDirection, STEMVerseVisualThemeMode, ComponentVisualModel, ComponentVisualType, ComponentVisualCategory, PinVisualMetadata, InteractionZone, AnchorPoint, LabelPosition, WireVisualRegistryEntry, WireType, WireCategory, RoutingPathType, SignalDirection, SignalActivity, SignalState, WireVisualModel, ControlPoint, WireRoutingMetadata, SignalVisualizationMetadata, InteractionZoneRect, WireInteractionMetadata, BoardVisualModel, BoardVisualType, BoardVisualCategory, BoardVisualRegistryEntry, BoardLayoutMetadata, ConnectorVisualMetadata, BoardInteractionMetadata, BoardBounds, ComponentRegion, PowerRegion, SignalRegion, ReservedRegion, BoardInteractionZone, SignalVisualModel, SignalVisualType, SignalVisualCategory, DigitalSignalMetadata, DigitalSignalLevel, DigitalSignalDirection, AnalogSignalMetadata, PWMSignalMetadata, ProtocolSignalMetadata, ProtocolSignalType, SignalVariantMetadata, SignalInteractionZone, SignalInteractionMetadata, SignalVisualRegistryEntry, AnimationType, AnimationRepeatMode, AnimationPlaybackMode, AnimationVisualModel, ComponentAnimationMetadata, WireAnimationMetadata, BoardAnimationMetadata, SignalAnimationMetadata, InteractionAnimationMetadata, AnimationRegistryEntry } from '../types';
+import { TargetId, TargetState, ASTScript, Thread, SpriteState, StageState, PendingBroadcast, BroadcastCompletionToken, ListenerEntry, BubbleState, StageSyncState, CostumeAsset, SoundAsset, BackdropAsset, ActiveSoundTrigger, SoundChannelState, PenCommand, PenState, VariableWatcher, WatcherMode, ListWatcher, ListWatcherMode, GlideState, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, SerializedProject, SerializedStage, SerializedTarget, SerializedAssetManifest, SerializedProjectMetadata, VariableState, ListState, RuntimeAssetState, AssetLoadStatus, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, ComponentType, RuntimeComponent, PinDirection, RuntimePin, RuntimeConnection, DeviceState, WorkspaceTransform, WorkspaceComponentLayout, WirePoint, WireLayout, DevelopmentBoardType, BoardPinDefinition, BoardPinCapabilities, DevelopmentBoardDefinition, WorkspaceBoard, RenderModelType, RenderMetadata, RuntimeHALState, HardwareAddress, PinMode, PullMode, PinCapability, ProtocolState, ProtocolType, PWMChannelState, I2CBusState, SPIBusState, UARTPortState, HardwareBackendMetadata, ExecutionCommand, ExecutionCommandLifecycleState, ExecutionCommandType, ESP32RuntimeMetadata, ESP32ExecutionState, ESP32PinCapability, ESP32PinMode, ESP32InstructionMetadata, ESP32InstructionExecutionState, ESP32InstructionType, ESP32GPIOExecutionResult, ESP32GPIOExecutionStatus, ESP32PWMExecutionState, ESP32ServoExecutionState, ESP32ADCExecutionState, ESP32TouchExecutionState, ESP32PeripheralCommandExecutionResult, ESP32PeripheralCommandExecutionStatus, ProtocolCommandExecutionResult, ProtocolCommandExecutionStatus, STEMVerseVisualState, STEMVerseVisualThemeState, STEMVerseVisualType, STEMVerseBoardStatus, STEMVerseSignalFlowDirection, STEMVerseVisualThemeMode, ComponentVisualModel, ComponentVisualType, ComponentVisualCategory, PinVisualMetadata, InteractionZone, AnchorPoint, LabelPosition, WireVisualRegistryEntry, WireType, WireCategory, RoutingPathType, SignalDirection, SignalActivity, SignalState, WireVisualModel, ControlPoint, WireRoutingMetadata, SignalVisualizationMetadata, InteractionZoneRect, WireInteractionMetadata, BoardVisualModel, BoardVisualType, BoardVisualCategory, BoardVisualRegistryEntry, BoardLayoutMetadata, ConnectorVisualMetadata, BoardInteractionMetadata, BoardBounds, ComponentRegion, PowerRegion, SignalRegion, ReservedRegion, BoardInteractionZone, SignalVisualModel, SignalVisualType, SignalVisualCategory, DigitalSignalMetadata, DigitalSignalLevel, DigitalSignalDirection, AnalogSignalMetadata, PWMSignalMetadata, ProtocolSignalMetadata, ProtocolSignalType, SignalVariantMetadata, SignalInteractionZone, SignalInteractionMetadata, SignalVisualRegistryEntry, AnimationType, AnimationRepeatMode, AnimationPlaybackMode, AnimationVisualModel, ComponentAnimationMetadata, WireAnimationMetadata, BoardAnimationMetadata, SignalAnimationMetadata, InteractionAnimationMetadata, AnimationRegistryEntry, InteractionMetadata, SelectionMetadata, HoverMetadata, FocusMetadata, InspectionMetadata, InteractionType, SelectionType, HoverPriority, HoverSource, FocusOwnership, InspectionTargetType } from '../types';
 import { MinimalASTInterpreter, IHardwareAdapter } from '../ast/interpreter';
 import { SimulatedHardwareBackend } from '../hal';
 import { createThread, TaskQueue, PendingTask, resetThreadCounter } from './execution-context';
@@ -277,6 +277,10 @@ export class BaseRuntime implements IRuntime {
   // Phase 10F Animation metadata registry
   private animationRegistry = new Map<string, AnimationRegistryEntry>();
   private animationOrder: string[] = [];
+
+  // Phase 11B Visual interaction registry
+  private interactionRegistry = new Map<string, InteractionMetadata>();
+  private interactionOrder: string[] = [];
 
   // Phase 8A.1 HAL state registry (passive contracts/state only)
   private halStateRegistry = new Map<string, RuntimeHALState>();
@@ -1755,6 +1759,182 @@ export class BaseRuntime implements IRuntime {
 
   public hasAnimation(id: string): boolean {
     return this.animationRegistry.has(id);
+  }
+
+  // ─── Phase 11B: Visual Interaction Registry ────────────
+
+  private validateSelectionMetadata(selection: SelectionMetadata, interactionId: string): boolean {
+    if (!selection || typeof selection !== 'object') {
+      console.warn(`[Runtime Diagnostics] malformed selection metadata: Interaction "${interactionId}" has invalid selectionState.`);
+      return false;
+    }
+    if (!selection.selectionType) {
+      console.warn(`[Runtime Diagnostics] malformed selection metadata: Interaction "${interactionId}" is missing selectionType.`);
+      return false;
+    }
+    if (!Array.isArray(selection.selectedIds)) {
+      console.warn(`[Runtime Diagnostics] malformed selection metadata: Interaction "${interactionId}" selectedIds is not an array.`);
+      return false;
+    }
+    return true;
+  }
+
+  private validateHoverMetadata(hover: HoverMetadata, interactionId: string): boolean {
+    if (!hover || typeof hover !== 'object') {
+      console.warn(`[Runtime Diagnostics] malformed hover metadata: Interaction "${interactionId}" has invalid hoverState.`);
+      return false;
+    }
+    if (!Array.isArray(hover.hoverTargetIds)) {
+      console.warn(`[Runtime Diagnostics] malformed hover metadata: Interaction "${interactionId}" hoverTargetIds is not an array.`);
+      return false;
+    }
+    if (!hover.priority) {
+      console.warn(`[Runtime Diagnostics] malformed hover metadata: Interaction "${interactionId}" is missing priority.`);
+      return false;
+    }
+    if (!hover.source) {
+      console.warn(`[Runtime Diagnostics] malformed hover metadata: Interaction "${interactionId}" is missing source.`);
+      return false;
+    }
+    return true;
+  }
+
+  private validateFocusMetadata(focus: FocusMetadata, interactionId: string): boolean {
+    if (!focus || typeof focus !== 'object') {
+      console.warn(`[Runtime Diagnostics] malformed focus metadata: Interaction "${interactionId}" has invalid focusState.`);
+      return false;
+    }
+    if (!Array.isArray(focus.focusTargetIds)) {
+      console.warn(`[Runtime Diagnostics] malformed focus metadata: Interaction "${interactionId}" focusTargetIds is not an array.`);
+      return false;
+    }
+    if (!Array.isArray(focus.focusChain)) {
+      console.warn(`[Runtime Diagnostics] malformed focus metadata: Interaction "${interactionId}" focusChain is not an array.`);
+      return false;
+    }
+    if (!focus.ownership) {
+      console.warn(`[Runtime Diagnostics] malformed focus metadata: Interaction "${interactionId}" is missing ownership.`);
+      return false;
+    }
+    return true;
+  }
+
+  private validateInspectionMetadataArray(inspections: InspectionMetadata[], interactionId: string): boolean {
+    if (!Array.isArray(inspections)) {
+      console.warn(`[Runtime Diagnostics] malformed inspection metadata: Interaction "${interactionId}" inspectionState is not an array.`);
+      return false;
+    }
+    for (let i = 0; i < inspections.length; i++) {
+      const insp = inspections[i];
+      if (!insp || typeof insp !== 'object') {
+        console.warn(`[Runtime Diagnostics] malformed inspection metadata: Interaction "${interactionId}" inspectionState[${i}] is invalid.`);
+        return false;
+      }
+      if (!insp.inspectionTargetType) {
+        console.warn(`[Runtime Diagnostics] malformed inspection metadata: Interaction "${interactionId}" inspectionState[${i}] is missing inspectionTargetType.`);
+        return false;
+      }
+      if (!insp.targetId) {
+        console.warn(`[Runtime Diagnostics] malformed inspection metadata: Interaction "${interactionId}" inspectionState[${i}] is missing targetId.`);
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private validateInteractionMetadata(entry: InteractionMetadata): boolean {
+    if (!entry || typeof entry !== 'object') {
+      console.warn('[Runtime Diagnostics] malformed interaction entry: Entry is not a valid object.');
+      return false;
+    }
+    if (!entry.interactionId || typeof entry.interactionId !== 'string') {
+      console.warn('[Runtime Diagnostics] malformed interaction entry: Missing or invalid interactionId.');
+      return false;
+    }
+    if (!entry.interactionType) {
+      console.warn('[Runtime Diagnostics] malformed interaction entry: Missing interactionType.');
+      return false;
+    }
+    if (!entry.targetId || typeof entry.targetId !== 'string') {
+      console.warn('[Runtime Diagnostics] malformed interaction entry: Missing or invalid targetId.');
+      return false;
+    }
+    if (!this.validateSelectionMetadata(entry.selectionState, entry.interactionId)) return false;
+    if (!this.validateHoverMetadata(entry.hoverState, entry.interactionId)) return false;
+    if (!this.validateFocusMetadata(entry.focusState, entry.interactionId)) return false;
+    if (!this.validateInspectionMetadataArray(entry.inspectionState, entry.interactionId)) return false;
+    return true;
+  }
+
+  public registerInteractionEntry(entry: InteractionMetadata): void {
+    if (!this.validateInteractionMetadata(entry)) return;
+    if (this.interactionRegistry.has(entry.interactionId)) {
+      console.warn(`[Runtime Diagnostics] duplicate interaction entry IDs: Interaction ID "${entry.interactionId}" already exists.`);
+    }
+    this.interactionRegistry.set(entry.interactionId, JSON.parse(JSON.stringify(entry)));
+    if (!this.interactionOrder.includes(entry.interactionId)) {
+      this.interactionOrder.push(entry.interactionId);
+    }
+  }
+
+  public getInteractionEntry(id: string): InteractionMetadata | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed interaction entry: Interaction ID must be a non-empty string.');
+      return undefined;
+    }
+    const entry = this.interactionRegistry.get(id);
+    return entry ? JSON.parse(JSON.stringify(entry)) : undefined;
+  }
+
+  public getInteractionEntries(): InteractionMetadata[] {
+    return this.interactionOrder
+      .map(id => this.interactionRegistry.get(id))
+      .filter((entry): entry is InteractionMetadata => !!entry)
+      .map(entry => JSON.parse(JSON.stringify(entry)));
+  }
+
+  public updateInteractionEntry(id: string, updates: Partial<InteractionMetadata>): void {
+    const existing = this.interactionRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing interaction entry: Interaction "${id}" not found.`);
+      return;
+    }
+    const merged: InteractionMetadata = {
+      ...existing,
+      ...updates,
+      interactionId: existing.interactionId,
+      selectionState: updates.selectionState ? { ...existing.selectionState, ...updates.selectionState } : { ...existing.selectionState },
+      hoverState: updates.hoverState ? { ...existing.hoverState, ...updates.hoverState } : { ...existing.hoverState },
+      focusState: updates.focusState ? { ...existing.focusState, ...updates.focusState } : { ...existing.focusState },
+      inspectionState: updates.inspectionState ? updates.inspectionState.map(i => ({ ...i })) : existing.inspectionState.map(i => ({ ...i })),
+    };
+    this.registerInteractionEntry(merged);
+  }
+
+  public removeInteractionEntry(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed interaction entry: Interaction ID must be a non-empty string.');
+      return;
+    }
+    if (!this.interactionRegistry.has(id)) {
+      console.warn(`[Runtime Diagnostics] missing interaction entry: Interaction "${id}" not found for removal.`);
+      return;
+    }
+    this.interactionRegistry.delete(id);
+    this.interactionOrder = this.interactionOrder.filter(existing => existing !== id);
+  }
+
+  public clearInteractionRegistry(): void {
+    this.interactionRegistry.clear();
+    this.interactionOrder = [];
+  }
+
+  public getInteractionKeys(): string[] {
+    return [...this.interactionOrder];
+  }
+
+  public hasInteraction(id: string): boolean {
+    return this.interactionRegistry.has(id);
   }
 
   private static readonly VALID_PIN_MODES: PinMode[] = ['INPUT', 'OUTPUT', 'INPUT_PULLUP', 'INPUT_PULLDOWN', 'ANALOG', 'PWM'];
@@ -5387,6 +5567,9 @@ export class BaseRuntime implements IRuntime {
     // Reset Phase 10F animation registry
     this.clearAnimationRegistry();
 
+    // Reset Phase 11B interaction registry
+    this.clearInteractionRegistry();
+
     // Reset Phase 8A.1 HAL state registry
     this.clearHALStates();
 
@@ -6363,6 +6546,10 @@ export class BaseRuntime implements IRuntime {
       if (this.animationRegistry.size > 0) {
         stageSnap.animationRegistry = this.getAnimationEntries();
       }
+      // Phase 11B: Attach interaction metadata to stage snapshot entry
+      if (this.interactionRegistry.size > 0) {
+        stageSnap.interactionMetadata = this.getInteractionEntries();
+      }
       // Phase 7R: Attach connection metadata to stage snapshot entry
       if (this.connectionRegistry.size > 0) {
         stageSnap.connections = this.getConnections();
@@ -6539,6 +6726,11 @@ export class BaseRuntime implements IRuntime {
       // Phase 10F: Serialize animation registry metadata
       if (isStage && this.animationRegistry.size > 0) {
         serializedTarget.animationRegistry = this.getAnimationEntries();
+      }
+
+      // Phase 11B: Serialize interaction registry metadata
+      if (isStage && this.interactionRegistry.size > 0) {
+        serializedTarget.interactionMetadata = this.getInteractionEntries();
       }
 
       // Phase 7W: Serialize board definitions & workspace boards
@@ -6965,6 +7157,12 @@ export class BaseRuntime implements IRuntime {
       if (Array.isArray(stageTarget.animationRegistry)) {
         for (const entry of stageTarget.animationRegistry) {
           this.registerAnimationEntry(JSON.parse(JSON.stringify(entry)));
+        }
+      }
+      // Phase 11B: Restore interaction registry metadata from stage target
+      if (Array.isArray(stageTarget.interactionMetadata)) {
+        for (const entry of stageTarget.interactionMetadata) {
+          this.registerInteractionEntry(JSON.parse(JSON.stringify(entry)));
         }
       }
       // Phase 7W: Restore board definitions from stage target
