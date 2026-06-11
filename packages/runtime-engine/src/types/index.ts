@@ -501,6 +501,12 @@ export interface StageSyncState {
   boardBoundsModels?: BoardBoundsModel[];
   boardConnectorModels?: BoardConnectorModel[];
   boardRegionModels?: BoardRegionModel[];
+
+  // Phase 13A: Signal effects foundation metadata synchronization
+  signalEffectModels?: SignalEffectModel[];
+  signalPropagationModels?: SignalPropagationModel[];
+  signalColorModels?: SignalColorModel[];
+  signalActivityModels?: SignalActivityModel[];
 }
 
 // ─── Phase 11B: Visual Interaction Engine ──────────────────
@@ -1109,6 +1115,12 @@ export interface SerializedTarget {
   boardBoundsModels?: BoardBoundsModel[];
   boardConnectorModels?: BoardConnectorModel[];
   boardRegionModels?: BoardRegionModel[];
+
+  // Phase 13A: Signal effects foundation metadata serialization
+  signalEffectModels?: SignalEffectModel[];
+  signalPropagationModels?: SignalPropagationModel[];
+  signalColorModels?: SignalColorModel[];
+  signalActivityModels?: SignalActivityModel[];
 }
 
 export interface SerializedAssetManifest {
@@ -2355,4 +2367,56 @@ export interface BoardRenderSnapshot {
   boardBoundsModels: BoardBoundsModel[];
   boardConnectorModels: BoardConnectorModel[];
   boardRegionModels: BoardRegionModel[];
+}
+
+// ─── Phase 13A: Signal Effects Foundation ─────────────────
+
+export interface SignalEffectModel {
+  signalEffectId: string;
+  signalId: string;
+  effectType: string;
+  displayName: string;
+  effectState: string;
+  effectIntensity: number;
+  effectPriority: number;
+  visibilityState: VisibilityState;
+  futureRendererHints: Record<string, unknown>;
+}
+
+export interface SignalPropagationModel {
+  propagationId: string;
+  signalId: string;
+  sourceNodeId: string;
+  targetNodeId: string;
+  propagationSpeed: number;
+  propagationDelay: number;
+  propagationState: string;
+  futurePropagationHints: Record<string, unknown>;
+}
+
+export interface SignalColorModel {
+  colorId: string;
+  signalId: string;
+  colorHex: string;
+  alpha: number;
+  colorTransition: string;
+  futureColorHints: Record<string, unknown>;
+}
+
+export interface SignalActivityModel {
+  activityId: string;
+  signalId: string;
+  activityType: string;
+  activityState: string;
+  intensity: number;
+  frequency: number;
+  dutyCycle: number;
+  futureActivityHints: Record<string, unknown>;
+}
+
+export interface SignalEffectSnapshot {
+  signalEffectModels: SignalEffectModel[];
+  signalPropagationModels: SignalPropagationModel[];
+  signalColorModels: SignalColorModel[];
+  signalActivityModels: SignalActivityModel[];
 }

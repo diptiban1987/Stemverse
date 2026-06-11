@@ -1,10 +1,11 @@
 import { IRuntime } from '../core';
-import { TargetId, TargetState, ASTScript, Thread, SpriteState, StageState, PendingBroadcast, BroadcastCompletionToken, ListenerEntry, BubbleState, StageSyncState, CostumeAsset, SoundAsset, BackdropAsset, ActiveSoundTrigger, SoundChannelState, PenCommand, PenState, VariableWatcher, WatcherMode, ListWatcher, ListWatcherMode, GlideState, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, SerializedProject, SerializedStage, SerializedTarget, SerializedAssetManifest, SerializedProjectMetadata, VariableState, ListState, RuntimeAssetState, AssetLoadStatus, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, ComponentType, RuntimeComponent, PinDirection, RuntimePin, RuntimeConnection, DeviceState, WorkspaceTransform, WorkspaceComponentLayout, WirePoint, WireLayout, DevelopmentBoardType, BoardPinDefinition, BoardPinCapabilities, DevelopmentBoardDefinition, WorkspaceBoard, RenderModelType, RenderMetadata, RuntimeHALState, HardwareAddress, PinMode, PullMode, PinCapability, ProtocolState, ProtocolType, PWMChannelState, I2CBusState, SPIBusState, UARTPortState, HardwareBackendMetadata, ExecutionCommand, ExecutionCommandLifecycleState, ExecutionCommandType, ESP32RuntimeMetadata, ESP32ExecutionState, ESP32PinCapability, ESP32PinMode, ESP32InstructionMetadata, ESP32InstructionExecutionState, ESP32InstructionType, ESP32GPIOExecutionResult, ESP32GPIOExecutionStatus, ESP32PWMExecutionState, ESP32ServoExecutionState, ESP32ADCExecutionState, ESP32TouchExecutionState, ESP32PeripheralCommandExecutionResult, ESP32PeripheralCommandExecutionStatus, ProtocolCommandExecutionResult, ProtocolCommandExecutionStatus, STEMVerseVisualState, STEMVerseVisualThemeState, STEMVerseVisualType, STEMVerseBoardStatus, STEMVerseSignalFlowDirection, STEMVerseVisualThemeMode, ComponentVisualModel, ComponentVisualType, ComponentVisualCategory, PinVisualMetadata, InteractionZone, AnchorPoint, LabelPosition, WireVisualRegistryEntry, WireType, WireCategory, RoutingPathType, SignalDirection, SignalActivity, SignalState, WireVisualModel, ControlPoint, WireRoutingMetadata, SignalVisualizationMetadata, InteractionZoneRect, WireInteractionMetadata, BoardVisualModel, BoardVisualType, BoardVisualCategory, BoardVisualRegistryEntry, BoardLayoutMetadata, ConnectorVisualMetadata, BoardInteractionMetadata, BoardBounds, ComponentRegion, PowerRegion, SignalRegion, ReservedRegion, BoardInteractionZone, SignalVisualModel, SignalVisualType, SignalVisualCategory, DigitalSignalMetadata, DigitalSignalLevel, DigitalSignalDirection, AnalogSignalMetadata, PWMSignalMetadata, ProtocolSignalMetadata, ProtocolSignalType, SignalVariantMetadata, SignalInteractionZone, SignalInteractionMetadata, SignalVisualRegistryEntry, AnimationType, AnimationRepeatMode, AnimationPlaybackMode, AnimationVisualModel, ComponentAnimationMetadata, WireAnimationMetadata, BoardAnimationMetadata, SignalAnimationMetadata, InteractionAnimationMetadata, AnimationRegistryEntry, InteractionMetadata, SelectionMetadata, HoverMetadata, FocusMetadata, InspectionMetadata, InteractionType, SelectionType, HoverPriority, HoverSource, FocusOwnership, InspectionTargetType, RenderNodeModel, NodeType, VisibilityState, SceneGraphModel, ViewportModel, VisibleRegion, RenderPipelineModel, PipelineType, CanvasRenderSnapshot, ComponentRenderModel, ComponentBoundsModel, ComponentLabelModel, ComponentPinRenderModel, ComponentRenderSnapshot, ComponentLabelPosition, WireRenderModel, WirePathModel, WireSegmentModel, WireAnchorModel, BoardRenderModel, BoardBoundsModel, BoardConnectorModel, BoardRegionModel } from '../types';
+import { TargetId, TargetState, ASTScript, Thread, SpriteState, StageState, PendingBroadcast, BroadcastCompletionToken, ListenerEntry, BubbleState, StageSyncState, CostumeAsset, SoundAsset, BackdropAsset, ActiveSoundTrigger, SoundChannelState, PenCommand, PenState, VariableWatcher, WatcherMode, ListWatcher, ListWatcherMode, GlideState, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, SerializedProject, SerializedStage, SerializedTarget, SerializedAssetManifest, SerializedProjectMetadata, VariableState, ListState, RuntimeAssetState, AssetLoadStatus, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, ComponentType, RuntimeComponent, PinDirection, RuntimePin, RuntimeConnection, DeviceState, WorkspaceTransform, WorkspaceComponentLayout, WirePoint, WireLayout, DevelopmentBoardType, BoardPinDefinition, BoardPinCapabilities, DevelopmentBoardDefinition, WorkspaceBoard, RenderModelType, RenderMetadata, RuntimeHALState, HardwareAddress, PinMode, PullMode, PinCapability, ProtocolState, ProtocolType, PWMChannelState, I2CBusState, SPIBusState, UARTPortState, HardwareBackendMetadata, ExecutionCommand, ExecutionCommandLifecycleState, ExecutionCommandType, ESP32RuntimeMetadata, ESP32ExecutionState, ESP32PinCapability, ESP32PinMode, ESP32InstructionMetadata, ESP32InstructionExecutionState, ESP32InstructionType, ESP32GPIOExecutionResult, ESP32GPIOExecutionStatus, ESP32PWMExecutionState, ESP32ServoExecutionState, ESP32ADCExecutionState, ESP32TouchExecutionState, ESP32PeripheralCommandExecutionResult, ESP32PeripheralCommandExecutionStatus, ProtocolCommandExecutionResult, ProtocolCommandExecutionStatus, STEMVerseVisualState, STEMVerseVisualThemeState, STEMVerseVisualType, STEMVerseBoardStatus, STEMVerseSignalFlowDirection, STEMVerseVisualThemeMode, ComponentVisualModel, ComponentVisualType, ComponentVisualCategory, PinVisualMetadata, InteractionZone, AnchorPoint, LabelPosition, WireVisualRegistryEntry, WireType, WireCategory, RoutingPathType, SignalDirection, SignalActivity, SignalState, WireVisualModel, ControlPoint, WireRoutingMetadata, SignalVisualizationMetadata, InteractionZoneRect, WireInteractionMetadata, BoardVisualModel, BoardVisualType, BoardVisualCategory, BoardVisualRegistryEntry, BoardLayoutMetadata, ConnectorVisualMetadata, BoardInteractionMetadata, BoardBounds, ComponentRegion, PowerRegion, SignalRegion, ReservedRegion, BoardInteractionZone, SignalVisualModel, SignalVisualType, SignalVisualCategory, DigitalSignalMetadata, DigitalSignalLevel, DigitalSignalDirection, AnalogSignalMetadata, PWMSignalMetadata, ProtocolSignalMetadata, ProtocolSignalType, SignalVariantMetadata, SignalInteractionZone, SignalInteractionMetadata, SignalVisualRegistryEntry, AnimationType, AnimationRepeatMode, AnimationPlaybackMode, AnimationVisualModel, ComponentAnimationMetadata, WireAnimationMetadata, BoardAnimationMetadata, SignalAnimationMetadata, InteractionAnimationMetadata, AnimationRegistryEntry, InteractionMetadata, SelectionMetadata, HoverMetadata, FocusMetadata, InspectionMetadata, InteractionType, SelectionType, HoverPriority, HoverSource, FocusOwnership, InspectionTargetType, RenderNodeModel, NodeType, VisibilityState, SceneGraphModel, ViewportModel, VisibleRegion, RenderPipelineModel, PipelineType, CanvasRenderSnapshot, ComponentRenderModel, ComponentBoundsModel, ComponentLabelModel, ComponentPinRenderModel, ComponentRenderSnapshot, ComponentLabelPosition, WireRenderModel, WirePathModel, WireSegmentModel, WireAnchorModel, BoardRenderModel, BoardBoundsModel, BoardConnectorModel, BoardRegionModel, SignalEffectModel, SignalPropagationModel, SignalColorModel, SignalActivityModel } from '../types';
 import { MinimalASTInterpreter, IHardwareAdapter } from '../ast/interpreter';
 import { SimulatedHardwareBackend } from '../hal';
 import { createThread, TaskQueue, PendingTask, resetThreadCounter } from './execution-context';
 import { BreadboardWorkspace } from '../stage/breadboard-workspace';
 import { validateBoardRenderModel, validateBoardBoundsModel, validateBoardConnectorModel, validateBoardRegionModel } from '../stage/board-rendering';
+import { validateSignalEffectModel, validateSignalPropagationModel, validateSignalColorModel, validateSignalActivityModel } from '../stage/signal-effects';
 
 /**
  * Concrete runtime implementation with minimal AST execution.
@@ -326,6 +327,16 @@ export class BaseRuntime implements IRuntime {
   private boardConnectorOrder: string[] = [];
   private boardRegionRegistry = new Map<string, BoardRegionModel>();
   private boardRegionOrder: string[] = [];
+
+  // Phase 13A Signal Effects Foundation registries
+  private signalEffectRegistry = new Map<string, SignalEffectModel>();
+  private signalEffectOrder: string[] = [];
+  private signalPropagationRegistry = new Map<string, SignalPropagationModel>();
+  private signalPropagationOrder: string[] = [];
+  private signalColorRegistry = new Map<string, SignalColorModel>();
+  private signalColorOrder: string[] = [];
+  private signalActivityRegistry = new Map<string, SignalActivityModel>();
+  private signalActivityOrder: string[] = [];
 
   // Phase 8A.1 HAL state registry (passive contracts/state only)
   private halStateRegistry = new Map<string, RuntimeHALState>();
@@ -2932,6 +2943,27 @@ export class BaseRuntime implements IRuntime {
     return warnings.length === 0;
   }
 
+  // ─── Phase 13A Signal Effects private validators ───
+  private validateSignalEffectModel(model: SignalEffectModel): boolean {
+    const warnings = validateSignalEffectModel(model, '[Runtime Diagnostics] malformed signal effect:');
+    return warnings.length === 0;
+  }
+
+  private validateSignalPropagationModel(propagation: SignalPropagationModel): boolean {
+    const warnings = validateSignalPropagationModel(propagation, '[Runtime Diagnostics] malformed signal propagation:');
+    return warnings.length === 0;
+  }
+
+  private validateSignalColorModel(color: SignalColorModel): boolean {
+    const warnings = validateSignalColorModel(color, '[Runtime Diagnostics] malformed signal color:');
+    return warnings.length === 0;
+  }
+
+  private validateSignalActivityModel(activity: SignalActivityModel): boolean {
+    const warnings = validateSignalActivityModel(activity, '[Runtime Diagnostics] malformed signal activity:');
+    return warnings.length === 0;
+  }
+
   // ─── Wire Render Model CRUD ───
   public registerWireRenderModel(model: WireRenderModel): void {
     if (!this.validateWireRenderModel(model)) return;
@@ -3444,11 +3476,271 @@ export class BaseRuntime implements IRuntime {
     return this.boardRegionRegistry.has(id);
   }
 
+  // ─── Signal Effect Model CRUD ───
+  public registerSignalEffectModel(model: SignalEffectModel): void {
+    if (!this.validateSignalEffectModel(model)) return;
+    if (this.signalEffectRegistry.has(model.signalEffectId)) {
+      console.warn(`[Runtime Diagnostics] duplicate signal effect IDs: ID "${model.signalEffectId}" already exists.`);
+    }
+    this.signalEffectRegistry.set(model.signalEffectId, JSON.parse(JSON.stringify(model)));
+    if (!this.signalEffectOrder.includes(model.signalEffectId)) {
+      this.signalEffectOrder.push(model.signalEffectId);
+    }
+  }
+
+  public getSignalEffectModel(id: string): SignalEffectModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed signal effect: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.signalEffectRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getSignalEffectModels(): SignalEffectModel[] {
+    return this.signalEffectOrder
+      .map(id => this.signalEffectRegistry.get(id))
+      .filter((m): m is SignalEffectModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateSignalEffectModel(id: string, updates: Partial<SignalEffectModel>): void {
+    const existing = this.signalEffectRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing signal effect: Model "${id}" not found.`);
+      return;
+    }
+    const merged: SignalEffectModel = {
+      ...existing,
+      ...updates,
+      signalEffectId: existing.signalEffectId,
+    };
+    this.registerSignalEffectModel(merged);
+  }
+
+  public removeSignalEffectModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed signal effect: ID must be a non-empty string.');
+      return;
+    }
+    this.signalEffectRegistry.delete(id);
+    this.signalEffectOrder = this.signalEffectOrder.filter(existing => existing !== id);
+  }
+
+  public clearSignalEffectModels(): void {
+    this.signalEffectRegistry.clear();
+    this.signalEffectOrder = [];
+  }
+
+  public getSignalEffectModelKeys(): string[] {
+    return [...this.signalEffectOrder];
+  }
+
+  public hasSignalEffectModel(id: string): boolean {
+    return this.signalEffectRegistry.has(id);
+  }
+
+  // ─── Signal Propagation Model CRUD ───
+  public registerSignalPropagationModel(propagation: SignalPropagationModel): void {
+    if (!this.validateSignalPropagationModel(propagation)) return;
+    if (this.signalPropagationRegistry.has(propagation.propagationId)) {
+      console.warn(`[Runtime Diagnostics] duplicate signal propagation IDs: ID "${propagation.propagationId}" already exists.`);
+    }
+    this.signalPropagationRegistry.set(propagation.propagationId, JSON.parse(JSON.stringify(propagation)));
+    if (!this.signalPropagationOrder.includes(propagation.propagationId)) {
+      this.signalPropagationOrder.push(propagation.propagationId);
+    }
+  }
+
+  public getSignalPropagationModel(id: string): SignalPropagationModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed signal propagation: ID must be a non-empty string.');
+      return undefined;
+    }
+    const prop = this.signalPropagationRegistry.get(id);
+    return prop ? JSON.parse(JSON.stringify(prop)) : undefined;
+  }
+
+  public getSignalPropagationModels(): SignalPropagationModel[] {
+    return this.signalPropagationOrder
+      .map(id => this.signalPropagationRegistry.get(id))
+      .filter((m): m is SignalPropagationModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateSignalPropagationModel(id: string, updates: Partial<SignalPropagationModel>): void {
+    const existing = this.signalPropagationRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing signal propagation: Model "${id}" not found.`);
+      return;
+    }
+    const merged: SignalPropagationModel = {
+      ...existing,
+      ...updates,
+      propagationId: existing.propagationId,
+    };
+    this.registerSignalPropagationModel(merged);
+  }
+
+  public removeSignalPropagationModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed signal propagation: ID must be a non-empty string.');
+      return;
+    }
+    this.signalPropagationRegistry.delete(id);
+    this.signalPropagationOrder = this.signalPropagationOrder.filter(existing => existing !== id);
+  }
+
+  public clearSignalPropagationModels(): void {
+    this.signalPropagationRegistry.clear();
+    this.signalPropagationOrder = [];
+  }
+
+  public getSignalPropagationModelKeys(): string[] {
+    return [...this.signalPropagationOrder];
+  }
+
+  public hasSignalPropagationModel(id: string): boolean {
+    return this.signalPropagationRegistry.has(id);
+  }
+
+  // ─── Signal Color Model CRUD ───
+  public registerSignalColorModel(color: SignalColorModel): void {
+    if (!this.validateSignalColorModel(color)) return;
+    if (this.signalColorRegistry.has(color.colorId)) {
+      console.warn(`[Runtime Diagnostics] duplicate signal color IDs: ID "${color.colorId}" already exists.`);
+    }
+    this.signalColorRegistry.set(color.colorId, JSON.parse(JSON.stringify(color)));
+    if (!this.signalColorOrder.includes(color.colorId)) {
+      this.signalColorOrder.push(color.colorId);
+    }
+  }
+
+  public getSignalColorModel(id: string): SignalColorModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed signal color: ID must be a non-empty string.');
+      return undefined;
+    }
+    const color = this.signalColorRegistry.get(id);
+    return color ? JSON.parse(JSON.stringify(color)) : undefined;
+  }
+
+  public getSignalColorModels(): SignalColorModel[] {
+    return this.signalColorOrder
+      .map(id => this.signalColorRegistry.get(id))
+      .filter((m): m is SignalColorModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateSignalColorModel(id: string, updates: Partial<SignalColorModel>): void {
+    const existing = this.signalColorRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing signal color: Model "${id}" not found.`);
+      return;
+    }
+    const merged: SignalColorModel = {
+      ...existing,
+      ...updates,
+      colorId: existing.colorId,
+    };
+    this.registerSignalColorModel(merged);
+  }
+
+  public removeSignalColorModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed signal color: ID must be a non-empty string.');
+      return;
+    }
+    this.signalColorRegistry.delete(id);
+    this.signalColorOrder = this.signalColorOrder.filter(existing => existing !== id);
+  }
+
+  public clearSignalColorModels(): void {
+    this.signalColorRegistry.clear();
+    this.signalColorOrder = [];
+  }
+
+  public getSignalColorModelKeys(): string[] {
+    return [...this.signalColorOrder];
+  }
+
+  public hasSignalColorModel(id: string): boolean {
+    return this.signalColorRegistry.has(id);
+  }
+
+  // ─── Signal Activity Model CRUD ───
+  public registerSignalActivityModel(activity: SignalActivityModel): void {
+    if (!this.validateSignalActivityModel(activity)) return;
+    if (this.signalActivityRegistry.has(activity.activityId)) {
+      console.warn(`[Runtime Diagnostics] duplicate signal activity IDs: ID "${activity.activityId}" already exists.`);
+    }
+    this.signalActivityRegistry.set(activity.activityId, JSON.parse(JSON.stringify(activity)));
+    if (!this.signalActivityOrder.includes(activity.activityId)) {
+      this.signalActivityOrder.push(activity.activityId);
+    }
+  }
+
+  public getSignalActivityModel(id: string): SignalActivityModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed signal activity: ID must be a non-empty string.');
+      return undefined;
+    }
+    const activity = this.signalActivityRegistry.get(id);
+    return activity ? JSON.parse(JSON.stringify(activity)) : undefined;
+  }
+
+  public getSignalActivityModels(): SignalActivityModel[] {
+    return this.signalActivityOrder
+      .map(id => this.signalActivityRegistry.get(id))
+      .filter((m): m is SignalActivityModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateSignalActivityModel(id: string, updates: Partial<SignalActivityModel>): void {
+    const existing = this.signalActivityRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing signal activity: Model "${id}" not found.`);
+      return;
+    }
+    const merged: SignalActivityModel = {
+      ...existing,
+      ...updates,
+      activityId: existing.activityId,
+    };
+    this.registerSignalActivityModel(merged);
+  }
+
+  public removeSignalActivityModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed signal activity: ID must be a non-empty string.');
+      return;
+    }
+    this.signalActivityRegistry.delete(id);
+    this.signalActivityOrder = this.signalActivityOrder.filter(existing => existing !== id);
+  }
+
+  public clearSignalActivityModels(): void {
+    this.signalActivityRegistry.clear();
+    this.signalActivityOrder = [];
+  }
+
+  public getSignalActivityModelKeys(): string[] {
+    return [...this.signalActivityOrder];
+  }
+
+  public hasSignalActivityModel(id: string): boolean {
+    return this.signalActivityRegistry.has(id);
+  }
+
   public reset(): void {
     this.clearBoardRenderModels();
     this.clearBoardBoundsModels();
     this.clearBoardConnectorModels();
     this.clearBoardRegionModels();
+    this.clearSignalEffectModels();
+    this.clearSignalPropagationModels();
+    this.clearSignalColorModels();
+    this.clearSignalActivityModels();
   }
 
   public destroy(): void {
@@ -7115,6 +7407,12 @@ export class BaseRuntime implements IRuntime {
     this.clearBoardConnectorModels();
     this.clearBoardRegionModels();
 
+    // Reset Phase 13A signal effects foundation registries
+    this.clearSignalEffectModels();
+    this.clearSignalPropagationModels();
+    this.clearSignalColorModels();
+    this.clearSignalActivityModels();
+
     // Reset Phase 8A.1 HAL state registry
     this.clearHALStates();
 
@@ -7359,6 +7657,12 @@ export class BaseRuntime implements IRuntime {
     this.clearBoardBoundsModels();
     this.clearBoardConnectorModels();
     this.clearBoardRegionModels();
+
+    // Reset Phase 13A signal effects foundation registries
+    this.clearSignalEffectModels();
+    this.clearSignalPropagationModels();
+    this.clearSignalColorModels();
+    this.clearSignalActivityModels();
 
     // Reset Phase 8A-8F hardware and ESP32 metadata registries
     this.clearHALStates();
@@ -8184,6 +8488,20 @@ export class BaseRuntime implements IRuntime {
       if (this.boardRegionRegistry.size > 0) {
         stageSnap.boardRegionModels = this.getBoardRegionModels();
       }
+
+      // Phase 13A: Attach signal effects foundation metadata to stage snapshot entry
+      if (this.signalEffectRegistry.size > 0) {
+        stageSnap.signalEffectModels = this.getSignalEffectModels();
+      }
+      if (this.signalPropagationRegistry.size > 0) {
+        stageSnap.signalPropagationModels = this.getSignalPropagationModels();
+      }
+      if (this.signalColorRegistry.size > 0) {
+        stageSnap.signalColorModels = this.getSignalColorModels();
+      }
+      if (this.signalActivityRegistry.size > 0) {
+        stageSnap.signalActivityModels = this.getSignalActivityModels();
+      }
       // Phase 7R: Attach connection metadata to stage snapshot entry
       if (this.connectionRegistry.size > 0) {
         stageSnap.connections = this.getConnections();
@@ -8430,6 +8748,20 @@ export class BaseRuntime implements IRuntime {
       }
       if (isStage && this.boardRegionRegistry.size > 0) {
         serializedTarget.boardRegionModels = this.getBoardRegionModels();
+      }
+
+      // Phase 13A: Serialize signal effects foundation metadata
+      if (isStage && this.signalEffectRegistry.size > 0) {
+        serializedTarget.signalEffectModels = this.getSignalEffectModels();
+      }
+      if (isStage && this.signalPropagationRegistry.size > 0) {
+        serializedTarget.signalPropagationModels = this.getSignalPropagationModels();
+      }
+      if (isStage && this.signalColorRegistry.size > 0) {
+        serializedTarget.signalColorModels = this.getSignalColorModels();
+      }
+      if (isStage && this.signalActivityRegistry.size > 0) {
+        serializedTarget.signalActivityModels = this.getSignalActivityModels();
       }
 
       // Phase 7W: Serialize board definitions & workspace boards
@@ -8964,6 +9296,28 @@ export class BaseRuntime implements IRuntime {
       if (Array.isArray(stageTarget.boardRegionModels)) {
         for (const region of stageTarget.boardRegionModels) {
           this.registerBoardRegionModel(JSON.parse(JSON.stringify(region)));
+        }
+      }
+
+      // Phase 13A: Restore signal effects foundation metadata from stage target
+      if (Array.isArray(stageTarget.signalEffectModels)) {
+        for (const model of stageTarget.signalEffectModels) {
+          this.registerSignalEffectModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.signalPropagationModels)) {
+        for (const prop of stageTarget.signalPropagationModels) {
+          this.registerSignalPropagationModel(JSON.parse(JSON.stringify(prop)));
+        }
+      }
+      if (Array.isArray(stageTarget.signalColorModels)) {
+        for (const color of stageTarget.signalColorModels) {
+          this.registerSignalColorModel(JSON.parse(JSON.stringify(color)));
+        }
+      }
+      if (Array.isArray(stageTarget.signalActivityModels)) {
+        for (const act of stageTarget.signalActivityModels) {
+          this.registerSignalActivityModel(JSON.parse(JSON.stringify(act)));
         }
       }
       // Phase 7W: Restore board definitions from stage target
