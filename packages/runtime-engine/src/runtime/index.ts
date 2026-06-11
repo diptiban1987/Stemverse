@@ -1,5 +1,5 @@
 import { IRuntime } from '../core';
-import { TargetId, TargetState, ASTScript, Thread, SpriteState, StageState, PendingBroadcast, BroadcastCompletionToken, ListenerEntry, BubbleState, StageSyncState, CostumeAsset, SoundAsset, BackdropAsset, ActiveSoundTrigger, SoundChannelState, PenCommand, PenState, VariableWatcher, WatcherMode, ListWatcher, ListWatcherMode, GlideState, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, SerializedProject, SerializedStage, SerializedTarget, SerializedAssetManifest, SerializedProjectMetadata, VariableState, ListState, RuntimeAssetState, AssetLoadStatus, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, ComponentType, RuntimeComponent, PinDirection, RuntimePin, RuntimeConnection, DeviceState, WorkspaceTransform, WorkspaceComponentLayout, WirePoint, WireLayout, DevelopmentBoardType, BoardPinDefinition, BoardPinCapabilities, DevelopmentBoardDefinition, WorkspaceBoard, RenderModelType, RenderMetadata, RuntimeHALState, HardwareAddress, PinMode, PullMode, PinCapability, ProtocolState, ProtocolType, PWMChannelState, I2CBusState, SPIBusState, UARTPortState, HardwareBackendMetadata, ExecutionCommand, ExecutionCommandLifecycleState, ExecutionCommandType, ESP32RuntimeMetadata, ESP32ExecutionState, ESP32PinCapability, ESP32PinMode, ESP32InstructionMetadata, ESP32InstructionExecutionState, ESP32InstructionType, ESP32GPIOExecutionResult, ESP32GPIOExecutionStatus, ESP32PWMExecutionState, ESP32ServoExecutionState, ESP32ADCExecutionState, ESP32TouchExecutionState, ESP32PeripheralCommandExecutionResult, ESP32PeripheralCommandExecutionStatus, ProtocolCommandExecutionResult, ProtocolCommandExecutionStatus, STEMVerseVisualState, STEMVerseVisualThemeState, STEMVerseVisualType, STEMVerseBoardStatus, STEMVerseSignalFlowDirection, STEMVerseVisualThemeMode, ComponentVisualModel, ComponentVisualType, ComponentVisualCategory, PinVisualMetadata, InteractionZone, AnchorPoint, LabelPosition } from '../types';
+import { TargetId, TargetState, ASTScript, Thread, SpriteState, StageState, PendingBroadcast, BroadcastCompletionToken, ListenerEntry, BubbleState, StageSyncState, CostumeAsset, SoundAsset, BackdropAsset, ActiveSoundTrigger, SoundChannelState, PenCommand, PenState, VariableWatcher, WatcherMode, ListWatcher, ListWatcherMode, GlideState, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, SerializedProject, SerializedStage, SerializedTarget, SerializedAssetManifest, SerializedProjectMetadata, VariableState, ListState, RuntimeAssetState, AssetLoadStatus, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, ComponentType, RuntimeComponent, PinDirection, RuntimePin, RuntimeConnection, DeviceState, WorkspaceTransform, WorkspaceComponentLayout, WirePoint, WireLayout, DevelopmentBoardType, BoardPinDefinition, BoardPinCapabilities, DevelopmentBoardDefinition, WorkspaceBoard, RenderModelType, RenderMetadata, RuntimeHALState, HardwareAddress, PinMode, PullMode, PinCapability, ProtocolState, ProtocolType, PWMChannelState, I2CBusState, SPIBusState, UARTPortState, HardwareBackendMetadata, ExecutionCommand, ExecutionCommandLifecycleState, ExecutionCommandType, ESP32RuntimeMetadata, ESP32ExecutionState, ESP32PinCapability, ESP32PinMode, ESP32InstructionMetadata, ESP32InstructionExecutionState, ESP32InstructionType, ESP32GPIOExecutionResult, ESP32GPIOExecutionStatus, ESP32PWMExecutionState, ESP32ServoExecutionState, ESP32ADCExecutionState, ESP32TouchExecutionState, ESP32PeripheralCommandExecutionResult, ESP32PeripheralCommandExecutionStatus, ProtocolCommandExecutionResult, ProtocolCommandExecutionStatus, STEMVerseVisualState, STEMVerseVisualThemeState, STEMVerseVisualType, STEMVerseBoardStatus, STEMVerseSignalFlowDirection, STEMVerseVisualThemeMode, ComponentVisualModel, ComponentVisualType, ComponentVisualCategory, PinVisualMetadata, InteractionZone, AnchorPoint, LabelPosition, WireVisualRegistryEntry, WireType, WireCategory, RoutingPathType, SignalDirection, SignalActivity, SignalState, WireVisualModel, ControlPoint, WireRoutingMetadata, SignalVisualizationMetadata, InteractionZoneRect, WireInteractionMetadata } from '../types';
 import { MinimalASTInterpreter, IHardwareAdapter } from '../ast/interpreter';
 import { SimulatedHardwareBackend } from '../hal';
 import { createThread, TaskQueue, PendingTask, resetThreadCounter } from './execution-context';
@@ -262,6 +262,10 @@ export class BaseRuntime implements IRuntime {
   private componentVisualModelRegistry = new Map<string, ComponentVisualModel>();
   private componentVisualModelOrder: string[] = [];
 
+  // Phase 10C Wire visualization registry
+  private wireVisualRegistry = new Map<string, WireVisualRegistryEntry>();
+  private wireVisualOrder: string[] = [];
+
   // Phase 8A.1 HAL state registry (passive contracts/state only)
   private halStateRegistry = new Map<string, RuntimeHALState>();
   private halStateOrder: string[] = [];
@@ -295,6 +299,15 @@ export class BaseRuntime implements IRuntime {
   private static readonly VALID_COMPONENT_VISUAL_TYPES: ComponentVisualType[] = ['LED', 'BUTTON', 'BUZZER', 'SERVO', 'ULTRASONIC', 'LCD', 'OLED', 'ESP32', 'ARDUINO_UNO', 'ARDUINO_NANO', 'RASPBERRY_PI_PICO'];
   private static readonly VALID_COMPONENT_VISUAL_CATEGORIES: ComponentVisualCategory[] = ['OUTPUT', 'INPUT', 'DISPLAY', 'BOARD', 'SENSOR', 'ACTUATOR'];
   private static readonly VALID_INTERACTION_ZONE_KINDS = ['hover', 'selection', 'drag', 'focus', 'click'] as const;
+
+  // Phase 10C Wire visualization valid constants
+  private static readonly VALID_WIRE_TYPES: WireType[] = ['JUMPER', 'DUPONT', 'CUSTOM'];
+  private static readonly VALID_WIRE_CATEGORIES: WireCategory[] = ['STANDARD', 'POWER', 'SIGNAL', 'CUSTOM'];
+  private static readonly VALID_ROUTING_PATH_TYPES: RoutingPathType[] = ['STRAIGHT', 'ORTHOGONAL', 'CURVED', 'AUTO'];
+  private static readonly VALID_SIGNAL_DIRECTIONS: SignalDirection[] = ['NONE', 'FORWARD', 'REVERSE', 'BIDIRECTIONAL'];
+  private static readonly VALID_SIGNAL_ACTIVITIES: SignalActivity[] = ['IDLE', 'ACTIVE', 'PULSING', 'ERROR'];
+  private static readonly VALID_SIGNAL_STATES: SignalState[] = ['LOW', 'HIGH', 'PWM', 'ANALOG', 'UNKNOWN'];
+  private static readonly VALID_INTERACTION_ZONE_RECT_KINDS = ['hover', 'selection', 'drag', 'routing', 'focus'] as const;
 
   private static readonly DEFAULT_COMPONENT_VISUAL_MODELS: Record<string, ComponentVisualModel> = {
     'LED': {
@@ -861,6 +874,231 @@ export class BaseRuntime implements IRuntime {
 
   public getComponentVisualModelKeys(): string[] {
     return [...this.componentVisualModelOrder];
+  }
+
+  // ─── Phase 10C: Wire Visualization Registry ────────────
+
+  private validateWireVisualModel(model: WireVisualModel): boolean {
+    if (!model || typeof model.wireId !== 'string' || model.wireId.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed wire visual model: Model is missing a valid wireId.');
+      return false;
+    }
+    if (!BaseRuntime.VALID_WIRE_TYPES.includes(model.wireType)) {
+      console.warn(`[Runtime Diagnostics] invalid wire types: Model "${model.wireId}" has invalid wireType "${model.wireType}".`);
+      return false;
+    }
+    if (typeof model.displayName !== 'string' || model.displayName.length === 0) {
+      console.warn(`[Runtime Diagnostics] malformed wire visual model: Model "${model.wireId}" has invalid displayName.`);
+      return false;
+    }
+    if (!BaseRuntime.VALID_WIRE_CATEGORIES.includes(model.category)) {
+      console.warn(`[Runtime Diagnostics] invalid wire categories: Model "${model.wireId}" has invalid category "${model.category}".`);
+      return false;
+    }
+    if (typeof model.defaultStyle !== 'string' || model.defaultStyle.length === 0) {
+      console.warn(`[Runtime Diagnostics] malformed wire visual model: Model "${model.wireId}" has invalid defaultStyle.`);
+      return false;
+    }
+    if (typeof model.defaultThickness !== 'number' || !Number.isFinite(model.defaultThickness) || model.defaultThickness <= 0) {
+      console.warn(`[Runtime Diagnostics] invalid wire thickness: Model "${model.wireId}" has invalid defaultThickness "${model.defaultThickness}".`);
+      return false;
+    }
+    if (!BaseRuntime.VALID_ROUTING_PATH_TYPES.includes(model.defaultRoutingMode)) {
+      console.warn(`[Runtime Diagnostics] invalid routing modes: Model "${model.wireId}" has invalid defaultRoutingMode "${model.defaultRoutingMode}".`);
+      return false;
+    }
+    if (!this.validatePlainObject(model.futureAnimationHints)) {
+      console.warn(`[Runtime Diagnostics] malformed wire visual model: Model "${model.wireId}" has invalid futureAnimationHints.`);
+      return false;
+    }
+    if (!this.validatePlainObject(model.futureSignalHints)) {
+      console.warn(`[Runtime Diagnostics] malformed wire visual model: Model "${model.wireId}" has invalid futureSignalHints.`);
+      return false;
+    }
+    if (!this.validatePlainObject(model.futureThemeHints)) {
+      console.warn(`[Runtime Diagnostics] malformed wire visual model: Model "${model.wireId}" has invalid futureThemeHints.`);
+      return false;
+    }
+    return true;
+  }
+
+  private validateControlPoints(points: ControlPoint[], wireId: string): boolean {
+    if (!Array.isArray(points)) {
+      console.warn(`[Runtime Diagnostics] invalid control points: Wire "${wireId}" has non-array controlPoints.`);
+      return false;
+    }
+    for (let i = 0; i < points.length; i++) {
+      const pt = points[i];
+      if (!pt || typeof pt.x !== 'number' || !Number.isFinite(pt.x) || typeof pt.y !== 'number' || !Number.isFinite(pt.y)) {
+        console.warn(`[Runtime Diagnostics] invalid control points: Wire "${wireId}" has invalid control point at index ${i}.`);
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private validateWireRoutingMetadata(routing: WireRoutingMetadata, wireId: string): boolean {
+    if (!routing || typeof routing !== 'object') {
+      console.warn(`[Runtime Diagnostics] malformed wire routing: Wire "${wireId}" has invalid routing metadata.`);
+      return false;
+    }
+    if (typeof routing.sourceAnchor !== 'string' || routing.sourceAnchor.length === 0) {
+      console.warn(`[Runtime Diagnostics] malformed wire routing: Wire "${wireId}" has invalid sourceAnchor.`);
+      return false;
+    }
+    if (typeof routing.targetAnchor !== 'string' || routing.targetAnchor.length === 0) {
+      console.warn(`[Runtime Diagnostics] malformed wire routing: Wire "${wireId}" has invalid targetAnchor.`);
+      return false;
+    }
+    if (!this.validateControlPoints(routing.controlPoints, wireId)) return false;
+    if (!BaseRuntime.VALID_ROUTING_PATH_TYPES.includes(routing.preferredPathType)) {
+      console.warn(`[Runtime Diagnostics] invalid routing path types: Wire "${wireId}" has invalid preferredPathType "${routing.preferredPathType}".`);
+      return false;
+    }
+    if (!this.validatePlainObject(routing.routingHints)) {
+      console.warn(`[Runtime Diagnostics] malformed wire routing: Wire "${wireId}" has invalid routingHints.`);
+      return false;
+    }
+    if (!this.validatePlainObject(routing.futureAutoRoutingHints)) {
+      console.warn(`[Runtime Diagnostics] malformed wire routing: Wire "${wireId}" has invalid futureAutoRoutingHints.`);
+      return false;
+    }
+    return true;
+  }
+
+  private validateSignalVisualizationMetadata(signal: SignalVisualizationMetadata, wireId: string): boolean {
+    if (!signal || typeof signal !== 'object') {
+      console.warn(`[Runtime Diagnostics] malformed signal visualization: Wire "${wireId}" has invalid signal metadata.`);
+      return false;
+    }
+    if (!BaseRuntime.VALID_SIGNAL_DIRECTIONS.includes(signal.signalDirection)) {
+      console.warn(`[Runtime Diagnostics] invalid signal directions: Wire "${wireId}" has invalid signalDirection "${signal.signalDirection}".`);
+      return false;
+    }
+    if (!BaseRuntime.VALID_SIGNAL_ACTIVITIES.includes(signal.signalActivity)) {
+      console.warn(`[Runtime Diagnostics] invalid signal activities: Wire "${wireId}" has invalid signalActivity "${signal.signalActivity}".`);
+      return false;
+    }
+    if (!BaseRuntime.VALID_SIGNAL_STATES.includes(signal.signalState)) {
+      console.warn(`[Runtime Diagnostics] invalid signal states: Wire "${wireId}" has invalid signalState "${signal.signalState}".`);
+      return false;
+    }
+    if (!this.validatePlainObject(signal.futureFlowAnimationHints)) {
+      console.warn(`[Runtime Diagnostics] malformed signal visualization: Wire "${wireId}" has invalid futureFlowAnimationHints.`);
+      return false;
+    }
+    if (!this.validatePlainObject(signal.futurePulseHints)) {
+      console.warn(`[Runtime Diagnostics] malformed signal visualization: Wire "${wireId}" has invalid futurePulseHints.`);
+      return false;
+    }
+    return true;
+  }
+
+  private validateInteractionZoneRects(zones: InteractionZoneRect[], label: string, wireId: string): boolean {
+    if (!Array.isArray(zones)) {
+      console.warn(`[Runtime Diagnostics] invalid interaction zones: Wire "${wireId}" has non-array ${label}.`);
+      return false;
+    }
+    for (let i = 0; i < zones.length; i++) {
+      const z = zones[i];
+      if (!z || typeof z.zoneId !== 'string' || z.zoneId.length === 0 || !BaseRuntime.VALID_INTERACTION_ZONE_RECT_KINDS.includes(z.kind as any) || typeof z.x !== 'number' || typeof z.y !== 'number' || typeof z.width !== 'number' || typeof z.height !== 'number') {
+        console.warn(`[Runtime Diagnostics] invalid interaction zones: Wire "${wireId}" has invalid ${label} entry at index ${i}.`);
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private validateWireInteractionMetadata(interaction: WireInteractionMetadata, wireId: string): boolean {
+    if (!interaction || typeof interaction !== 'object') {
+      console.warn(`[Runtime Diagnostics] malformed wire interaction: Wire "${wireId}" has invalid interaction metadata.`);
+      return false;
+    }
+    if (!this.validateInteractionZoneRects(interaction.hoverZones, 'hoverZones', wireId)) return false;
+    if (!this.validateInteractionZoneRects(interaction.selectionZones, 'selectionZones', wireId)) return false;
+    if (!this.validateInteractionZoneRects(interaction.dragHandles, 'dragHandles', wireId)) return false;
+    if (!this.validateInteractionZoneRects(interaction.routingHandles, 'routingHandles', wireId)) return false;
+    if (!this.validateInteractionZoneRects(interaction.focusRegions, 'focusRegions', wireId)) return false;
+    return true;
+  }
+
+  private validateWireVisualRegistryEntry(entry: WireVisualRegistryEntry): boolean {
+    if (!entry || typeof entry.wireId !== 'string' || entry.wireId.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed wire visual registry entry: Entry is missing a valid wireId.');
+      return false;
+    }
+    if (!this.validateWireVisualModel(entry.visualModel)) return false;
+    if (!this.validateWireRoutingMetadata(entry.routing, entry.wireId)) return false;
+    if (!this.validateSignalVisualizationMetadata(entry.signal, entry.wireId)) return false;
+    if (!this.validateWireInteractionMetadata(entry.interaction, entry.wireId)) return false;
+    return true;
+  }
+
+  public registerWireVisualEntry(entry: WireVisualRegistryEntry): void {
+    if (!this.validateWireVisualRegistryEntry(entry)) return;
+    if (this.wireVisualRegistry.has(entry.wireId)) {
+      console.warn(`[Runtime Diagnostics] duplicate wire visual entry IDs: Wire ID "${entry.wireId}" already exists.`);
+    }
+    this.wireVisualRegistry.set(entry.wireId, JSON.parse(JSON.stringify(entry)));
+    if (!this.wireVisualOrder.includes(entry.wireId)) {
+      this.wireVisualOrder.push(entry.wireId);
+    }
+  }
+
+  public getWireVisualEntry(id: string): WireVisualRegistryEntry | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed wire visual entry: Wire ID must be a non-empty string.');
+      return undefined;
+    }
+    const entry = this.wireVisualRegistry.get(id);
+    return entry ? JSON.parse(JSON.stringify(entry)) : undefined;
+  }
+
+  public getWireVisualEntries(): WireVisualRegistryEntry[] {
+    return this.wireVisualOrder
+      .map(id => this.wireVisualRegistry.get(id))
+      .filter((entry): entry is WireVisualRegistryEntry => !!entry)
+      .map(entry => JSON.parse(JSON.stringify(entry)));
+  }
+
+  public updateWireVisualEntry(id: string, updates: Partial<WireVisualRegistryEntry>): void {
+    const existing = this.wireVisualRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing wire visual entry: Wire "${id}" not found.`);
+      return;
+    }
+    const merged: WireVisualRegistryEntry = {
+      ...existing,
+      ...updates,
+      wireId: existing.wireId,
+      visualModel: updates.visualModel ? { ...existing.visualModel, ...updates.visualModel } : { ...existing.visualModel },
+      routing: updates.routing ? { ...existing.routing, ...updates.routing, controlPoints: updates.routing.controlPoints ? updates.routing.controlPoints.map(p => ({ ...p })) : existing.routing.controlPoints.map(p => ({ ...p })) } : { ...existing.routing, controlPoints: existing.routing.controlPoints.map(p => ({ ...p })) },
+      signal: updates.signal ? { ...existing.signal, ...updates.signal } : { ...existing.signal },
+      interaction: updates.interaction ? { ...existing.interaction, ...updates.interaction } : { ...existing.interaction },
+    };
+    this.registerWireVisualEntry(merged);
+  }
+
+  public removeWireVisualEntry(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed wire visual entry: Wire ID must be a non-empty string.');
+      return;
+    }
+    this.wireVisualRegistry.delete(id);
+    this.wireVisualOrder = this.wireVisualOrder.filter(existing => existing !== id);
+  }
+
+  public clearWireVisualRegistry(): void {
+    this.wireVisualRegistry.clear();
+    this.wireVisualOrder = [];
+  }
+
+  public getWireVisualKeys(): string[] {
+    return [...this.wireVisualOrder];
+  }
+
+  public hasWireVisual(id: string): boolean {
+    return this.wireVisualRegistry.has(id);
   }
 
   private static readonly VALID_PIN_MODES: PinMode[] = ['INPUT', 'OUTPUT', 'INPUT_PULLUP', 'INPUT_PULLDOWN', 'ANALOG', 'PWM'];
@@ -4481,6 +4719,9 @@ export class BaseRuntime implements IRuntime {
     // Reset Phase 10B component visual model registry
     this.clearComponentVisualModels();
 
+    // Reset Phase 10C wire visual registry
+    this.clearWireVisualRegistry();
+
     // Reset Phase 8A.1 HAL state registry
     this.clearHALStates();
 
@@ -4671,6 +4912,9 @@ export class BaseRuntime implements IRuntime {
 
     // Reset Phase 10B component visual model registry
     this.clearComponentVisualModels();
+
+    // Reset Phase 10C wire visual registry
+    this.clearWireVisualRegistry();
 
     // Clean up component metadata from remaining targets
     for (const target of this.targets.values()) {
@@ -5429,6 +5673,10 @@ export class BaseRuntime implements IRuntime {
       if (this.componentVisualModelRegistry.size > 0) {
         stageSnap.componentVisualModels = this.getComponentVisualModels();
       }
+      // Phase 10C: Attach wire visualization registry metadata to stage snapshot entry
+      if (this.wireVisualRegistry.size > 0) {
+        stageSnap.wireVisualRegistry = this.getWireVisualEntries();
+      }
       // Phase 7R: Attach connection metadata to stage snapshot entry
       if (this.connectionRegistry.size > 0) {
         stageSnap.connections = this.getConnections();
@@ -5585,6 +5833,11 @@ export class BaseRuntime implements IRuntime {
       // Phase 10B: Serialize component visual model metadata
       if (isStage && this.componentVisualModelRegistry.size > 0) {
         serializedTarget.componentVisualModels = this.getComponentVisualModels();
+      }
+
+      // Phase 10C: Serialize wire visualization registry metadata
+      if (isStage && this.wireVisualRegistry.size > 0) {
+        serializedTarget.wireVisualRegistry = this.getWireVisualEntries();
       }
 
       // Phase 7W: Serialize board definitions & workspace boards
@@ -5987,6 +6240,12 @@ export class BaseRuntime implements IRuntime {
       if (Array.isArray(stageTarget.componentVisualModels)) {
         for (const visualModel of stageTarget.componentVisualModels) {
           this.registerComponentVisualModel(JSON.parse(JSON.stringify(visualModel)));
+        }
+      }
+      // Phase 10C: Restore wire visualization registry metadata from stage target
+      if (Array.isArray(stageTarget.wireVisualRegistry)) {
+        for (const entry of stageTarget.wireVisualRegistry) {
+          this.registerWireVisualEntry(JSON.parse(JSON.stringify(entry)));
         }
       }
       // Phase 7W: Restore board definitions from stage target

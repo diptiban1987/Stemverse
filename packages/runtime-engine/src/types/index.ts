@@ -456,6 +456,78 @@ export interface StageSyncState {
 
   // Phase 10B: Component visual model metadata synchronization
   componentVisualModels?: ComponentVisualModel[];
+
+  // Phase 10C: Wire visualization metadata synchronization
+  wireVisualRegistry?: WireVisualRegistryEntry[];
+}
+
+// ─── Phase 10C: Wire Visualization Foundation ──────────────
+
+export type WireType = 'JUMPER' | 'DUPONT' | 'CUSTOM';
+export type WireCategory = 'STANDARD' | 'POWER' | 'SIGNAL' | 'CUSTOM';
+export type RoutingPathType = 'STRAIGHT' | 'ORTHOGONAL' | 'CURVED' | 'AUTO';
+export type SignalDirection = 'NONE' | 'FORWARD' | 'REVERSE' | 'BIDIRECTIONAL';
+export type SignalActivity = 'IDLE' | 'ACTIVE' | 'PULSING' | 'ERROR';
+export type SignalState = 'LOW' | 'HIGH' | 'PWM' | 'ANALOG' | 'UNKNOWN';
+
+export interface WireVisualModel {
+  wireId: string;
+  wireType: WireType;
+  displayName: string;
+  category: WireCategory;
+  defaultStyle: string;
+  defaultThickness: number;
+  defaultRoutingMode: RoutingPathType;
+  futureAnimationHints: Record<string, unknown>;
+  futureSignalHints: Record<string, unknown>;
+  futureThemeHints: Record<string, unknown>;
+}
+
+export interface ControlPoint {
+  x: number;
+  y: number;
+}
+
+export interface WireRoutingMetadata {
+  sourceAnchor: string;
+  targetAnchor: string;
+  controlPoints: ControlPoint[];
+  routingHints: Record<string, unknown>;
+  preferredPathType: RoutingPathType;
+  futureAutoRoutingHints: Record<string, unknown>;
+}
+
+export interface SignalVisualizationMetadata {
+  signalDirection: SignalDirection;
+  signalActivity: SignalActivity;
+  signalState: SignalState;
+  futureFlowAnimationHints: Record<string, unknown>;
+  futurePulseHints: Record<string, unknown>;
+}
+
+export interface InteractionZoneRect {
+  zoneId: string;
+  kind: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface WireInteractionMetadata {
+  hoverZones: InteractionZoneRect[];
+  selectionZones: InteractionZoneRect[];
+  dragHandles: InteractionZoneRect[];
+  routingHandles: InteractionZoneRect[];
+  focusRegions: InteractionZoneRect[];
+}
+
+export interface WireVisualRegistryEntry {
+  wireId: string;
+  visualModel: WireVisualModel;
+  routing: WireRoutingMetadata;
+  signal: SignalVisualizationMetadata;
+  interaction: WireInteractionMetadata;
 }
 
 /**
@@ -649,6 +721,9 @@ export interface SerializedTarget {
 
   // Phase 10B: Component visual model metadata serialization
   componentVisualModels?: ComponentVisualModel[];
+
+  // Phase 10C: Wire visualization metadata serialization
+  wireVisualRegistry?: WireVisualRegistryEntry[];
 }
 
 export interface SerializedAssetManifest {
