@@ -1,5 +1,5 @@
 import { IRuntime } from '../core';
-import { TargetId, TargetState, ASTScript, Thread, SpriteState, StageState, PendingBroadcast, BroadcastCompletionToken, ListenerEntry, BubbleState, StageSyncState, CostumeAsset, SoundAsset, BackdropAsset, ActiveSoundTrigger, SoundChannelState, PenCommand, PenState, VariableWatcher, WatcherMode, ListWatcher, ListWatcherMode, GlideState, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, SerializedProject, SerializedStage, SerializedTarget, SerializedAssetManifest, SerializedProjectMetadata, VariableState, ListState, RuntimeAssetState, AssetLoadStatus, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, ComponentType, RuntimeComponent, PinDirection, RuntimePin, RuntimeConnection, DeviceState, WorkspaceTransform, WorkspaceComponentLayout, WirePoint, WireLayout, DevelopmentBoardType, BoardPinDefinition, BoardPinCapabilities, DevelopmentBoardDefinition, WorkspaceBoard, RenderModelType, RenderMetadata, RuntimeHALState, HardwareAddress, PinMode, PullMode, PinCapability, ProtocolState, ProtocolType, PWMChannelState, I2CBusState, SPIBusState, UARTPortState, HardwareBackendMetadata } from '../types';
+import { TargetId, TargetState, ASTScript, Thread, SpriteState, StageState, PendingBroadcast, BroadcastCompletionToken, ListenerEntry, BubbleState, StageSyncState, CostumeAsset, SoundAsset, BackdropAsset, ActiveSoundTrigger, SoundChannelState, PenCommand, PenState, VariableWatcher, WatcherMode, ListWatcher, ListWatcherMode, GlideState, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, SerializedProject, SerializedStage, SerializedTarget, SerializedAssetManifest, SerializedProjectMetadata, VariableState, ListState, RuntimeAssetState, AssetLoadStatus, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, ComponentType, RuntimeComponent, PinDirection, RuntimePin, RuntimeConnection, DeviceState, WorkspaceTransform, WorkspaceComponentLayout, WirePoint, WireLayout, DevelopmentBoardType, BoardPinDefinition, BoardPinCapabilities, DevelopmentBoardDefinition, WorkspaceBoard, RenderModelType, RenderMetadata, RuntimeHALState, HardwareAddress, PinMode, PullMode, PinCapability, ProtocolState, ProtocolType, PWMChannelState, I2CBusState, SPIBusState, UARTPortState, HardwareBackendMetadata, ExecutionCommand, ExecutionCommandLifecycleState, ExecutionCommandType } from '../types';
 import { MinimalASTInterpreter, IHardwareAdapter } from '../ast/interpreter';
 import { SimulatedHardwareBackend } from '../hal';
 import { createThread, TaskQueue, PendingTask, resetThreadCounter } from './execution-context';
@@ -264,6 +264,8 @@ export class BaseRuntime implements IRuntime {
   private backendMetadataRegistry = new Map<string, HardwareBackendMetadata>();
   private backendMetadataOrder: string[] = [];
   private activeHardwareBackendId = 'simulated-runtime';
+  private executionCommandRegistry = new Map<string, ExecutionCommand>();
+  private executionCommandOrder: string[] = [];
 
   private static readonly DEFAULT_RENDER_METADATA: Record<RenderModelType, RenderMetadata> = {
     'LED': { modelType: 'LED', width: 20, height: 20, anchorX: 0.5, anchorY: 0.5, rotation: 0, visible: true },
@@ -685,6 +687,106 @@ export class BaseRuntime implements IRuntime {
       return;
     }
     this.simulatedHardwareBackend.importState(JSON.parse(JSON.stringify(state)));
+  }
+
+  private static readonly VALID_EXECUTION_COMMAND_TYPES: ExecutionCommandType[] = [
+    'DIGITAL_WRITE', 'DIGITAL_READ', 'ANALOG_WRITE', 'ANALOG_READ', 'PWM_WRITE',
+    'SERVO_WRITE', 'LCD_WRITE', 'OLED_WRITE', 'SENSOR_READ', 'I2C_READ', 'I2C_WRITE',
+    'SPI_TRANSFER', 'UART_READ', 'UART_WRITE'
+  ];
+
+  private static readonly VALID_EXECUTION_COMMAND_LIFECYCLES: ExecutionCommandLifecycleState[] = [
+    'CREATED', 'QUEUED', 'READY', 'COMPLETED', 'FAILED'
+  ];
+
+  private validateExecutionCommand(command: ExecutionCommand): boolean {
+    if (!command || typeof command.commandId !== 'string' || command.commandId.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed execution command: Command is missing a valid commandId.');
+      return false;
+    }
+    if (!BaseRuntime.VALID_EXECUTION_COMMAND_TYPES.includes(command.commandType)) {
+      console.warn(`[Runtime Diagnostics] unsupported execution command types: Command "${command.commandId}" has unsupported type "${(command as any).commandType}".`);
+      return false;
+    }
+    if (!BaseRuntime.VALID_EXECUTION_COMMAND_LIFECYCLES.includes(command.lifecycle)) {
+      console.warn(`[Runtime Diagnostics] invalid execution command lifecycle: Command "${command.commandId}" has invalid lifecycle "${(command as any).lifecycle}".`);
+      return false;
+    }
+    if (!command.address || typeof command.address !== 'object' || Array.isArray(command.address)) {
+      console.warn(`[Runtime Diagnostics] malformed execution command: Command "${command.commandId}" has invalid address.`);
+      return false;
+    }
+    for (const [key, value] of Object.entries(command.address)) {
+      if (value !== undefined && typeof value !== 'string') {
+        console.warn(`[Runtime Diagnostics] malformed execution command: Command "${command.commandId}" has invalid address field "${key}".`);
+        return false;
+      }
+    }
+    if (typeof command.payload !== 'object' || command.payload === null || Array.isArray(command.payload)) {
+      console.warn(`[Runtime Diagnostics] malformed execution command: Command "${command.commandId}" has invalid payload.`);
+      return false;
+    }
+    if (typeof command.metadata !== 'object' || command.metadata === null || Array.isArray(command.metadata)) {
+      console.warn(`[Runtime Diagnostics] malformed execution command: Command "${command.commandId}" has invalid metadata.`);
+      return false;
+    }
+    return true;
+  }
+
+  public registerExecutionCommand(command: ExecutionCommand): void {
+    if (!this.validateExecutionCommand(command)) return;
+    if (this.executionCommandRegistry.has(command.commandId)) {
+      console.warn(`[Runtime Diagnostics] duplicate execution command IDs: Command ID "${command.commandId}" already exists.`);
+    }
+    this.executionCommandRegistry.set(command.commandId, JSON.parse(JSON.stringify(command)));
+    if (!this.executionCommandOrder.includes(command.commandId)) this.executionCommandOrder.push(command.commandId);
+  }
+
+  public getExecutionCommand(id: string): ExecutionCommand | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed execution command: Command ID must be a non-empty string.');
+      return undefined;
+    }
+    const command = this.executionCommandRegistry.get(id);
+    return command ? JSON.parse(JSON.stringify(command)) : undefined;
+  }
+
+  public getExecutionCommands(): ExecutionCommand[] {
+    return this.executionCommandOrder
+      .map(id => this.executionCommandRegistry.get(id))
+      .filter((command): command is ExecutionCommand => !!command)
+      .map(command => JSON.parse(JSON.stringify(command)));
+  }
+
+  public removeExecutionCommand(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed execution command: Command ID must be a non-empty string.');
+      return;
+    }
+    this.executionCommandRegistry.delete(id);
+    this.executionCommandOrder = this.executionCommandOrder.filter(existing => existing !== id);
+  }
+
+  public clearExecutionCommands(): void {
+    this.executionCommandRegistry.clear();
+    this.executionCommandOrder = [];
+  }
+
+  public setExecutionCommandLifecycle(id: string, lifecycle: ExecutionCommandLifecycleState): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed execution command: Command ID must be a non-empty string.');
+      return;
+    }
+    if (!BaseRuntime.VALID_EXECUTION_COMMAND_LIFECYCLES.includes(lifecycle)) {
+      console.warn(`[Runtime Diagnostics] invalid execution command lifecycle: Lifecycle "${lifecycle}" is invalid.`);
+      return;
+    }
+    const command = this.executionCommandRegistry.get(id);
+    if (!command) {
+      console.warn(`[Runtime Diagnostics] missing execution command references: Command "${id}" is not registered.`);
+      return;
+    }
+    command.lifecycle = lifecycle;
   }
 
   private static readonly VALID_BOARD_TYPES: DevelopmentBoardType[] = [
@@ -2994,6 +3096,9 @@ export class BaseRuntime implements IRuntime {
 
     // Reset Phase 8A.6 HAL backend metadata registry
     this.clearHardwareBackendMetadata();
+
+    // Reset Phase 8B execution command metadata registry
+    this.clearExecutionCommands();
   }
 
   public start(): void {
@@ -3849,6 +3954,9 @@ export class BaseRuntime implements IRuntime {
         stageSnap.hardwareBackends = this.getHardwareBackendsMetadata();
         stageSnap.activeHardwareBackendId = this.activeHardwareBackendId;
       }
+      if (this.executionCommandRegistry.size > 0) {
+        stageSnap.executionCommands = this.getExecutionCommands();
+      }
       // Phase 7R: Attach connection metadata to stage snapshot entry
       if (this.connectionRegistry.size > 0) {
         stageSnap.connections = this.getConnections();
@@ -4019,6 +4127,11 @@ export class BaseRuntime implements IRuntime {
       if (isStage && this.backendMetadataRegistry.size > 0) {
         serializedTarget.hardwareBackends = this.getHardwareBackendsMetadata();
         serializedTarget.activeHardwareBackendId = this.activeHardwareBackendId;
+      }
+
+      // Phase 8B: Serialize execution command metadata registry
+      if (isStage && this.executionCommandRegistry.size > 0) {
+        serializedTarget.executionCommands = this.getExecutionCommands();
       }
 
       const targetWatchers = Array.from(this.variableWatchers.values())
@@ -4399,6 +4512,12 @@ export class BaseRuntime implements IRuntime {
       }
       if (typeof stageTarget.activeHardwareBackendId === 'string') {
         this.setActiveHardwareBackend(stageTarget.activeHardwareBackendId);
+      }
+      // Phase 8B: Restore execution command metadata from stage target
+      if (Array.isArray(stageTarget.executionCommands)) {
+        for (const command of stageTarget.executionCommands) {
+          this.registerExecutionCommand(JSON.parse(JSON.stringify(command)));
+        }
       }
     }
     // Restore pins from component pin data

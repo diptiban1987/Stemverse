@@ -425,6 +425,9 @@ export interface StageSyncState {
   // Phase 8A.6: HAL backend metadata synchronization
   hardwareBackends?: HardwareBackendMetadata[];
   activeHardwareBackendId?: string;
+
+  // Phase 8B: Execution command metadata synchronization
+  executionCommands?: ExecutionCommand[];
 }
 
 /**
@@ -587,6 +590,9 @@ export interface SerializedTarget {
   // Phase 8A.6: HAL backend metadata serialization
   hardwareBackends?: HardwareBackendMetadata[];
   activeHardwareBackendId?: string;
+
+  // Phase 8B: Execution command metadata serialization
+  executionCommands?: ExecutionCommand[];
 }
 
 export interface SerializedAssetManifest {
@@ -765,6 +771,41 @@ export interface HardwareBackendMetadata {
   active: boolean;
   supportsSerialization: boolean;
   supportsSnapshots: boolean;
+  metadata: Record<string, unknown>;
+}
+
+// ─── Phase 8B: Execution Command Layer Metadata ──────────────
+
+export type ExecutionCommandType =
+  | 'DIGITAL_WRITE'
+  | 'DIGITAL_READ'
+  | 'ANALOG_WRITE'
+  | 'ANALOG_READ'
+  | 'PWM_WRITE'
+  | 'SERVO_WRITE'
+  | 'LCD_WRITE'
+  | 'OLED_WRITE'
+  | 'SENSOR_READ'
+  | 'I2C_READ'
+  | 'I2C_WRITE'
+  | 'SPI_TRANSFER'
+  | 'UART_READ'
+  | 'UART_WRITE';
+
+export type ExecutionCommandLifecycleState = 'CREATED' | 'QUEUED' | 'READY' | 'COMPLETED' | 'FAILED';
+
+export interface ExecutionCommandAddress extends HardwareAddress {
+  protocolId?: string;
+  busId?: string;
+  portId?: string;
+}
+
+export interface ExecutionCommand {
+  commandId: string;
+  commandType: ExecutionCommandType;
+  lifecycle: ExecutionCommandLifecycleState;
+  address: ExecutionCommandAddress;
+  payload: Record<string, unknown>;
   metadata: Record<string, unknown>;
 }
 
