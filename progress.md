@@ -211,6 +211,8 @@
 | 8.48 | Simulated HAL Backend Integration (Phase 8A.2) | Runtime Architecture | ✅ | SimulatedHardwareBackend routes existing electronics behavior through HAL while preserving runtime registries, snapshots, serialization, clone behavior, and device compatibility |
 | 8.49 | Compatibility Projection & Rich Pin State (Phase 8A.3) | Runtime Architecture | ✅ | Rich HAL pin state ownership for digital/analog/PWM/mode/pull metadata while preserving RuntimePin.signalState as the boolean digital compatibility projection |
 | 8.50 | Board Pin Mapping & Capability Model (Phase 8A.4) | Runtime Architecture | ✅ | Board pin capability metadata for ESP32, Arduino Uno/Nano, and Raspberry Pi Pico with deterministic lookup, snapshots, serialization, and warning-only validation |
+| 8.51 | Protocol Shell Foundation (Phase 8A.5) | Runtime Architecture | ✅ | Deterministic I2C/SPI/UART/PWM protocol shell metadata, synchronous warning-only HAL contracts, simulated backend state, snapshot/export/import round-trip, and 368 protocol tests |
+| 8.52 | HAL Backend Finalization (Phase 8A.6) | Runtime Architecture | ✅ | Runtime-owned backend metadata registry, active backend ownership, deterministic lifecycle wrappers, snapshot/export/import round-trip, and 456 backend finalization tests |
 ---
 
 ## 9. Robotics Studio Workspace
@@ -414,6 +416,8 @@ Based on V3 Enterprise Spec quarterly breakdown:
 | **Phase 8A.2 — Simulated HAL Backend Integration** | Q3 | HAL routing for existing simulated electronics behavior | ✅ | 100% |
 | **Phase 8A.3 — Compatibility Projection & Rich Pin State** | Q3 | Rich pin state storage with boolean GPIO compatibility projection | ✅ | 100% |
 | **Phase 8A.4 — Board Pin Mapping & Capability Model** | Q3 | Deterministic board pin capability metadata and HAL lookup APIs | ✅ | 100% |
+| **Phase 8A.5 — Protocol Shell Foundation** | Q3 | Deterministic I2C/SPI/UART/PWM protocol shells with metadata-only snapshots and serialization | ✅ | 100% |
+| **Phase 8A.6 — HAL Backend Finalization** | Q3 | Runtime-owned backend registry, active backend ownership metadata, lifecycle wrappers, and serialization-safe backend snapshots | ✅ | 100% |
 | **Phase 4 (Roadmap)** | Q3 | Simulator Engine + AI Studio + Advanced Blocks | 🔵 | 72% |
 | **Phase 5.1 (Roadmap)** | Q4 | Production hardening, unified streaming, Scratch runtime, E2E, OpenAPI | 🔵 | 55% |
 | **Phase 5.2A (Roadmap)** | Q4 | Object storage & asset pipeline (MinIO, presign, Asset model) | ✅ | 90% |
@@ -433,7 +437,7 @@ Based on V3 Enterprise Spec quarterly breakdown:
 | 5. Database & Data Layer | 10 | 6 | 2 | 2 | 60% |
 | 6. Blockly Engine & Block System | 13 | 11 | 0 | 2 | 85% |
 | 7. Block Implementations | 37 | 10 | 14 | 13 | 27% |
-| 8. Scratch Integration | 48 | 42 | 5 | 1 | 88% |
+| 8. Scratch Integration | 49 | 43 | 5 | 1 | 88% |
 | 9. Robotics Studio Workspace | 8 | 7 | 0 | 1 | 88% |
 | 10. Compiler Service | 7 | 2 | 1 | 4 | 29% |
 | 11. Simulator Engine | 12 | 5 | 1 | 6 | 46% |
@@ -446,7 +450,7 @@ Based on V3 Enterprise Spec quarterly breakdown:
 | 18. Enterprise Features | 6 | 0 | 0 | 6 | 0% |
 | 19. Documentation Portal | 6 | 0 | 4 | 2 | 33% |
 | 20. SEO & Content | 3 | 0 | 3 | 0 | 50% |
-| **TOTAL** | **230** | **126** | **47** | **57** | **55%** |
+| **TOTAL** | **231** | **127** | **47** | **57** | **55%** |
 
 ---
 
@@ -539,6 +543,8 @@ Based on V3 Enterprise Spec quarterly breakdown:
 | 2026-06-11 | 8 | Phase 8A.2 — Simulated HAL Backend Integration: Added SimulatedHardwareBackend and routed existing electronics callbacks through HAL while preserving runtime registry ownership and behavior. | Kilo |
 | 2026-06-11 | 8 | Phase 8A.3 — Compatibility Projection & Rich Pin State: Added backend-owned rich pin state for digital/analog/PWM/mode/pull metadata, preserved RuntimePin.signalState as digitalValue projection, and added 250 compatibility tests. | Kilo |
 | 2026-06-11 | 8 | Phase 8A.4 — Board Pin Mapping & Capability Model: Added typed board pin capabilities, deterministic capability lookup APIs, metadata normalization, snapshot/export/import preservation, and 325 board capability tests. | Kilo |
+| 2026-06-11 | 8 | Phase 8A.5 — Protocol Shell Foundation: Added JSON-safe I2C/SPI/UART/PWM protocol state, synchronous warning-only HAL shell contracts, simulated backend protocol metadata storage, snapshots, export/import round-trip, and 368 protocol shell tests. | Kilo |
+| 2026-06-11 | 8 | Phase 8A.6 — HAL Backend Finalization: Added backend metadata contracts, runtime-owned backend registry, active backend ownership, deterministic lifecycle wrappers, snapshot/export/import support, and 456 backend finalization tests. | Kilo |
 
 ---
 
@@ -555,12 +561,12 @@ As per visual simulator rendering foundation design decisions, the following vis
 - **Arduino Execution**: Defer Arduino hardware instruction execution emulator.
 - **MicroPython**: Defer Python virtual execution runtime or MicroPython runtime interpreters.
 - **Python Runtime**: Defer standard Python script evaluation inside the simulator engine.
-- **HAL Backends**: Simulated runtime backend is integrated with rich pin state and board pin capability metadata; ESP32, Arduino, MicroPython, Python, async operations, and physical hardware backend implementations remain deferred.
+- **HAL Backends**: Simulated runtime backend is integrated with rich pin state, board pin capability metadata, protocol shell metadata, runtime-owned backend metadata registry, active backend ownership, and deterministic lifecycle wrappers; ESP32, Arduino, MicroPython, Python, async operations, serial/USB/network transport, and physical hardware backend implementations remain deferred.
 
 ---
 
 ### Verification Metrics
 
-- **Tests Added**: 325 unit tests for Phase 8A.4 (Board Pin Mapping & Capability Model)
-- **Total Test Count**: 3148 tests passing successfully
+- **Tests Added**: 456 unit tests for Phase 8A.6 (HAL Backend Finalization)
+- **Total Test Count**: 3972 tests passing successfully across 36 test files
 - **Build Status**: Clean compiler run (0 errors, 0 warnings)

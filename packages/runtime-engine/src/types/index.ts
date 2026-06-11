@@ -421,6 +421,10 @@ export interface StageSyncState {
   i2cBuses?: I2CBusState[];
   spiBuses?: SPIBusState[];
   uartPorts?: UARTPortState[];
+
+  // Phase 8A.6: HAL backend metadata synchronization
+  hardwareBackends?: HardwareBackendMetadata[];
+  activeHardwareBackendId?: string;
 }
 
 /**
@@ -579,6 +583,10 @@ export interface SerializedTarget {
   i2cBuses?: I2CBusState[];
   spiBuses?: SPIBusState[];
   uartPorts?: UARTPortState[];
+
+  // Phase 8A.6: HAL backend metadata serialization
+  hardwareBackends?: HardwareBackendMetadata[];
+  activeHardwareBackendId?: string;
 }
 
 export interface SerializedAssetManifest {
@@ -710,6 +718,13 @@ export interface HardwareAddress {
   channelId?: string;
 }
 
+export interface ProtocolAddress extends HardwareAddress {
+  protocolId: string;
+  protocolType: ProtocolType;
+  busId?: string;
+  portId?: string;
+}
+
 export interface ComponentAddress extends HardwareAddress {
   componentId: string;
 }
@@ -739,9 +754,33 @@ export interface RuntimeHALState {
   metadata?: Record<string, unknown>;
 }
 
+// ─── Phase 8A.6: HAL Backend Metadata ──────────────
+
+export type HardwareBackendType = 'SIMULATED' | 'CUSTOM';
+
+export interface HardwareBackendMetadata {
+  backendId: string;
+  backendType: HardwareBackendType;
+  deterministic: boolean;
+  active: boolean;
+  supportsSerialization: boolean;
+  supportsSnapshots: boolean;
+  metadata: Record<string, unknown>;
+}
+
 // ─── Phase 8A.5: Protocol Shell Metadata ──────────────
 
 export type ProtocolType = 'PWM' | 'I2C' | 'SPI' | 'UART';
+
+export interface ProtocolCapabilities {
+  protocolType: ProtocolType;
+  supportsRead: boolean;
+  supportsWrite: boolean;
+  supportsTransfer: boolean;
+  maxFrequencyHz?: number;
+  maxPayloadLength?: number;
+  metadata?: Record<string, unknown>;
+}
 
 export interface ProtocolDefinition {
   protocolId: string;
@@ -749,7 +788,10 @@ export interface ProtocolDefinition {
   boardId: string;
   enabled: boolean;
   metadata: Record<string, unknown>;
+  capabilities?: ProtocolCapabilities;
 }
+
+export type ProtocolState = PWMChannelState | I2CBusState | SPIBusState | UARTPortState;
 
 export interface PWMChannelState extends ProtocolDefinition {
   protocolType: 'PWM';

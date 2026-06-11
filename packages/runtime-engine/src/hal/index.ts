@@ -1,4 +1,4 @@
-import { BusAddress, ComponentAddress, HardwareAddress, I2CBusState, PinAddress, PinMode, PinSignalState, PullMode, PWMChannelState, RuntimeHALState, SPIBusState, UARTPortState } from '../types';
+import { BusAddress, ComponentAddress, HardwareAddress, HardwareBackendMetadata, I2CBusState, PinAddress, PinMode, PinSignalState, PullMode, PWMChannelState, RuntimeHALState, SPIBusState, UARTPortState } from '../types';
 
 export interface IHardwareAdapter {
   initialize(state?: RuntimeHALState[]): void;
@@ -21,6 +21,7 @@ export interface IHardwareAdapter {
   setPullMode(address: PinAddress, pullMode: PullMode): void;
   getPullMode(address: PinAddress): PullMode;
   pwmWrite(address: PinAddress, dutyCycle: number, options?: Record<string, unknown>): void;
+  pwmRead(address: PinAddress): number;
   configurePWM(state: PWMChannelState): void;
   getPWMState(protocolId: string): PWMChannelState | undefined;
   servoWrite(address: PinAddress | ComponentAddress, angle: number, options?: Record<string, unknown>): void;
@@ -47,6 +48,7 @@ export interface IHardwareAdapter {
 export interface IHardwareBackend extends IHardwareAdapter {
   readonly backendId: string;
   readonly deterministic: boolean;
+  getMetadata(): HardwareBackendMetadata;
   getState(address: HardwareAddress): PinSignalState | undefined;
   setState(address: HardwareAddress, state: PinSignalState): void;
 }

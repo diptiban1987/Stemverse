@@ -1,5 +1,5 @@
 import { IRuntime } from '../core';
-import { TargetId, TargetState, ASTScript, Thread, SpriteState, StageState, PendingBroadcast, BroadcastCompletionToken, ListenerEntry, BubbleState, StageSyncState, CostumeAsset, SoundAsset, BackdropAsset, ActiveSoundTrigger, SoundChannelState, PenCommand, PenState, VariableWatcher, WatcherMode, ListWatcher, ListWatcherMode, GlideState, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, SerializedProject, SerializedStage, SerializedTarget, SerializedAssetManifest, SerializedProjectMetadata, VariableState, ListState, RuntimeAssetState, AssetLoadStatus, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, ComponentType, RuntimeComponent, PinDirection, RuntimePin, RuntimeConnection, DeviceState, WorkspaceTransform, WorkspaceComponentLayout, WirePoint, WireLayout, DevelopmentBoardType, BoardPinDefinition, BoardPinCapabilities, DevelopmentBoardDefinition, WorkspaceBoard, RenderModelType, RenderMetadata, RuntimeHALState, HardwareAddress, PinMode, PullMode, PinCapability } from '../types';
+import { TargetId, TargetState, ASTScript, Thread, SpriteState, StageState, PendingBroadcast, BroadcastCompletionToken, ListenerEntry, BubbleState, StageSyncState, CostumeAsset, SoundAsset, BackdropAsset, ActiveSoundTrigger, SoundChannelState, PenCommand, PenState, VariableWatcher, WatcherMode, ListWatcher, ListWatcherMode, GlideState, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, SerializedProject, SerializedStage, SerializedTarget, SerializedAssetManifest, SerializedProjectMetadata, VariableState, ListState, RuntimeAssetState, AssetLoadStatus, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, ComponentType, RuntimeComponent, PinDirection, RuntimePin, RuntimeConnection, DeviceState, WorkspaceTransform, WorkspaceComponentLayout, WirePoint, WireLayout, DevelopmentBoardType, BoardPinDefinition, BoardPinCapabilities, DevelopmentBoardDefinition, WorkspaceBoard, RenderModelType, RenderMetadata, RuntimeHALState, HardwareAddress, PinMode, PullMode, PinCapability, ProtocolState, ProtocolType, PWMChannelState, I2CBusState, SPIBusState, UARTPortState, HardwareBackendMetadata } from '../types';
 import { MinimalASTInterpreter, IHardwareAdapter } from '../ast/interpreter';
 import { SimulatedHardwareBackend } from '../hal';
 import { createThread, TaskQueue, PendingTask, resetThreadCounter } from './execution-context';
@@ -259,6 +259,11 @@ export class BaseRuntime implements IRuntime {
   private halStateRegistry = new Map<string, RuntimeHALState>();
   private halStateOrder: string[] = [];
   private simulatedHardwareBackend: SimulatedHardwareBackend;
+  private protocolRegistry = new Map<string, ProtocolState>();
+  private protocolOrder: string[] = [];
+  private backendMetadataRegistry = new Map<string, HardwareBackendMetadata>();
+  private backendMetadataOrder: string[] = [];
+  private activeHardwareBackendId = 'simulated-runtime';
 
   private static readonly DEFAULT_RENDER_METADATA: Record<RenderModelType, RenderMetadata> = {
     'LED': { modelType: 'LED', width: 20, height: 20, anchorX: 0.5, anchorY: 0.5, rotation: 0, visible: true },
@@ -475,6 +480,211 @@ export class BaseRuntime implements IRuntime {
   public clearHALStates(): void {
     this.halStateRegistry.clear();
     this.halStateOrder = [];
+  }
+
+  private static readonly VALID_PROTOCOL_TYPES: ProtocolType[] = ['PWM', 'I2C', 'SPI', 'UART'];
+
+  private validateProtocolState(state: ProtocolState): boolean {
+    if (!state || typeof state.protocolId !== 'string' || state.protocolId.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed protocol state: Protocol state is missing a valid protocolId.');
+      return false;
+    }
+    if (!BaseRuntime.VALID_PROTOCOL_TYPES.includes(state.protocolType)) {
+      console.warn(`[Runtime Diagnostics] unsupported protocol types: Protocol state "${state.protocolId}" has invalid type "${(state as any).protocolType}".`);
+      return false;
+    }
+    if (typeof state.boardId !== 'string' || state.boardId.length === 0 || typeof state.enabled !== 'boolean' || typeof state.metadata !== 'object' || state.metadata === null || Array.isArray(state.metadata)) {
+      console.warn(`[Runtime Diagnostics] malformed protocol state: Protocol state "${state.protocolId}" has invalid base metadata.`);
+      return false;
+    }
+    const numericFields = ['frequencyHz', 'dutyCycle', 'clockHz', 'baudRate'] as const;
+    for (const field of numericFields) {
+      const value = (state as any)[field];
+      if (value !== undefined && (typeof value !== 'number' || !Number.isFinite(value))) {
+        console.warn(`[Runtime Diagnostics] malformed protocol state: Protocol state "${state.protocolId}" has invalid ${field}.`);
+        return false;
+      }
+    }
+    if (state.protocolType === 'PWM' && typeof (state as PWMChannelState).channelId !== 'string') return this.warnMalformedProtocol(state.protocolId);
+    if (state.protocolType === 'I2C' && typeof (state as I2CBusState).busId !== 'string') return this.warnMalformedProtocol(state.protocolId);
+    if (state.protocolType === 'SPI' && typeof (state as SPIBusState).busId !== 'string') return this.warnMalformedProtocol(state.protocolId);
+    if (state.protocolType === 'UART' && typeof (state as UARTPortState).portId !== 'string') return this.warnMalformedProtocol(state.protocolId);
+    return true;
+  }
+
+  private warnMalformedProtocol(protocolId: string): false {
+    console.warn(`[Runtime Diagnostics] malformed protocol state: Protocol state "${protocolId}" is missing required protocol identifiers.`);
+    return false;
+  }
+
+  public registerProtocolState(state: ProtocolState): void {
+    if (!this.validateProtocolState(state)) return;
+    if (this.protocolRegistry.has(state.protocolId)) {
+      console.warn(`[Runtime Diagnostics] duplicate protocol IDs: Protocol ID "${state.protocolId}" already exists.`);
+    }
+    this.protocolRegistry.set(state.protocolId, JSON.parse(JSON.stringify(state)));
+    if (!this.protocolOrder.includes(state.protocolId)) this.protocolOrder.push(state.protocolId);
+    if (state.protocolType === 'PWM') this.simulatedHardwareBackend.configurePWM(state as PWMChannelState);
+    if (state.protocolType === 'I2C') this.simulatedHardwareBackend.registerI2CBus(state as I2CBusState);
+    if (state.protocolType === 'SPI') this.simulatedHardwareBackend.registerSPIBus(state as SPIBusState);
+    if (state.protocolType === 'UART') this.simulatedHardwareBackend.registerUARTPort(state as UARTPortState);
+  }
+
+  public getProtocolState(id: string): ProtocolState | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed protocol state: Protocol ID must be a non-empty string.');
+      return undefined;
+    }
+    const state = this.protocolRegistry.get(id);
+    return state ? JSON.parse(JSON.stringify(state)) : undefined;
+  }
+
+  public getProtocolStates(type?: ProtocolType): ProtocolState[] {
+    return this.protocolOrder
+      .map(id => this.protocolRegistry.get(id))
+      .filter((state): state is ProtocolState => !!state && (!type || state.protocolType === type))
+      .map(state => JSON.parse(JSON.stringify(state)));
+  }
+
+  public removeProtocolState(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed protocol state: Protocol ID must be a non-empty string.');
+      return;
+    }
+    this.protocolRegistry.delete(id);
+    this.protocolOrder = this.protocolOrder.filter(existing => existing !== id);
+  }
+
+  public clearProtocolStates(): void {
+    this.protocolRegistry.clear();
+    this.protocolOrder = [];
+    this.simulatedHardwareBackend.importProtocolState({});
+  }
+
+  public registerPWMChannel(state: PWMChannelState): void { this.registerProtocolState(state); }
+  public registerI2CBus(state: I2CBusState): void { this.registerProtocolState(state); }
+  public registerSPIBus(state: SPIBusState): void { this.registerProtocolState(state); }
+  public registerUARTPort(state: UARTPortState): void { this.registerProtocolState(state); }
+  public getPWMChannels(): PWMChannelState[] { return this.getProtocolStates('PWM') as PWMChannelState[]; }
+  public getI2CBuses(): I2CBusState[] { return this.getProtocolStates('I2C') as I2CBusState[]; }
+  public getSPIBuses(): SPIBusState[] { return this.getProtocolStates('SPI') as SPIBusState[]; }
+  public getUARTPorts(): UARTPortState[] { return this.getProtocolStates('UART') as UARTPortState[]; }
+
+  private static readonly VALID_BACKEND_TYPES = ['SIMULATED', 'CUSTOM'] as const;
+
+  private validateBackendMetadata(metadata: HardwareBackendMetadata): boolean {
+    if (!metadata || typeof metadata.backendId !== 'string' || metadata.backendId.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed backend metadata: Backend metadata is missing a valid backendId.');
+      return false;
+    }
+    if (!BaseRuntime.VALID_BACKEND_TYPES.includes(metadata.backendType as any)) {
+      console.warn(`[Runtime Diagnostics] unsupported backend types: Backend "${metadata.backendId}" has unsupported type "${(metadata as any).backendType}".`);
+      return false;
+    }
+    if (typeof metadata.deterministic !== 'boolean' || typeof metadata.active !== 'boolean' || typeof metadata.supportsSerialization !== 'boolean' || typeof metadata.supportsSnapshots !== 'boolean') {
+      console.warn(`[Runtime Diagnostics] malformed backend metadata: Backend "${metadata.backendId}" has invalid boolean flags.`);
+      return false;
+    }
+    if (typeof metadata.metadata !== 'object' || metadata.metadata === null || Array.isArray(metadata.metadata)) {
+      console.warn(`[Runtime Diagnostics] malformed backend metadata: Backend "${metadata.backendId}" has invalid metadata.`);
+      return false;
+    }
+    return true;
+  }
+
+  public registerHardwareBackendMetadata(metadata: HardwareBackendMetadata): void {
+    if (!this.validateBackendMetadata(metadata)) return;
+    if (this.backendMetadataRegistry.has(metadata.backendId)) {
+      console.warn(`[Runtime Diagnostics] duplicate backend IDs: Backend ID "${metadata.backendId}" already exists.`);
+    }
+    const copy = JSON.parse(JSON.stringify(metadata)) as HardwareBackendMetadata;
+    copy.active = copy.backendId === this.activeHardwareBackendId || copy.active;
+    this.backendMetadataRegistry.set(copy.backendId, copy);
+    if (!this.backendMetadataOrder.includes(copy.backendId)) this.backendMetadataOrder.push(copy.backendId);
+    if (copy.active) this.setActiveHardwareBackend(copy.backendId);
+  }
+
+  public getHardwareBackendMetadata(id: string): HardwareBackendMetadata | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed backend metadata: Backend ID must be a non-empty string.');
+      return undefined;
+    }
+    const metadata = this.backendMetadataRegistry.get(id);
+    return metadata ? JSON.parse(JSON.stringify(metadata)) : undefined;
+  }
+
+  public getHardwareBackendsMetadata(): HardwareBackendMetadata[] {
+    return this.backendMetadataOrder
+      .map(id => this.backendMetadataRegistry.get(id))
+      .filter((metadata): metadata is HardwareBackendMetadata => !!metadata)
+      .map(metadata => JSON.parse(JSON.stringify(metadata)));
+  }
+
+  public removeHardwareBackendMetadata(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed backend metadata: Backend ID must be a non-empty string.');
+      return;
+    }
+    if (id === this.activeHardwareBackendId) {
+      console.warn(`[Runtime Diagnostics] invalid backend ownership: Active backend "${id}" cannot be removed.`);
+      return;
+    }
+    this.backendMetadataRegistry.delete(id);
+    this.backendMetadataOrder = this.backendMetadataOrder.filter(existing => existing !== id);
+  }
+
+  public clearHardwareBackendMetadata(): void {
+    this.backendMetadataRegistry.clear();
+    this.backendMetadataOrder = [];
+    this.activeHardwareBackendId = this.simulatedHardwareBackend.backendId;
+    this.registerHardwareBackendMetadata(this.simulatedHardwareBackend.getMetadata());
+  }
+
+  public setActiveHardwareBackend(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed backend metadata: Backend ID must be a non-empty string.');
+      return;
+    }
+    if (!this.backendMetadataRegistry.has(id)) {
+      console.warn(`[Runtime Diagnostics] unsupported backend IDs: Backend "${id}" is not registered.`);
+      return;
+    }
+    this.activeHardwareBackendId = id;
+    for (const [backendId, metadata] of this.backendMetadataRegistry) {
+      metadata.active = backendId === id;
+    }
+  }
+
+  public getActiveHardwareBackendId(): string {
+    return this.activeHardwareBackendId;
+  }
+
+  public initializeHardwareBackend(state?: RuntimeHALState[]): void {
+    this.simulatedHardwareBackend.initialize(state);
+  }
+
+  public resetHardwareBackend(): void {
+    this.simulatedHardwareBackend.reset();
+  }
+
+  public beginHardwareBackendTick(tickContext?: Record<string, unknown>): void {
+    this.simulatedHardwareBackend.beginTick(tickContext);
+  }
+
+  public endHardwareBackendTick(): void {
+    this.simulatedHardwareBackend.endTick();
+  }
+
+  public exportHardwareBackendState(): RuntimeHALState[] {
+    return JSON.parse(JSON.stringify(this.simulatedHardwareBackend.exportState()));
+  }
+
+  public importHardwareBackendState(state: RuntimeHALState[]): void {
+    if (!Array.isArray(state)) {
+      console.warn('[Runtime Diagnostics] malformed backend state: Backend state import must be an array.');
+      return;
+    }
+    this.simulatedHardwareBackend.importState(JSON.parse(JSON.stringify(state)));
   }
 
   private static readonly VALID_BOARD_TYPES: DevelopmentBoardType[] = [
@@ -2453,6 +2663,7 @@ export class BaseRuntime implements IRuntime {
       setLCDText: (componentId: string, text: string) => this.setLCDText(componentId, text),
       setOLEDText: (componentId: string, text: string) => this.setOLEDText(componentId, text),
     });
+    this.registerHardwareBackendMetadata(this.simulatedHardwareBackend.getMetadata());
 
     // Register deterministic stop callbacks
     this.interpreter.onStopAll = () => {
@@ -2777,6 +2988,12 @@ export class BaseRuntime implements IRuntime {
 
     // Reset Phase 8A.1 HAL state registry
     this.clearHALStates();
+
+    // Reset Phase 8A.5 protocol shell registry and backend protocol state
+    this.clearProtocolStates();
+
+    // Reset Phase 8A.6 HAL backend metadata registry
+    this.clearHardwareBackendMetadata();
   }
 
   public start(): void {
@@ -2956,6 +3173,7 @@ export class BaseRuntime implements IRuntime {
     this.tickCount++;
 
     const tickDurationMs = 1000 / this.fps;
+    this.beginHardwareBackendTick({ tickCount: this.tickCount, tickDurationMs });
 
     // Phase 7J: Deterministic runtime timer accumulation
     this.runtimeTimerMs += tickDurationMs;
@@ -3179,6 +3397,7 @@ export class BaseRuntime implements IRuntime {
     for (const channel of this.soundChannels.values()) {
       channel.activeTriggerIds = channel.activeTriggerIds.filter(id => activeIds.has(id));
     }
+    this.endHardwareBackendTick();
   }
 
   /**
@@ -3620,6 +3839,16 @@ export class BaseRuntime implements IRuntime {
       if (this.halStateRegistry.size > 0) {
         stageSnap.halState = this.getHALStates();
       }
+      if (this.protocolRegistry.size > 0) {
+        stageSnap.pwmChannels = this.getPWMChannels();
+        stageSnap.i2cBuses = this.getI2CBuses();
+        stageSnap.spiBuses = this.getSPIBuses();
+        stageSnap.uartPorts = this.getUARTPorts();
+      }
+      if (this.backendMetadataRegistry.size > 0) {
+        stageSnap.hardwareBackends = this.getHardwareBackendsMetadata();
+        stageSnap.activeHardwareBackendId = this.activeHardwareBackendId;
+      }
       // Phase 7R: Attach connection metadata to stage snapshot entry
       if (this.connectionRegistry.size > 0) {
         stageSnap.connections = this.getConnections();
@@ -3776,6 +4005,20 @@ export class BaseRuntime implements IRuntime {
       // Phase 8A.1: Serialize passive HAL state registry
       if (isStage && this.halStateRegistry.size > 0) {
         serializedTarget.halState = this.getHALStates();
+      }
+
+      // Phase 8A.5: Serialize protocol shell metadata
+      if (isStage && this.protocolRegistry.size > 0) {
+        serializedTarget.pwmChannels = this.getPWMChannels();
+        serializedTarget.i2cBuses = this.getI2CBuses();
+        serializedTarget.spiBuses = this.getSPIBuses();
+        serializedTarget.uartPorts = this.getUARTPorts();
+      }
+
+      // Phase 8A.6: Serialize HAL backend ownership metadata
+      if (isStage && this.backendMetadataRegistry.size > 0) {
+        serializedTarget.hardwareBackends = this.getHardwareBackendsMetadata();
+        serializedTarget.activeHardwareBackendId = this.activeHardwareBackendId;
       }
 
       const targetWatchers = Array.from(this.variableWatchers.values())
@@ -4133,6 +4376,29 @@ export class BaseRuntime implements IRuntime {
         for (const halState of stageTarget.halState) {
           this.registerHALState(JSON.parse(JSON.stringify(halState)));
         }
+      }
+      // Phase 8A.5: Restore protocol shell metadata from stage target
+      for (const protocolState of [
+        ...(Array.isArray(stageTarget.pwmChannels) ? stageTarget.pwmChannels : []),
+        ...(Array.isArray(stageTarget.i2cBuses) ? stageTarget.i2cBuses : []),
+        ...(Array.isArray(stageTarget.spiBuses) ? stageTarget.spiBuses : []),
+        ...(Array.isArray(stageTarget.uartPorts) ? stageTarget.uartPorts : []),
+      ]) {
+        this.registerProtocolState(JSON.parse(JSON.stringify(protocolState)));
+      }
+      // Phase 8A.6: Restore HAL backend metadata from stage target
+      if (Array.isArray(stageTarget.hardwareBackends)) {
+        this.backendMetadataRegistry.clear();
+        this.backendMetadataOrder = [];
+        for (const backendMetadata of stageTarget.hardwareBackends) {
+          this.registerHardwareBackendMetadata(JSON.parse(JSON.stringify(backendMetadata)));
+        }
+        if (!this.backendMetadataRegistry.has(this.simulatedHardwareBackend.backendId)) {
+          this.registerHardwareBackendMetadata(this.simulatedHardwareBackend.getMetadata());
+        }
+      }
+      if (typeof stageTarget.activeHardwareBackendId === 'string') {
+        this.setActiveHardwareBackend(stageTarget.activeHardwareBackendId);
       }
     }
     // Restore pins from component pin data

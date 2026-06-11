@@ -1,4 +1,4 @@
-import { BusAddress, ComponentAddress, ComponentType, HardwareAddress, I2CBusState, PinAddress, PinMode, PinSignalState, PullMode, PWMChannelState, RuntimeComponent, RuntimeHALState, RuntimePin, SPIBusState, UARTPortState } from '../types';
+import { BusAddress, ComponentAddress, ComponentType, HardwareAddress, HardwareBackendMetadata, I2CBusState, PinAddress, PinMode, PinSignalState, PullMode, PWMChannelState, RuntimeComponent, RuntimeHALState, RuntimePin, SPIBusState, UARTPortState } from '../types';
 import { IHardwareBackend } from './index';
 
 export interface SimulatedHardwareRuntimeAccess {
@@ -33,6 +33,42 @@ export class SimulatedHardwareBackend implements IHardwareBackend {
   public endTick(): void {}
   public exportState(): RuntimeHALState[] { return []; }
   public importState(_state: RuntimeHALState[]): void {}
+
+  public getMetadata(): HardwareBackendMetadata {
+    return {
+      backendId: this.backendId,
+      backendType: 'SIMULATED',
+      deterministic: this.deterministic,
+      active: true,
+      supportsSerialization: true,
+      supportsSnapshots: true,
+      metadata: { label: 'Simulated Runtime Backend' },
+    };
+  }
+
+  public exportProtocolState(): { pwmChannels: PWMChannelState[]; i2cBuses: I2CBusState[]; spiBuses: SPIBusState[]; uartPorts: UARTPortState[] } {
+    return {
+      pwmChannels: this.uniqueProtocolValues(this.pwmChannels),
+      i2cBuses: this.uniqueProtocolValues(this.i2cBuses),
+      spiBuses: this.uniqueProtocolValues(this.spiBuses),
+      uartPorts: this.uniqueProtocolValues(this.uartPorts),
+    };
+  }
+
+  public importProtocolState(state: { pwmChannels?: PWMChannelState[]; i2cBuses?: I2CBusState[]; spiBuses?: SPIBusState[]; uartPorts?: UARTPortState[] }): void {
+    if (!state || typeof state !== 'object') {
+      console.warn('[Runtime Diagnostics] malformed protocol state: Protocol state import must be an object.');
+      return;
+    }
+    this.pwmChannels.clear();
+    this.i2cBuses.clear();
+    this.spiBuses.clear();
+    this.uartPorts.clear();
+    for (const pwm of state.pwmChannels ?? []) this.configurePWM(pwm);
+    for (const i2c of state.i2cBuses ?? []) this.registerI2CBus(i2c);
+    for (const spi of state.spiBuses ?? []) this.registerSPIBus(spi);
+    for (const uart of state.uartPorts ?? []) this.registerUARTPort(uart);
+  }
 
   public resolveComponent(address: ComponentAddress): ComponentAddress | undefined {
     if (!this.isValidComponentAddress(address)) return undefined;
@@ -145,12 +181,19 @@ export class SimulatedHardwareBackend implements IHardwareBackend {
     this.ensureSignalState(resolved).pwmValue = dutyCycle;
   }
 
+  public pwmRead(address: PinAddress): number {
+    if (!this.isValidPinAddress(address, false)) return 0;
+    const resolved = this.resolvePin(address);
+    return resolved ? this.ensureSignalState(resolved).pwmValue : 0;
+  }
+
   public configurePWM(state: PWMChannelState): void {
     if (!state || state.protocolType !== 'PWM' || typeof state.protocolId !== 'string' || !state.protocolId) {
       console.warn('[Runtime Diagnostics] malformed protocol definition: PWM protocol state is invalid.');
       return;
     }
     this.pwmChannels.set(state.protocolId, JSON.parse(JSON.stringify(state)));
+    this.pwmChannels.set(state.channelId, JSON.parse(JSON.stringify(state)));
   }
 
   public getPWMState(protocolId: string): PWMChannelState | undefined {
@@ -163,8 +206,15 @@ export class SimulatedHardwareBackend implements IHardwareBackend {
     this.runtime.setServoAngle(address.componentId, angle);
   }
 
-  public i2cWrite(_address: BusAddress, _deviceAddress: number, _bytes: number[]): void {
-    console.warn('[Runtime Diagnostics] unsupported HAL operation: i2cWrite is not implemented by the simulated backend yet.');
+  public i2cWrite(address: BusAddress, deviceAddress: number, bytes: number[]): void {
+    if (!this.isValidBusAddress(address, 'I2C')) return;
+    if (!this.i2cBuses.has(address.busId)) {
+      console.warn(`[Runtime Diagnostics] unsupported protocol IDs: I2C bus "${address.busId}" is not registered.`);
+      return;
+    }
+    if (!this.isValidByteArray(bytes) || typeof deviceAddress !== 'number' || !Number.isInteger(deviceAddress) || deviceAddress < 0) {
+      console.warn('[Runtime Diagnostics] malformed protocol state: i2cWrite payload or device address is invalid.');
+    }
   }
 
   public registerI2CBus(state: I2CBusState): void {
@@ -173,6 +223,7 @@ export class SimulatedHardwareBackend implements IHardwareBackend {
       return;
     }
     this.i2cBuses.set(state.protocolId, JSON.parse(JSON.stringify(state)));
+    this.i2cBuses.set(state.busId, JSON.parse(JSON.stringify(state)));
   }
 
   public getI2CBus(protocolId: string): I2CBusState | undefined {
@@ -180,14 +231,30 @@ export class SimulatedHardwareBackend implements IHardwareBackend {
     return state ? JSON.parse(JSON.stringify(state)) : undefined;
   }
 
-  public i2cRead(_address: BusAddress, _deviceAddress: number, _length: number): number[] {
-    console.warn('[Runtime Diagnostics] unsupported HAL operation: i2cRead is not implemented by the simulated backend yet.');
+  public i2cRead(address: BusAddress, deviceAddress: number, length: number): number[] {
+    if (!this.isValidBusAddress(address, 'I2C')) return [];
+    if (!this.i2cBuses.has(address.busId)) {
+      console.warn(`[Runtime Diagnostics] unsupported protocol IDs: I2C bus "${address.busId}" is not registered.`);
+      return [];
+    }
+    if (typeof deviceAddress !== 'number' || !Number.isInteger(deviceAddress) || deviceAddress < 0 || typeof length !== 'number' || !Number.isInteger(length) || length < 0) {
+      console.warn('[Runtime Diagnostics] malformed protocol state: i2cRead device address or length is invalid.');
+      return [];
+    }
     return [];
   }
 
-  public spiTransfer(_address: BusAddress, _bytes: number[], _options?: Record<string, unknown>): number[] {
-    console.warn('[Runtime Diagnostics] unsupported HAL operation: spiTransfer is not implemented by the simulated backend yet.');
-    return [];
+  public spiTransfer(address: BusAddress, bytes: number[], _options?: Record<string, unknown>): number[] {
+    if (!this.isValidBusAddress(address, 'SPI')) return [];
+    if (!this.spiBuses.has(address.busId)) {
+      console.warn(`[Runtime Diagnostics] unsupported protocol IDs: SPI bus "${address.busId}" is not registered.`);
+      return [];
+    }
+    if (!this.isValidByteArray(bytes)) {
+      console.warn('[Runtime Diagnostics] malformed protocol state: spiTransfer payload is invalid.');
+      return [];
+    }
+    return bytes.map(byte => byte);
   }
 
   public registerSPIBus(state: SPIBusState): void {
@@ -196,6 +263,7 @@ export class SimulatedHardwareBackend implements IHardwareBackend {
       return;
     }
     this.spiBuses.set(state.protocolId, JSON.parse(JSON.stringify(state)));
+    this.spiBuses.set(state.busId, JSON.parse(JSON.stringify(state)));
   }
 
   public getSPIBus(protocolId: string): SPIBusState | undefined {
@@ -209,6 +277,7 @@ export class SimulatedHardwareBackend implements IHardwareBackend {
       return;
     }
     this.uartPorts.set(state.protocolId, JSON.parse(JSON.stringify(state)));
+    this.uartPorts.set(state.portId, JSON.parse(JSON.stringify(state)));
   }
 
   public getUARTPort(protocolId: string): UARTPortState | undefined {
@@ -216,12 +285,27 @@ export class SimulatedHardwareBackend implements IHardwareBackend {
     return state ? JSON.parse(JSON.stringify(state)) : undefined;
   }
 
-  public uartWrite(_address: BusAddress, _bytes: number[]): void {
-    console.warn('[Runtime Diagnostics] unsupported HAL operation: uartWrite is not implemented by the simulated backend yet.');
+  public uartWrite(address: BusAddress, bytes: number[]): void {
+    if (!this.isValidBusAddress(address, 'UART')) return;
+    if (!this.uartPorts.has(address.busId)) {
+      console.warn(`[Runtime Diagnostics] unsupported protocol IDs: UART port "${address.busId}" is not registered.`);
+      return;
+    }
+    if (!this.isValidByteArray(bytes)) {
+      console.warn('[Runtime Diagnostics] malformed protocol state: uartWrite payload is invalid.');
+    }
   }
 
-  public uartRead(_address: BusAddress, _maxLength: number): number[] {
-    console.warn('[Runtime Diagnostics] unsupported HAL operation: uartRead is not implemented by the simulated backend yet.');
+  public uartRead(address: BusAddress, maxLength: number): number[] {
+    if (!this.isValidBusAddress(address, 'UART')) return [];
+    if (!this.uartPorts.has(address.busId)) {
+      console.warn(`[Runtime Diagnostics] unsupported protocol IDs: UART port "${address.busId}" is not registered.`);
+      return [];
+    }
+    if (typeof maxLength !== 'number' || !Number.isInteger(maxLength) || maxLength < 0) {
+      console.warn('[Runtime Diagnostics] malformed protocol state: uartRead maxLength is invalid.');
+      return [];
+    }
     return [];
   }
 
@@ -356,6 +440,29 @@ export class SimulatedHardwareBackend implements IHardwareBackend {
       return false;
     }
     return true;
+  }
+
+  private isValidBusAddress(address: BusAddress | undefined, protocol: 'I2C' | 'SPI' | 'UART'): address is BusAddress {
+    if (!address || typeof address !== 'object' || address.protocol !== protocol || typeof address.busId !== 'string' || !address.busId) {
+      console.warn(`[Runtime Diagnostics] malformed protocol address: ${protocol} address is invalid.`);
+      return false;
+    }
+    return true;
+  }
+
+  private isValidByteArray(bytes: number[]): boolean {
+    return Array.isArray(bytes) && bytes.every(byte => typeof byte === 'number' && Number.isInteger(byte) && byte >= 0 && byte <= 255);
+  }
+
+  private uniqueProtocolValues<T extends { protocolId: string }>(map: Map<string, T>): T[] {
+    const seen = new Set<string>();
+    const values: T[] = [];
+    for (const state of map.values()) {
+      if (seen.has(state.protocolId)) continue;
+      seen.add(state.protocolId);
+      values.push(JSON.parse(JSON.stringify(state)));
+    }
+    return values;
   }
 
   private syncSimpleOutputDeviceState(componentId: string, high: boolean): void {
