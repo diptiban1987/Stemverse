@@ -104,11 +104,11 @@ phase-12-rendering
 
 Latest Stable Tag:
 
-phase-14A-stable
+phase-14B-stable
 
 Recommended Recovery Tag:
 
-phase-14A-stable
+phase-14B-stable
 
 ---
 
@@ -124,9 +124,9 @@ PASS
 
 Verification Metrics:
 
-176443 tests passing
+215894 tests passing
 
-61 test files passing
+63 test files passing
 
 Build clean
 
@@ -355,6 +355,8 @@ COMPLETED
 ✓ Visual Themes Foundation
 ✓ Animation Playback Foundation
 ✓ Visual Rendering Runtime Foundation
+✓ Renderer Execution Metadata Foundation
+✓ Visible Rendering Foundation
 
 NOT STARTED
 
@@ -364,9 +366,9 @@ NOT STARTED
 
 # NEXT PHASE
 
-PHASE 14B
+PHASE 15B
 
-Actual Renderer Integration Foundation
+Actual Pixi/Canvas Rendering Integration
 
 ---
 
@@ -534,6 +536,41 @@ Actual Renderer Integration Foundation
 
 ---
 
+# PHASE 14B — COMPLETE
+
+## Files Modified
+- packages/runtime-engine/src/types/index.ts (RenderExecutionModel, RenderInstructionModel, RenderScheduleModel, RenderExecutionSnapshot types; StageSyncState and SerializedTarget extended with 3 optional arrays)
+- packages/runtime-engine/src/runtime/index.ts (3 Map+order registries, 24 CRUD methods, initialize/stop/reset/destroy cleanup, snapshot/export/import integration, importProject restore)
+- packages/runtime-engine/src/stage/renderer-adapter.ts (IRenderTarget renderer execution arrays, InMemoryRendererAdapter sync)
+- packages/runtime-engine/src/stage/pixi-renderer-adapter.ts (renderer execution fields sync in update+creation paths)
+- packages/runtime-engine/src/stage/index.ts (exported render-execution)
+- progress.md
+- MASTER_HANDOFF.md
+
+## Files Created
+- packages/runtime-engine/src/stage/render-execution.ts (RenderExecutionSynchronizer class, factory functions, validators)
+- packages/runtime-engine/tests/render-execution-foundation-runtime.test.ts (30000 tests covering registration, lookup, updates, removal, cleanup, ordering, validation warnings, renderer isolation, deep-copy, clone safety, snapshot sync, serialization round trip)
+
+
+---
+
+# PHASE 15A — COMPLETE
+
+## Files Modified
+- packages/runtime-engine/src/types/index.ts (VisualNodeModel, SceneTreeModel, LayerCompositionModel, VisualCompositionModel, VisibleRenderingSnapshot types; StageSyncState and SerializedTarget extended with 4 optional arrays)
+- packages/runtime-engine/src/runtime/index.ts (4 Map+order registries, 32 CRUD methods, initialize/stop/reset/destroy cleanup, snapshot/export/import integration, importProject restore)
+- packages/runtime-engine/src/stage/renderer-adapter.ts (IRenderTarget visible rendering arrays, InMemoryRendererAdapter sync)
+- packages/runtime-engine/src/stage/pixi-renderer-adapter.ts (visible rendering fields sync in update+creation paths)
+- packages/runtime-engine/src/stage/index.ts (exported visible-rendering)
+- progress.md
+- MASTER_HANDOFF.md
+
+## Files Created
+- packages/runtime-engine/src/stage/visible-rendering.ts (VisibleRenderingSynchronizer class, factory functions, validators)
+- packages/runtime-engine/tests/visible-rendering-foundation-runtime.test.ts (6940+ tests covering registration, lookup, updates, removal, cleanup, ordering, validation warnings, renderer isolation, deep-copy, clone safety, snapshot sync, serialization round trip)
+
+---
+
 # DO NOT MODIFY
 
 scheduler
@@ -577,6 +614,8 @@ Clone Architecture
 13B Visual Themes ✅
 13C Animation Playback ✅
 14A Visual Rendering Runtime ✅
+14B Renderer Execution Metadata ✅
+15A Visible Rendering ✅
 
 ---
 

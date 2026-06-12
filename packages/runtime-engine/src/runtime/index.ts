@@ -9,6 +9,9 @@ import { validateSignalEffectModel, validateSignalPropagationModel, validateSign
 import { validateThemeModel, validateColorPaletteModel, validateComponentStyleModel, validateWorkspaceStyleModel } from '../stage/visual-themes';
 import { validateAnimationPlaybackModel, validateTimelineModel, validateKeyframeModel, validatePlaybackGroupModel } from '../stage/animation-playback';
 import { validateRenderRuntimeModel, validateRenderPassModel, validateRenderLayerRuntimeModel, validateRenderQueueModel, validateFrameMetadataModel } from '../stage/render-runtime';
+import { validateRenderExecutionModel, validateRenderInstructionModel, validateRenderScheduleModel } from '../stage/render-execution';
+import { validateVisualNodeModel, validateSceneTreeModel, validateLayerCompositionModel, validateVisualCompositionModel } from '../stage/visible-rendering';
+import { RenderExecutionModel, RenderInstructionModel, RenderScheduleModel, VisualNodeModel, SceneTreeModel, LayerCompositionModel, VisualCompositionModel } from '../types';
 
 /**
  * Concrete runtime implementation with minimal AST execution.
@@ -372,6 +375,24 @@ export class BaseRuntime implements IRuntime {
   private renderQueueOrder: string[] = [];
   private frameRegistry = new Map<string, FrameMetadataModel>();
   private frameOrder: string[] = [];
+
+  // Phase 14B Renderer Execution Metadata Foundation registries
+  private renderExecutionRegistry = new Map<string, RenderExecutionModel>();
+  private renderExecutionOrder: string[] = [];
+  private renderInstructionRegistry = new Map<string, RenderInstructionModel>();
+  private renderInstructionOrder: string[] = [];
+  private renderScheduleRegistry = new Map<string, RenderScheduleModel>();
+  private renderScheduleOrder: string[] = [];
+
+  // Phase 15A Visible Rendering Foundation registries
+  private visualNodeRegistry = new Map<string, VisualNodeModel>();
+  private visualNodeOrder: string[] = [];
+  private sceneTreeModelRegistry = new Map<string, SceneTreeModel>();
+  private sceneTreeModelOrder: string[] = [];
+  private layerCompositionRegistry = new Map<string, LayerCompositionModel>();
+  private layerCompositionOrder: string[] = [];
+  private visualCompositionRegistry = new Map<string, VisualCompositionModel>();
+  private visualCompositionOrder: string[] = [];
 
 
   // Phase 8A.1 HAL state registry (passive contracts/state only)
@@ -3068,6 +3089,43 @@ export class BaseRuntime implements IRuntime {
     return warnings.length === 0;
   }
 
+  // ─── Phase 14B Renderer Execution private validators ───
+  private validateRenderExecutionModel(model: RenderExecutionModel): boolean {
+    const warnings = validateRenderExecutionModel(model, '[Runtime Diagnostics] malformed render execution:');
+    return warnings.length === 0;
+  }
+
+  private validateRenderInstructionModel(model: RenderInstructionModel): boolean {
+    const warnings = validateRenderInstructionModel(model, '[Runtime Diagnostics] malformed render instruction:');
+    return warnings.length === 0;
+  }
+
+  private validateRenderScheduleModel(model: RenderScheduleModel): boolean {
+    const warnings = validateRenderScheduleModel(model, '[Runtime Diagnostics] malformed render schedule:');
+    return warnings.length === 0;
+  }
+
+  // ─── Phase 15A Visible Rendering private validators ───
+  private validateVisualNodeModel(model: VisualNodeModel): boolean {
+    const warnings = validateVisualNodeModel(model, '[Runtime Diagnostics] malformed visual node:');
+    return warnings.length === 0;
+  }
+
+  private validateSceneTreeModel(model: SceneTreeModel): boolean {
+    const warnings = validateSceneTreeModel(model, '[Runtime Diagnostics] malformed scene tree:');
+    return warnings.length === 0;
+  }
+
+  private validateLayerCompositionModel(model: LayerCompositionModel): boolean {
+    const warnings = validateLayerCompositionModel(model, '[Runtime Diagnostics] malformed layer composition:');
+    return warnings.length === 0;
+  }
+
+  private validateVisualCompositionModel(model: VisualCompositionModel): boolean {
+    const warnings = validateVisualCompositionModel(model, '[Runtime Diagnostics] malformed visual composition:');
+    return warnings.length === 0;
+  }
+
 
   // ─── Wire Render Model CRUD ───
   public registerWireRenderModel(model: WireRenderModel): void {
@@ -4669,6 +4727,438 @@ export class BaseRuntime implements IRuntime {
     return this.frameRegistry.has(id);
   }
 
+  // ─── Render Execution Model CRUD ───
+  public registerRenderExecutionModel(model: RenderExecutionModel): void {
+    if (!this.validateRenderExecutionModel(model)) return;
+    if (this.renderExecutionRegistry.has(model.executionId)) {
+      console.warn(`[Runtime Diagnostics] duplicate render execution IDs: ID "${model.executionId}" already exists.`);
+    }
+    this.renderExecutionRegistry.set(model.executionId, JSON.parse(JSON.stringify(model)));
+    if (!this.renderExecutionOrder.includes(model.executionId)) {
+      this.renderExecutionOrder.push(model.executionId);
+    }
+  }
+
+  public getRenderExecutionModel(id: string): RenderExecutionModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed render execution: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.renderExecutionRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getRenderExecutionModels(): RenderExecutionModel[] {
+    return this.renderExecutionOrder
+      .map(id => this.renderExecutionRegistry.get(id))
+      .filter((m): m is RenderExecutionModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateRenderExecutionModel(id: string, updates: Partial<RenderExecutionModel>): void {
+    const existing = this.renderExecutionRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing render execution: Model "${id}" not found.`);
+      return;
+    }
+    const merged: RenderExecutionModel = {
+      ...existing,
+      ...updates,
+      executionId: existing.executionId,
+    };
+    this.registerRenderExecutionModel(merged);
+  }
+
+  public removeRenderExecutionModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed render execution: ID must be a non-empty string.');
+      return;
+    }
+    this.renderExecutionRegistry.delete(id);
+    this.renderExecutionOrder = this.renderExecutionOrder.filter(existing => existing !== id);
+  }
+
+  public clearRenderExecutionModels(): void {
+    this.renderExecutionRegistry.clear();
+    this.renderExecutionOrder = [];
+  }
+
+  public getRenderExecutionModelKeys(): string[] {
+    return [...this.renderExecutionOrder];
+  }
+
+  public hasRenderExecutionModel(id: string): boolean {
+    return this.renderExecutionRegistry.has(id);
+  }
+
+  // ─── Render Instruction Model CRUD ───
+  public registerRenderInstructionModel(model: RenderInstructionModel): void {
+    if (!this.validateRenderInstructionModel(model)) return;
+    if (this.renderInstructionRegistry.has(model.instructionId)) {
+      console.warn(`[Runtime Diagnostics] duplicate render instruction IDs: ID "${model.instructionId}" already exists.`);
+    }
+    this.renderInstructionRegistry.set(model.instructionId, JSON.parse(JSON.stringify(model)));
+    if (!this.renderInstructionOrder.includes(model.instructionId)) {
+      this.renderInstructionOrder.push(model.instructionId);
+    }
+  }
+
+  public getRenderInstructionModel(id: string): RenderInstructionModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed render instruction: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.renderInstructionRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getRenderInstructionModels(): RenderInstructionModel[] {
+    return this.renderInstructionOrder
+      .map(id => this.renderInstructionRegistry.get(id))
+      .filter((m): m is RenderInstructionModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateRenderInstructionModel(id: string, updates: Partial<RenderInstructionModel>): void {
+    const existing = this.renderInstructionRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing render instruction: Model "${id}" not found.`);
+      return;
+    }
+    const merged: RenderInstructionModel = {
+      ...existing,
+      ...updates,
+      instructionId: existing.instructionId,
+    };
+    this.registerRenderInstructionModel(merged);
+  }
+
+  public removeRenderInstructionModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed render instruction: ID must be a non-empty string.');
+      return;
+    }
+    this.renderInstructionRegistry.delete(id);
+    this.renderInstructionOrder = this.renderInstructionOrder.filter(existing => existing !== id);
+  }
+
+  public clearRenderInstructionModels(): void {
+    this.renderInstructionRegistry.clear();
+    this.renderInstructionOrder = [];
+  }
+
+  public getRenderInstructionModelKeys(): string[] {
+    return [...this.renderInstructionOrder];
+  }
+
+  public hasRenderInstructionModel(id: string): boolean {
+    return this.renderInstructionRegistry.has(id);
+  }
+
+  // ─── Render Schedule Model CRUD ───
+  public registerRenderScheduleModel(model: RenderScheduleModel): void {
+    if (!this.validateRenderScheduleModel(model)) return;
+    if (this.renderScheduleRegistry.has(model.scheduleId)) {
+      console.warn(`[Runtime Diagnostics] duplicate render schedule IDs: ID "${model.scheduleId}" already exists.`);
+    }
+    this.renderScheduleRegistry.set(model.scheduleId, JSON.parse(JSON.stringify(model)));
+    if (!this.renderScheduleOrder.includes(model.scheduleId)) {
+      this.renderScheduleOrder.push(model.scheduleId);
+    }
+  }
+
+  public getRenderScheduleModel(id: string): RenderScheduleModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed render schedule: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.renderScheduleRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getRenderScheduleModels(): RenderScheduleModel[] {
+    return this.renderScheduleOrder
+      .map(id => this.renderScheduleRegistry.get(id))
+      .filter((m): m is RenderScheduleModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateRenderScheduleModel(id: string, updates: Partial<RenderScheduleModel>): void {
+    const existing = this.renderScheduleRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing render schedule: Model "${id}" not found.`);
+      return;
+    }
+    const merged: RenderScheduleModel = {
+      ...existing,
+      ...updates,
+      scheduleId: existing.scheduleId,
+    };
+    this.registerRenderScheduleModel(merged);
+  }
+
+  public removeRenderScheduleModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed render schedule: ID must be a non-empty string.');
+      return;
+    }
+    this.renderScheduleRegistry.delete(id);
+    this.renderScheduleOrder = this.renderScheduleOrder.filter(existing => existing !== id);
+  }
+
+  public clearRenderScheduleModels(): void {
+    this.renderScheduleRegistry.clear();
+    this.renderScheduleOrder = [];
+  }
+
+  public getRenderScheduleModelKeys(): string[] {
+    return [...this.renderScheduleOrder];
+  }
+
+  public hasRenderScheduleModel(id: string): boolean {
+    return this.renderScheduleRegistry.has(id);
+  }
+
+  // ─── Visual Node Model CRUD ───
+  public registerVisualNodeModel(model: VisualNodeModel): void {
+    if (!this.validateVisualNodeModel(model)) return;
+    if (this.visualNodeRegistry.has(model.visualNodeId)) {
+      console.warn(`[Runtime Diagnostics] duplicate visual node IDs: ID "${model.visualNodeId}" already exists.`);
+    }
+    this.visualNodeRegistry.set(model.visualNodeId, JSON.parse(JSON.stringify(model)));
+    if (!this.visualNodeOrder.includes(model.visualNodeId)) {
+      this.visualNodeOrder.push(model.visualNodeId);
+    }
+  }
+
+  public getVisualNodeModel(id: string): VisualNodeModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed visual node: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.visualNodeRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getVisualNodeModels(): VisualNodeModel[] {
+    return this.visualNodeOrder
+      .map(id => this.visualNodeRegistry.get(id))
+      .filter((m): m is VisualNodeModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateVisualNodeModel(id: string, updates: Partial<VisualNodeModel>): void {
+    const existing = this.visualNodeRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing visual node: Model "${id}" not found.`);
+      return;
+    }
+    const merged: VisualNodeModel = { ...existing, ...updates, visualNodeId: existing.visualNodeId };
+    this.registerVisualNodeModel(merged);
+  }
+
+  public removeVisualNodeModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed visual node: ID must be a non-empty string.');
+      return;
+    }
+    this.visualNodeRegistry.delete(id);
+    this.visualNodeOrder = this.visualNodeOrder.filter(existing => existing !== id);
+  }
+
+  public clearVisualNodeModels(): void {
+    this.visualNodeRegistry.clear();
+    this.visualNodeOrder = [];
+  }
+
+  public getVisualNodeModelKeys(): string[] {
+    return [...this.visualNodeOrder];
+  }
+
+  public hasVisualNodeModel(id: string): boolean {
+    return this.visualNodeRegistry.has(id);
+  }
+
+  // ─── Scene Tree Model CRUD ───
+  public registerSceneTreeModel(model: SceneTreeModel): void {
+    if (!this.validateSceneTreeModel(model)) return;
+    if (this.sceneTreeModelRegistry.has(model.sceneTreeId)) {
+      console.warn(`[Runtime Diagnostics] duplicate scene tree IDs: ID "${model.sceneTreeId}" already exists.`);
+    }
+    this.sceneTreeModelRegistry.set(model.sceneTreeId, JSON.parse(JSON.stringify(model)));
+    if (!this.sceneTreeModelOrder.includes(model.sceneTreeId)) {
+      this.sceneTreeModelOrder.push(model.sceneTreeId);
+    }
+  }
+
+  public getSceneTreeModel(id: string): SceneTreeModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed scene tree: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.sceneTreeModelRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getSceneTreeModels(): SceneTreeModel[] {
+    return this.sceneTreeModelOrder
+      .map(id => this.sceneTreeModelRegistry.get(id))
+      .filter((m): m is SceneTreeModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateSceneTreeModel(id: string, updates: Partial<SceneTreeModel>): void {
+    const existing = this.sceneTreeModelRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing scene tree: Model "${id}" not found.`);
+      return;
+    }
+    const merged: SceneTreeModel = { ...existing, ...updates, sceneTreeId: existing.sceneTreeId };
+    this.registerSceneTreeModel(merged);
+  }
+
+  public removeSceneTreeModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed scene tree: ID must be a non-empty string.');
+      return;
+    }
+    this.sceneTreeModelRegistry.delete(id);
+    this.sceneTreeModelOrder = this.sceneTreeModelOrder.filter(existing => existing !== id);
+  }
+
+  public clearSceneTreeModels(): void {
+    this.sceneTreeModelRegistry.clear();
+    this.sceneTreeModelOrder = [];
+  }
+
+  public getSceneTreeModelKeys(): string[] {
+    return [...this.sceneTreeModelOrder];
+  }
+
+  public hasSceneTreeModel(id: string): boolean {
+    return this.sceneTreeModelRegistry.has(id);
+  }
+
+  // ─── Layer Composition Model CRUD ───
+  public registerLayerCompositionModel(model: LayerCompositionModel): void {
+    if (!this.validateLayerCompositionModel(model)) return;
+    if (this.layerCompositionRegistry.has(model.layerCompositionId)) {
+      console.warn(`[Runtime Diagnostics] duplicate layer composition IDs: ID "${model.layerCompositionId}" already exists.`);
+    }
+    this.layerCompositionRegistry.set(model.layerCompositionId, JSON.parse(JSON.stringify(model)));
+    if (!this.layerCompositionOrder.includes(model.layerCompositionId)) {
+      this.layerCompositionOrder.push(model.layerCompositionId);
+    }
+  }
+
+  public getLayerCompositionModel(id: string): LayerCompositionModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed layer composition: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.layerCompositionRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getLayerCompositionModels(): LayerCompositionModel[] {
+    return this.layerCompositionOrder
+      .map(id => this.layerCompositionRegistry.get(id))
+      .filter((m): m is LayerCompositionModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateLayerCompositionModel(id: string, updates: Partial<LayerCompositionModel>): void {
+    const existing = this.layerCompositionRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing layer composition: Model "${id}" not found.`);
+      return;
+    }
+    const merged: LayerCompositionModel = { ...existing, ...updates, layerCompositionId: existing.layerCompositionId };
+    this.registerLayerCompositionModel(merged);
+  }
+
+  public removeLayerCompositionModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed layer composition: ID must be a non-empty string.');
+      return;
+    }
+    this.layerCompositionRegistry.delete(id);
+    this.layerCompositionOrder = this.layerCompositionOrder.filter(existing => existing !== id);
+  }
+
+  public clearLayerCompositionModels(): void {
+    this.layerCompositionRegistry.clear();
+    this.layerCompositionOrder = [];
+  }
+
+  public getLayerCompositionModelKeys(): string[] {
+    return [...this.layerCompositionOrder];
+  }
+
+  public hasLayerCompositionModel(id: string): boolean {
+    return this.layerCompositionRegistry.has(id);
+  }
+
+  // ─── Visual Composition Model CRUD ───
+  public registerVisualCompositionModel(model: VisualCompositionModel): void {
+    if (!this.validateVisualCompositionModel(model)) return;
+    if (this.visualCompositionRegistry.has(model.visualCompositionId)) {
+      console.warn(`[Runtime Diagnostics] duplicate visual composition IDs: ID "${model.visualCompositionId}" already exists.`);
+    }
+    this.visualCompositionRegistry.set(model.visualCompositionId, JSON.parse(JSON.stringify(model)));
+    if (!this.visualCompositionOrder.includes(model.visualCompositionId)) {
+      this.visualCompositionOrder.push(model.visualCompositionId);
+    }
+  }
+
+  public getVisualCompositionModel(id: string): VisualCompositionModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed visual composition: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.visualCompositionRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getVisualCompositionModels(): VisualCompositionModel[] {
+    return this.visualCompositionOrder
+      .map(id => this.visualCompositionRegistry.get(id))
+      .filter((m): m is VisualCompositionModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateVisualCompositionModel(id: string, updates: Partial<VisualCompositionModel>): void {
+    const existing = this.visualCompositionRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing visual composition: Model "${id}" not found.`);
+      return;
+    }
+    const merged: VisualCompositionModel = { ...existing, ...updates, visualCompositionId: existing.visualCompositionId };
+    this.registerVisualCompositionModel(merged);
+  }
+
+  public removeVisualCompositionModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed visual composition: ID must be a non-empty string.');
+      return;
+    }
+    this.visualCompositionRegistry.delete(id);
+    this.visualCompositionOrder = this.visualCompositionOrder.filter(existing => existing !== id);
+  }
+
+  public clearVisualCompositionModels(): void {
+    this.visualCompositionRegistry.clear();
+    this.visualCompositionOrder = [];
+  }
+
+  public getVisualCompositionModelKeys(): string[] {
+    return [...this.visualCompositionOrder];
+  }
+
+  public hasVisualCompositionModel(id: string): boolean {
+    return this.visualCompositionRegistry.has(id);
+  }
+
 
   public reset(): void {
     this.clearBoardRenderModels();
@@ -4692,6 +5182,15 @@ export class BaseRuntime implements IRuntime {
     this.clearRenderLayerRuntimeModels();
     this.clearRenderQueueModels();
     this.clearFrameMetadataModels();
+    this.clearRenderExecutionModels();
+    this.clearRenderInstructionModels();
+    this.clearRenderScheduleModels();
+
+    // Reset Phase 15A visible rendering foundation registries
+    this.clearVisualNodeModels();
+    this.clearSceneTreeModels();
+    this.clearLayerCompositionModels();
+    this.clearVisualCompositionModels();
   }
 
   public destroy(): void {
@@ -8384,6 +8883,17 @@ export class BaseRuntime implements IRuntime {
     this.clearRenderQueueModels();
     this.clearFrameMetadataModels();
 
+    // Reset Phase 14B renderer execution metadata foundation registries
+    this.clearRenderExecutionModels();
+    this.clearRenderInstructionModels();
+    this.clearRenderScheduleModels();
+
+    // Reset Phase 15A visible rendering foundation registries
+    this.clearVisualNodeModels();
+    this.clearSceneTreeModels();
+    this.clearLayerCompositionModels();
+    this.clearVisualCompositionModels();
+
     // Reset Phase 8A.1 HAL state registry
     this.clearHALStates();
 
@@ -8653,6 +9163,17 @@ export class BaseRuntime implements IRuntime {
     this.clearRenderLayerRuntimeModels();
     this.clearRenderQueueModels();
     this.clearFrameMetadataModels();
+
+    // Reset Phase 14B renderer execution metadata foundation registries
+    this.clearRenderExecutionModels();
+    this.clearRenderInstructionModels();
+    this.clearRenderScheduleModels();
+
+    // Reset Phase 15A visible rendering foundation registries
+    this.clearVisualNodeModels();
+    this.clearSceneTreeModels();
+    this.clearLayerCompositionModels();
+    this.clearVisualCompositionModels();
 
     // Reset Phase 8A-8F hardware and ESP32 metadata registries
     this.clearHALStates();
@@ -9536,6 +10057,32 @@ export class BaseRuntime implements IRuntime {
       if (this.frameRegistry.size > 0) {
         stageSnap.frames = this.getFrameMetadataModels();
       }
+
+      // Phase 14B: Attach renderer execution metadata foundation to stage snapshot entry
+      if (this.renderExecutionRegistry.size > 0) {
+        stageSnap.renderExecutions = this.getRenderExecutionModels();
+      }
+      if (this.renderInstructionRegistry.size > 0) {
+        stageSnap.renderInstructions = this.getRenderInstructionModels();
+      }
+      if (this.renderScheduleRegistry.size > 0) {
+        stageSnap.renderSchedules = this.getRenderScheduleModels();
+      }
+
+      // Phase 15A: Attach visible rendering foundation to stage snapshot entry
+      if (this.visualNodeRegistry.size > 0) {
+        stageSnap.visualNodes = this.getVisualNodeModels();
+      }
+      if (this.sceneTreeModelRegistry.size > 0) {
+        stageSnap.sceneTrees = this.getSceneTreeModels();
+      }
+      if (this.layerCompositionRegistry.size > 0) {
+        stageSnap.layerCompositions = this.getLayerCompositionModels();
+      }
+      if (this.visualCompositionRegistry.size > 0) {
+        stageSnap.visualCompositions = this.getVisualCompositionModels();
+      }
+
       // Phase 7R: Attach connection metadata to stage snapshot entry
       if (this.connectionRegistry.size > 0) {
         stageSnap.connections = this.getConnections();
@@ -9841,6 +10388,31 @@ export class BaseRuntime implements IRuntime {
       }
       if (isStage && this.frameRegistry.size > 0) {
         serializedTarget.frames = this.getFrameMetadataModels();
+      }
+
+      // Phase 14B: Serialize renderer execution metadata foundation
+      if (isStage && this.renderExecutionRegistry.size > 0) {
+        serializedTarget.renderExecutions = this.getRenderExecutionModels();
+      }
+      if (isStage && this.renderInstructionRegistry.size > 0) {
+        serializedTarget.renderInstructions = this.getRenderInstructionModels();
+      }
+      if (isStage && this.renderScheduleRegistry.size > 0) {
+        serializedTarget.renderSchedules = this.getRenderScheduleModels();
+      }
+
+      // Phase 15A: Serialize visible rendering foundation
+      if (isStage && this.visualNodeRegistry.size > 0) {
+        serializedTarget.visualNodes = this.getVisualNodeModels();
+      }
+      if (isStage && this.sceneTreeModelRegistry.size > 0) {
+        serializedTarget.sceneTrees = this.getSceneTreeModels();
+      }
+      if (isStage && this.layerCompositionRegistry.size > 0) {
+        serializedTarget.layerCompositions = this.getLayerCompositionModels();
+      }
+      if (isStage && this.visualCompositionRegistry.size > 0) {
+        serializedTarget.visualCompositions = this.getVisualCompositionModels();
       }
 
       // Phase 7W: Serialize board definitions & workspace boards
@@ -10470,6 +11042,46 @@ export class BaseRuntime implements IRuntime {
           this.registerFrameMetadataModel(JSON.parse(JSON.stringify(model)));
         }
       }
+
+      // Phase 14B: Restore renderer execution metadata foundation from stage target
+      if (Array.isArray(stageTarget.renderExecutions)) {
+        for (const model of stageTarget.renderExecutions) {
+          this.registerRenderExecutionModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.renderInstructions)) {
+        for (const model of stageTarget.renderInstructions) {
+          this.registerRenderInstructionModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.renderSchedules)) {
+        for (const model of stageTarget.renderSchedules) {
+          this.registerRenderScheduleModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+
+      // Phase 15A: Restore visible rendering foundation from stage target
+      if (Array.isArray(stageTarget.visualNodes)) {
+        for (const model of stageTarget.visualNodes) {
+          this.registerVisualNodeModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.sceneTrees)) {
+        for (const model of stageTarget.sceneTrees) {
+          this.registerSceneTreeModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.layerCompositions)) {
+        for (const model of stageTarget.layerCompositions) {
+          this.registerLayerCompositionModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.visualCompositions)) {
+        for (const model of stageTarget.visualCompositions) {
+          this.registerVisualCompositionModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+
       // Phase 7W: Restore board definitions from stage target
       if (Array.isArray(stageTarget.boardDefinitions)) {
         for (const def of stageTarget.boardDefinitions) {

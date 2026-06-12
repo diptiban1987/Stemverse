@@ -526,6 +526,17 @@ export interface StageSyncState {
   renderLayers?: RenderLayerRuntimeModel[];
   renderQueues?: RenderQueueModel[];
   frames?: FrameMetadataModel[];
+
+  // Phase 14B: Renderer execution metadata foundation synchronization
+  renderExecutions?: RenderExecutionModel[];
+  renderInstructions?: RenderInstructionModel[];
+  renderSchedules?: RenderScheduleModel[];
+
+  // Phase 15A: Visible rendering foundation synchronization
+  visualNodes?: VisualNodeModel[];
+  sceneTrees?: SceneTreeModel[];
+  layerCompositions?: LayerCompositionModel[];
+  visualCompositions?: VisualCompositionModel[];
 }
 
 // ─── Phase 11B: Visual Interaction Engine ──────────────────
@@ -1159,6 +1170,17 @@ export interface SerializedTarget {
   renderLayers?: RenderLayerRuntimeModel[];
   renderQueues?: RenderQueueModel[];
   frames?: FrameMetadataModel[];
+
+  // Phase 14B: Renderer execution metadata foundation serialization
+  renderExecutions?: RenderExecutionModel[];
+  renderInstructions?: RenderInstructionModel[];
+  renderSchedules?: RenderScheduleModel[];
+
+  // Phase 15A: Visible rendering foundation serialization
+  visualNodes?: VisualNodeModel[];
+  sceneTrees?: SceneTreeModel[];
+  layerCompositions?: LayerCompositionModel[];
+  visualCompositions?: VisualCompositionModel[];
 }
 
 export interface SerializedAssetManifest {
@@ -2615,4 +2637,93 @@ export interface RenderRuntimeSnapshot {
   frames: FrameMetadataModel[];
 }
 
+// ─── Phase 14B: Renderer Execution Metadata Foundation ────
+
+export interface RenderExecutionModel {
+  executionId: string;
+  runtimeId: string;
+  executionName: string;
+  executionState: string;
+  executionOrder: number;
+  futureRendererHints: Record<string, unknown>;
+}
+
+export interface RenderInstructionModel {
+  instructionId: string;
+  executionId: string;
+  instructionName: string;
+  instructionType: string;
+  instructionOrder: number;
+  instructionState: string;
+  futureExecutionHints: Record<string, unknown>;
+}
+
+export interface RenderScheduleModel {
+  scheduleId: string;
+  runtimeId: string;
+  scheduleName: string;
+  scheduleType: string;
+  scheduleOrder: number;
+  scheduleState: string;
+  futureExecutionHints: Record<string, unknown>;
+}
+
+export interface RenderExecutionSnapshot {
+  renderExecutions: RenderExecutionModel[];
+  renderInstructions: RenderInstructionModel[];
+  renderSchedules: RenderScheduleModel[];
+}
+
+
+// ─── Phase 15A: Visible Rendering Foundation ────────────────
+
+export interface VisualNodeModel {
+  visualNodeId: string;
+  sceneId: string;
+  nodeType: string;
+  nodeState: string;
+  nodeOrder: number;
+  parentNodeId: string;
+  childNodeIds: string[];
+  visibilityState: string;
+  futureRendererHints: Record<string, unknown>;
+}
+
+export interface SceneTreeModel {
+  sceneTreeId: string;
+  runtimeId: string;
+  treeName: string;
+  treeState: string;
+  rootNodeId: string;
+  nodeCount: number;
+  futureRendererHints: Record<string, unknown>;
+}
+
+export interface LayerCompositionModel {
+  layerCompositionId: string;
+  sceneTreeId: string;
+  compositionName: string;
+  compositionOrder: number;
+  compositionState: string;
+  layerIds: string[];
+  futureRendererHints: Record<string, unknown>;
+}
+
+export interface VisualCompositionModel {
+  visualCompositionId: string;
+  runtimeId: string;
+  compositionName: string;
+  compositionState: string;
+  compositionOrder: number;
+  sceneTreeIds: string[];
+  layerCompositionIds: string[];
+  futureRendererHints: Record<string, unknown>;
+}
+
+export interface VisibleRenderingSnapshot {
+  visualNodes: VisualNodeModel[];
+  sceneTrees: SceneTreeModel[];
+  layerCompositions: LayerCompositionModel[];
+  visualCompositions: VisualCompositionModel[];
+}
 

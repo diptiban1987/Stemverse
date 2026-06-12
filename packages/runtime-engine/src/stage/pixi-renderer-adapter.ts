@@ -1,5 +1,6 @@
 import { Application, Container, Graphics, Text } from 'pixi.js';
 import { StageSyncState, PenState, PenCommand, VariableWatcher, ListWatcher, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, RuntimeAssetState, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, RuntimeComponent, RuntimeConnection, WorkspaceComponentLayout, WireLayout, DevelopmentBoardDefinition, WorkspaceBoard, RenderMetadata, ComponentVisualModel, WireVisualRegistryEntry, BoardVisualRegistryEntry, SignalVisualRegistryEntry, AnimationRegistryEntry, InteractionMetadata, BreadboardModel, BreadboardPositionModel, ComponentPlacementModel, BreadboardConnectionMetadata, SignalEffectModel, SignalPropagationModel, SignalColorModel, SignalActivityModel, ThemeModel, ColorPaletteModel, ComponentStyleModel, WorkspaceStyleModel, AnimationPlaybackModel, TimelineModel, KeyframeModel, PlaybackGroupModel, RenderRuntimeModel, RenderPassModel, RenderLayerRuntimeModel, RenderQueueModel, FrameMetadataModel } from '../types';
+import { RenderExecutionModel, RenderInstructionModel, RenderScheduleModel } from '../types';
 import { IRendererAdapter, IRenderTarget } from './renderer-adapter';
 
 /**
@@ -270,6 +271,9 @@ export class PixiRendererAdapter implements IRendererAdapter {
         target.renderLayers = snap.renderLayers ? JSON.parse(JSON.stringify(snap.renderLayers)) : undefined;
         target.renderQueues = snap.renderQueues ? JSON.parse(JSON.stringify(snap.renderQueues)) : undefined;
         target.frames = snap.frames ? JSON.parse(JSON.stringify(snap.frames)) : undefined;
+        target.renderExecutions = snap.renderExecutions ? JSON.parse(JSON.stringify(snap.renderExecutions)) : undefined;
+        target.renderInstructions = snap.renderInstructions ? JSON.parse(JSON.stringify(snap.renderInstructions)) : undefined;
+        target.renderSchedules = snap.renderSchedules ? JSON.parse(JSON.stringify(snap.renderSchedules)) : undefined;
       } else {
         target = {
           id: snap.targetId,
@@ -365,6 +369,9 @@ export class PixiRendererAdapter implements IRendererAdapter {
           renderLayers: snap.renderLayers ? JSON.parse(JSON.stringify(snap.renderLayers)) : undefined,
           renderQueues: snap.renderQueues ? JSON.parse(JSON.stringify(snap.renderQueues)) : undefined,
           frames: snap.frames ? JSON.parse(JSON.stringify(snap.frames)) : undefined,
+          renderExecutions: snap.renderExecutions ? JSON.parse(JSON.stringify(snap.renderExecutions)) : undefined,
+          renderInstructions: snap.renderInstructions ? JSON.parse(JSON.stringify(snap.renderInstructions)) : undefined,
+          renderSchedules: snap.renderSchedules ? JSON.parse(JSON.stringify(snap.renderSchedules)) : undefined,
         };
         this.targets.set(snap.targetId, target);
       }

@@ -1,4 +1,5 @@
 import { StageSyncState, BubbleState, ActiveSoundTrigger, PenState, PenCommand, VariableWatcher, ListWatcher, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, RuntimeAssetState, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, RuntimeComponent, RuntimeConnection, WorkspaceComponentLayout, WireLayout, DevelopmentBoardDefinition, WorkspaceBoard, RenderMetadata, STEMVerseVisualState, STEMVerseVisualThemeState, ComponentVisualModel, WireVisualRegistryEntry, BoardVisualRegistryEntry, SignalVisualRegistryEntry, AnimationRegistryEntry, InteractionMetadata, BreadboardModel, BreadboardPositionModel, ComponentPlacementModel, BreadboardConnectionMetadata, RenderNodeModel, SceneGraphModel, ViewportModel, RenderPipelineModel, ComponentRenderModel, ComponentBoundsModel, ComponentLabelModel, ComponentPinRenderModel, WireRenderModel, WirePathModel, WireSegmentModel, WireAnchorModel, BoardRenderModel, BoardBoundsModel, BoardConnectorModel, BoardRegionModel, SignalEffectModel, SignalPropagationModel, SignalColorModel, SignalActivityModel, ThemeModel, ColorPaletteModel, ComponentStyleModel, WorkspaceStyleModel, AnimationPlaybackModel, TimelineModel, KeyframeModel, PlaybackGroupModel, RenderRuntimeModel, RenderPassModel, RenderLayerRuntimeModel, RenderQueueModel, FrameMetadataModel } from '../types';
+import { RenderExecutionModel, RenderInstructionModel, RenderScheduleModel } from '../types';
 
 /**
  * Representation of individual target properties inside the renderer memory.
@@ -113,6 +114,11 @@ export interface IRenderTarget {
   renderLayers?: RenderLayerRuntimeModel[];
   renderQueues?: RenderQueueModel[];
   frames?: FrameMetadataModel[];
+
+  // Phase 14B: Renderer execution metadata foundation
+  renderExecutions?: RenderExecutionModel[];
+  renderInstructions?: RenderInstructionModel[];
+  renderSchedules?: RenderScheduleModel[];
 }
 
 /**
@@ -319,6 +325,9 @@ export class InMemoryRendererAdapter implements IRendererAdapter {
         target.renderLayers = snap.renderLayers ? JSON.parse(JSON.stringify(snap.renderLayers)) : undefined;
         target.renderQueues = snap.renderQueues ? JSON.parse(JSON.stringify(snap.renderQueues)) : undefined;
         target.frames = snap.frames ? JSON.parse(JSON.stringify(snap.frames)) : undefined;
+        target.renderExecutions = snap.renderExecutions ? JSON.parse(JSON.stringify(snap.renderExecutions)) : undefined;
+        target.renderInstructions = snap.renderInstructions ? JSON.parse(JSON.stringify(snap.renderInstructions)) : undefined;
+        target.renderSchedules = snap.renderSchedules ? JSON.parse(JSON.stringify(snap.renderSchedules)) : undefined;
       } else {
         target = {
           id: snap.targetId,
@@ -414,6 +423,9 @@ export class InMemoryRendererAdapter implements IRendererAdapter {
           renderLayers: snap.renderLayers ? JSON.parse(JSON.stringify(snap.renderLayers)) : undefined,
           renderQueues: snap.renderQueues ? JSON.parse(JSON.stringify(snap.renderQueues)) : undefined,
           frames: snap.frames ? JSON.parse(JSON.stringify(snap.frames)) : undefined,
+          renderExecutions: snap.renderExecutions ? JSON.parse(JSON.stringify(snap.renderExecutions)) : undefined,
+          renderInstructions: snap.renderInstructions ? JSON.parse(JSON.stringify(snap.renderInstructions)) : undefined,
+          renderSchedules: snap.renderSchedules ? JSON.parse(JSON.stringify(snap.renderSchedules)) : undefined,
         };
         this.targets.set(snap.targetId, target);
       }
