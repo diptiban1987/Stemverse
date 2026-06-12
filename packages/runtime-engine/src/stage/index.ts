@@ -71,5 +71,7 @@ export * from './board-rendering';
 export * from './signal-effects';
 export * from './visual-themes';
 export * from './animation-playback';
+export * from './render-runtime';
+
 
 

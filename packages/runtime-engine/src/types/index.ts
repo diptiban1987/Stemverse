@@ -519,6 +519,13 @@ export interface StageSyncState {
   timelines?: TimelineModel[];
   keyframes?: KeyframeModel[];
   playbackGroups?: PlaybackGroupModel[];
+
+  // Phase 14A: Visual rendering runtime foundation metadata synchronization
+  renderRuntimes?: RenderRuntimeModel[];
+  renderPasses?: RenderPassModel[];
+  renderLayers?: RenderLayerRuntimeModel[];
+  renderQueues?: RenderQueueModel[];
+  frames?: FrameMetadataModel[];
 }
 
 // ─── Phase 11B: Visual Interaction Engine ──────────────────
@@ -1145,6 +1152,13 @@ export interface SerializedTarget {
   timelines?: TimelineModel[];
   keyframes?: KeyframeModel[];
   playbackGroups?: PlaybackGroupModel[];
+
+  // Phase 14A: Visual rendering runtime foundation metadata serialization
+  renderRuntimes?: RenderRuntimeModel[];
+  renderPasses?: RenderPassModel[];
+  renderLayers?: RenderLayerRuntimeModel[];
+  renderQueues?: RenderQueueModel[];
+  frames?: FrameMetadataModel[];
 }
 
 export interface SerializedAssetManifest {
@@ -2541,4 +2555,64 @@ export interface AnimationPlaybackSnapshot {
   keyframes: KeyframeModel[];
   playbackGroups: PlaybackGroupModel[];
 }
+
+// ─── Phase 14A: Visual Rendering Runtime Foundation ───────
+
+export interface RenderRuntimeModel {
+  runtimeId: string;
+  runtimeName: string;
+  runtimeVersion: string;
+  runtimeState: string;
+  runtimeMode: string;
+  visibilityState: VisibilityState;
+  futureRendererHints: Record<string, unknown>;
+}
+
+export interface RenderPassModel {
+  renderPassId: string;
+  runtimeId: string;
+  passName: string;
+  passType: string;
+  passOrder: number;
+  passState: string;
+  futureExecutionHints: Record<string, unknown>;
+}
+
+export interface RenderLayerRuntimeModel {
+  layerRuntimeId: string;
+  layerId: string;
+  layerName: string;
+  layerType: string;
+  layerOrder: number;
+  layerState: string;
+  futureRendererHints: Record<string, unknown>;
+}
+
+export interface RenderQueueModel {
+  queueId: string;
+  runtimeId: string;
+  queueName: string;
+  queuePriority: number;
+  queueState: string;
+  queueMetadata: Record<string, unknown>;
+  futureExecutionHints: Record<string, unknown>;
+}
+
+export interface FrameMetadataModel {
+  frameId: string;
+  runtimeId: string;
+  frameNumber: number;
+  frameState: string;
+  frameMetadata: Record<string, unknown>;
+  futureRendererHints: Record<string, unknown>;
+}
+
+export interface RenderRuntimeSnapshot {
+  renderRuntimes: RenderRuntimeModel[];
+  renderPasses: RenderPassModel[];
+  renderLayers: RenderLayerRuntimeModel[];
+  renderQueues: RenderQueueModel[];
+  frames: FrameMetadataModel[];
+}
+
 

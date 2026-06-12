@@ -1,5 +1,5 @@
 import { IRuntime } from '../core';
-import { TargetId, TargetState, ASTScript, Thread, SpriteState, StageState, PendingBroadcast, BroadcastCompletionToken, ListenerEntry, BubbleState, StageSyncState, CostumeAsset, SoundAsset, BackdropAsset, ActiveSoundTrigger, SoundChannelState, PenCommand, PenState, VariableWatcher, WatcherMode, ListWatcher, ListWatcherMode, GlideState, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, SerializedProject, SerializedStage, SerializedTarget, SerializedAssetManifest, SerializedProjectMetadata, VariableState, ListState, RuntimeAssetState, AssetLoadStatus, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, ComponentType, RuntimeComponent, PinDirection, RuntimePin, RuntimeConnection, DeviceState, WorkspaceTransform, WorkspaceComponentLayout, WirePoint, WireLayout, DevelopmentBoardType, BoardPinDefinition, BoardPinCapabilities, DevelopmentBoardDefinition, WorkspaceBoard, RenderModelType, RenderMetadata, RuntimeHALState, HardwareAddress, PinMode, PullMode, PinCapability, ProtocolState, ProtocolType, PWMChannelState, I2CBusState, SPIBusState, UARTPortState, HardwareBackendMetadata, ExecutionCommand, ExecutionCommandLifecycleState, ExecutionCommandType, ESP32RuntimeMetadata, ESP32ExecutionState, ESP32PinCapability, ESP32PinMode, ESP32InstructionMetadata, ESP32InstructionExecutionState, ESP32InstructionType, ESP32GPIOExecutionResult, ESP32GPIOExecutionStatus, ESP32PWMExecutionState, ESP32ServoExecutionState, ESP32ADCExecutionState, ESP32TouchExecutionState, ESP32PeripheralCommandExecutionResult, ESP32PeripheralCommandExecutionStatus, ProtocolCommandExecutionResult, ProtocolCommandExecutionStatus, STEMVerseVisualState, STEMVerseVisualThemeState, STEMVerseVisualType, STEMVerseBoardStatus, STEMVerseSignalFlowDirection, STEMVerseVisualThemeMode, ComponentVisualModel, ComponentVisualType, ComponentVisualCategory, PinVisualMetadata, InteractionZone, AnchorPoint, LabelPosition, WireVisualRegistryEntry, WireType, WireCategory, RoutingPathType, SignalDirection, SignalActivity, SignalState, WireVisualModel, ControlPoint, WireRoutingMetadata, SignalVisualizationMetadata, InteractionZoneRect, WireInteractionMetadata, BoardVisualModel, BoardVisualType, BoardVisualCategory, BoardVisualRegistryEntry, BoardLayoutMetadata, ConnectorVisualMetadata, BoardInteractionMetadata, BoardBounds, ComponentRegion, PowerRegion, SignalRegion, ReservedRegion, BoardInteractionZone, SignalVisualModel, SignalVisualType, SignalVisualCategory, DigitalSignalMetadata, DigitalSignalLevel, DigitalSignalDirection, AnalogSignalMetadata, PWMSignalMetadata, ProtocolSignalMetadata, ProtocolSignalType, SignalVariantMetadata, SignalInteractionZone, SignalInteractionMetadata, SignalVisualRegistryEntry, AnimationType, AnimationRepeatMode, AnimationPlaybackMode, AnimationVisualModel, ComponentAnimationMetadata, WireAnimationMetadata, BoardAnimationMetadata, SignalAnimationMetadata, InteractionAnimationMetadata, AnimationRegistryEntry, InteractionMetadata, SelectionMetadata, HoverMetadata, FocusMetadata, InspectionMetadata, InteractionType, SelectionType, HoverPriority, HoverSource, FocusOwnership, InspectionTargetType, RenderNodeModel, NodeType, VisibilityState, SceneGraphModel, ViewportModel, VisibleRegion, RenderPipelineModel, PipelineType, CanvasRenderSnapshot, ComponentRenderModel, ComponentBoundsModel, ComponentLabelModel, ComponentPinRenderModel, ComponentRenderSnapshot, ComponentLabelPosition, WireRenderModel, WirePathModel, WireSegmentModel, WireAnchorModel, BoardRenderModel, BoardBoundsModel, BoardConnectorModel, BoardRegionModel, SignalEffectModel, SignalPropagationModel, SignalColorModel, SignalActivityModel, ThemeModel, ColorPaletteModel, ComponentStyleModel, WorkspaceStyleModel, AnimationPlaybackModel, TimelineModel, KeyframeModel, PlaybackGroupModel } from '../types';
+import { TargetId, TargetState, ASTScript, Thread, SpriteState, StageState, PendingBroadcast, BroadcastCompletionToken, ListenerEntry, BubbleState, StageSyncState, CostumeAsset, SoundAsset, BackdropAsset, ActiveSoundTrigger, SoundChannelState, PenCommand, PenState, VariableWatcher, WatcherMode, ListWatcher, ListWatcherMode, GlideState, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, SerializedProject, SerializedStage, SerializedTarget, SerializedAssetManifest, SerializedProjectMetadata, VariableState, ListState, RuntimeAssetState, AssetLoadStatus, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, ComponentType, RuntimeComponent, PinDirection, RuntimePin, RuntimeConnection, DeviceState, WorkspaceTransform, WorkspaceComponentLayout, WirePoint, WireLayout, DevelopmentBoardType, BoardPinDefinition, BoardPinCapabilities, DevelopmentBoardDefinition, WorkspaceBoard, RenderModelType, RenderMetadata, RuntimeHALState, HardwareAddress, PinMode, PullMode, PinCapability, ProtocolState, ProtocolType, PWMChannelState, I2CBusState, SPIBusState, UARTPortState, HardwareBackendMetadata, ExecutionCommand, ExecutionCommandLifecycleState, ExecutionCommandType, ESP32RuntimeMetadata, ESP32ExecutionState, ESP32PinCapability, ESP32PinMode, ESP32InstructionMetadata, ESP32InstructionExecutionState, ESP32InstructionType, ESP32GPIOExecutionResult, ESP32GPIOExecutionStatus, ESP32PWMExecutionState, ESP32ServoExecutionState, ESP32ADCExecutionState, ESP32TouchExecutionState, ESP32PeripheralCommandExecutionResult, ESP32PeripheralCommandExecutionStatus, ProtocolCommandExecutionResult, ProtocolCommandExecutionStatus, STEMVerseVisualState, STEMVerseVisualThemeState, STEMVerseVisualType, STEMVerseBoardStatus, STEMVerseSignalFlowDirection, STEMVerseVisualThemeMode, ComponentVisualModel, ComponentVisualType, ComponentVisualCategory, PinVisualMetadata, InteractionZone, AnchorPoint, LabelPosition, WireVisualRegistryEntry, WireType, WireCategory, RoutingPathType, SignalDirection, SignalActivity, SignalState, WireVisualModel, ControlPoint, WireRoutingMetadata, SignalVisualizationMetadata, InteractionZoneRect, WireInteractionMetadata, BoardVisualModel, BoardVisualType, BoardVisualCategory, BoardVisualRegistryEntry, BoardLayoutMetadata, ConnectorVisualMetadata, BoardInteractionMetadata, BoardBounds, ComponentRegion, PowerRegion, SignalRegion, ReservedRegion, BoardInteractionZone, SignalVisualModel, SignalVisualType, SignalVisualCategory, DigitalSignalMetadata, DigitalSignalLevel, DigitalSignalDirection, AnalogSignalMetadata, PWMSignalMetadata, ProtocolSignalMetadata, ProtocolSignalType, SignalVariantMetadata, SignalInteractionZone, SignalInteractionMetadata, SignalVisualRegistryEntry, AnimationType, AnimationRepeatMode, AnimationPlaybackMode, AnimationVisualModel, ComponentAnimationMetadata, WireAnimationMetadata, BoardAnimationMetadata, SignalAnimationMetadata, InteractionAnimationMetadata, AnimationRegistryEntry, InteractionMetadata, SelectionMetadata, HoverMetadata, FocusMetadata, InspectionMetadata, InteractionType, SelectionType, HoverPriority, HoverSource, FocusOwnership, InspectionTargetType, RenderNodeModel, NodeType, VisibilityState, SceneGraphModel, ViewportModel, VisibleRegion, RenderPipelineModel, PipelineType, CanvasRenderSnapshot, ComponentRenderModel, ComponentBoundsModel, ComponentLabelModel, ComponentPinRenderModel, ComponentRenderSnapshot, ComponentLabelPosition, WireRenderModel, WirePathModel, WireSegmentModel, WireAnchorModel, BoardRenderModel, BoardBoundsModel, BoardConnectorModel, BoardRegionModel, SignalEffectModel, SignalPropagationModel, SignalColorModel, SignalActivityModel, ThemeModel, ColorPaletteModel, ComponentStyleModel, WorkspaceStyleModel, AnimationPlaybackModel, TimelineModel, KeyframeModel, PlaybackGroupModel, RenderRuntimeModel, RenderPassModel, RenderLayerRuntimeModel, RenderQueueModel, FrameMetadataModel } from '../types';
 import { MinimalASTInterpreter, IHardwareAdapter } from '../ast/interpreter';
 import { SimulatedHardwareBackend } from '../hal';
 import { createThread, TaskQueue, PendingTask, resetThreadCounter } from './execution-context';
@@ -8,6 +8,7 @@ import { validateBoardRenderModel, validateBoardBoundsModel, validateBoardConnec
 import { validateSignalEffectModel, validateSignalPropagationModel, validateSignalColorModel, validateSignalActivityModel } from '../stage/signal-effects';
 import { validateThemeModel, validateColorPaletteModel, validateComponentStyleModel, validateWorkspaceStyleModel } from '../stage/visual-themes';
 import { validateAnimationPlaybackModel, validateTimelineModel, validateKeyframeModel, validatePlaybackGroupModel } from '../stage/animation-playback';
+import { validateRenderRuntimeModel, validateRenderPassModel, validateRenderLayerRuntimeModel, validateRenderQueueModel, validateFrameMetadataModel } from '../stage/render-runtime';
 
 /**
  * Concrete runtime implementation with minimal AST execution.
@@ -359,6 +360,19 @@ export class BaseRuntime implements IRuntime {
   private keyframeOrder: string[] = [];
   private playbackGroupRegistry = new Map<string, PlaybackGroupModel>();
   private playbackGroupOrder: string[] = [];
+
+  // Phase 14A Visual Rendering Runtime Foundation registries
+  private renderRuntimeRegistry = new Map<string, RenderRuntimeModel>();
+  private renderRuntimeOrder: string[] = [];
+  private renderPassRegistry = new Map<string, RenderPassModel>();
+  private renderPassOrder: string[] = [];
+  private renderLayerRegistry = new Map<string, RenderLayerRuntimeModel>();
+  private renderLayerOrder: string[] = [];
+  private renderQueueRegistry = new Map<string, RenderQueueModel>();
+  private renderQueueOrder: string[] = [];
+  private frameRegistry = new Map<string, FrameMetadataModel>();
+  private frameOrder: string[] = [];
+
 
   // Phase 8A.1 HAL state registry (passive contracts/state only)
   private halStateRegistry = new Map<string, RuntimeHALState>();
@@ -3028,6 +3042,33 @@ export class BaseRuntime implements IRuntime {
     return warnings.length === 0;
   }
 
+  // ─── Phase 14A Visual Rendering Runtime Foundation private validators ───
+  private validateRenderRuntimeModel(model: RenderRuntimeModel): boolean {
+    const warnings = validateRenderRuntimeModel(model, '[Runtime Diagnostics] malformed render runtime:');
+    return warnings.length === 0;
+  }
+
+  private validateRenderPassModel(model: RenderPassModel): boolean {
+    const warnings = validateRenderPassModel(model, '[Runtime Diagnostics] malformed render pass:');
+    return warnings.length === 0;
+  }
+
+  private validateRenderLayerRuntimeModel(model: RenderLayerRuntimeModel): boolean {
+    const warnings = validateRenderLayerRuntimeModel(model, '[Runtime Diagnostics] malformed render layer runtime:');
+    return warnings.length === 0;
+  }
+
+  private validateRenderQueueModel(model: RenderQueueModel): boolean {
+    const warnings = validateRenderQueueModel(model, '[Runtime Diagnostics] malformed render queue:');
+    return warnings.length === 0;
+  }
+
+  private validateFrameMetadataModel(model: FrameMetadataModel): boolean {
+    const warnings = validateFrameMetadataModel(model, '[Runtime Diagnostics] malformed frame metadata:');
+    return warnings.length === 0;
+  }
+
+
   // ─── Wire Render Model CRUD ───
   public registerWireRenderModel(model: WireRenderModel): void {
     if (!this.validateWireRenderModel(model)) return;
@@ -4308,6 +4349,327 @@ export class BaseRuntime implements IRuntime {
     return this.playbackGroupRegistry.has(id);
   }
 
+  // ─── Render Runtime Model CRUD ───
+  public registerRenderRuntimeModel(model: RenderRuntimeModel): void {
+    if (!this.validateRenderRuntimeModel(model)) return;
+    if (this.renderRuntimeRegistry.has(model.runtimeId)) {
+      console.warn(`[Runtime Diagnostics] duplicate render runtime IDs: ID "${model.runtimeId}" already exists.`);
+    }
+    this.renderRuntimeRegistry.set(model.runtimeId, JSON.parse(JSON.stringify(model)));
+    if (!this.renderRuntimeOrder.includes(model.runtimeId)) {
+      this.renderRuntimeOrder.push(model.runtimeId);
+    }
+  }
+
+  public getRenderRuntimeModel(id: string): RenderRuntimeModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed render runtime: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.renderRuntimeRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getRenderRuntimeModels(): RenderRuntimeModel[] {
+    return this.renderRuntimeOrder
+      .map(id => this.renderRuntimeRegistry.get(id))
+      .filter((m): m is RenderRuntimeModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateRenderRuntimeModel(id: string, updates: Partial<RenderRuntimeModel>): void {
+    const existing = this.renderRuntimeRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing render runtime: Model "${id}" not found.`);
+      return;
+    }
+    const merged: RenderRuntimeModel = {
+      ...existing,
+      ...updates,
+      runtimeId: existing.runtimeId,
+    };
+    this.registerRenderRuntimeModel(merged);
+  }
+
+  public removeRenderRuntimeModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed render runtime: ID must be a non-empty string.');
+      return;
+    }
+    this.renderRuntimeRegistry.delete(id);
+    this.renderRuntimeOrder = this.renderRuntimeOrder.filter(existing => existing !== id);
+  }
+
+  public clearRenderRuntimeModels(): void {
+    this.renderRuntimeRegistry.clear();
+    this.renderRuntimeOrder = [];
+  }
+
+  public getRenderRuntimeModelKeys(): string[] {
+    return [...this.renderRuntimeOrder];
+  }
+
+  public hasRenderRuntimeModel(id: string): boolean {
+    return this.renderRuntimeRegistry.has(id);
+  }
+
+  // ─── Render Pass Model CRUD ───
+  public registerRenderPassModel(model: RenderPassModel): void {
+    if (!this.validateRenderPassModel(model)) return;
+    if (this.renderPassRegistry.has(model.renderPassId)) {
+      console.warn(`[Runtime Diagnostics] duplicate render pass IDs: ID "${model.renderPassId}" already exists.`);
+    }
+    this.renderPassRegistry.set(model.renderPassId, JSON.parse(JSON.stringify(model)));
+    if (!this.renderPassOrder.includes(model.renderPassId)) {
+      this.renderPassOrder.push(model.renderPassId);
+    }
+  }
+
+  public getRenderPassModel(id: string): RenderPassModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed render pass: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.renderPassRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getRenderPassModels(): RenderPassModel[] {
+    return this.renderPassOrder
+      .map(id => this.renderPassRegistry.get(id))
+      .filter((m): m is RenderPassModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateRenderPassModel(id: string, updates: Partial<RenderPassModel>): void {
+    const existing = this.renderPassRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing render pass: Model "${id}" not found.`);
+      return;
+    }
+    const merged: RenderPassModel = {
+      ...existing,
+      ...updates,
+      renderPassId: existing.renderPassId,
+    };
+    this.registerRenderPassModel(merged);
+  }
+
+  public removeRenderPassModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed render pass: ID must be a non-empty string.');
+      return;
+    }
+    this.renderPassRegistry.delete(id);
+    this.renderPassOrder = this.renderPassOrder.filter(existing => existing !== id);
+  }
+
+  public clearRenderPassModels(): void {
+    this.renderPassRegistry.clear();
+    this.renderPassOrder = [];
+  }
+
+  public getRenderPassModelKeys(): string[] {
+    return [...this.renderPassOrder];
+  }
+
+  public hasRenderPassModel(id: string): boolean {
+    return this.renderPassRegistry.has(id);
+  }
+
+  // ─── Render Layer Runtime Model CRUD ───
+  public registerRenderLayerRuntimeModel(model: RenderLayerRuntimeModel): void {
+    if (!this.validateRenderLayerRuntimeModel(model)) return;
+    if (this.renderLayerRegistry.has(model.layerRuntimeId)) {
+      console.warn(`[Runtime Diagnostics] duplicate render layer runtime IDs: ID "${model.layerRuntimeId}" already exists.`);
+    }
+    this.renderLayerRegistry.set(model.layerRuntimeId, JSON.parse(JSON.stringify(model)));
+    if (!this.renderLayerOrder.includes(model.layerRuntimeId)) {
+      this.renderLayerOrder.push(model.layerRuntimeId);
+    }
+  }
+
+  public getRenderLayerRuntimeModel(id: string): RenderLayerRuntimeModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed render layer runtime: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.renderLayerRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getRenderLayerRuntimeModels(): RenderLayerRuntimeModel[] {
+    return this.renderLayerOrder
+      .map(id => this.renderLayerRegistry.get(id))
+      .filter((m): m is RenderLayerRuntimeModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateRenderLayerRuntimeModel(id: string, updates: Partial<RenderLayerRuntimeModel>): void {
+    const existing = this.renderLayerRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing render layer runtime: Model "${id}" not found.`);
+      return;
+    }
+    const merged: RenderLayerRuntimeModel = {
+      ...existing,
+      ...updates,
+      layerRuntimeId: existing.layerRuntimeId,
+    };
+    this.registerRenderLayerRuntimeModel(merged);
+  }
+
+  public removeRenderLayerRuntimeModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed render layer runtime: ID must be a non-empty string.');
+      return;
+    }
+    this.renderLayerRegistry.delete(id);
+    this.renderLayerOrder = this.renderLayerOrder.filter(existing => existing !== id);
+  }
+
+  public clearRenderLayerRuntimeModels(): void {
+    this.renderLayerRegistry.clear();
+    this.renderLayerOrder = [];
+  }
+
+  public getRenderLayerRuntimeModelKeys(): string[] {
+    return [...this.renderLayerOrder];
+  }
+
+  public hasRenderLayerRuntimeModel(id: string): boolean {
+    return this.renderLayerRegistry.has(id);
+  }
+
+  // ─── Render Queue Model CRUD ───
+  public registerRenderQueueModel(model: RenderQueueModel): void {
+    if (!this.validateRenderQueueModel(model)) return;
+    if (this.renderQueueRegistry.has(model.queueId)) {
+      console.warn(`[Runtime Diagnostics] duplicate render queue IDs: ID "${model.queueId}" already exists.`);
+    }
+    this.renderQueueRegistry.set(model.queueId, JSON.parse(JSON.stringify(model)));
+    if (!this.renderQueueOrder.includes(model.queueId)) {
+      this.renderQueueOrder.push(model.queueId);
+    }
+  }
+
+  public getRenderQueueModel(id: string): RenderQueueModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed render queue: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.renderQueueRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getRenderQueueModels(): RenderQueueModel[] {
+    return this.renderQueueOrder
+      .map(id => this.renderQueueRegistry.get(id))
+      .filter((m): m is RenderQueueModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateRenderQueueModel(id: string, updates: Partial<RenderQueueModel>): void {
+    const existing = this.renderQueueRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing render queue: Model "${id}" not found.`);
+      return;
+    }
+    const merged: RenderQueueModel = {
+      ...existing,
+      ...updates,
+      queueId: existing.queueId,
+    };
+    this.registerRenderQueueModel(merged);
+  }
+
+  public removeRenderQueueModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed render queue: ID must be a non-empty string.');
+      return;
+    }
+    this.renderQueueRegistry.delete(id);
+    this.renderQueueOrder = this.renderQueueOrder.filter(existing => existing !== id);
+  }
+
+  public clearRenderQueueModels(): void {
+    this.renderQueueRegistry.clear();
+    this.renderQueueOrder = [];
+  }
+
+  public getRenderQueueModelKeys(): string[] {
+    return [...this.renderQueueOrder];
+  }
+
+  public hasRenderQueueModel(id: string): boolean {
+    return this.renderQueueRegistry.has(id);
+  }
+
+  // ─── Frame Metadata Model CRUD ───
+  public registerFrameMetadataModel(model: FrameMetadataModel): void {
+    if (!this.validateFrameMetadataModel(model)) return;
+    if (this.frameRegistry.has(model.frameId)) {
+      console.warn(`[Runtime Diagnostics] duplicate frame IDs: ID "${model.frameId}" already exists.`);
+    }
+    this.frameRegistry.set(model.frameId, JSON.parse(JSON.stringify(model)));
+    if (!this.frameOrder.includes(model.frameId)) {
+      this.frameOrder.push(model.frameId);
+    }
+  }
+
+  public getFrameMetadataModel(id: string): FrameMetadataModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed frame metadata: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.frameRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getFrameMetadataModels(): FrameMetadataModel[] {
+    return this.frameOrder
+      .map(id => this.frameRegistry.get(id))
+      .filter((m): m is FrameMetadataModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateFrameMetadataModel(id: string, updates: Partial<FrameMetadataModel>): void {
+    const existing = this.frameRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing frame metadata: Model "${id}" not found.`);
+      return;
+    }
+    const merged: FrameMetadataModel = {
+      ...existing,
+      ...updates,
+      frameId: existing.frameId,
+    };
+    this.registerFrameMetadataModel(merged);
+  }
+
+  public removeFrameMetadataModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed frame metadata: ID must be a non-empty string.');
+      return;
+    }
+    this.frameRegistry.delete(id);
+    this.frameOrder = this.frameOrder.filter(existing => existing !== id);
+  }
+
+  public clearFrameMetadataModels(): void {
+    this.frameRegistry.clear();
+    this.frameOrder = [];
+  }
+
+  public getFrameMetadataModelKeys(): string[] {
+    return [...this.frameOrder];
+  }
+
+  public hasFrameMetadataModel(id: string): boolean {
+    return this.frameRegistry.has(id);
+  }
+
+
   public reset(): void {
     this.clearBoardRenderModels();
     this.clearBoardBoundsModels();
@@ -4325,6 +4687,11 @@ export class BaseRuntime implements IRuntime {
     this.clearTimelineModels();
     this.clearKeyframeModels();
     this.clearPlaybackGroupModels();
+    this.clearRenderRuntimeModels();
+    this.clearRenderPassModels();
+    this.clearRenderLayerRuntimeModels();
+    this.clearRenderQueueModels();
+    this.clearFrameMetadataModels();
   }
 
   public destroy(): void {
@@ -8010,6 +8377,13 @@ export class BaseRuntime implements IRuntime {
     this.clearKeyframeModels();
     this.clearPlaybackGroupModels();
 
+    // Reset Phase 14A visual rendering runtime foundation registries
+    this.clearRenderRuntimeModels();
+    this.clearRenderPassModels();
+    this.clearRenderLayerRuntimeModels();
+    this.clearRenderQueueModels();
+    this.clearFrameMetadataModels();
+
     // Reset Phase 8A.1 HAL state registry
     this.clearHALStates();
 
@@ -8272,6 +8646,13 @@ export class BaseRuntime implements IRuntime {
     this.clearTimelineModels();
     this.clearKeyframeModels();
     this.clearPlaybackGroupModels();
+
+    // Reset Phase 14A visual rendering runtime foundation registries
+    this.clearRenderRuntimeModels();
+    this.clearRenderPassModels();
+    this.clearRenderLayerRuntimeModels();
+    this.clearRenderQueueModels();
+    this.clearFrameMetadataModels();
 
     // Reset Phase 8A-8F hardware and ESP32 metadata registries
     this.clearHALStates();
@@ -9138,6 +9519,23 @@ export class BaseRuntime implements IRuntime {
       if (this.playbackGroupRegistry.size > 0) {
         stageSnap.playbackGroups = this.getPlaybackGroupModels();
       }
+
+      // Phase 14A: Attach visual rendering runtime foundation metadata to stage snapshot entry
+      if (this.renderRuntimeRegistry.size > 0) {
+        stageSnap.renderRuntimes = this.getRenderRuntimeModels();
+      }
+      if (this.renderPassRegistry.size > 0) {
+        stageSnap.renderPasses = this.getRenderPassModels();
+      }
+      if (this.renderLayerRegistry.size > 0) {
+        stageSnap.renderLayers = this.getRenderLayerRuntimeModels();
+      }
+      if (this.renderQueueRegistry.size > 0) {
+        stageSnap.renderQueues = this.getRenderQueueModels();
+      }
+      if (this.frameRegistry.size > 0) {
+        stageSnap.frames = this.getFrameMetadataModels();
+      }
       // Phase 7R: Attach connection metadata to stage snapshot entry
       if (this.connectionRegistry.size > 0) {
         stageSnap.connections = this.getConnections();
@@ -9426,6 +9824,23 @@ export class BaseRuntime implements IRuntime {
       }
       if (isStage && this.playbackGroupRegistry.size > 0) {
         serializedTarget.playbackGroups = this.getPlaybackGroupModels();
+      }
+
+      // Phase 14A: Serialize visual rendering runtime foundation metadata
+      if (isStage && this.renderRuntimeRegistry.size > 0) {
+        serializedTarget.renderRuntimes = this.getRenderRuntimeModels();
+      }
+      if (isStage && this.renderPassRegistry.size > 0) {
+        serializedTarget.renderPasses = this.getRenderPassModels();
+      }
+      if (isStage && this.renderLayerRegistry.size > 0) {
+        serializedTarget.renderLayers = this.getRenderLayerRuntimeModels();
+      }
+      if (isStage && this.renderQueueRegistry.size > 0) {
+        serializedTarget.renderQueues = this.getRenderQueueModels();
+      }
+      if (isStage && this.frameRegistry.size > 0) {
+        serializedTarget.frames = this.getFrameMetadataModels();
       }
 
       // Phase 7W: Serialize board definitions & workspace boards
@@ -10026,6 +10441,33 @@ export class BaseRuntime implements IRuntime {
       if (Array.isArray(stageTarget.playbackGroups)) {
         for (const model of stageTarget.playbackGroups) {
           this.registerPlaybackGroupModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+
+      // Phase 14A: Restore visual rendering runtime foundation metadata from stage target
+      if (Array.isArray(stageTarget.renderRuntimes)) {
+        for (const model of stageTarget.renderRuntimes) {
+          this.registerRenderRuntimeModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.renderPasses)) {
+        for (const model of stageTarget.renderPasses) {
+          this.registerRenderPassModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.renderLayers)) {
+        for (const model of stageTarget.renderLayers) {
+          this.registerRenderLayerRuntimeModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.renderQueues)) {
+        for (const model of stageTarget.renderQueues) {
+          this.registerRenderQueueModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.frames)) {
+        for (const model of stageTarget.frames) {
+          this.registerFrameMetadataModel(JSON.parse(JSON.stringify(model)));
         }
       }
       // Phase 7W: Restore board definitions from stage target
