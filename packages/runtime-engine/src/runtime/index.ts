@@ -1,5 +1,5 @@
 import { IRuntime } from '../core';
-import { TargetId, TargetState, ASTScript, Thread, SpriteState, StageState, PendingBroadcast, BroadcastCompletionToken, ListenerEntry, BubbleState, StageSyncState, CostumeAsset, SoundAsset, BackdropAsset, ActiveSoundTrigger, SoundChannelState, PenCommand, PenState, VariableWatcher, WatcherMode, ListWatcher, ListWatcherMode, GlideState, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, SerializedProject, SerializedStage, SerializedTarget, SerializedAssetManifest, SerializedProjectMetadata, VariableState, ListState, RuntimeAssetState, AssetLoadStatus, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, ComponentType, RuntimeComponent, PinDirection, RuntimePin, RuntimeConnection, DeviceState, WorkspaceTransform, WorkspaceComponentLayout, WirePoint, WireLayout, DevelopmentBoardType, BoardPinDefinition, BoardPinCapabilities, DevelopmentBoardDefinition, WorkspaceBoard, RenderModelType, RenderMetadata, RuntimeHALState, HardwareAddress, PinMode, PullMode, PinCapability, ProtocolState, ProtocolType, PWMChannelState, I2CBusState, SPIBusState, UARTPortState, HardwareBackendMetadata, ExecutionCommand, ExecutionCommandLifecycleState, ExecutionCommandType, ESP32RuntimeMetadata, ESP32ExecutionState, ESP32PinCapability, ESP32PinMode, ESP32InstructionMetadata, ESP32InstructionExecutionState, ESP32InstructionType, ESP32GPIOExecutionResult, ESP32GPIOExecutionStatus, ESP32PWMExecutionState, ESP32ServoExecutionState, ESP32ADCExecutionState, ESP32TouchExecutionState, ESP32PeripheralCommandExecutionResult, ESP32PeripheralCommandExecutionStatus, ProtocolCommandExecutionResult, ProtocolCommandExecutionStatus, STEMVerseVisualState, STEMVerseVisualThemeState, STEMVerseVisualType, STEMVerseBoardStatus, STEMVerseSignalFlowDirection, STEMVerseVisualThemeMode, ComponentVisualModel, ComponentVisualType, ComponentVisualCategory, PinVisualMetadata, InteractionZone, AnchorPoint, LabelPosition, WireVisualRegistryEntry, WireType, WireCategory, RoutingPathType, SignalDirection, SignalActivity, SignalState, WireVisualModel, ControlPoint, WireRoutingMetadata, SignalVisualizationMetadata, InteractionZoneRect, WireInteractionMetadata, BoardVisualModel, BoardVisualType, BoardVisualCategory, BoardVisualRegistryEntry, BoardLayoutMetadata, ConnectorVisualMetadata, BoardInteractionMetadata, BoardBounds, ComponentRegion, PowerRegion, SignalRegion, ReservedRegion, BoardInteractionZone, SignalVisualModel, SignalVisualType, SignalVisualCategory, DigitalSignalMetadata, DigitalSignalLevel, DigitalSignalDirection, AnalogSignalMetadata, PWMSignalMetadata, ProtocolSignalMetadata, ProtocolSignalType, SignalVariantMetadata, SignalInteractionZone, SignalInteractionMetadata, SignalVisualRegistryEntry, AnimationType, AnimationRepeatMode, AnimationPlaybackMode, AnimationVisualModel, ComponentAnimationMetadata, WireAnimationMetadata, BoardAnimationMetadata, SignalAnimationMetadata, InteractionAnimationMetadata, AnimationRegistryEntry, InteractionMetadata, SelectionMetadata, HoverMetadata, FocusMetadata, InspectionMetadata, InteractionType, SelectionType, HoverPriority, HoverSource, FocusOwnership, InspectionTargetType, RenderNodeModel, NodeType, VisibilityState, SceneGraphModel, ViewportModel, VisibleRegion, RenderPipelineModel, PipelineType, CanvasRenderSnapshot, ComponentRenderModel, ComponentBoundsModel, ComponentLabelModel, ComponentPinRenderModel, ComponentRenderSnapshot, ComponentLabelPosition, WireRenderModel, WirePathModel, WireSegmentModel, WireAnchorModel, BoardRenderModel, BoardBoundsModel, BoardConnectorModel, BoardRegionModel, SignalEffectModel, SignalPropagationModel, SignalColorModel, SignalActivityModel, ThemeModel, ColorPaletteModel, ComponentStyleModel, WorkspaceStyleModel } from '../types';
+import { TargetId, TargetState, ASTScript, Thread, SpriteState, StageState, PendingBroadcast, BroadcastCompletionToken, ListenerEntry, BubbleState, StageSyncState, CostumeAsset, SoundAsset, BackdropAsset, ActiveSoundTrigger, SoundChannelState, PenCommand, PenState, VariableWatcher, WatcherMode, ListWatcher, ListWatcherMode, GlideState, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, SerializedProject, SerializedStage, SerializedTarget, SerializedAssetManifest, SerializedProjectMetadata, VariableState, ListState, RuntimeAssetState, AssetLoadStatus, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, ComponentType, RuntimeComponent, PinDirection, RuntimePin, RuntimeConnection, DeviceState, WorkspaceTransform, WorkspaceComponentLayout, WirePoint, WireLayout, DevelopmentBoardType, BoardPinDefinition, BoardPinCapabilities, DevelopmentBoardDefinition, WorkspaceBoard, RenderModelType, RenderMetadata, RuntimeHALState, HardwareAddress, PinMode, PullMode, PinCapability, ProtocolState, ProtocolType, PWMChannelState, I2CBusState, SPIBusState, UARTPortState, HardwareBackendMetadata, ExecutionCommand, ExecutionCommandLifecycleState, ExecutionCommandType, ESP32RuntimeMetadata, ESP32ExecutionState, ESP32PinCapability, ESP32PinMode, ESP32InstructionMetadata, ESP32InstructionExecutionState, ESP32InstructionType, ESP32GPIOExecutionResult, ESP32GPIOExecutionStatus, ESP32PWMExecutionState, ESP32ServoExecutionState, ESP32ADCExecutionState, ESP32TouchExecutionState, ESP32PeripheralCommandExecutionResult, ESP32PeripheralCommandExecutionStatus, ProtocolCommandExecutionResult, ProtocolCommandExecutionStatus, STEMVerseVisualState, STEMVerseVisualThemeState, STEMVerseVisualType, STEMVerseBoardStatus, STEMVerseSignalFlowDirection, STEMVerseVisualThemeMode, ComponentVisualModel, ComponentVisualType, ComponentVisualCategory, PinVisualMetadata, InteractionZone, AnchorPoint, LabelPosition, WireVisualRegistryEntry, WireType, WireCategory, RoutingPathType, SignalDirection, SignalActivity, SignalState, WireVisualModel, ControlPoint, WireRoutingMetadata, SignalVisualizationMetadata, InteractionZoneRect, WireInteractionMetadata, BoardVisualModel, BoardVisualType, BoardVisualCategory, BoardVisualRegistryEntry, BoardLayoutMetadata, ConnectorVisualMetadata, BoardInteractionMetadata, BoardBounds, ComponentRegion, PowerRegion, SignalRegion, ReservedRegion, BoardInteractionZone, SignalVisualModel, SignalVisualType, SignalVisualCategory, DigitalSignalMetadata, DigitalSignalLevel, DigitalSignalDirection, AnalogSignalMetadata, PWMSignalMetadata, ProtocolSignalMetadata, ProtocolSignalType, SignalVariantMetadata, SignalInteractionZone, SignalInteractionMetadata, SignalVisualRegistryEntry, AnimationType, AnimationRepeatMode, AnimationPlaybackMode, AnimationVisualModel, ComponentAnimationMetadata, WireAnimationMetadata, BoardAnimationMetadata, SignalAnimationMetadata, InteractionAnimationMetadata, AnimationRegistryEntry, InteractionMetadata, SelectionMetadata, HoverMetadata, FocusMetadata, InspectionMetadata, InteractionType, SelectionType, HoverPriority, HoverSource, FocusOwnership, InspectionTargetType, RenderNodeModel, NodeType, VisibilityState, SceneGraphModel, ViewportModel, VisibleRegion, RenderPipelineModel, PipelineType, CanvasRenderSnapshot, ComponentRenderModel, ComponentBoundsModel, ComponentLabelModel, ComponentPinRenderModel, ComponentRenderSnapshot, ComponentLabelPosition, WireRenderModel, WirePathModel, WireSegmentModel, WireAnchorModel, BoardRenderModel, BoardBoundsModel, BoardConnectorModel, BoardRegionModel, SignalEffectModel, SignalPropagationModel, SignalColorModel, SignalActivityModel, ThemeModel, ColorPaletteModel, ComponentStyleModel, WorkspaceStyleModel, AnimationPlaybackModel, TimelineModel, KeyframeModel, PlaybackGroupModel } from '../types';
 import { MinimalASTInterpreter, IHardwareAdapter } from '../ast/interpreter';
 import { SimulatedHardwareBackend } from '../hal';
 import { createThread, TaskQueue, PendingTask, resetThreadCounter } from './execution-context';
@@ -7,6 +7,7 @@ import { BreadboardWorkspace } from '../stage/breadboard-workspace';
 import { validateBoardRenderModel, validateBoardBoundsModel, validateBoardConnectorModel, validateBoardRegionModel } from '../stage/board-rendering';
 import { validateSignalEffectModel, validateSignalPropagationModel, validateSignalColorModel, validateSignalActivityModel } from '../stage/signal-effects';
 import { validateThemeModel, validateColorPaletteModel, validateComponentStyleModel, validateWorkspaceStyleModel } from '../stage/visual-themes';
+import { validateAnimationPlaybackModel, validateTimelineModel, validateKeyframeModel, validatePlaybackGroupModel } from '../stage/animation-playback';
 
 /**
  * Concrete runtime implementation with minimal AST execution.
@@ -348,6 +349,16 @@ export class BaseRuntime implements IRuntime {
   private componentStyleOrder: string[] = [];
   private workspaceStyleRegistry = new Map<string, WorkspaceStyleModel>();
   private workspaceStyleOrder: string[] = [];
+
+  // Phase 13C Animation Playback Foundation registries
+  private animationPlaybackRegistry = new Map<string, AnimationPlaybackModel>();
+  private animationPlaybackOrder: string[] = [];
+  private timelineRegistry = new Map<string, TimelineModel>();
+  private timelineOrder: string[] = [];
+  private keyframeRegistry = new Map<string, KeyframeModel>();
+  private keyframeOrder: string[] = [];
+  private playbackGroupRegistry = new Map<string, PlaybackGroupModel>();
+  private playbackGroupOrder: string[] = [];
 
   // Phase 8A.1 HAL state registry (passive contracts/state only)
   private halStateRegistry = new Map<string, RuntimeHALState>();
@@ -2996,6 +3007,27 @@ export class BaseRuntime implements IRuntime {
     return warnings.length === 0;
   }
 
+  // ─── Phase 13C Animation Playback private validators ───
+  private validateAnimationPlaybackModel(model: AnimationPlaybackModel): boolean {
+    const warnings = validateAnimationPlaybackModel(model, '[Runtime Diagnostics] malformed animation playback:');
+    return warnings.length === 0;
+  }
+
+  private validateTimelineModel(model: TimelineModel): boolean {
+    const warnings = validateTimelineModel(model, '[Runtime Diagnostics] malformed timeline:');
+    return warnings.length === 0;
+  }
+
+  private validateKeyframeModel(model: KeyframeModel): boolean {
+    const warnings = validateKeyframeModel(model, '[Runtime Diagnostics] malformed keyframe:');
+    return warnings.length === 0;
+  }
+
+  private validatePlaybackGroupModel(model: PlaybackGroupModel): boolean {
+    const warnings = validatePlaybackGroupModel(model, '[Runtime Diagnostics] malformed playback group:');
+    return warnings.length === 0;
+  }
+
   // ─── Wire Render Model CRUD ───
   public registerWireRenderModel(model: WireRenderModel): void {
     if (!this.validateWireRenderModel(model)) return;
@@ -4020,6 +4052,262 @@ export class BaseRuntime implements IRuntime {
     return this.workspaceStyleRegistry.has(id);
   }
 
+  // ─── Animation Playback Model CRUD ───
+  public registerAnimationPlaybackModel(model: AnimationPlaybackModel): void {
+    if (!this.validateAnimationPlaybackModel(model)) return;
+    if (this.animationPlaybackRegistry.has(model.playbackId)) {
+      console.warn(`[Runtime Diagnostics] duplicate animation playback IDs: ID "${model.playbackId}" already exists.`);
+    }
+    this.animationPlaybackRegistry.set(model.playbackId, JSON.parse(JSON.stringify(model)));
+    if (!this.animationPlaybackOrder.includes(model.playbackId)) {
+      this.animationPlaybackOrder.push(model.playbackId);
+    }
+  }
+
+  public getAnimationPlaybackModel(id: string): AnimationPlaybackModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed animation playback: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.animationPlaybackRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getAnimationPlaybackModels(): AnimationPlaybackModel[] {
+    return this.animationPlaybackOrder
+      .map(id => this.animationPlaybackRegistry.get(id))
+      .filter((m): m is AnimationPlaybackModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateAnimationPlaybackModel(id: string, updates: Partial<AnimationPlaybackModel>): void {
+    const existing = this.animationPlaybackRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing animation playback: Model "${id}" not found.`);
+      return;
+    }
+    const merged: AnimationPlaybackModel = {
+      ...existing,
+      ...updates,
+      playbackId: existing.playbackId,
+    };
+    this.registerAnimationPlaybackModel(merged);
+  }
+
+  public removeAnimationPlaybackModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed animation playback: ID must be a non-empty string.');
+      return;
+    }
+    this.animationPlaybackRegistry.delete(id);
+    this.animationPlaybackOrder = this.animationPlaybackOrder.filter(existing => existing !== id);
+  }
+
+  public clearAnimationPlaybackModels(): void {
+    this.animationPlaybackRegistry.clear();
+    this.animationPlaybackOrder = [];
+  }
+
+  public getAnimationPlaybackModelKeys(): string[] {
+    return [...this.animationPlaybackOrder];
+  }
+
+  public hasAnimationPlaybackModel(id: string): boolean {
+    return this.animationPlaybackRegistry.has(id);
+  }
+
+  // ─── Timeline Model CRUD ───
+  public registerTimelineModel(model: TimelineModel): void {
+    if (!this.validateTimelineModel(model)) return;
+    if (this.timelineRegistry.has(model.timelineId)) {
+      console.warn(`[Runtime Diagnostics] duplicate timeline IDs: ID "${model.timelineId}" already exists.`);
+    }
+    this.timelineRegistry.set(model.timelineId, JSON.parse(JSON.stringify(model)));
+    if (!this.timelineOrder.includes(model.timelineId)) {
+      this.timelineOrder.push(model.timelineId);
+    }
+  }
+
+  public getTimelineModel(id: string): TimelineModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed timeline: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.timelineRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getTimelineModels(): TimelineModel[] {
+    return this.timelineOrder
+      .map(id => this.timelineRegistry.get(id))
+      .filter((m): m is TimelineModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateTimelineModel(id: string, updates: Partial<TimelineModel>): void {
+    const existing = this.timelineRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing timeline: Model "${id}" not found.`);
+      return;
+    }
+    const merged: TimelineModel = {
+      ...existing,
+      ...updates,
+      timelineId: existing.timelineId,
+    };
+    this.registerTimelineModel(merged);
+  }
+
+  public removeTimelineModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed timeline: ID must be a non-empty string.');
+      return;
+    }
+    this.timelineRegistry.delete(id);
+    this.timelineOrder = this.timelineOrder.filter(existing => existing !== id);
+  }
+
+  public clearTimelineModels(): void {
+    this.timelineRegistry.clear();
+    this.timelineOrder = [];
+  }
+
+  public getTimelineModelKeys(): string[] {
+    return [...this.timelineOrder];
+  }
+
+  public hasTimelineModel(id: string): boolean {
+    return this.timelineRegistry.has(id);
+  }
+
+  // ─── Keyframe Model CRUD ───
+  public registerKeyframeModel(model: KeyframeModel): void {
+    if (!this.validateKeyframeModel(model)) return;
+    if (this.keyframeRegistry.has(model.keyframeId)) {
+      console.warn(`[Runtime Diagnostics] duplicate keyframe IDs: ID "${model.keyframeId}" already exists.`);
+    }
+    this.keyframeRegistry.set(model.keyframeId, JSON.parse(JSON.stringify(model)));
+    if (!this.keyframeOrder.includes(model.keyframeId)) {
+      this.keyframeOrder.push(model.keyframeId);
+    }
+  }
+
+  public getKeyframeModel(id: string): KeyframeModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed keyframe: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.keyframeRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getKeyframeModels(): KeyframeModel[] {
+    return this.keyframeOrder
+      .map(id => this.keyframeRegistry.get(id))
+      .filter((m): m is KeyframeModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateKeyframeModel(id: string, updates: Partial<KeyframeModel>): void {
+    const existing = this.keyframeRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing keyframe: Model "${id}" not found.`);
+      return;
+    }
+    const merged: KeyframeModel = {
+      ...existing,
+      ...updates,
+      keyframeId: existing.keyframeId,
+    };
+    this.registerKeyframeModel(merged);
+  }
+
+  public removeKeyframeModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed keyframe: ID must be a non-empty string.');
+      return;
+    }
+    this.keyframeRegistry.delete(id);
+    this.keyframeOrder = this.keyframeOrder.filter(existing => existing !== id);
+  }
+
+  public clearKeyframeModels(): void {
+    this.keyframeRegistry.clear();
+    this.keyframeOrder = [];
+  }
+
+  public getKeyframeModelKeys(): string[] {
+    return [...this.keyframeOrder];
+  }
+
+  public hasKeyframeModel(id: string): boolean {
+    return this.keyframeRegistry.has(id);
+  }
+
+  // ─── Playback Group Model CRUD ───
+  public registerPlaybackGroupModel(model: PlaybackGroupModel): void {
+    if (!this.validatePlaybackGroupModel(model)) return;
+    if (this.playbackGroupRegistry.has(model.groupId)) {
+      console.warn(`[Runtime Diagnostics] duplicate playback group IDs: ID "${model.groupId}" already exists.`);
+    }
+    this.playbackGroupRegistry.set(model.groupId, JSON.parse(JSON.stringify(model)));
+    if (!this.playbackGroupOrder.includes(model.groupId)) {
+      this.playbackGroupOrder.push(model.groupId);
+    }
+  }
+
+  public getPlaybackGroupModel(id: string): PlaybackGroupModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed playback group: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.playbackGroupRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getPlaybackGroupModels(): PlaybackGroupModel[] {
+    return this.playbackGroupOrder
+      .map(id => this.playbackGroupRegistry.get(id))
+      .filter((m): m is PlaybackGroupModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updatePlaybackGroupModel(id: string, updates: Partial<PlaybackGroupModel>): void {
+    const existing = this.playbackGroupRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing playback group: Model "${id}" not found.`);
+      return;
+    }
+    const merged: PlaybackGroupModel = {
+      ...existing,
+      ...updates,
+      groupId: existing.groupId,
+    };
+    this.registerPlaybackGroupModel(merged);
+  }
+
+  public removePlaybackGroupModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed playback group: ID must be a non-empty string.');
+      return;
+    }
+    this.playbackGroupRegistry.delete(id);
+    this.playbackGroupOrder = this.playbackGroupOrder.filter(existing => existing !== id);
+  }
+
+  public clearPlaybackGroupModels(): void {
+    this.playbackGroupRegistry.clear();
+    this.playbackGroupOrder = [];
+  }
+
+  public getPlaybackGroupModelKeys(): string[] {
+    return [...this.playbackGroupOrder];
+  }
+
+  public hasPlaybackGroupModel(id: string): boolean {
+    return this.playbackGroupRegistry.has(id);
+  }
+
   public reset(): void {
     this.clearBoardRenderModels();
     this.clearBoardBoundsModels();
@@ -4033,6 +4321,10 @@ export class BaseRuntime implements IRuntime {
     this.clearColorPaletteModels();
     this.clearComponentStyleModels();
     this.clearWorkspaceStyleModels();
+    this.clearAnimationPlaybackModels();
+    this.clearTimelineModels();
+    this.clearKeyframeModels();
+    this.clearPlaybackGroupModels();
   }
 
   public destroy(): void {
@@ -7712,6 +8004,12 @@ export class BaseRuntime implements IRuntime {
     this.clearComponentStyleModels();
     this.clearWorkspaceStyleModels();
 
+    // Reset Phase 13C animation playback foundation registries
+    this.clearAnimationPlaybackModels();
+    this.clearTimelineModels();
+    this.clearKeyframeModels();
+    this.clearPlaybackGroupModels();
+
     // Reset Phase 8A.1 HAL state registry
     this.clearHALStates();
 
@@ -7968,6 +8266,12 @@ export class BaseRuntime implements IRuntime {
     this.clearColorPaletteModels();
     this.clearComponentStyleModels();
     this.clearWorkspaceStyleModels();
+
+    // Reset Phase 13C animation playback foundation registries
+    this.clearAnimationPlaybackModels();
+    this.clearTimelineModels();
+    this.clearKeyframeModels();
+    this.clearPlaybackGroupModels();
 
     // Reset Phase 8A-8F hardware and ESP32 metadata registries
     this.clearHALStates();
@@ -8820,6 +9124,20 @@ export class BaseRuntime implements IRuntime {
       if (this.workspaceStyleRegistry.size > 0) {
         stageSnap.workspaceStyleModels = this.getWorkspaceStyleModels();
       }
+
+      // Phase 13C: Attach animation playback foundation metadata to stage snapshot entry
+      if (this.animationPlaybackRegistry.size > 0) {
+        stageSnap.animationPlaybacks = this.getAnimationPlaybackModels();
+      }
+      if (this.timelineRegistry.size > 0) {
+        stageSnap.timelines = this.getTimelineModels();
+      }
+      if (this.keyframeRegistry.size > 0) {
+        stageSnap.keyframes = this.getKeyframeModels();
+      }
+      if (this.playbackGroupRegistry.size > 0) {
+        stageSnap.playbackGroups = this.getPlaybackGroupModels();
+      }
       // Phase 7R: Attach connection metadata to stage snapshot entry
       if (this.connectionRegistry.size > 0) {
         stageSnap.connections = this.getConnections();
@@ -9094,6 +9412,20 @@ export class BaseRuntime implements IRuntime {
       }
       if (isStage && this.workspaceStyleRegistry.size > 0) {
         serializedTarget.workspaceStyleModels = this.getWorkspaceStyleModels();
+      }
+
+      // Phase 13C: Serialize animation playback foundation metadata
+      if (isStage && this.animationPlaybackRegistry.size > 0) {
+        serializedTarget.animationPlaybacks = this.getAnimationPlaybackModels();
+      }
+      if (isStage && this.timelineRegistry.size > 0) {
+        serializedTarget.timelines = this.getTimelineModels();
+      }
+      if (isStage && this.keyframeRegistry.size > 0) {
+        serializedTarget.keyframes = this.getKeyframeModels();
+      }
+      if (isStage && this.playbackGroupRegistry.size > 0) {
+        serializedTarget.playbackGroups = this.getPlaybackGroupModels();
       }
 
       // Phase 7W: Serialize board definitions & workspace boards
@@ -9672,6 +10004,28 @@ export class BaseRuntime implements IRuntime {
       if (Array.isArray(stageTarget.workspaceStyleModels)) {
         for (const ws of stageTarget.workspaceStyleModels) {
           this.registerWorkspaceStyleModel(JSON.parse(JSON.stringify(ws)));
+        }
+      }
+
+      // Phase 13C: Restore animation playback foundation metadata from stage target
+      if (Array.isArray(stageTarget.animationPlaybacks)) {
+        for (const model of stageTarget.animationPlaybacks) {
+          this.registerAnimationPlaybackModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.timelines)) {
+        for (const model of stageTarget.timelines) {
+          this.registerTimelineModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.keyframes)) {
+        for (const model of stageTarget.keyframes) {
+          this.registerKeyframeModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.playbackGroups)) {
+        for (const model of stageTarget.playbackGroups) {
+          this.registerPlaybackGroupModel(JSON.parse(JSON.stringify(model)));
         }
       }
       // Phase 7W: Restore board definitions from stage target

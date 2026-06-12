@@ -513,6 +513,12 @@ export interface StageSyncState {
   colorPaletteModels?: ColorPaletteModel[];
   componentStyleModels?: ComponentStyleModel[];
   workspaceStyleModels?: WorkspaceStyleModel[];
+
+  // Phase 13C: Animation playback foundation metadata synchronization
+  animationPlaybacks?: AnimationPlaybackModel[];
+  timelines?: TimelineModel[];
+  keyframes?: KeyframeModel[];
+  playbackGroups?: PlaybackGroupModel[];
 }
 
 // ─── Phase 11B: Visual Interaction Engine ──────────────────
@@ -1133,6 +1139,12 @@ export interface SerializedTarget {
   colorPaletteModels?: ColorPaletteModel[];
   componentStyleModels?: ComponentStyleModel[];
   workspaceStyleModels?: WorkspaceStyleModel[];
+
+  // Phase 13C: Animation playback foundation metadata serialization
+  animationPlaybacks?: AnimationPlaybackModel[];
+  timelines?: TimelineModel[];
+  keyframes?: KeyframeModel[];
+  playbackGroups?: PlaybackGroupModel[];
 }
 
 export interface SerializedAssetManifest {
@@ -2480,3 +2492,53 @@ export interface ThemeSnapshot {
   componentStyleModels: ComponentStyleModel[];
   workspaceStyleModels: WorkspaceStyleModel[];
 }
+
+// ─── Phase 13C: Animation Playback Foundation ──────────────
+
+export interface AnimationPlaybackModel {
+  playbackId: string;
+  animationId: string;
+  playbackState: string;
+  playbackMode: string;
+  currentFrame: number;
+  frameCount: number;
+  playbackSpeed: number;
+  visibilityState: VisibilityState;
+  futureRendererHints: Record<string, unknown>;
+}
+
+export interface TimelineModel {
+  timelineId: string;
+  animationId: string;
+  timelineState: string;
+  timelineDuration: number;
+  timelinePosition: number;
+  timelineMetadata: Record<string, unknown>;
+  futurePlaybackHints: Record<string, unknown>;
+}
+
+export interface KeyframeModel {
+  keyframeId: string;
+  timelineId: string;
+  frameIndex: number;
+  frameMetadata: Record<string, unknown>;
+  interpolationMetadata: Record<string, unknown>;
+  futureAnimationHints: Record<string, unknown>;
+}
+
+export interface PlaybackGroupModel {
+  groupId: string;
+  groupName: string;
+  groupState: string;
+  memberAnimations: string[];
+  groupMetadata: Record<string, unknown>;
+  futureRendererHints: Record<string, unknown>;
+}
+
+export interface AnimationPlaybackSnapshot {
+  animationPlaybacks: AnimationPlaybackModel[];
+  timelines: TimelineModel[];
+  keyframes: KeyframeModel[];
+  playbackGroups: PlaybackGroupModel[];
+}
+
