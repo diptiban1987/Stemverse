@@ -1,11 +1,12 @@
 import { IRuntime } from '../core';
-import { TargetId, TargetState, ASTScript, Thread, SpriteState, StageState, PendingBroadcast, BroadcastCompletionToken, ListenerEntry, BubbleState, StageSyncState, CostumeAsset, SoundAsset, BackdropAsset, ActiveSoundTrigger, SoundChannelState, PenCommand, PenState, VariableWatcher, WatcherMode, ListWatcher, ListWatcherMode, GlideState, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, SerializedProject, SerializedStage, SerializedTarget, SerializedAssetManifest, SerializedProjectMetadata, VariableState, ListState, RuntimeAssetState, AssetLoadStatus, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, ComponentType, RuntimeComponent, PinDirection, RuntimePin, RuntimeConnection, DeviceState, WorkspaceTransform, WorkspaceComponentLayout, WirePoint, WireLayout, DevelopmentBoardType, BoardPinDefinition, BoardPinCapabilities, DevelopmentBoardDefinition, WorkspaceBoard, RenderModelType, RenderMetadata, RuntimeHALState, HardwareAddress, PinMode, PullMode, PinCapability, ProtocolState, ProtocolType, PWMChannelState, I2CBusState, SPIBusState, UARTPortState, HardwareBackendMetadata, ExecutionCommand, ExecutionCommandLifecycleState, ExecutionCommandType, ESP32RuntimeMetadata, ESP32ExecutionState, ESP32PinCapability, ESP32PinMode, ESP32InstructionMetadata, ESP32InstructionExecutionState, ESP32InstructionType, ESP32GPIOExecutionResult, ESP32GPIOExecutionStatus, ESP32PWMExecutionState, ESP32ServoExecutionState, ESP32ADCExecutionState, ESP32TouchExecutionState, ESP32PeripheralCommandExecutionResult, ESP32PeripheralCommandExecutionStatus, ProtocolCommandExecutionResult, ProtocolCommandExecutionStatus, STEMVerseVisualState, STEMVerseVisualThemeState, STEMVerseVisualType, STEMVerseBoardStatus, STEMVerseSignalFlowDirection, STEMVerseVisualThemeMode, ComponentVisualModel, ComponentVisualType, ComponentVisualCategory, PinVisualMetadata, InteractionZone, AnchorPoint, LabelPosition, WireVisualRegistryEntry, WireType, WireCategory, RoutingPathType, SignalDirection, SignalActivity, SignalState, WireVisualModel, ControlPoint, WireRoutingMetadata, SignalVisualizationMetadata, InteractionZoneRect, WireInteractionMetadata, BoardVisualModel, BoardVisualType, BoardVisualCategory, BoardVisualRegistryEntry, BoardLayoutMetadata, ConnectorVisualMetadata, BoardInteractionMetadata, BoardBounds, ComponentRegion, PowerRegion, SignalRegion, ReservedRegion, BoardInteractionZone, SignalVisualModel, SignalVisualType, SignalVisualCategory, DigitalSignalMetadata, DigitalSignalLevel, DigitalSignalDirection, AnalogSignalMetadata, PWMSignalMetadata, ProtocolSignalMetadata, ProtocolSignalType, SignalVariantMetadata, SignalInteractionZone, SignalInteractionMetadata, SignalVisualRegistryEntry, AnimationType, AnimationRepeatMode, AnimationPlaybackMode, AnimationVisualModel, ComponentAnimationMetadata, WireAnimationMetadata, BoardAnimationMetadata, SignalAnimationMetadata, InteractionAnimationMetadata, AnimationRegistryEntry, InteractionMetadata, SelectionMetadata, HoverMetadata, FocusMetadata, InspectionMetadata, InteractionType, SelectionType, HoverPriority, HoverSource, FocusOwnership, InspectionTargetType, RenderNodeModel, NodeType, VisibilityState, SceneGraphModel, ViewportModel, VisibleRegion, RenderPipelineModel, PipelineType, CanvasRenderSnapshot, ComponentRenderModel, ComponentBoundsModel, ComponentLabelModel, ComponentPinRenderModel, ComponentRenderSnapshot, ComponentLabelPosition, WireRenderModel, WirePathModel, WireSegmentModel, WireAnchorModel, BoardRenderModel, BoardBoundsModel, BoardConnectorModel, BoardRegionModel, SignalEffectModel, SignalPropagationModel, SignalColorModel, SignalActivityModel } from '../types';
+import { TargetId, TargetState, ASTScript, Thread, SpriteState, StageState, PendingBroadcast, BroadcastCompletionToken, ListenerEntry, BubbleState, StageSyncState, CostumeAsset, SoundAsset, BackdropAsset, ActiveSoundTrigger, SoundChannelState, PenCommand, PenState, VariableWatcher, WatcherMode, ListWatcher, ListWatcherMode, GlideState, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, SerializedProject, SerializedStage, SerializedTarget, SerializedAssetManifest, SerializedProjectMetadata, VariableState, ListState, RuntimeAssetState, AssetLoadStatus, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, ComponentType, RuntimeComponent, PinDirection, RuntimePin, RuntimeConnection, DeviceState, WorkspaceTransform, WorkspaceComponentLayout, WirePoint, WireLayout, DevelopmentBoardType, BoardPinDefinition, BoardPinCapabilities, DevelopmentBoardDefinition, WorkspaceBoard, RenderModelType, RenderMetadata, RuntimeHALState, HardwareAddress, PinMode, PullMode, PinCapability, ProtocolState, ProtocolType, PWMChannelState, I2CBusState, SPIBusState, UARTPortState, HardwareBackendMetadata, ExecutionCommand, ExecutionCommandLifecycleState, ExecutionCommandType, ESP32RuntimeMetadata, ESP32ExecutionState, ESP32PinCapability, ESP32PinMode, ESP32InstructionMetadata, ESP32InstructionExecutionState, ESP32InstructionType, ESP32GPIOExecutionResult, ESP32GPIOExecutionStatus, ESP32PWMExecutionState, ESP32ServoExecutionState, ESP32ADCExecutionState, ESP32TouchExecutionState, ESP32PeripheralCommandExecutionResult, ESP32PeripheralCommandExecutionStatus, ProtocolCommandExecutionResult, ProtocolCommandExecutionStatus, STEMVerseVisualState, STEMVerseVisualThemeState, STEMVerseVisualType, STEMVerseBoardStatus, STEMVerseSignalFlowDirection, STEMVerseVisualThemeMode, ComponentVisualModel, ComponentVisualType, ComponentVisualCategory, PinVisualMetadata, InteractionZone, AnchorPoint, LabelPosition, WireVisualRegistryEntry, WireType, WireCategory, RoutingPathType, SignalDirection, SignalActivity, SignalState, WireVisualModel, ControlPoint, WireRoutingMetadata, SignalVisualizationMetadata, InteractionZoneRect, WireInteractionMetadata, BoardVisualModel, BoardVisualType, BoardVisualCategory, BoardVisualRegistryEntry, BoardLayoutMetadata, ConnectorVisualMetadata, BoardInteractionMetadata, BoardBounds, ComponentRegion, PowerRegion, SignalRegion, ReservedRegion, BoardInteractionZone, SignalVisualModel, SignalVisualType, SignalVisualCategory, DigitalSignalMetadata, DigitalSignalLevel, DigitalSignalDirection, AnalogSignalMetadata, PWMSignalMetadata, ProtocolSignalMetadata, ProtocolSignalType, SignalVariantMetadata, SignalInteractionZone, SignalInteractionMetadata, SignalVisualRegistryEntry, AnimationType, AnimationRepeatMode, AnimationPlaybackMode, AnimationVisualModel, ComponentAnimationMetadata, WireAnimationMetadata, BoardAnimationMetadata, SignalAnimationMetadata, InteractionAnimationMetadata, AnimationRegistryEntry, InteractionMetadata, SelectionMetadata, HoverMetadata, FocusMetadata, InspectionMetadata, InteractionType, SelectionType, HoverPriority, HoverSource, FocusOwnership, InspectionTargetType, RenderNodeModel, NodeType, VisibilityState, SceneGraphModel, ViewportModel, VisibleRegion, RenderPipelineModel, PipelineType, CanvasRenderSnapshot, ComponentRenderModel, ComponentBoundsModel, ComponentLabelModel, ComponentPinRenderModel, ComponentRenderSnapshot, ComponentLabelPosition, WireRenderModel, WirePathModel, WireSegmentModel, WireAnchorModel, BoardRenderModel, BoardBoundsModel, BoardConnectorModel, BoardRegionModel, SignalEffectModel, SignalPropagationModel, SignalColorModel, SignalActivityModel, ThemeModel, ColorPaletteModel, ComponentStyleModel, WorkspaceStyleModel } from '../types';
 import { MinimalASTInterpreter, IHardwareAdapter } from '../ast/interpreter';
 import { SimulatedHardwareBackend } from '../hal';
 import { createThread, TaskQueue, PendingTask, resetThreadCounter } from './execution-context';
 import { BreadboardWorkspace } from '../stage/breadboard-workspace';
 import { validateBoardRenderModel, validateBoardBoundsModel, validateBoardConnectorModel, validateBoardRegionModel } from '../stage/board-rendering';
 import { validateSignalEffectModel, validateSignalPropagationModel, validateSignalColorModel, validateSignalActivityModel } from '../stage/signal-effects';
+import { validateThemeModel, validateColorPaletteModel, validateComponentStyleModel, validateWorkspaceStyleModel } from '../stage/visual-themes';
 
 /**
  * Concrete runtime implementation with minimal AST execution.
@@ -337,6 +338,16 @@ export class BaseRuntime implements IRuntime {
   private signalColorOrder: string[] = [];
   private signalActivityRegistry = new Map<string, SignalActivityModel>();
   private signalActivityOrder: string[] = [];
+
+  // Phase 13B Visual Themes Foundation registries
+  private themeRegistry = new Map<string, ThemeModel>();
+  private themeOrder: string[] = [];
+  private colorPaletteRegistry = new Map<string, ColorPaletteModel>();
+  private colorPaletteOrder: string[] = [];
+  private componentStyleRegistry = new Map<string, ComponentStyleModel>();
+  private componentStyleOrder: string[] = [];
+  private workspaceStyleRegistry = new Map<string, WorkspaceStyleModel>();
+  private workspaceStyleOrder: string[] = [];
 
   // Phase 8A.1 HAL state registry (passive contracts/state only)
   private halStateRegistry = new Map<string, RuntimeHALState>();
@@ -2964,6 +2975,27 @@ export class BaseRuntime implements IRuntime {
     return warnings.length === 0;
   }
 
+  // ─── Phase 13B Visual Themes private validators ───
+  private validateThemeModel(model: ThemeModel): boolean {
+    const warnings = validateThemeModel(model, '[Runtime Diagnostics] malformed theme:');
+    return warnings.length === 0;
+  }
+
+  private validateColorPaletteModel(palette: ColorPaletteModel): boolean {
+    const warnings = validateColorPaletteModel(palette, '[Runtime Diagnostics] malformed color palette:');
+    return warnings.length === 0;
+  }
+
+  private validateComponentStyleModel(style: ComponentStyleModel): boolean {
+    const warnings = validateComponentStyleModel(style, '[Runtime Diagnostics] malformed component style:');
+    return warnings.length === 0;
+  }
+
+  private validateWorkspaceStyleModel(ws: WorkspaceStyleModel): boolean {
+    const warnings = validateWorkspaceStyleModel(ws, '[Runtime Diagnostics] malformed workspace style:');
+    return warnings.length === 0;
+  }
+
   // ─── Wire Render Model CRUD ───
   public registerWireRenderModel(model: WireRenderModel): void {
     if (!this.validateWireRenderModel(model)) return;
@@ -3732,6 +3764,262 @@ export class BaseRuntime implements IRuntime {
     return this.signalActivityRegistry.has(id);
   }
 
+  // ─── Theme Model CRUD ───
+  public registerThemeModel(model: ThemeModel): void {
+    if (!this.validateThemeModel(model)) return;
+    if (this.themeRegistry.has(model.themeId)) {
+      console.warn(`[Runtime Diagnostics] duplicate theme IDs: ID "${model.themeId}" already exists.`);
+    }
+    this.themeRegistry.set(model.themeId, JSON.parse(JSON.stringify(model)));
+    if (!this.themeOrder.includes(model.themeId)) {
+      this.themeOrder.push(model.themeId);
+    }
+  }
+
+  public getThemeModel(id: string): ThemeModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed theme: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.themeRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getThemeModels(): ThemeModel[] {
+    return this.themeOrder
+      .map(id => this.themeRegistry.get(id))
+      .filter((m): m is ThemeModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateThemeModel(id: string, updates: Partial<ThemeModel>): void {
+    const existing = this.themeRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing theme: Model "${id}" not found.`);
+      return;
+    }
+    const merged: ThemeModel = {
+      ...existing,
+      ...updates,
+      themeId: existing.themeId,
+    };
+    this.registerThemeModel(merged);
+  }
+
+  public removeThemeModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed theme: ID must be a non-empty string.');
+      return;
+    }
+    this.themeRegistry.delete(id);
+    this.themeOrder = this.themeOrder.filter(existing => existing !== id);
+  }
+
+  public clearThemeModels(): void {
+    this.themeRegistry.clear();
+    this.themeOrder = [];
+  }
+
+  public getThemeModelKeys(): string[] {
+    return [...this.themeOrder];
+  }
+
+  public hasThemeModel(id: string): boolean {
+    return this.themeRegistry.has(id);
+  }
+
+  // ─── Color Palette Model CRUD ───
+  public registerColorPaletteModel(palette: ColorPaletteModel): void {
+    if (!this.validateColorPaletteModel(palette)) return;
+    if (this.colorPaletteRegistry.has(palette.paletteId)) {
+      console.warn(`[Runtime Diagnostics] duplicate color palette IDs: ID "${palette.paletteId}" already exists.`);
+    }
+    this.colorPaletteRegistry.set(palette.paletteId, JSON.parse(JSON.stringify(palette)));
+    if (!this.colorPaletteOrder.includes(palette.paletteId)) {
+      this.colorPaletteOrder.push(palette.paletteId);
+    }
+  }
+
+  public getColorPaletteModel(id: string): ColorPaletteModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed color palette: ID must be a non-empty string.');
+      return undefined;
+    }
+    const palette = this.colorPaletteRegistry.get(id);
+    return palette ? JSON.parse(JSON.stringify(palette)) : undefined;
+  }
+
+  public getColorPaletteModels(): ColorPaletteModel[] {
+    return this.colorPaletteOrder
+      .map(id => this.colorPaletteRegistry.get(id))
+      .filter((m): m is ColorPaletteModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateColorPaletteModel(id: string, updates: Partial<ColorPaletteModel>): void {
+    const existing = this.colorPaletteRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing color palette: Model "${id}" not found.`);
+      return;
+    }
+    const merged: ColorPaletteModel = {
+      ...existing,
+      ...updates,
+      paletteId: existing.paletteId,
+    };
+    this.registerColorPaletteModel(merged);
+  }
+
+  public removeColorPaletteModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed color palette: ID must be a non-empty string.');
+      return;
+    }
+    this.colorPaletteRegistry.delete(id);
+    this.colorPaletteOrder = this.colorPaletteOrder.filter(existing => existing !== id);
+  }
+
+  public clearColorPaletteModels(): void {
+    this.colorPaletteRegistry.clear();
+    this.colorPaletteOrder = [];
+  }
+
+  public getColorPaletteModelKeys(): string[] {
+    return [...this.colorPaletteOrder];
+  }
+
+  public hasColorPaletteModel(id: string): boolean {
+    return this.colorPaletteRegistry.has(id);
+  }
+
+  // ─── Component Style Model CRUD ───
+  public registerComponentStyleModel(style: ComponentStyleModel): void {
+    if (!this.validateComponentStyleModel(style)) return;
+    if (this.componentStyleRegistry.has(style.styleId)) {
+      console.warn(`[Runtime Diagnostics] duplicate component style IDs: ID "${style.styleId}" already exists.`);
+    }
+    this.componentStyleRegistry.set(style.styleId, JSON.parse(JSON.stringify(style)));
+    if (!this.componentStyleOrder.includes(style.styleId)) {
+      this.componentStyleOrder.push(style.styleId);
+    }
+  }
+
+  public getComponentStyleModel(id: string): ComponentStyleModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed component style: ID must be a non-empty string.');
+      return undefined;
+    }
+    const style = this.componentStyleRegistry.get(id);
+    return style ? JSON.parse(JSON.stringify(style)) : undefined;
+  }
+
+  public getComponentStyleModels(): ComponentStyleModel[] {
+    return this.componentStyleOrder
+      .map(id => this.componentStyleRegistry.get(id))
+      .filter((m): m is ComponentStyleModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateComponentStyleModel(id: string, updates: Partial<ComponentStyleModel>): void {
+    const existing = this.componentStyleRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing component style: Model "${id}" not found.`);
+      return;
+    }
+    const merged: ComponentStyleModel = {
+      ...existing,
+      ...updates,
+      styleId: existing.styleId,
+    };
+    this.registerComponentStyleModel(merged);
+  }
+
+  public removeComponentStyleModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed component style: ID must be a non-empty string.');
+      return;
+    }
+    this.componentStyleRegistry.delete(id);
+    this.componentStyleOrder = this.componentStyleOrder.filter(existing => existing !== id);
+  }
+
+  public clearComponentStyleModels(): void {
+    this.componentStyleRegistry.clear();
+    this.componentStyleOrder = [];
+  }
+
+  public getComponentStyleModelKeys(): string[] {
+    return [...this.componentStyleOrder];
+  }
+
+  public hasComponentStyleModel(id: string): boolean {
+    return this.componentStyleRegistry.has(id);
+  }
+
+  // ─── Workspace Style Model CRUD ───
+  public registerWorkspaceStyleModel(ws: WorkspaceStyleModel): void {
+    if (!this.validateWorkspaceStyleModel(ws)) return;
+    if (this.workspaceStyleRegistry.has(ws.workspaceStyleId)) {
+      console.warn(`[Runtime Diagnostics] duplicate workspace style IDs: ID "${ws.workspaceStyleId}" already exists.`);
+    }
+    this.workspaceStyleRegistry.set(ws.workspaceStyleId, JSON.parse(JSON.stringify(ws)));
+    if (!this.workspaceStyleOrder.includes(ws.workspaceStyleId)) {
+      this.workspaceStyleOrder.push(ws.workspaceStyleId);
+    }
+  }
+
+  public getWorkspaceStyleModel(id: string): WorkspaceStyleModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed workspace style: ID must be a non-empty string.');
+      return undefined;
+    }
+    const ws = this.workspaceStyleRegistry.get(id);
+    return ws ? JSON.parse(JSON.stringify(ws)) : undefined;
+  }
+
+  public getWorkspaceStyleModels(): WorkspaceStyleModel[] {
+    return this.workspaceStyleOrder
+      .map(id => this.workspaceStyleRegistry.get(id))
+      .filter((m): m is WorkspaceStyleModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateWorkspaceStyleModel(id: string, updates: Partial<WorkspaceStyleModel>): void {
+    const existing = this.workspaceStyleRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing workspace style: Model "${id}" not found.`);
+      return;
+    }
+    const merged: WorkspaceStyleModel = {
+      ...existing,
+      ...updates,
+      workspaceStyleId: existing.workspaceStyleId,
+    };
+    this.registerWorkspaceStyleModel(merged);
+  }
+
+  public removeWorkspaceStyleModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed workspace style: ID must be a non-empty string.');
+      return;
+    }
+    this.workspaceStyleRegistry.delete(id);
+    this.workspaceStyleOrder = this.workspaceStyleOrder.filter(existing => existing !== id);
+  }
+
+  public clearWorkspaceStyleModels(): void {
+    this.workspaceStyleRegistry.clear();
+    this.workspaceStyleOrder = [];
+  }
+
+  public getWorkspaceStyleModelKeys(): string[] {
+    return [...this.workspaceStyleOrder];
+  }
+
+  public hasWorkspaceStyleModel(id: string): boolean {
+    return this.workspaceStyleRegistry.has(id);
+  }
+
   public reset(): void {
     this.clearBoardRenderModels();
     this.clearBoardBoundsModels();
@@ -3741,11 +4029,16 @@ export class BaseRuntime implements IRuntime {
     this.clearSignalPropagationModels();
     this.clearSignalColorModels();
     this.clearSignalActivityModels();
+    this.clearThemeModels();
+    this.clearColorPaletteModels();
+    this.clearComponentStyleModels();
+    this.clearWorkspaceStyleModels();
   }
 
   public destroy(): void {
     this.reset();
   }
+
 
   private static readonly VALID_PIN_MODES: PinMode[] = ['INPUT', 'OUTPUT', 'INPUT_PULLUP', 'INPUT_PULLDOWN', 'ANALOG', 'PWM'];
   private static readonly VALID_PULL_MODES: PullMode[] = ['NONE', 'UP', 'DOWN'];
@@ -7413,6 +7706,12 @@ export class BaseRuntime implements IRuntime {
     this.clearSignalColorModels();
     this.clearSignalActivityModels();
 
+    // Reset Phase 13B visual themes foundation registries
+    this.clearThemeModels();
+    this.clearColorPaletteModels();
+    this.clearComponentStyleModels();
+    this.clearWorkspaceStyleModels();
+
     // Reset Phase 8A.1 HAL state registry
     this.clearHALStates();
 
@@ -7663,6 +7962,12 @@ export class BaseRuntime implements IRuntime {
     this.clearSignalPropagationModels();
     this.clearSignalColorModels();
     this.clearSignalActivityModels();
+
+    // Reset Phase 13B visual themes foundation registries
+    this.clearThemeModels();
+    this.clearColorPaletteModels();
+    this.clearComponentStyleModels();
+    this.clearWorkspaceStyleModels();
 
     // Reset Phase 8A-8F hardware and ESP32 metadata registries
     this.clearHALStates();
@@ -8502,6 +8807,19 @@ export class BaseRuntime implements IRuntime {
       if (this.signalActivityRegistry.size > 0) {
         stageSnap.signalActivityModels = this.getSignalActivityModels();
       }
+      // Phase 13B: Attach visual themes foundation metadata to stage snapshot entry
+      if (this.themeRegistry.size > 0) {
+        stageSnap.themeModels = this.getThemeModels();
+      }
+      if (this.colorPaletteRegistry.size > 0) {
+        stageSnap.colorPaletteModels = this.getColorPaletteModels();
+      }
+      if (this.componentStyleRegistry.size > 0) {
+        stageSnap.componentStyleModels = this.getComponentStyleModels();
+      }
+      if (this.workspaceStyleRegistry.size > 0) {
+        stageSnap.workspaceStyleModels = this.getWorkspaceStyleModels();
+      }
       // Phase 7R: Attach connection metadata to stage snapshot entry
       if (this.connectionRegistry.size > 0) {
         stageSnap.connections = this.getConnections();
@@ -8762,6 +9080,20 @@ export class BaseRuntime implements IRuntime {
       }
       if (isStage && this.signalActivityRegistry.size > 0) {
         serializedTarget.signalActivityModels = this.getSignalActivityModels();
+      }
+
+      // Phase 13B: Serialize visual themes foundation metadata
+      if (isStage && this.themeRegistry.size > 0) {
+        serializedTarget.themeModels = this.getThemeModels();
+      }
+      if (isStage && this.colorPaletteRegistry.size > 0) {
+        serializedTarget.colorPaletteModels = this.getColorPaletteModels();
+      }
+      if (isStage && this.componentStyleRegistry.size > 0) {
+        serializedTarget.componentStyleModels = this.getComponentStyleModels();
+      }
+      if (isStage && this.workspaceStyleRegistry.size > 0) {
+        serializedTarget.workspaceStyleModels = this.getWorkspaceStyleModels();
       }
 
       // Phase 7W: Serialize board definitions & workspace boards
@@ -9318,6 +9650,28 @@ export class BaseRuntime implements IRuntime {
       if (Array.isArray(stageTarget.signalActivityModels)) {
         for (const act of stageTarget.signalActivityModels) {
           this.registerSignalActivityModel(JSON.parse(JSON.stringify(act)));
+        }
+      }
+
+      // Phase 13B: Restore visual themes foundation metadata from stage target
+      if (Array.isArray(stageTarget.themeModels)) {
+        for (const model of stageTarget.themeModels) {
+          this.registerThemeModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.colorPaletteModels)) {
+        for (const palette of stageTarget.colorPaletteModels) {
+          this.registerColorPaletteModel(JSON.parse(JSON.stringify(palette)));
+        }
+      }
+      if (Array.isArray(stageTarget.componentStyleModels)) {
+        for (const style of stageTarget.componentStyleModels) {
+          this.registerComponentStyleModel(JSON.parse(JSON.stringify(style)));
+        }
+      }
+      if (Array.isArray(stageTarget.workspaceStyleModels)) {
+        for (const ws of stageTarget.workspaceStyleModels) {
+          this.registerWorkspaceStyleModel(JSON.parse(JSON.stringify(ws)));
         }
       }
       // Phase 7W: Restore board definitions from stage target

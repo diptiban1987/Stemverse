@@ -507,6 +507,12 @@ export interface StageSyncState {
   signalPropagationModels?: SignalPropagationModel[];
   signalColorModels?: SignalColorModel[];
   signalActivityModels?: SignalActivityModel[];
+
+  // Phase 13B: Visual themes foundation metadata synchronization
+  themeModels?: ThemeModel[];
+  colorPaletteModels?: ColorPaletteModel[];
+  componentStyleModels?: ComponentStyleModel[];
+  workspaceStyleModels?: WorkspaceStyleModel[];
 }
 
 // ─── Phase 11B: Visual Interaction Engine ──────────────────
@@ -1121,6 +1127,12 @@ export interface SerializedTarget {
   signalPropagationModels?: SignalPropagationModel[];
   signalColorModels?: SignalColorModel[];
   signalActivityModels?: SignalActivityModel[];
+
+  // Phase 13B: Visual themes foundation metadata serialization
+  themeModels?: ThemeModel[];
+  colorPaletteModels?: ColorPaletteModel[];
+  componentStyleModels?: ComponentStyleModel[];
+  workspaceStyleModels?: WorkspaceStyleModel[];
 }
 
 export interface SerializedAssetManifest {
@@ -2419,4 +2431,52 @@ export interface SignalEffectSnapshot {
   signalPropagationModels: SignalPropagationModel[];
   signalColorModels: SignalColorModel[];
   signalActivityModels: SignalActivityModel[];
+}
+
+// ─── Phase 13B: Visual Themes Foundation ───────────────────
+
+export interface ThemeModel {
+  themeId: string;
+  themeName: string;
+  themeCategory: string;
+  themeVersion: string;
+  themeState: string;
+  visibilityState: VisibilityState;
+  futureRendererHints: Record<string, unknown>;
+}
+
+export interface ColorPaletteModel {
+  paletteId: string;
+  paletteName: string;
+  backgroundColors: Record<string, unknown>;
+  foregroundColors: Record<string, unknown>;
+  signalColors: Record<string, unknown>;
+  wireColors: Record<string, unknown>;
+  boardColors: Record<string, unknown>;
+  componentColors: Record<string, unknown>;
+  futureThemeHints: Record<string, unknown>;
+}
+
+export interface ComponentStyleModel {
+  styleId: string;
+  componentType: string;
+  styleMetadata: Record<string, unknown>;
+  interactionMetadata: Record<string, unknown>;
+  futureAnimationHints: Record<string, unknown>;
+}
+
+export interface WorkspaceStyleModel {
+  workspaceStyleId: string;
+  workspaceType: string;
+  workspaceColors: Record<string, unknown>;
+  workspaceGridMetadata: Record<string, unknown>;
+  workspaceLayoutMetadata: Record<string, unknown>;
+  futureThemeHints: Record<string, unknown>;
+}
+
+export interface ThemeSnapshot {
+  themeModels: ThemeModel[];
+  colorPaletteModels: ColorPaletteModel[];
+  componentStyleModels: ComponentStyleModel[];
+  workspaceStyleModels: WorkspaceStyleModel[];
 }

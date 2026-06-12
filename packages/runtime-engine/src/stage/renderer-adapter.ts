@@ -1,4 +1,4 @@
-import { StageSyncState, BubbleState, ActiveSoundTrigger, PenState, PenCommand, VariableWatcher, ListWatcher, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, RuntimeAssetState, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, RuntimeComponent, RuntimeConnection, WorkspaceComponentLayout, WireLayout, DevelopmentBoardDefinition, WorkspaceBoard, RenderMetadata, STEMVerseVisualState, STEMVerseVisualThemeState, ComponentVisualModel, WireVisualRegistryEntry, BoardVisualRegistryEntry, SignalVisualRegistryEntry, AnimationRegistryEntry, InteractionMetadata, BreadboardModel, BreadboardPositionModel, ComponentPlacementModel, BreadboardConnectionMetadata, RenderNodeModel, SceneGraphModel, ViewportModel, RenderPipelineModel, ComponentRenderModel, ComponentBoundsModel, ComponentLabelModel, ComponentPinRenderModel, WireRenderModel, WirePathModel, WireSegmentModel, WireAnchorModel, BoardRenderModel, BoardBoundsModel, BoardConnectorModel, BoardRegionModel, SignalEffectModel, SignalPropagationModel, SignalColorModel, SignalActivityModel } from '../types';
+import { StageSyncState, BubbleState, ActiveSoundTrigger, PenState, PenCommand, VariableWatcher, ListWatcher, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, RuntimeAssetState, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, RuntimeComponent, RuntimeConnection, WorkspaceComponentLayout, WireLayout, DevelopmentBoardDefinition, WorkspaceBoard, RenderMetadata, STEMVerseVisualState, STEMVerseVisualThemeState, ComponentVisualModel, WireVisualRegistryEntry, BoardVisualRegistryEntry, SignalVisualRegistryEntry, AnimationRegistryEntry, InteractionMetadata, BreadboardModel, BreadboardPositionModel, ComponentPlacementModel, BreadboardConnectionMetadata, RenderNodeModel, SceneGraphModel, ViewportModel, RenderPipelineModel, ComponentRenderModel, ComponentBoundsModel, ComponentLabelModel, ComponentPinRenderModel, WireRenderModel, WirePathModel, WireSegmentModel, WireAnchorModel, BoardRenderModel, BoardBoundsModel, BoardConnectorModel, BoardRegionModel, SignalEffectModel, SignalPropagationModel, SignalColorModel, SignalActivityModel, ThemeModel, ColorPaletteModel, ComponentStyleModel, WorkspaceStyleModel } from '../types';
 
 /**
  * Representation of individual target properties inside the renderer memory.
@@ -94,6 +94,12 @@ export interface IRenderTarget {
   signalPropagationModels?: SignalPropagationModel[];
   signalColorModels?: SignalColorModel[];
   signalActivityModels?: SignalActivityModel[];
+
+  // Phase 13B: Visual themes foundation metadata
+  themeModels?: ThemeModel[];
+  colorPaletteModels?: ColorPaletteModel[];
+  componentStyleModels?: ComponentStyleModel[];
+  workspaceStyleModels?: WorkspaceStyleModel[];
 }
 
 /**
@@ -287,6 +293,10 @@ export class InMemoryRendererAdapter implements IRendererAdapter {
         target.signalPropagationModels = snap.signalPropagationModels ? JSON.parse(JSON.stringify(snap.signalPropagationModels)) : undefined;
         target.signalColorModels = snap.signalColorModels ? JSON.parse(JSON.stringify(snap.signalColorModels)) : undefined;
         target.signalActivityModels = snap.signalActivityModels ? JSON.parse(JSON.stringify(snap.signalActivityModels)) : undefined;
+        target.themeModels = snap.themeModels ? JSON.parse(JSON.stringify(snap.themeModels)) : undefined;
+        target.colorPaletteModels = snap.colorPaletteModels ? JSON.parse(JSON.stringify(snap.colorPaletteModels)) : undefined;
+        target.componentStyleModels = snap.componentStyleModels ? JSON.parse(JSON.stringify(snap.componentStyleModels)) : undefined;
+        target.workspaceStyleModels = snap.workspaceStyleModels ? JSON.parse(JSON.stringify(snap.workspaceStyleModels)) : undefined;
       } else {
         target = {
           id: snap.targetId,
@@ -369,6 +379,10 @@ export class InMemoryRendererAdapter implements IRendererAdapter {
           signalPropagationModels: snap.signalPropagationModels ? JSON.parse(JSON.stringify(snap.signalPropagationModels)) : undefined,
           signalColorModels: snap.signalColorModels ? JSON.parse(JSON.stringify(snap.signalColorModels)) : undefined,
           signalActivityModels: snap.signalActivityModels ? JSON.parse(JSON.stringify(snap.signalActivityModels)) : undefined,
+          themeModels: snap.themeModels ? JSON.parse(JSON.stringify(snap.themeModels)) : undefined,
+          colorPaletteModels: snap.colorPaletteModels ? JSON.parse(JSON.stringify(snap.colorPaletteModels)) : undefined,
+          componentStyleModels: snap.componentStyleModels ? JSON.parse(JSON.stringify(snap.componentStyleModels)) : undefined,
+          workspaceStyleModels: snap.workspaceStyleModels ? JSON.parse(JSON.stringify(snap.workspaceStyleModels)) : undefined,
         };
         this.targets.set(snap.targetId, target);
       }

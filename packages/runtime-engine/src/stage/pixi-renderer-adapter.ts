@@ -1,5 +1,5 @@
 import { Application, Container, Graphics, Text } from 'pixi.js';
-import { StageSyncState, PenState, PenCommand, VariableWatcher, ListWatcher, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, RuntimeAssetState, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, RuntimeComponent, RuntimeConnection, WorkspaceComponentLayout, WireLayout, DevelopmentBoardDefinition, WorkspaceBoard, RenderMetadata, ComponentVisualModel, WireVisualRegistryEntry, BoardVisualRegistryEntry, SignalVisualRegistryEntry, AnimationRegistryEntry, InteractionMetadata, BreadboardModel, BreadboardPositionModel, ComponentPlacementModel, BreadboardConnectionMetadata, SignalEffectModel, SignalPropagationModel, SignalColorModel, SignalActivityModel } from '../types';
+import { StageSyncState, PenState, PenCommand, VariableWatcher, ListWatcher, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, RuntimeAssetState, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, RuntimeComponent, RuntimeConnection, WorkspaceComponentLayout, WireLayout, DevelopmentBoardDefinition, WorkspaceBoard, RenderMetadata, ComponentVisualModel, WireVisualRegistryEntry, BoardVisualRegistryEntry, SignalVisualRegistryEntry, AnimationRegistryEntry, InteractionMetadata, BreadboardModel, BreadboardPositionModel, ComponentPlacementModel, BreadboardConnectionMetadata, SignalEffectModel, SignalPropagationModel, SignalColorModel, SignalActivityModel, ThemeModel, ColorPaletteModel, ComponentStyleModel, WorkspaceStyleModel } from '../types';
 import { IRendererAdapter, IRenderTarget } from './renderer-adapter';
 
 /**
@@ -257,6 +257,10 @@ export class PixiRendererAdapter implements IRendererAdapter {
         target.signalPropagationModels = snap.signalPropagationModels ? JSON.parse(JSON.stringify(snap.signalPropagationModels)) : undefined;
         target.signalColorModels = snap.signalColorModels ? JSON.parse(JSON.stringify(snap.signalColorModels)) : undefined;
         target.signalActivityModels = snap.signalActivityModels ? JSON.parse(JSON.stringify(snap.signalActivityModels)) : undefined;
+        target.themeModels = snap.themeModels ? JSON.parse(JSON.stringify(snap.themeModels)) : undefined;
+        target.colorPaletteModels = snap.colorPaletteModels ? JSON.parse(JSON.stringify(snap.colorPaletteModels)) : undefined;
+        target.componentStyleModels = snap.componentStyleModels ? JSON.parse(JSON.stringify(snap.componentStyleModels)) : undefined;
+        target.workspaceStyleModels = snap.workspaceStyleModels ? JSON.parse(JSON.stringify(snap.workspaceStyleModels)) : undefined;
       } else {
         target = {
           id: snap.targetId,
@@ -339,6 +343,10 @@ export class PixiRendererAdapter implements IRendererAdapter {
           signalPropagationModels: snap.signalPropagationModels ? JSON.parse(JSON.stringify(snap.signalPropagationModels)) : undefined,
           signalColorModels: snap.signalColorModels ? JSON.parse(JSON.stringify(snap.signalColorModels)) : undefined,
           signalActivityModels: snap.signalActivityModels ? JSON.parse(JSON.stringify(snap.signalActivityModels)) : undefined,
+          themeModels: snap.themeModels ? JSON.parse(JSON.stringify(snap.themeModels)) : undefined,
+          colorPaletteModels: snap.colorPaletteModels ? JSON.parse(JSON.stringify(snap.colorPaletteModels)) : undefined,
+          componentStyleModels: snap.componentStyleModels ? JSON.parse(JSON.stringify(snap.componentStyleModels)) : undefined,
+          workspaceStyleModels: snap.workspaceStyleModels ? JSON.parse(JSON.stringify(snap.workspaceStyleModels)) : undefined,
         };
         this.targets.set(snap.targetId, target);
       }
