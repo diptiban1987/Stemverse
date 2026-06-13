@@ -43,6 +43,14 @@ export async function apiFetch<T>(
       ...headers,
     },
   });
+
+  // ── 401 Interceptor: redirect to login on unauthorized ──────
+  if (res.status === 401 && token) {
+    // Lazy import to avoid circular dependency
+    const { useAuthStore } = await import('./auth-store');
+    useAuthStore.getState().handleUnauthorized();
+  }
+
   return parseResponse<T>(res);
 }
 

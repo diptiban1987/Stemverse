@@ -15,7 +15,16 @@ interface AuthState {
   }) => void;
   clearSession: () => void;
   getValidAccessToken: () => Promise<string | null>;
+
+  /**
+   * Called when a 401 Unauthorized response is received.
+   * Clears the session, removes the cookie, and redirects to /login.
+   */
+  handleUnauthorized: () => void;
 }
+
+/** Flag to prevent multiple simultaneous redirects */
+let redirecting = false;
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -44,11 +53,45 @@ export const useAuthStore = create<AuthState>()(
           });
           return res.accessToken;
         } catch {
-          get().clearSession();
+          get().handleUnauthorized();
           return null;
+        }
+      },
+
+      handleUnauthorized: () => {
+        // Clear session state
+        get().clearSession();
+
+        // Remove the session cookie
+        if (typeof document !== 'undefined') {
+          document.cookie =
+            'stemverse-session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+        }
+
+        // Redirect to login (client-side only, debounced)
+        if (typeof window !== 'undefined' && !redirecting) {
+          // Don't redirect if already on login/register pages
+          const path = window.location.pathname;
+          if (path === '/login' || path === '/register') return;
+
+          redirecting = true;
+          // Encode the current URL so we can return after login
+          const returnUrl = encodeURIComponent(
+            window.location.pathname + window.location.search,
+          );
+          window.location.href = `/login?expired=1&returnUrl=${returnUrl}`;
         }
       },
     }),
     { name: 'stemverse-auth' },
   ),
 );
+
+/**
+ * Reset the redirect guard — used after a successful login
+ * so that future 401s can redirect again.
+ */
+export function resetRedirectGuard(): void {
+  redirecting = false;
+}
+

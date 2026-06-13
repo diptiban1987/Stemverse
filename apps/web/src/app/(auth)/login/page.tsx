@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { FormEvent, Suspense, useState } from 'react';
 import { Button, Card, CardContent, CardHeader, CardTitle, Input } from '@stemverse/ui';
 import { authApi } from '@/lib/api';
-import { useAuthStore } from '@/lib/auth-store';
+import { useAuthStore, resetRedirectGuard } from '@/lib/auth-store';
 
 function LoginForm() {
   const router = useRouter();
@@ -23,8 +23,11 @@ function LoginForm() {
     try {
       const res = await authApi.login({ email, password });
       setSession(res);
+      resetRedirectGuard();
       document.cookie = 'stemverse-session=1; path=/; max-age=604800; SameSite=Lax';
-      const redirect = searchParams.get('redirect') ?? '/dashboard';
+      // Redirect back to original page if coming from a session expiry
+      const returnUrl = searchParams.get('returnUrl');
+      const redirect = returnUrl ?? searchParams.get('redirect') ?? '/dashboard';
       router.push(redirect);
     } catch (err) {
       if (err instanceof TypeError && err.message === 'Failed to fetch') {
@@ -43,6 +46,11 @@ function LoginForm() {
         <CardTitle className="font-display text-2xl">Sign in to STEMVerse</CardTitle>
       </CardHeader>
       <CardContent>
+        {searchParams.get('expired') === '1' && (
+          <div className="mb-4 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-400">
+            Your session has expired. Please sign in again.
+          </div>
+        )}
         <form onSubmit={onSubmit} className="space-y-4">
           <Input
             label="Email"
