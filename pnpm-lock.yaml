@@ -26,6 +26,9 @@ importers:
       '@stemverse/blockly-engine':
         specifier: workspace:*
         version: link:../../packages/blockly-engine
+      '@stemverse/runtime-engine':
+        specifier: workspace:*
+        version: link:../../packages/runtime-engine
       '@stemverse/simulator-engine':
         specifier: workspace:*
         version: link:../../packages/simulator-engine

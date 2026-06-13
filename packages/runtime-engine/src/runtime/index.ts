@@ -11,7 +11,577 @@ import { validateAnimationPlaybackModel, validateTimelineModel, validateKeyframe
 import { validateRenderRuntimeModel, validateRenderPassModel, validateRenderLayerRuntimeModel, validateRenderQueueModel, validateFrameMetadataModel } from '../stage/render-runtime';
 import { validateRenderExecutionModel, validateRenderInstructionModel, validateRenderScheduleModel } from '../stage/render-execution';
 import { validateVisualNodeModel, validateSceneTreeModel, validateLayerCompositionModel, validateVisualCompositionModel } from '../stage/visible-rendering';
-import { RenderExecutionModel, RenderInstructionModel, RenderScheduleModel, VisualNodeModel, SceneTreeModel, LayerCompositionModel, VisualCompositionModel } from '../types';
+import { validateSceneAssemblyModel, validateVisualAssemblyModel, validateBoardAssemblyModel, validateComponentAssemblyModel, validateWireAssemblyModel, validateSignalAssemblyModel } from '../stage/scene-assembly';
+import { RenderExecutionModel, RenderInstructionModel, RenderScheduleModel, VisualNodeModel, SceneTreeModel, LayerCompositionModel, VisualCompositionModel, SceneAssemblyModel, VisualAssemblyModel, BoardAssemblyModel, ComponentAssemblyModel, WireAssemblyModel, SignalAssemblyModel } from '../types';
+import {
+  validateVisualObjectModel,
+  validateBoardObjectModel,
+  validateComponentObjectModel,
+  validateWireObjectModel,
+  validateSignalObjectModel,
+  validateThemeObjectModel,
+  validateAnimationObjectModel,
+} from '../stage/visible-object-runtime';
+import {
+  validateElectricalNodeModel,
+  validateElectricalNetModel,
+  validateElectricalConnectionModel,
+  validateBreadboardRailModel,
+  validateBreadboardRowModel,
+  solveConnectivity,
+} from '../stage/electrical-connectivity';
+import {
+  VisualObjectModel,
+  BoardObjectModel,
+  ComponentObjectModel,
+  WireObjectModel,
+  SignalObjectModel,
+  ThemeObjectModel,
+  AnimationObjectModel,
+  ElectricalNodeModel,
+  ElectricalNetModel,
+  ElectricalConnectionModel,
+  BreadboardRailModel,
+  BreadboardRowModel,
+  SignalPacketModel,
+  SignalPropagationRuntimeModel,
+  PropagationPathModel,
+  TimingModel,
+  VirtualObjectModel,
+  ObstacleModel,
+  SensorRuntimeModel,
+  DistanceMeasurementModel,
+  SensorInteractionModel,
+  EnvironmentStateModel,
+  InteractiveSensorSnapshot,
+} from '../types';
+import {
+  VirtualESP32Model,
+  VirtualGPIOPinModel,
+  VirtualPWMChannelModel,
+  VirtualTimerModel,
+  VirtualInterruptModel,
+  GPIOPinMode,
+  GPIOPinState,
+  InterruptEdge,
+} from '../types';
+import {
+  validateSignalPacketModel,
+  validateSignalPropagationRuntimeModel,
+  validatePropagationPathModel,
+  validateTimingModel,
+  tickSimulation,
+  stepSimulation,
+  generateDefaultPaths,
+  validateVirtualObjectModel,
+  validateObstacleModel,
+  validateSensorRuntimeModel,
+  validateDistanceMeasurementModel,
+  validateSensorInteractionModel,
+  validateEnvironmentStateModel,
+  processSensorInteractions,
+} from '../stage';
+
+
+import {
+  WorkspaceRuntimeModel,
+  WorkspaceCameraModel,
+  WorkspaceSelectionModel,
+  WorkspaceObjectModel,
+  WorkspaceInteractionModel,
+  WorkspaceGridModel,
+  WorkspaceRuntimeSnapshot,
+} from '../types';
+import {
+  validateWorkspaceRuntimeModel,
+  validateWorkspaceCameraModel,
+  validateWorkspaceSelectionModel,
+  validateWorkspaceObjectModel,
+  validateWorkspaceInteractionModel,
+  validateWorkspaceGridModel,
+  ComponentAssetLibrary,
+  validateComponentAssetDefinition,
+  validateBreadboardVisualModel,
+  validateDuplicateBreadboardVisualIds,
+  generateBreadboardVisual,
+  validateWireGeometryModel,
+  validateWireRouteModel,
+  validateWireAnchorModel,
+  validateDuplicateWireAnchorIds,
+  validateDuplicateWireRouteIds,
+  WireRoutingEngine,
+} from '../stage';
+import {
+  ComponentAssetDefinition,
+  BreadboardVisualModel,
+  BreadboardHoleVisual,
+  BreadboardRailVisual,
+  BreadboardLabelVisual,
+  WireGeometryModel,
+  WireRouteModel,
+  WireRoutingSnapshot,
+} from '../types';
+import {
+  ComponentSelectionModel,
+  SelectionBoundsModel,
+  SelectionStateModel,
+  PinOccupancyModel,
+  WirePlacementModel,
+  WiringSessionModel,
+  WirePreviewModel,
+  WireConnectionModel,
+  PinConnectionModel,
+  InteractiveWiringSnapshot,
+  VoltageVisualizationModel,
+  CurrentVisualizationModel,
+  LogicStateVisualizationModel,
+  ActivityVisualizationModel,
+  SignalFlowModel,
+  LiveElectricalVisualizationSnapshot,
+} from '../types';
+import {
+  validateComponentSelectionModel,
+  validateSelectionBoundsModel,
+  validateSelectionStateModel,
+  validatePinOccupancyModel,
+  validateWirePlacementModel,
+  BreadboardSnapEngine,
+  rotatePoint,
+} from '../stage/interactive-placement-runtime';
+import {
+  validateWiringSessionModel,
+  validateWirePreviewModel,
+  validateWireConnectionModel,
+  validatePinConnectionModel,
+  checkDuplicateWireConnection,
+  createDefaultWiringSessionModel,
+  createDefaultWirePreviewModel,
+  createDefaultWireConnectionModel,
+  createDefaultPinConnectionModel,
+} from '../stage/interactive-wiring-runtime';
+import {
+  validateVoltageVisualizationModel,
+  validateCurrentVisualizationModel,
+  validateLogicStateVisualizationModel,
+  validateActivityVisualizationModel,
+  validateSignalFlowModel,
+  createDefaultVoltageVisualizationModel,
+  createDefaultCurrentVisualizationModel,
+  createDefaultLogicStateVisualizationModel,
+  createDefaultActivityVisualizationModel,
+  createDefaultSignalFlowModel,
+  resolveGlowColor,
+} from '../stage/live-electrical-visualization-runtime';
+import {
+  validateVirtualESP32Model,
+  validateVirtualGPIOPinModel,
+  validateVirtualPWMChannelModel,
+  validateVirtualTimerModel,
+  validateVirtualInterruptModel,
+  createDefaultVirtualESP32Model,
+  createDefaultVirtualGPIOPinModel,
+  createDefaultVirtualPWMChannelModel,
+  createDefaultVirtualTimerModel,
+  createDefaultVirtualInterruptModel,
+  applyPinMode,
+  applyDigitalWrite,
+  readDigitalPin,
+  togglePin,
+  shouldTriggerInterrupt,
+  applyLedcAttachPin,
+  applyLedcWrite,
+  computeNormalizedDuty,
+  advanceClock,
+  tickTimers,
+} from '../stage/virtual-esp32-execution-runtime';
+import {
+  BlocklyExecutionModel,
+  BlocklyProgramModel,
+  BlocklyExecutionContextModel,
+  BlocklyExecutionSnapshot,
+  BlocklyInstructionModel,
+} from '../types';
+import {
+  createDefaultBlocklyExecutionModel,
+  createDefaultBlocklyProgramModel,
+  createDefaultBlocklyExecutionContextModel,
+  createDefaultBlocklyInstructionModel,
+  validateBlocklyExecutionModel,
+  validateBlocklyProgramModel,
+  validateBlocklyExecutionContextModel,
+  executeInstruction,
+  stepExecution,
+  runSetup,
+  advanceLoop,
+  tickDelay,
+  resetExecution,
+  pauseExecution,
+  resumeExecution,
+  stopExecution as stopBlocklyExecution,
+  BlocklyRuntimeBridge,
+} from '../stage/blockly-execution-runtime';
+import {
+  HCSR04Model,
+  UltrasonicBeamModel,
+  EchoPulseModel,
+  DistanceTargetModel,
+  UltrasonicEnvironmentModel,
+  UltrasonicSimulationSnapshot,
+} from '../types';
+import {
+  validateHCSR04Model,
+  validateUltrasonicBeamModel,
+  validateEchoPulseModel,
+  validateDistanceTargetModel,
+  validateUltrasonicEnvironmentModel,
+  createDefaultHCSR04Model,
+  createDefaultUltrasonicBeamModel,
+  createDefaultEchoPulseModel,
+  createDefaultDistanceTargetModel,
+  createDefaultUltrasonicEnvironmentModel,
+  simulateMeasurement,
+  simulatePulseIn,
+} from '../stage/hcsr04-runtime';
+import {
+  ServoMotorModel,
+  ServoPositionModel,
+  ServoMotionModel,
+  ServoConstraintModel,
+  ServoAnimationModel,
+  ServoSimulationSnapshot,
+} from '../types';
+import {
+  validateServoMotorModel,
+  validateServoPositionModel,
+  validateServoMotionModel,
+  validateServoConstraintModel,
+  validateServoAnimationModel,
+  createDefaultServoMotorModel,
+  createDefaultServoPositionModel,
+  createDefaultServoMotionModel,
+  createDefaultServoConstraintModel,
+  createDefaultServoAnimationModel,
+  attachServo as attachServoFn,
+  detachServo as detachServoFn,
+  writeAngle as writeAngleFn,
+  readAngle as readAngleFn,
+  computeMotion,
+  stepMotion,
+  simulateServoFromPWM,
+  simulateServoStep,
+  resetServo as resetServoFn,
+} from '../stage/servo-runtime';
+import {
+  LCDDisplayModel,
+  LCDCursorModel,
+  LCDCharacterModel,
+  OLEDDisplayModel,
+  OLEDBufferModel,
+  OLEDPixelModel,
+  DisplayAnimationModel,
+  DisplaySimulationSnapshot,
+} from '../types';
+import {
+  validateLCDDisplayModel,
+  validateLCDCursorModel,
+  validateLCDCharacterModel,
+  validateOLEDDisplayModel,
+  validateOLEDBufferModel,
+  validateOLEDPixelModel,
+  validateDisplayAnimationModel,
+  createDefaultLCDDisplayModel,
+  createDefaultLCDCursorModel,
+  createDefaultLCDCharacterModel,
+  createDefaultOLEDDisplayModel,
+  createDefaultOLEDBufferModel,
+  createDefaultOLEDPixelModel,
+  createDefaultDisplayAnimationModel,
+  lcdBegin,
+  lcdClear,
+  lcdSetCursor,
+  lcdPrint,
+  oledBegin,
+  oledClearDisplay,
+  oledDrawPixel as oledDrawPixelFn,
+  oledDrawLine as oledDrawLineFn,
+  oledDrawRect as oledDrawRectFn,
+  oledFillRect as oledFillRectFn,
+  oledDrawCircle as oledDrawCircleFn,
+  oledDrawText as oledDrawTextFn,
+  oledDisplay as oledDisplayFn,
+} from '../stage/display-runtime';
+import {
+  SerialPortModel,
+  SerialMessageModel,
+  SerialBufferModel,
+  SerialCommandModel,
+  SerialSessionModel,
+  SerialMonitorSnapshot,
+} from '../types';
+import {
+  validateSerialPortModel,
+  validateSerialMessageModel,
+  validateSerialBufferModel,
+  validateSerialCommandModel,
+  validateSerialSessionModel,
+  createDefaultSerialPortModel,
+  createDefaultSerialMessageModel,
+  createDefaultSerialBufferModel,
+  createDefaultSerialCommandModel,
+  createDefaultSerialSessionModel,
+  serialBegin as serialBeginFn,
+  serialPrint as serialPrintFn,
+  serialPrintln as serialPrintlnFn,
+  serialWrite as serialWriteFn,
+  serialRead as serialReadFn,
+  serialAvailable as serialAvailableFn,
+  serialFlush as serialFlushFn,
+  serialClear as serialClearFn,
+  serialFeedInput as serialFeedInputFn,
+  trimMessages as trimMessagesFn,
+  startSession as startSessionFn,
+  endSession as endSessionFn,
+  getPortOutputText,
+} from '../stage/serial-monitor-runtime';
+import {
+  LogicAnalyzerChannelModel,
+  LogicCaptureModel,
+  LogicSampleModel,
+  OscilloscopeChannelModel,
+  OscilloscopeCaptureModel,
+  WaveformBufferModel,
+  LogicAnalyzerSnapshot,
+} from '../types';
+import {
+  validateLogicAnalyzerChannelModel,
+  validateLogicCaptureModel,
+  validateLogicSampleModel,
+  validateOscilloscopeChannelModel,
+  validateOscilloscopeCaptureModel,
+  validateWaveformBufferModel,
+  createDefaultLogicAnalyzerChannelModel,
+  createDefaultLogicCaptureModel,
+  createDefaultLogicSampleModel,
+  createDefaultOscilloscopeChannelModel,
+  createDefaultOscilloscopeCaptureModel,
+  createDefaultWaveformBufferModel,
+  logicCreateChannel as logicCreateChannelFn,
+  logicArmCapture as logicArmCaptureFn,
+  logicStartCapture as logicStartCaptureFn,
+  logicStopCapture as logicStopCaptureFn,
+  logicClearCapture as logicClearCaptureFn,
+  logicExportCapture as logicExportCaptureFn,
+  logicRecordSample as logicRecordSampleFn,
+  logicRecordDigitalWrite as logicRecordDigitalWriteFn,
+  sampleVoltage as sampleVoltageFn,
+  oscilloscopeStartCapture as oscilloscopeStartCaptureFn,
+  oscilloscopeStopCapture as oscilloscopeStopCaptureFn,
+  clearWaveform as clearWaveformFn,
+  exportWaveform as exportWaveformFn,
+  pwmDutyToVoltage as pwmDutyToVoltageFn,
+} from '../stage/logic-analyzer-runtime';
+import { BREADBOARD_830_ASSET, BREADBOARD_400_ASSET, BREADBOARD_MINI_ASSET } from '../stage/component-asset-definitions';
+import {
+  RobotPhysicsModel,
+  RobotPoseModel,
+  WheelRuntimeModel,
+  MotionCommandModel,
+  CollisionModel,
+  PhysicsWorldModel,
+  PhysicsSnapshot,
+} from '../types';
+import {
+  validateRobotPhysicsModel,
+  validateRobotPoseModel,
+  validateWheelRuntimeModel,
+  validateMotionCommandModel,
+  validateCollisionModel,
+  validatePhysicsWorldModel,
+  createDefaultRobotPhysicsModel,
+  createDefaultRobotPoseModel,
+  createDefaultWheelRuntimeModel,
+  createDefaultMotionCommandModel,
+  createDefaultCollisionModel,
+  createDefaultPhysicsWorldModel,
+  applyMotionCommand as applyMotionCommandFn,
+  stepPhysics as stepPhysicsFn,
+  detectCollisions as detectCollisionsFn,
+  computeRobotSensorDistance as computeRobotSensorDistanceFn,
+  computeRobotSensorDistanceWithServo as computeRobotSensorDistanceWithServoFn,
+  getRobotAABB,
+} from '../stage/robotics-physics-runtime';
+import {
+  DifferentialDriveRobotModel,
+  WheelEncoderModel,
+  MotorDriverModel,
+  RobotCommandQueueModel,
+  RobotPathModel,
+  RobotTelemetryModel,
+  DifferentialDriveSnapshot,
+  MotorDirection,
+  RobotDriveState,
+  EncoderState,
+} from '../types';
+import {
+  validateDifferentialDriveRobotModel,
+  validateWheelEncoderModel,
+  validateMotorDriverModel,
+  validateRobotCommandQueueModel,
+  validateRobotPathModel,
+  validateRobotTelemetryModel,
+  createDefaultDifferentialDriveRobotModel,
+  createDefaultWheelEncoderModel,
+  createDefaultMotorDriverModel,
+  createDefaultRobotCommandQueueModel,
+  createDefaultRobotPathModel,
+  createDefaultRobotTelemetryModel,
+  setMotorSpeed as setMotorSpeedFn,
+  setMotorDirection as setMotorDirectionFn,
+  stopMotor as stopMotorFn,
+  simulateDriverOutput as simulateDriverOutputFn,
+  simulateDriveStep as simulateDriveStepFn,
+  enqueueCommand as enqueueCommandFn,
+  executeNextCommand as executeNextCommandFn,
+  cancelQueue as cancelQueueFn,
+  isQueueComplete as isQueueCompleteFn,
+  recordWaypoint as recordWaypointFn,
+  updateTelemetry as updateTelemetryFn,
+  getTelemetrySummary as getTelemetrySummaryFn,
+  resetEncoder as resetEncoderFn,
+} from '../stage/differential-drive-runtime';
+import {
+  LineTrackModel,
+  LineSensorModel,
+  TrackSegmentModel,
+  TrackIntersectionModel,
+  TrackMarkerModel,
+  SensorReadingModel,
+  LineFollowingSnapshot,
+  TrackColor,
+  SensorState,
+  TrackType,
+} from '../types';
+import {
+  ObstacleAvoidanceModel,
+  AvoidanceRuleModel,
+  ObstacleDetectionModel,
+  NavigationDecisionModel,
+  SafeZoneModel,
+  CollisionPredictionModel,
+  ObstacleAvoidanceSnapshot,
+  AvoidanceState,
+  ObstacleSeverity,
+  NavigationAction,
+} from '../types';
+import {
+  validateLineTrackModel,
+  validateLineSensorModel,
+  validateTrackSegmentModel,
+  validateTrackIntersectionModel,
+  validateTrackMarkerModel,
+  validateSensorReadingModel,
+  createDefaultLineTrackModel,
+  createDefaultLineSensorModel,
+  createDefaultTrackSegmentModel,
+  createDefaultTrackIntersectionModel,
+  createDefaultTrackMarkerModel,
+  createDefaultSensorReadingModel,
+  readLineSensor as readLineSensorFn,
+  readAllLineSensors as readAllLineSensorsFn,
+  sampleTrack as sampleTrackFn,
+  calibrateAllSensors as calibrateAllSensorsFn,
+  calibrateSensor as calibrateSensorFn,
+  calculateSegmentLength as calculateSegmentLengthFn,
+} from '../stage/line-following-runtime';
+import {
+  validateObstacleAvoidanceModel,
+  validateAvoidanceRuleModel,
+  validateObstacleDetectionModel,
+  validateNavigationDecisionModel,
+  validateSafeZoneModel,
+  validateCollisionPredictionModel,
+  createDefaultObstacleAvoidanceModel,
+  createDefaultAvoidanceRuleModel,
+  createDefaultObstacleDetectionModel,
+  createDefaultNavigationDecisionModel,
+  createDefaultSafeZoneModel,
+  createDefaultCollisionPredictionModel,
+  obstacleDetected as obstacleDetectedFn,
+  getObstacleDistance as getObstacleDistanceFn,
+  avoidObstacle as avoidObstacleFn,
+  decideNavigationAction as decideNavigationActionFn,
+  detectObstacleInZone as detectObstacleInZoneFn,
+  predictTimeToCollision as predictTimeToCollisionFn,
+} from '../stage/obstacle-avoidance-runtime';
+import {
+  ComponentTextureModel,
+  TextureAtlasModel,
+  TextureCacheModel,
+  TextureMetadataModel,
+  RenderPerformanceModel,
+  ViewportCullingModel,
+  ObjectPoolModel,
+  DirtyRectModel,
+  SpatialIndexModel,
+  RenderBatchModel,
+  CadGridModel,
+  DebugOverlayModel,
+  StartupSceneModel,
+  PinRenderStateModel,
+  HighFidelityRendererSnapshot,
+  UndoHistoryModel,
+  CameraGestureModel,
+  ConnectionValidationModel,
+  ConnectionWarningModel,
+  PaletteComponentModel,
+  PaletteCategoryModel,
+  PaletteStateModel,
+  WorkspaceToolModel,
+  PinInspectorModel,
+} from '../types';
+import {
+  validateComponentTextureModel,
+  validateTextureAtlasModel,
+  validateTextureCacheModel,
+  validateTextureMetadataModel,
+  validateRenderPerformanceModel,
+  validateViewportCullingModel,
+  validateObjectPoolModel,
+  validateDirtyRectModel,
+  validateSpatialIndexModel,
+  validateRenderBatchModel,
+  validateCadGridModel,
+  validateDebugOverlayModel,
+  validateStartupSceneModel,
+  validatePinRenderStateModel,
+  createDefaultComponentTextureModel,
+  createDefaultTextureAtlasModel,
+  createDefaultTextureCacheModel,
+  createDefaultTextureMetadataModel,
+  createDefaultRenderPerformanceModel,
+  createDefaultViewportCullingModel,
+  createDefaultObjectPoolModel,
+  createDefaultDirtyRectModel,
+  createDefaultSpatialIndexModel,
+  createDefaultRenderBatchModel,
+  createDefaultCadGridModel,
+  createDefaultDebugOverlayModel,
+  createDefaultStartupSceneModel,
+  createDefaultPinRenderStateModel,
+} from '../stage/high-fidelity-renderer-runtime';
+
+import {
+  validateUndoHistoryModel,
+  validateCameraGestureModel,
+  validateConnectionValidationModel,
+  validateConnectionWarningModel,
+  validatePaletteComponentModel,
+  validatePaletteCategoryModel,
+  validatePaletteStateModel,
+  validateWorkspaceToolModel,
+  validatePinInspectorModel,
+} from '../stage/simulator-ui-runtime';
+
 
 /**
  * Concrete runtime implementation with minimal AST execution.
@@ -44,6 +614,23 @@ export class BaseRuntime implements IRuntime {
   public readonly costumeRegistry = new Map<string, CostumeAsset>();
   public readonly soundRegistry = new Map<string, SoundAsset>();
   public readonly backdropRegistry = new Map<string, BackdropAsset>();
+
+  // Phase 18B Component Asset Library
+  public readonly componentAssetLibrary = new ComponentAssetLibrary();
+
+  // Phase 18C: Breadboard Visual Rendering
+  private breadboardVisualRegistry = new Map<string, BreadboardVisualModel>();
+  private breadboardVisualOrderList: string[] = [];
+
+  // Phase 18D: Wire Rendering Engine registries
+  private wireGeometryRegistry = new Map<string, WireGeometryModel>();
+  private wireGeometryOrderList: string[] = [];
+
+  private wireRouteRegistry = new Map<string, WireRouteModel>();
+  private wireRouteOrderList: string[] = [];
+
+  private wireRoutingAnchorRegistry = new Map<string, WireAnchorModel>();
+  private wireRoutingAnchorOrderList: string[] = [];
 
   // Phase 7M Asset loading state registry
   private assetStates = new Map<string, RuntimeAssetState>();
@@ -394,6 +981,311 @@ export class BaseRuntime implements IRuntime {
   private visualCompositionRegistry = new Map<string, VisualCompositionModel>();
   private visualCompositionOrder: string[] = [];
 
+  // Phase 15B Renderer Scene Assembly Foundation registries
+  private sceneAssemblyRegistry = new Map<string, SceneAssemblyModel>();
+  private sceneAssemblyOrder: string[] = [];
+  private visualAssemblyRegistry = new Map<string, VisualAssemblyModel>();
+  private visualAssemblyOrder: string[] = [];
+  private boardAssemblyRegistry = new Map<string, BoardAssemblyModel>();
+  private boardAssemblyOrder: string[] = [];
+  private componentAssemblyRegistry = new Map<string, ComponentAssemblyModel>();
+  private componentAssemblyOrder: string[] = [];
+  private wireAssemblyRegistry = new Map<string, WireAssemblyModel>();
+  private wireAssemblyOrder: string[] = [];
+  private signalAssemblyRegistry = new Map<string, SignalAssemblyModel>();
+  private signalAssemblyOrder: string[] = [];
+
+  // Phase 16A Visible Object Runtime Foundation registries
+  private visualObjectRegistry = new Map<string, VisualObjectModel>();
+  private visualObjectOrder: string[] = [];
+  private boardObjectRegistry = new Map<string, BoardObjectModel>();
+  private boardObjectOrder: string[] = [];
+  private componentObjectRegistry = new Map<string, ComponentObjectModel>();
+  private componentObjectOrder: string[] = [];
+  private wireObjectRegistry = new Map<string, WireObjectModel>();
+  private wireObjectOrder: string[] = [];
+  private signalObjectRegistry = new Map<string, SignalObjectModel>();
+  private signalObjectOrder: string[] = [];
+  private themeObjectRegistry = new Map<string, ThemeObjectModel>();
+  private themeObjectOrder: string[] = [];
+  private animationObjectRegistry = new Map<string, AnimationObjectModel>();
+  private animationObjectOrder: string[] = [];
+
+  // Phase 17A Electrical Connectivity Foundation registries
+  private electricalNodeRegistry = new Map<string, ElectricalNodeModel>();
+  private electricalNodeOrder: string[] = [];
+  private electricalNetRegistry = new Map<string, ElectricalNetModel>();
+  private electricalNetOrder: string[] = [];
+  private electricalConnectionRegistry = new Map<string, ElectricalConnectionModel>();
+  private electricalConnectionOrder: string[] = [];
+  private breadboardRailRegistry = new Map<string, BreadboardRailModel>();
+  private breadboardRailOrder: string[] = [];
+  private breadboardRowRegistry = new Map<string, BreadboardRowModel>();
+  private breadboardRowOrder: string[] = [];
+
+  // Phase 17B: Signal Propagation Runtime Foundation registries
+  private signalPacketRegistry = new Map<string, SignalPacketModel>();
+  private signalPacketOrder: string[] = [];
+  private signalPropagationRuntimeRegistry = new Map<string, SignalPropagationRuntimeModel>();
+  private signalPropagationRuntimeOrder: string[] = [];
+  private propagationPathRegistry = new Map<string, PropagationPathModel>();
+  private propagationPathOrder: string[] = [];
+  private timingModelRegistry = new Map<string, TimingModel>();
+  private timingModelOrder: string[] = [];
+
+  // Phase 17C: Interactive Sensor Runtime Foundation registries
+  private virtualObjectRegistry = new Map<string, VirtualObjectModel>();
+  private virtualObjectOrder: string[] = [];
+  private obstacleRegistry = new Map<string, ObstacleModel>();
+  private obstacleOrder: string[] = [];
+  private sensorRuntimeRegistry = new Map<string, SensorRuntimeModel>();
+  private sensorRuntimeOrder: string[] = [];
+  private distanceMeasurementRegistry = new Map<string, DistanceMeasurementModel>();
+  private distanceMeasurementOrder: string[] = [];
+  private sensorInteractionRegistry = new Map<string, SensorInteractionModel>();
+  private sensorInteractionOrder: string[] = [];
+  private environmentStateRegistry = new Map<string, EnvironmentStateModel>();
+  private environmentStateOrder: string[] = [];
+
+  // Phase 18A: Visible Simulator Workspace Foundation registries
+  private workspaceRuntimeRegistry = new Map<string, WorkspaceRuntimeModel>();
+  private workspaceRuntimeOrder: string[] = [];
+  private workspaceCameraRegistry = new Map<string, WorkspaceCameraModel>();
+  private workspaceCameraOrder: string[] = [];
+  private workspaceSelectionRegistry = new Map<string, WorkspaceSelectionModel>();
+  private workspaceSelectionOrder: string[] = [];
+  private workspaceObjectRegistry = new Map<string, WorkspaceObjectModel>();
+  private workspaceObjectOrder: string[] = [];
+  private workspaceInteractionRegistry = new Map<string, WorkspaceInteractionModel>();
+  private workspaceInteractionOrder: string[] = [];
+  private workspaceGridRegistry = new Map<string, WorkspaceGridModel>();
+  private workspaceGridOrder: string[] = [];
+
+  // Phase 20A: Interactive Component Placement & Wiring Foundation registries
+  private componentSelectionRegistry = new Map<string, ComponentSelectionModel>();
+  private componentSelectionOrder: string[] = [];
+  private selectionBoundsRegistry = new Map<string, SelectionBoundsModel>();
+  private selectionBoundsOrder: string[] = [];
+  private selectionStateRegistry = new Map<string, SelectionStateModel>();
+  private selectionStateOrder: string[] = [];
+  private pinOccupancyRegistry = new Map<string, PinOccupancyModel>();
+  private pinOccupancyOrder: string[] = [];
+  private wirePlacementRegistry = new Map<string, WirePlacementModel>();
+  private wirePlacementOrder: string[] = [];
+
+  // Phase 20B: Interactive Wiring System Foundation registries
+  private wiringSessionRegistry = new Map<string, WiringSessionModel>();
+  private wiringSessionOrder: string[] = [];
+  private wirePreviewRegistry = new Map<string, WirePreviewModel>();
+  private wirePreviewOrder: string[] = [];
+  private wireConnectionRegistry = new Map<string, WireConnectionModel>();
+  private wireConnectionOrder: string[] = [];
+  private pinConnectionRegistry = new Map<string, PinConnectionModel>();
+  private pinConnectionOrder: string[] = [];
+
+  // Phase 20C: Live Electrical Visualization Foundation registries
+  private voltageVizRegistry = new Map<string, VoltageVisualizationModel>();
+  private voltageVizOrder: string[] = [];
+  private currentVizRegistry = new Map<string, CurrentVisualizationModel>();
+  private currentVizOrder: string[] = [];
+  private logicVizRegistry = new Map<string, LogicStateVisualizationModel>();
+  private logicVizOrder: string[] = [];
+  private activityVizRegistry = new Map<string, ActivityVisualizationModel>();
+  private activityVizOrder: string[] = [];
+  private signalFlowRegistry = new Map<string, SignalFlowModel>();
+  private signalFlowOrder: string[] = [];
+
+  // Phase 21A: Virtual ESP32 Execution Runtime registries
+  private esp32VirtualRegistry = new Map<string, VirtualESP32Model>();
+  private esp32VirtualOrder: string[] = [];
+  private gpioPinRegistry = new Map<string, VirtualGPIOPinModel>();
+  private gpioPinOrder: string[] = [];
+  private pwmChannelRegistry = new Map<string, VirtualPWMChannelModel>();
+  private pwmChannelOrder: string[] = [];
+  private virtualTimerRegistry = new Map<string, VirtualTimerModel>();
+  private virtualTimerOrder: string[] = [];
+  private virtualInterruptRegistry = new Map<string, VirtualInterruptModel>();
+  private virtualInterruptOrder: string[] = [];
+
+  // Phase 21B: Blockly → Virtual ESP32 Execution Bridge registries
+  private blocklyExecutionRegistry = new Map<string, BlocklyExecutionModel>();
+  private blocklyExecutionOrder: string[] = [];
+  private blocklyProgramRegistry = new Map<string, BlocklyProgramModel>();
+  private blocklyProgramOrder: string[] = [];
+  private blocklyContextRegistry = new Map<string, BlocklyExecutionContextModel>();
+  private blocklyContextOrder: string[] = [];
+
+  // Phase 22A: HC-SR04 Virtual Ultrasonic Sensor Simulation registries
+  private hcsr04Registry = new Map<string, HCSR04Model>();
+  private hcsr04Order: string[] = [];
+  private ultrasonicBeamRegistry = new Map<string, UltrasonicBeamModel>();
+  private ultrasonicBeamOrder: string[] = [];
+  private echoPulseRegistry = new Map<string, EchoPulseModel>();
+  private echoPulseOrder: string[] = [];
+  private distanceTargetRegistry = new Map<string, DistanceTargetModel>();
+  private distanceTargetOrder: string[] = [];
+  private ultrasonicEnvironmentRegistry = new Map<string, UltrasonicEnvironmentModel>();
+  private ultrasonicEnvironmentOrder: string[] = [];
+
+  // Phase 22B: SG90 Servo Motor Virtual Simulation registries
+  private servoMotorRegistry = new Map<string, ServoMotorModel>();
+  private servoMotorOrder: string[] = [];
+  private servoPositionRegistry = new Map<string, ServoPositionModel>();
+  private servoPositionOrder: string[] = [];
+  private servoMotionRegistry = new Map<string, ServoMotionModel>();
+  private servoMotionOrder: string[] = [];
+  private servoConstraintRegistry = new Map<string, ServoConstraintModel>();
+  private servoConstraintOrder: string[] = [];
+  private servoAnimationRegistry = new Map<string, ServoAnimationModel>();
+  private servoAnimationOrder: string[] = [];
+
+  // Phase 22C: OLED & LCD Display Runtime Simulation registries
+  private lcdDisplayRegistry = new Map<string, LCDDisplayModel>();
+  private lcdDisplayOrder: string[] = [];
+  private lcdCursorRegistry = new Map<string, LCDCursorModel>();
+  private lcdCursorOrder: string[] = [];
+  private lcdCharacterRegistry = new Map<string, LCDCharacterModel>();
+  private lcdCharacterOrder: string[] = [];
+  private oledDisplayRegistry = new Map<string, OLEDDisplayModel>();
+  private oledDisplayOrder: string[] = [];
+  private oledBufferRegistry = new Map<string, OLEDBufferModel>();
+  private oledBufferOrder: string[] = [];
+  private oledPixelRegistry = new Map<string, OLEDPixelModel>();
+  private oledPixelOrder: string[] = [];
+  private displayAnimationRegistry = new Map<string, DisplayAnimationModel>();
+  private displayAnimationOrder: string[] = [];
+
+  // Phase 23A: Virtual Serial Monitor Runtime Simulation registries
+  private serialPortRegistry = new Map<string, SerialPortModel>();
+  private serialPortOrder: string[] = [];
+  private serialMessageRegistry = new Map<string, SerialMessageModel>();
+  private serialMessageOrder: string[] = [];
+  private serialBufferRegistry = new Map<string, SerialBufferModel>();
+  private serialBufferOrder: string[] = [];
+  private serialCommandRegistry = new Map<string, SerialCommandModel>();
+  private serialCommandOrder: string[] = [];
+  private serialSessionRegistry = new Map<string, SerialSessionModel>();
+  private serialSessionOrder: string[] = [];
+
+  // Phase 23B: Virtual Logic Analyzer & Oscilloscope registries
+  private logicAnalyzerChannelRegistry = new Map<string, LogicAnalyzerChannelModel>();
+  private logicAnalyzerChannelOrder: string[] = [];
+  private logicCaptureRegistry = new Map<string, LogicCaptureModel>();
+  private logicCaptureOrder: string[] = [];
+  private logicSampleRegistry = new Map<string, LogicSampleModel>();
+  private logicSampleOrder: string[] = [];
+  private oscilloscopeChannelRegistry = new Map<string, OscilloscopeChannelModel>();
+  private oscilloscopeChannelOrder: string[] = [];
+  private oscilloscopeCaptureRegistry = new Map<string, OscilloscopeCaptureModel>();
+  private oscilloscopeCaptureOrder: string[] = [];
+  private waveformBufferRegistry = new Map<string, WaveformBufferModel>();
+  private waveformBufferOrder: string[] = [];
+
+  // Phase 24A: Virtual Robotics Physics Runtime Foundation registries
+  private robotPhysicsRegistry = new Map<string, RobotPhysicsModel>();
+  private robotPhysicsOrder: string[] = [];
+  private robotPoseRegistry = new Map<string, RobotPoseModel>();
+  private robotPoseOrder: string[] = [];
+  private wheelRuntimeRegistry = new Map<string, WheelRuntimeModel>();
+  private wheelRuntimeOrder: string[] = [];
+  private motionCommandRegistry = new Map<string, MotionCommandModel>();
+  private motionCommandOrder: string[] = [];
+  private collisionRegistry = new Map<string, CollisionModel>();
+  private collisionOrder: string[] = [];
+  private physicsWorldRegistry = new Map<string, PhysicsWorldModel>();
+  private physicsWorldOrder: string[] = [];
+
+  // Phase 24B: Differential Drive Robot Simulator registries
+  private differentialDriveRobotRegistry = new Map<string, DifferentialDriveRobotModel>();
+  private differentialDriveRobotOrder: string[] = [];
+  private wheelEncoderRegistry = new Map<string, WheelEncoderModel>();
+  private wheelEncoderOrder: string[] = [];
+  private motorDriverRegistry = new Map<string, MotorDriverModel>();
+  private motorDriverOrder: string[] = [];
+  private robotCommandQueueRegistry = new Map<string, RobotCommandQueueModel>();
+  private robotCommandQueueOrder: string[] = [];
+  private robotPathRegistry = new Map<string, RobotPathModel>();
+  private robotPathOrder: string[] = [];
+  private robotTelemetryRegistry = new Map<string, RobotTelemetryModel>();
+  private robotTelemetryOrder: string[] = [];
+
+  // Phase 25A: Line Following Sensor Runtime registries
+  private lineTrackRegistry = new Map<string, LineTrackModel>();
+  private lineTrackOrder: string[] = [];
+  private lineSensorRegistry = new Map<string, LineSensorModel>();
+  private lineSensorOrder: string[] = [];
+  private trackSegmentRegistry = new Map<string, TrackSegmentModel>();
+  private trackSegmentOrder: string[] = [];
+  private trackIntersectionRegistry = new Map<string, TrackIntersectionModel>();
+  private trackIntersectionOrder: string[] = [];
+  private trackMarkerRegistry = new Map<string, TrackMarkerModel>();
+  private trackMarkerOrder: string[] = [];
+  private sensorReadingRegistry = new Map<string, SensorReadingModel>();
+  private sensorReadingOrder: string[] = [];
+
+  // Phase 25B: Obstacle Avoidance Runtime registries
+  private obstacleAvoidanceRegistry = new Map<string, ObstacleAvoidanceModel>();
+  private obstacleAvoidanceOrder: string[] = [];
+  private avoidanceRuleRegistry = new Map<string, AvoidanceRuleModel>();
+  private avoidanceRuleOrder: string[] = [];
+  private obstacleDetectionRegistry = new Map<string, ObstacleDetectionModel>();
+  private obstacleDetectionOrder: string[] = [];
+  private navigationDecisionRegistry = new Map<string, NavigationDecisionModel>();
+  private navigationDecisionOrder: string[] = [];
+  private safeZoneRegistry = new Map<string, SafeZoneModel>();
+  private safeZoneOrder: string[] = [];
+  private collisionPredictionRegistry = new Map<string, CollisionPredictionModel>();
+  private collisionPredictionOrder: string[] = [];
+
+  // Phase 19D: High Fidelity 3D Component Rendering & Performance Foundation registries
+  private componentTextureRegistry = new Map<string, ComponentTextureModel>();
+  private componentTextureOrder: string[] = [];
+  private textureAtlasRegistry = new Map<string, TextureAtlasModel>();
+  private textureAtlasOrder: string[] = [];
+  private textureCacheRegistry = new Map<string, TextureCacheModel>();
+  private textureCacheOrder: string[] = [];
+  private textureMetadataRegistry = new Map<string, TextureMetadataModel>();
+  private textureMetadataOrder: string[] = [];
+  private renderPerformanceRegistry = new Map<string, RenderPerformanceModel>();
+  private renderPerformanceOrder: string[] = [];
+  private viewportCullingRegistry = new Map<string, ViewportCullingModel>();
+  private viewportCullingOrder: string[] = [];
+  private objectPoolRegistry = new Map<string, ObjectPoolModel>();
+  private objectPoolOrder: string[] = [];
+  private dirtyRectRegistry = new Map<string, DirtyRectModel>();
+  private dirtyRectOrder: string[] = [];
+  private spatialIndexRegistry = new Map<string, SpatialIndexModel>();
+  private spatialIndexOrder: string[] = [];
+  private renderBatchRegistry = new Map<string, RenderBatchModel>();
+  private renderBatchOrder: string[] = [];
+  private cadGridRegistry = new Map<string, CadGridModel>();
+  private cadGridOrder: string[] = [];
+  private debugOverlayRegistry = new Map<string, DebugOverlayModel>();
+  private debugOverlayOrder: string[] = [];
+  private startupSceneRegistry = new Map<string, StartupSceneModel>();
+  private startupSceneOrder: string[] = [];
+  private pinRenderStateRegistry = new Map<string, PinRenderStateModel>();
+  private pinRenderStateOrder: string[] = [];
+
+  // Phase 26A: Simulator UI Foundation registries
+  private undoHistoryRegistry = new Map<string, UndoHistoryModel>();
+  private undoHistoryOrder: string[] = [];
+  private cameraGestureRegistry = new Map<string, CameraGestureModel>();
+  private cameraGestureOrder: string[] = [];
+  private connectionValidationRegistry = new Map<string, ConnectionValidationModel>();
+  private connectionValidationOrder: string[] = [];
+  private connectionWarningRegistry = new Map<string, ConnectionWarningModel>();
+  private connectionWarningOrder: string[] = [];
+  private paletteComponentRegistry = new Map<string, PaletteComponentModel>();
+  private paletteComponentOrder: string[] = [];
+  private paletteCategoryRegistry = new Map<string, PaletteCategoryModel>();
+  private paletteCategoryOrder: string[] = [];
+  private paletteStateRegistry = new Map<string, PaletteStateModel>();
+  private paletteStateOrder: string[] = [];
+  private workspaceToolRegistry = new Map<string, WorkspaceToolModel>();
+  private workspaceToolOrder: string[] = [];
+  private pinInspectorRegistry = new Map<string, PinInspectorModel>();
+  private pinInspectorOrder: string[] = [];
 
   // Phase 8A.1 HAL state registry (passive contracts/state only)
   private halStateRegistry = new Map<string, RuntimeHALState>();
@@ -3126,6 +4018,230 @@ export class BaseRuntime implements IRuntime {
     return warnings.length === 0;
   }
 
+  // ─── Phase 15B Scene Assembly private validators ───
+  private validateSceneAssemblyModel(model: SceneAssemblyModel): boolean {
+    const warnings = validateSceneAssemblyModel(model, '[Runtime Diagnostics] malformed scene assembly:');
+    return warnings.length === 0;
+  }
+
+  private validateVisualAssemblyModel(model: VisualAssemblyModel): boolean {
+    const warnings = validateVisualAssemblyModel(model, '[Runtime Diagnostics] malformed visual assembly:');
+    return warnings.length === 0;
+  }
+
+  private validateBoardAssemblyModel(model: BoardAssemblyModel): boolean {
+    const warnings = validateBoardAssemblyModel(model, '[Runtime Diagnostics] malformed board assembly:');
+    return warnings.length === 0;
+  }
+
+  private validateComponentAssemblyModel(model: ComponentAssemblyModel): boolean {
+    const warnings = validateComponentAssemblyModel(model, '[Runtime Diagnostics] malformed component assembly:');
+    return warnings.length === 0;
+  }
+
+  private validateWireAssemblyModel(model: WireAssemblyModel): boolean {
+    const warnings = validateWireAssemblyModel(model, '[Runtime Diagnostics] malformed wire assembly:');
+    return warnings.length === 0;
+  }
+
+  private validateSignalAssemblyModel(model: SignalAssemblyModel): boolean {
+    const warnings = validateSignalAssemblyModel(model, '[Runtime Diagnostics] malformed signal assembly:');
+    return warnings.length === 0;
+  }
+
+  // ─── Phase 16A Visible Object Runtime private validators ───
+  private validateVisualObjectModel(model: VisualObjectModel): boolean {
+    const warnings = validateVisualObjectModel(model, '[Runtime Diagnostics] malformed visual object:');
+    return warnings.length === 0;
+  }
+
+  private validateBoardObjectModel(model: BoardObjectModel): boolean {
+    const warnings = validateBoardObjectModel(model, '[Runtime Diagnostics] malformed board object:');
+    return warnings.length === 0;
+  }
+
+  private validateComponentObjectModel(model: ComponentObjectModel): boolean {
+    const warnings = validateComponentObjectModel(model, '[Runtime Diagnostics] malformed component object:');
+    return warnings.length === 0;
+  }
+
+  private validateWireObjectModel(model: WireObjectModel): boolean {
+    const warnings = validateWireObjectModel(model, '[Runtime Diagnostics] malformed wire object:');
+    return warnings.length === 0;
+  }
+
+  private validateSignalObjectModel(model: SignalObjectModel): boolean {
+    const warnings = validateSignalObjectModel(model, '[Runtime Diagnostics] malformed signal object:');
+    return warnings.length === 0;
+  }
+
+  private validateThemeObjectModel(model: ThemeObjectModel): boolean {
+    const warnings = validateThemeObjectModel(model, '[Runtime Diagnostics] malformed theme object:');
+    return warnings.length === 0;
+  }
+
+  private validateAnimationObjectModel(model: AnimationObjectModel): boolean {
+    const warnings = validateAnimationObjectModel(model, '[Runtime Diagnostics] malformed animation object:');
+    return warnings.length === 0;
+  }
+
+  // ─── Phase 17A Electrical Connectivity private validators ───
+  private validateElectricalNodeModel(model: ElectricalNodeModel): boolean {
+    const warnings = validateElectricalNodeModel(model, '[Runtime Diagnostics] malformed electrical node:');
+    return warnings.length === 0;
+  }
+
+  private validateElectricalNetModel(model: ElectricalNetModel): boolean {
+    const warnings = validateElectricalNetModel(model, '[Runtime Diagnostics] malformed electrical net:');
+    return warnings.length === 0;
+  }
+
+  private validateElectricalConnectionModel(model: ElectricalConnectionModel): boolean {
+    const warnings = validateElectricalConnectionModel(model, '[Runtime Diagnostics] malformed electrical connection:');
+    return warnings.length === 0;
+  }
+
+  private validateBreadboardRailModel(model: BreadboardRailModel): boolean {
+    const warnings = validateBreadboardRailModel(model, '[Runtime Diagnostics] malformed breadboard rail:');
+    return warnings.length === 0;
+  }
+
+  private validateBreadboardRowModel(model: BreadboardRowModel): boolean {
+    const warnings = validateBreadboardRowModel(model, '[Runtime Diagnostics] malformed breadboard row:');
+    return warnings.length === 0;
+  }
+
+  // ─── Phase 17B Signal Propagation private validators ───
+  private validateSignalPacketModel(model: SignalPacketModel): boolean {
+    const warnings = validateSignalPacketModel(model, '[Runtime Diagnostics] malformed signal packet:');
+    return warnings.length === 0;
+  }
+
+  private validateSignalPropagationRuntimeModel(model: SignalPropagationRuntimeModel): boolean {
+    const warnings = validateSignalPropagationRuntimeModel(model, '[Runtime Diagnostics] malformed signal propagation runtime:');
+    return warnings.length === 0;
+  }
+
+  private validatePropagationPathModel(model: PropagationPathModel): boolean {
+    const warnings = validatePropagationPathModel(model, '[Runtime Diagnostics] malformed propagation path:');
+    return warnings.length === 0;
+  }
+
+  private validateTimingModel(model: TimingModel): boolean {
+    const warnings = validateTimingModel(model, '[Runtime Diagnostics] malformed timing model:');
+    return warnings.length === 0;
+  }
+
+  // ─── Phase 17C Interactive Sensor private validators ───
+  private validateVirtualObjectModel(model: VirtualObjectModel): boolean {
+    const warnings = validateVirtualObjectModel(model, '[Runtime Diagnostics] malformed virtual object:');
+    return warnings.length === 0;
+  }
+
+  private validateObstacleModel(model: ObstacleModel): boolean {
+    const warnings = validateObstacleModel(model, '[Runtime Diagnostics] malformed obstacle:');
+    return warnings.length === 0;
+  }
+
+  private validateSensorRuntimeModel(model: SensorRuntimeModel): boolean {
+    const warnings = validateSensorRuntimeModel(model, '[Runtime Diagnostics] malformed sensor runtime:');
+    return warnings.length === 0;
+  }
+
+  private validateDistanceMeasurementModel(model: DistanceMeasurementModel): boolean {
+    const warnings = validateDistanceMeasurementModel(model, '[Runtime Diagnostics] malformed distance measurement:');
+    return warnings.length === 0;
+  }
+
+  private validateSensorInteractionModel(model: SensorInteractionModel): boolean {
+    const warnings = validateSensorInteractionModel(model, '[Runtime Diagnostics] malformed sensor interaction:');
+    return warnings.length === 0;
+  }
+
+  private validateEnvironmentStateModel(model: EnvironmentStateModel): boolean {
+    const warnings = validateEnvironmentStateModel(model, '[Runtime Diagnostics] malformed environment state:');
+    return warnings.length === 0;
+  }
+
+  private validateWorkspaceRuntimeModel(model: WorkspaceRuntimeModel): boolean {
+    const warnings = validateWorkspaceRuntimeModel(model, '[Runtime Diagnostics] malformed workspace runtime:');
+    return warnings.length === 0;
+  }
+
+  private validateWorkspaceCameraModel(model: WorkspaceCameraModel): boolean {
+    const warnings = validateWorkspaceCameraModel(model, '[Runtime Diagnostics] malformed workspace camera:');
+    return warnings.length === 0;
+  }
+
+  private validateWorkspaceSelectionModel(model: WorkspaceSelectionModel): boolean {
+    const warnings = validateWorkspaceSelectionModel(model, '[Runtime Diagnostics] malformed workspace selection:');
+    return warnings.length === 0;
+  }
+
+  private validateWorkspaceObjectModel(model: WorkspaceObjectModel): boolean {
+    const warnings = validateWorkspaceObjectModel(model, '[Runtime Diagnostics] malformed workspace object:');
+    return warnings.length === 0;
+  }
+
+  private validateWorkspaceInteractionModel(model: WorkspaceInteractionModel): boolean {
+    const warnings = validateWorkspaceInteractionModel(model, '[Runtime Diagnostics] malformed workspace interaction:');
+    return warnings.length === 0;
+  }
+
+  private validateWorkspaceGridModel(model: WorkspaceGridModel): boolean {
+    const warnings = validateWorkspaceGridModel(model, '[Runtime Diagnostics] malformed workspace grid:');
+    return warnings.length === 0;
+  }
+
+  // ─── Phase 20A Interactive Placement private validators ───
+  private validateComponentSelectionModel(model: ComponentSelectionModel): boolean {
+    const warnings = validateComponentSelectionModel(model, '[Runtime Diagnostics] malformed component selection:');
+    return warnings.length === 0;
+  }
+
+  private validateSelectionBoundsModel(model: SelectionBoundsModel): boolean {
+    const warnings = validateSelectionBoundsModel(model, '[Runtime Diagnostics] malformed selection bounds:');
+    return warnings.length === 0;
+  }
+
+  private validateSelectionStateModel(model: SelectionStateModel): boolean {
+    const warnings = validateSelectionStateModel(model, '[Runtime Diagnostics] malformed selection state:');
+    return warnings.length === 0;
+  }
+
+  private validatePinOccupancyModel(model: PinOccupancyModel): boolean {
+    const warnings = validatePinOccupancyModel(model, '[Runtime Diagnostics] malformed pin occupancy:');
+    return warnings.length === 0;
+  }
+
+  private validateWirePlacementModel(model: WirePlacementModel): boolean {
+    const warnings = validateWirePlacementModel(model, '[Runtime Diagnostics] malformed wire placement:');
+    return warnings.length === 0;
+  }
+
+  private validateWiringSessionModel(model: WiringSessionModel): boolean {
+    const warnings = validateWiringSessionModel(model, '[Runtime Diagnostics] malformed wiring session:');
+    return warnings.length === 0;
+  }
+
+  private validateWirePreviewModel(model: WirePreviewModel): boolean {
+    const warnings = validateWirePreviewModel(model, '[Runtime Diagnostics] malformed wire preview:');
+    return warnings.length === 0;
+  }
+
+  private validateWireConnectionModel(model: WireConnectionModel): boolean {
+    const warnings = validateWireConnectionModel(model, '[Runtime Diagnostics] malformed wire connection:');
+    return warnings.length === 0;
+  }
+
+  private validatePinConnectionModel(model: PinConnectionModel): boolean {
+    const warnings = validatePinConnectionModel(model, '[Runtime Diagnostics] malformed pin connection:');
+    return warnings.length === 0;
+  }
+
+
+
+
 
   // ─── Wire Render Model CRUD ───
   public registerWireRenderModel(model: WireRenderModel): void {
@@ -4151,7 +5267,6031 @@ export class BaseRuntime implements IRuntime {
     return this.workspaceStyleRegistry.has(id);
   }
 
+  // ─── Component Selection Model CRUD ───
+  public registerComponentSelectionModel(model: ComponentSelectionModel): void {
+    if (!this.validateComponentSelectionModel(model)) return;
+    if (this.componentSelectionRegistry.has(model.selectionId)) {
+      console.warn(`[Runtime Diagnostics] duplicate component selection IDs: ID "${model.selectionId}" already exists.`);
+    }
+    this.componentSelectionRegistry.set(model.selectionId, JSON.parse(JSON.stringify(model)));
+    if (!this.componentSelectionOrder.includes(model.selectionId)) {
+      this.componentSelectionOrder.push(model.selectionId);
+    }
+  }
+
+  public getComponentSelectionModel(id: string): ComponentSelectionModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed component selection: ID must be a non-empty string.');
+      return undefined;
+    }
+    const m = this.componentSelectionRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+
+  public getComponentSelectionModels(): ComponentSelectionModel[] {
+    return this.componentSelectionOrder
+      .map(id => this.componentSelectionRegistry.get(id))
+      .filter((m): m is ComponentSelectionModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateComponentSelectionModel(id: string, updates: Partial<ComponentSelectionModel>): void {
+    const existing = this.componentSelectionRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing component selection: Model "${id}" not found.`);
+      return;
+    }
+    const merged: ComponentSelectionModel = {
+      ...existing,
+      ...updates,
+      selectionId: existing.selectionId,
+    };
+    this.registerComponentSelectionModel(merged);
+  }
+
+  public removeComponentSelectionModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed component selection: ID must be a non-empty string.');
+      return;
+    }
+    this.componentSelectionRegistry.delete(id);
+    this.componentSelectionOrder = this.componentSelectionOrder.filter(existing => existing !== id);
+  }
+
+  public clearComponentSelectionModels(): void {
+    this.componentSelectionRegistry.clear();
+    this.componentSelectionOrder = [];
+  }
+
+  public getComponentSelectionModelKeys(): string[] {
+    return [...this.componentSelectionOrder];
+  }
+
+  public hasComponentSelectionModel(id: string): boolean {
+    return this.componentSelectionRegistry.has(id);
+  }
+
+  // ─── Selection Bounds Model CRUD ───
+  public registerSelectionBoundsModel(model: SelectionBoundsModel): void {
+    if (!this.validateSelectionBoundsModel(model)) return;
+    if (this.selectionBoundsRegistry.has(model.boundsId)) {
+      console.warn(`[Runtime Diagnostics] duplicate selection bounds IDs: ID "${model.boundsId}" already exists.`);
+    }
+    this.selectionBoundsRegistry.set(model.boundsId, JSON.parse(JSON.stringify(model)));
+    if (!this.selectionBoundsOrder.includes(model.boundsId)) {
+      this.selectionBoundsOrder.push(model.boundsId);
+    }
+  }
+
+  public getSelectionBoundsModel(id: string): SelectionBoundsModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed selection bounds: ID must be a non-empty string.');
+      return undefined;
+    }
+    const m = this.selectionBoundsRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+
+  public getSelectionBoundsModels(): SelectionBoundsModel[] {
+    return this.selectionBoundsOrder
+      .map(id => this.selectionBoundsRegistry.get(id))
+      .filter((m): m is SelectionBoundsModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateSelectionBoundsModel(id: string, updates: Partial<SelectionBoundsModel>): void {
+    const existing = this.selectionBoundsRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing selection bounds: Model "${id}" not found.`);
+      return;
+    }
+    const merged: SelectionBoundsModel = {
+      ...existing,
+      ...updates,
+      boundsId: existing.boundsId,
+    };
+    this.registerSelectionBoundsModel(merged);
+  }
+
+  public removeSelectionBoundsModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed selection bounds: ID must be a non-empty string.');
+      return;
+    }
+    this.selectionBoundsRegistry.delete(id);
+    this.selectionBoundsOrder = this.selectionBoundsOrder.filter(existing => existing !== id);
+  }
+
+  public clearSelectionBoundsModels(): void {
+    this.selectionBoundsRegistry.clear();
+    this.selectionBoundsOrder = [];
+  }
+
+  public getSelectionBoundsModelKeys(): string[] {
+    return [...this.selectionBoundsOrder];
+  }
+
+  public hasSelectionBoundsModel(id: string): boolean {
+    return this.selectionBoundsRegistry.has(id);
+  }
+
+  // ─── Selection State Model CRUD ───
+  public registerSelectionStateModel(model: SelectionStateModel): void {
+    if (!this.validateSelectionStateModel(model)) return;
+    if (this.selectionStateRegistry.has(model.stateId)) {
+      console.warn(`[Runtime Diagnostics] duplicate selection state IDs: ID "${model.stateId}" already exists.`);
+    }
+    this.selectionStateRegistry.set(model.stateId, JSON.parse(JSON.stringify(model)));
+    if (!this.selectionStateOrder.includes(model.stateId)) {
+      this.selectionStateOrder.push(model.stateId);
+    }
+  }
+
+  public getSelectionStateModel(id: string): SelectionStateModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed selection state: ID must be a non-empty string.');
+      return undefined;
+    }
+    const m = this.selectionStateRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+
+  public getSelectionStateModels(): SelectionStateModel[] {
+    return this.selectionStateOrder
+      .map(id => this.selectionStateRegistry.get(id))
+      .filter((m): m is SelectionStateModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateSelectionStateModel(id: string, updates: Partial<SelectionStateModel>): void {
+    const existing = this.selectionStateRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing selection state: Model "${id}" not found.`);
+      return;
+    }
+    const merged: SelectionStateModel = {
+      ...existing,
+      ...updates,
+      stateId: existing.stateId,
+    };
+    this.registerSelectionStateModel(merged);
+  }
+
+  public removeSelectionStateModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed selection state: ID must be a non-empty string.');
+      return;
+    }
+    this.selectionStateRegistry.delete(id);
+    this.selectionStateOrder = this.selectionStateOrder.filter(existing => existing !== id);
+  }
+
+  public clearSelectionStateModels(): void {
+    this.selectionStateRegistry.clear();
+    this.selectionStateOrder = [];
+  }
+
+  public getSelectionStateModelKeys(): string[] {
+    return [...this.selectionStateOrder];
+  }
+
+  public hasSelectionStateModel(id: string): boolean {
+    return this.selectionStateRegistry.has(id);
+  }
+
+  // ─── Pin Occupancy Model CRUD ───
+  public registerPinOccupancyModel(model: PinOccupancyModel): void {
+    if (!this.validatePinOccupancyModel(model)) return;
+    if (this.pinOccupancyRegistry.has(model.occupancyId)) {
+      console.warn(`[Runtime Diagnostics] duplicate pin occupancy IDs: ID "${model.occupancyId}" already exists.`);
+    }
+    this.pinOccupancyRegistry.set(model.occupancyId, JSON.parse(JSON.stringify(model)));
+    if (!this.pinOccupancyOrder.includes(model.occupancyId)) {
+      this.pinOccupancyOrder.push(model.occupancyId);
+    }
+    // Automatically trigger conflict updating whenever occupancies are registered
+    this.recalculateOccupancyConflicts();
+  }
+
+  public getPinOccupancyModel(id: string): PinOccupancyModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed pin occupancy: ID must be a non-empty string.');
+      return undefined;
+    }
+    const m = this.pinOccupancyRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+
+  public getPinOccupancies(): PinOccupancyModel[] {
+    return this.pinOccupancyOrder
+      .map(id => this.pinOccupancyRegistry.get(id))
+      .filter((m): m is PinOccupancyModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updatePinOccupancyModel(id: string, updates: Partial<PinOccupancyModel>): void {
+    const existing = this.pinOccupancyRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing pin occupancy: Model "${id}" not found.`);
+      return;
+    }
+    const merged: PinOccupancyModel = {
+      ...existing,
+      ...updates,
+      occupancyId: existing.occupancyId,
+    };
+    this.registerPinOccupancyModel(merged);
+  }
+
+  public removePinOccupancyModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed pin occupancy: ID must be a non-empty string.');
+      return;
+    }
+    this.pinOccupancyRegistry.delete(id);
+    this.pinOccupancyOrder = this.pinOccupancyOrder.filter(existing => existing !== id);
+    this.recalculateOccupancyConflicts();
+  }
+
+  public clearPinOccupancies(): void {
+    this.pinOccupancyRegistry.clear();
+    this.pinOccupancyOrder = [];
+  }
+
+  public getPinOccupancyKeys(): string[] {
+    return [...this.pinOccupancyOrder];
+  }
+
+  public hasPinOccupancyModel(id: string): boolean {
+    return this.pinOccupancyRegistry.has(id);
+  }
+
+  private recalculateOccupancyConflicts(): void {
+    const all = this.getPinOccupancies();
+    BreadboardSnapEngine.updateOccupancyConflicts(all);
+    for (const m of all) {
+      this.pinOccupancyRegistry.set(m.occupancyId, m);
+    }
+  }
+
+  // ─── Wire Placement Model CRUD ───
+  public registerWirePlacementModel(model: WirePlacementModel): void {
+    if (!this.validateWirePlacementModel(model)) return;
+    if (this.wirePlacementRegistry.has(model.placementId)) {
+      console.warn(`[Runtime Diagnostics] duplicate wire placement IDs: ID "${model.placementId}" already exists.`);
+    }
+    this.wirePlacementRegistry.set(model.placementId, JSON.parse(JSON.stringify(model)));
+    if (!this.wirePlacementOrder.includes(model.placementId)) {
+      this.wirePlacementOrder.push(model.placementId);
+    }
+  }
+
+  public getWirePlacementModel(id: string): WirePlacementModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed wire placement: ID must be a non-empty string.');
+      return undefined;
+    }
+    const m = this.wirePlacementRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+
+  public getWirePlacements(): WirePlacementModel[] {
+    return this.wirePlacementOrder
+      .map(id => this.wirePlacementRegistry.get(id))
+      .filter((m): m is WirePlacementModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateWirePlacementModel(id: string, updates: Partial<WirePlacementModel>): void {
+    const existing = this.wirePlacementRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing wire placement: Model "${id}" not found.`);
+      return;
+    }
+    const merged: WirePlacementModel = {
+      ...existing,
+      ...updates,
+      placementId: existing.placementId,
+    };
+    this.registerWirePlacementModel(merged);
+  }
+
+  public removeWirePlacementModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed wire placement: ID must be a non-empty string.');
+      return;
+    }
+    this.wirePlacementRegistry.delete(id);
+    this.wirePlacementOrder = this.wirePlacementOrder.filter(existing => existing !== id);
+  }
+
+  public clearWirePlacements(): void {
+    this.wirePlacementRegistry.clear();
+    this.wirePlacementOrder = [];
+  }
+
+  public getWirePlacementKeys(): string[] {
+    return [...this.wirePlacementOrder];
+  }
+
+  public hasWirePlacementModel(id: string): boolean {
+    return this.wirePlacementRegistry.has(id);
+  }
+
+  // ─── Wiring Session Model CRUD ───
+  public registerWiringSessionModel(model: WiringSessionModel): void {
+    if (!this.validateWiringSessionModel(model)) return;
+    if (this.wiringSessionRegistry.has(model.sessionId)) {
+      console.warn(`[Runtime Diagnostics] duplicate wiring session IDs: ID "${model.sessionId}" already exists.`);
+    }
+    this.wiringSessionRegistry.set(model.sessionId, JSON.parse(JSON.stringify(model)));
+    if (!this.wiringSessionOrder.includes(model.sessionId)) {
+      this.wiringSessionOrder.push(model.sessionId);
+    }
+  }
+
+  public getWiringSessionModel(id: string): WiringSessionModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed wiring session: ID must be a non-empty string.');
+      return undefined;
+    }
+    const m = this.wiringSessionRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+
+  public getWiringSessionModels(): WiringSessionModel[] {
+    return this.wiringSessionOrder
+      .map(id => this.wiringSessionRegistry.get(id))
+      .filter((m): m is WiringSessionModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateWiringSessionModel(id: string, updates: Partial<WiringSessionModel>): void {
+    const existing = this.wiringSessionRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing wiring session: Model "${id}" not found.`);
+      return;
+    }
+    const merged: WiringSessionModel = {
+      ...existing,
+      ...updates,
+      sessionId: existing.sessionId,
+    };
+    this.registerWiringSessionModel(merged);
+  }
+
+  public removeWiringSessionModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed wiring session: ID must be a non-empty string.');
+      return;
+    }
+    this.wiringSessionRegistry.delete(id);
+    this.wiringSessionOrder = this.wiringSessionOrder.filter(existing => existing !== id);
+  }
+
+  public clearWiringSessionModels(): void {
+    this.wiringSessionRegistry.clear();
+    this.wiringSessionOrder = [];
+  }
+
+  public getWiringSessionModelKeys(): string[] {
+    return [...this.wiringSessionOrder];
+  }
+
+  public hasWiringSessionModel(id: string): boolean {
+    return this.wiringSessionRegistry.has(id);
+  }
+
+  // ─── Wire Preview Model CRUD ───
+  public registerWirePreviewModel(model: WirePreviewModel): void {
+    if (!this.validateWirePreviewModel(model)) return;
+    if (this.wirePreviewRegistry.has(model.previewId)) {
+      console.warn(`[Runtime Diagnostics] duplicate wire preview IDs: ID "${model.previewId}" already exists.`);
+    }
+    this.wirePreviewRegistry.set(model.previewId, JSON.parse(JSON.stringify(model)));
+    if (!this.wirePreviewOrder.includes(model.previewId)) {
+      this.wirePreviewOrder.push(model.previewId);
+    }
+  }
+
+  public getWirePreviewModel(id: string): WirePreviewModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed wire preview: ID must be a non-empty string.');
+      return undefined;
+    }
+    const m = this.wirePreviewRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+
+  public getWirePreviewModels(): WirePreviewModel[] {
+    return this.wirePreviewOrder
+      .map(id => this.wirePreviewRegistry.get(id))
+      .filter((m): m is WirePreviewModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateWirePreviewModel(id: string, updates: Partial<WirePreviewModel>): void {
+    const existing = this.wirePreviewRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing wire preview: Model "${id}" not found.`);
+      return;
+    }
+    const merged: WirePreviewModel = {
+      ...existing,
+      ...updates,
+      previewId: existing.previewId,
+    };
+    this.registerWirePreviewModel(merged);
+  }
+
+  public removeWirePreviewModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed wire preview: ID must be a non-empty string.');
+      return;
+    }
+    this.wirePreviewRegistry.delete(id);
+    this.wirePreviewOrder = this.wirePreviewOrder.filter(existing => existing !== id);
+  }
+
+  public clearWirePreviewModels(): void {
+    this.wirePreviewRegistry.clear();
+    this.wirePreviewOrder = [];
+  }
+
+  public getWirePreviewModelKeys(): string[] {
+    return [...this.wirePreviewOrder];
+  }
+
+  public hasWirePreviewModel(id: string): boolean {
+    return this.wirePreviewRegistry.has(id);
+  }
+
+  // ─── Wire Connection Model CRUD ───
+  public registerWireConnectionModel(model: WireConnectionModel): void {
+    if (!this.validateWireConnectionModel(model)) return;
+    if (this.wireConnectionRegistry.has(model.connectionId)) {
+      console.warn(`[Runtime Diagnostics] duplicate wire connection IDs: ID "${model.connectionId}" already exists.`);
+    }
+    this.wireConnectionRegistry.set(model.connectionId, JSON.parse(JSON.stringify(model)));
+    if (!this.wireConnectionOrder.includes(model.connectionId)) {
+      this.wireConnectionOrder.push(model.connectionId);
+    }
+  }
+
+  public getWireConnectionModel(id: string): WireConnectionModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed wire connection: ID must be a non-empty string.');
+      return undefined;
+    }
+    const m = this.wireConnectionRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+
+  public getWireConnectionModels(): WireConnectionModel[] {
+    return this.wireConnectionOrder
+      .map(id => this.wireConnectionRegistry.get(id))
+      .filter((m): m is WireConnectionModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateWireConnectionModel(id: string, updates: Partial<WireConnectionModel>): void {
+    const existing = this.wireConnectionRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing wire connection: Model "${id}" not found.`);
+      return;
+    }
+    const merged: WireConnectionModel = {
+      ...existing,
+      ...updates,
+      connectionId: existing.connectionId,
+    };
+    this.registerWireConnectionModel(merged);
+  }
+
+  public removeWireConnectionModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed wire connection: ID must be a non-empty string.');
+      return;
+    }
+    this.wireConnectionRegistry.delete(id);
+    this.wireConnectionOrder = this.wireConnectionOrder.filter(existing => existing !== id);
+  }
+
+  public clearWireConnectionModels(): void {
+    this.wireConnectionRegistry.clear();
+    this.wireConnectionOrder = [];
+  }
+
+  public getWireConnectionModelKeys(): string[] {
+    return [...this.wireConnectionOrder];
+  }
+
+  public hasWireConnectionModel(id: string): boolean {
+    return this.wireConnectionRegistry.has(id);
+  }
+
+  // ─── Pin Connection Model CRUD ───
+  public registerPinConnectionModel(model: PinConnectionModel): void {
+    if (!this.validatePinConnectionModel(model)) return;
+    if (this.pinConnectionRegistry.has(model.pinConnectionId)) {
+      console.warn(`[Runtime Diagnostics] duplicate pin connection IDs: ID "${model.pinConnectionId}" already exists.`);
+    }
+    this.pinConnectionRegistry.set(model.pinConnectionId, JSON.parse(JSON.stringify(model)));
+    if (!this.pinConnectionOrder.includes(model.pinConnectionId)) {
+      this.pinConnectionOrder.push(model.pinConnectionId);
+    }
+  }
+
+  public getPinConnectionModel(id: string): PinConnectionModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed pin connection: ID must be a non-empty string.');
+      return undefined;
+    }
+    const m = this.pinConnectionRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+
+  public getPinConnectionModels(): PinConnectionModel[] {
+    return this.pinConnectionOrder
+      .map(id => this.pinConnectionRegistry.get(id))
+      .filter((m): m is PinConnectionModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updatePinConnectionModel(id: string, updates: Partial<PinConnectionModel>): void {
+    const existing = this.pinConnectionRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing pin connection: Model "${id}" not found.`);
+      return;
+    }
+    const merged: PinConnectionModel = {
+      ...existing,
+      ...updates,
+      pinConnectionId: existing.pinConnectionId,
+    };
+    this.registerPinConnectionModel(merged);
+  }
+
+  public removePinConnectionModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed pin connection: ID must be a non-empty string.');
+      return;
+    }
+    this.pinConnectionRegistry.delete(id);
+    this.pinConnectionOrder = this.pinConnectionOrder.filter(existing => existing !== id);
+  }
+
+  public clearPinConnectionModels(): void {
+    this.pinConnectionRegistry.clear();
+    this.pinConnectionOrder = [];
+  }
+
+  public getPinConnectionModelKeys(): string[] {
+    return [...this.pinConnectionOrder];
+  }
+
+  public hasPinConnectionModel(id: string): boolean {
+    return this.pinConnectionRegistry.has(id);
+  }
+
+  // ─── High-Level Interactive Wiring Workflow ───
+  public startWiring(sessionId: string, startPinId: string, color: string): void {
+    const session = createDefaultWiringSessionModel(sessionId, {
+      startPinId,
+      currentColor: color,
+      currentPoints: [],
+      isRoutingActive: true,
+    });
+    this.registerWiringSessionModel(session);
+
+    const preview = createDefaultWirePreviewModel(`preview_${sessionId}`, {
+      points: [],
+      color,
+      isValidTarget: true,
+    });
+    this.registerWirePreviewModel(preview);
+  }
+
+  public cancelWiring(sessionId: string): void {
+    this.removeWiringSessionModel(sessionId);
+    this.removeWirePreviewModel(`preview_${sessionId}`);
+  }
+
+  public finishWiring(sessionId: string, endPinId: string): void {
+    const session = this.getWiringSessionModel(sessionId);
+    if (!session) {
+      console.warn(`[Runtime Diagnostics] missing wiring session: Model "${sessionId}" not found.`);
+      return;
+    }
+    const connectionId = `conn_${sessionId}_${Date.now()}`;
+    const conn = createDefaultWireConnectionModel(connectionId, {
+      startPinId: session.startPinId,
+      endPinId,
+      color: session.currentColor,
+      routePoints: session.currentPoints || [],
+    });
+    this.registerWireConnectionModel(conn);
+
+    // Update pin connections
+    let pinConnStart = this.getPinConnectionModel(`pin_conn_${session.startPinId}`);
+    if (!pinConnStart) {
+      pinConnStart = createDefaultPinConnectionModel(`pin_conn_${session.startPinId}`, {
+        pinId: session.startPinId,
+        connectedWireIds: [],
+      });
+    }
+    if (!pinConnStart.connectedWireIds.includes(connectionId)) {
+      pinConnStart.connectedWireIds.push(connectionId);
+    }
+    this.registerPinConnectionModel(pinConnStart);
+
+    let pinConnEnd = this.getPinConnectionModel(`pin_conn_${endPinId}`);
+    if (!pinConnEnd) {
+      pinConnEnd = createDefaultPinConnectionModel(`pin_conn_${endPinId}`, {
+        pinId: endPinId,
+        connectedWireIds: [],
+      });
+    }
+    if (!pinConnEnd.connectedWireIds.includes(connectionId)) {
+      pinConnEnd.connectedWireIds.push(connectionId);
+    }
+    this.registerPinConnectionModel(pinConnEnd);
+
+    // Clear session and preview
+    this.removeWiringSessionModel(sessionId);
+    this.removeWirePreviewModel(`preview_${sessionId}`);
+  }
+
+  public deleteWireConnection(connectionId: string): void {
+    const conn = this.getWireConnectionModel(connectionId);
+    if (!conn) {
+      console.warn(`[Runtime Diagnostics] missing wire connection: Model "${connectionId}" not found.`);
+      return;
+    }
+    this.removeWireConnectionModel(connectionId);
+
+    // Remove connectionId from all pin connections
+    const allPinConns = this.getPinConnectionModels();
+    for (const pc of allPinConns) {
+      if (pc.connectedWireIds.includes(connectionId)) {
+        pc.connectedWireIds = pc.connectedWireIds.filter((id) => id !== connectionId);
+        this.registerPinConnectionModel(pc);
+      }
+    }
+  }
+
+  // ─── Phase 20C: Voltage Visualization Model CRUD ───
+  private validateVoltageVisualizationModel(model: VoltageVisualizationModel): boolean {
+    const warnings = validateVoltageVisualizationModel(model, '[Runtime Diagnostics] malformed voltage viz:');
+    return warnings.length === 0;
+  }
+
+  public registerVoltageVisualizationModel(model: VoltageVisualizationModel): void {
+    if (!this.validateVoltageVisualizationModel(model)) return;
+    if (this.voltageVizRegistry.has(model.voltageVizId)) {
+      console.warn(`[Runtime Diagnostics] duplicate voltage viz IDs: ID "${model.voltageVizId}" already exists.`);
+    }
+    this.voltageVizRegistry.set(model.voltageVizId, JSON.parse(JSON.stringify(model)));
+    if (!this.voltageVizOrder.includes(model.voltageVizId)) {
+      this.voltageVizOrder.push(model.voltageVizId);
+    }
+  }
+
+  public getVoltageVisualizationModel(id: string): VoltageVisualizationModel | undefined {
+    const m = this.voltageVizRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+
+  public getVoltageVisualizationModels(): VoltageVisualizationModel[] {
+    return this.voltageVizOrder
+      .map(id => this.voltageVizRegistry.get(id))
+      .filter((m): m is VoltageVisualizationModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateVoltageVisualizationModel(id: string, updates: Partial<VoltageVisualizationModel>): void {
+    const existing = this.voltageVizRegistry.get(id);
+    if (!existing) { console.warn(`[Runtime Diagnostics] missing voltage viz: Model "${id}" not found.`); return; }
+    const merged: VoltageVisualizationModel = { ...existing, ...updates, voltageVizId: existing.voltageVizId };
+    this.registerVoltageVisualizationModel(merged);
+  }
+
+  public removeVoltageVisualizationModel(id: string): void {
+    if (!id) { console.warn('[Runtime Diagnostics] removeVoltageVisualizationModel: empty ID provided.'); return; }
+    this.voltageVizRegistry.delete(id);
+    this.voltageVizOrder = this.voltageVizOrder.filter(e => e !== id);
+  }
+
+  public clearVoltageVisualizationModels(): void {
+    this.voltageVizRegistry.clear();
+    this.voltageVizOrder = [];
+  }
+
+  public getVoltageVisualizationModelKeys(): string[] { return [...this.voltageVizOrder]; }
+  public hasVoltageVisualizationModel(id: string): boolean { return this.voltageVizRegistry.has(id); }
+
+  // ─── Phase 20C: Current Visualization Model CRUD ───
+  private validateCurrentVisualizationModel(model: CurrentVisualizationModel): boolean {
+    const warnings = validateCurrentVisualizationModel(model, '[Runtime Diagnostics] malformed current viz:');
+    return warnings.length === 0;
+  }
+
+  public registerCurrentVisualizationModel(model: CurrentVisualizationModel): void {
+    if (!this.validateCurrentVisualizationModel(model)) return;
+    if (this.currentVizRegistry.has(model.currentVizId)) {
+      console.warn(`[Runtime Diagnostics] duplicate current viz IDs: ID "${model.currentVizId}" already exists.`);
+    }
+    this.currentVizRegistry.set(model.currentVizId, JSON.parse(JSON.stringify(model)));
+    if (!this.currentVizOrder.includes(model.currentVizId)) {
+      this.currentVizOrder.push(model.currentVizId);
+    }
+  }
+
+  public getCurrentVisualizationModel(id: string): CurrentVisualizationModel | undefined {
+    const m = this.currentVizRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+
+  public getCurrentVisualizationModels(): CurrentVisualizationModel[] {
+    return this.currentVizOrder
+      .map(id => this.currentVizRegistry.get(id))
+      .filter((m): m is CurrentVisualizationModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateCurrentVisualizationModel(id: string, updates: Partial<CurrentVisualizationModel>): void {
+    const existing = this.currentVizRegistry.get(id);
+    if (!existing) { console.warn(`[Runtime Diagnostics] missing current viz: Model "${id}" not found.`); return; }
+    const merged: CurrentVisualizationModel = { ...existing, ...updates, currentVizId: existing.currentVizId };
+    this.registerCurrentVisualizationModel(merged);
+  }
+
+  public removeCurrentVisualizationModel(id: string): void {
+    if (!id) { console.warn('[Runtime Diagnostics] removeCurrentVisualizationModel: empty ID provided.'); return; }
+    this.currentVizRegistry.delete(id);
+    this.currentVizOrder = this.currentVizOrder.filter(e => e !== id);
+  }
+
+  public clearCurrentVisualizationModels(): void {
+    this.currentVizRegistry.clear();
+    this.currentVizOrder = [];
+  }
+
+  public getCurrentVisualizationModelKeys(): string[] { return [...this.currentVizOrder]; }
+  public hasCurrentVisualizationModel(id: string): boolean { return this.currentVizRegistry.has(id); }
+
+  // ─── Phase 20C: Logic State Visualization Model CRUD ───
+  private validateLogicStateVisualizationModel(model: LogicStateVisualizationModel): boolean {
+    const warnings = validateLogicStateVisualizationModel(model, '[Runtime Diagnostics] malformed logic viz:');
+    return warnings.length === 0;
+  }
+
+  public registerLogicStateVisualizationModel(model: LogicStateVisualizationModel): void {
+    if (!this.validateLogicStateVisualizationModel(model)) return;
+    if (this.logicVizRegistry.has(model.logicVizId)) {
+      console.warn(`[Runtime Diagnostics] duplicate logic viz IDs: ID "${model.logicVizId}" already exists.`);
+    }
+    this.logicVizRegistry.set(model.logicVizId, JSON.parse(JSON.stringify(model)));
+    if (!this.logicVizOrder.includes(model.logicVizId)) {
+      this.logicVizOrder.push(model.logicVizId);
+    }
+  }
+
+  public getLogicStateVisualizationModel(id: string): LogicStateVisualizationModel | undefined {
+    const m = this.logicVizRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+
+  public getLogicStateVisualizationModels(): LogicStateVisualizationModel[] {
+    return this.logicVizOrder
+      .map(id => this.logicVizRegistry.get(id))
+      .filter((m): m is LogicStateVisualizationModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateLogicStateVisualizationModel(id: string, updates: Partial<LogicStateVisualizationModel>): void {
+    const existing = this.logicVizRegistry.get(id);
+    if (!existing) { console.warn(`[Runtime Diagnostics] missing logic viz: Model "${id}" not found.`); return; }
+    const merged: LogicStateVisualizationModel = { ...existing, ...updates, logicVizId: existing.logicVizId };
+    this.registerLogicStateVisualizationModel(merged);
+  }
+
+  public removeLogicStateVisualizationModel(id: string): void {
+    if (!id) { console.warn('[Runtime Diagnostics] removeLogicStateVisualizationModel: empty ID provided.'); return; }
+    this.logicVizRegistry.delete(id);
+    this.logicVizOrder = this.logicVizOrder.filter(e => e !== id);
+  }
+
+  public clearLogicStateVisualizationModels(): void {
+    this.logicVizRegistry.clear();
+    this.logicVizOrder = [];
+  }
+
+  public getLogicStateVisualizationModelKeys(): string[] { return [...this.logicVizOrder]; }
+  public hasLogicStateVisualizationModel(id: string): boolean { return this.logicVizRegistry.has(id); }
+
+  // ─── Phase 20C: Activity Visualization Model CRUD ───
+  private validateActivityVisualizationModel(model: ActivityVisualizationModel): boolean {
+    const warnings = validateActivityVisualizationModel(model, '[Runtime Diagnostics] malformed activity viz:');
+    return warnings.length === 0;
+  }
+
+  public registerActivityVisualizationModel(model: ActivityVisualizationModel): void {
+    if (!this.validateActivityVisualizationModel(model)) return;
+    if (this.activityVizRegistry.has(model.activityVizId)) {
+      console.warn(`[Runtime Diagnostics] duplicate activity viz IDs: ID "${model.activityVizId}" already exists.`);
+    }
+    this.activityVizRegistry.set(model.activityVizId, JSON.parse(JSON.stringify(model)));
+    if (!this.activityVizOrder.includes(model.activityVizId)) {
+      this.activityVizOrder.push(model.activityVizId);
+    }
+  }
+
+  public getActivityVisualizationModel(id: string): ActivityVisualizationModel | undefined {
+    const m = this.activityVizRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+
+  public getActivityVisualizationModels(): ActivityVisualizationModel[] {
+    return this.activityVizOrder
+      .map(id => this.activityVizRegistry.get(id))
+      .filter((m): m is ActivityVisualizationModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateActivityVisualizationModel(id: string, updates: Partial<ActivityVisualizationModel>): void {
+    const existing = this.activityVizRegistry.get(id);
+    if (!existing) { console.warn(`[Runtime Diagnostics] missing activity viz: Model "${id}" not found.`); return; }
+    const merged: ActivityVisualizationModel = { ...existing, ...updates, activityVizId: existing.activityVizId };
+    this.registerActivityVisualizationModel(merged);
+  }
+
+  public removeActivityVisualizationModel(id: string): void {
+    if (!id) { console.warn('[Runtime Diagnostics] removeActivityVisualizationModel: empty ID provided.'); return; }
+    this.activityVizRegistry.delete(id);
+    this.activityVizOrder = this.activityVizOrder.filter(e => e !== id);
+  }
+
+  public clearActivityVisualizationModels(): void {
+    this.activityVizRegistry.clear();
+    this.activityVizOrder = [];
+  }
+
+  public getActivityVisualizationModelKeys(): string[] { return [...this.activityVizOrder]; }
+  public hasActivityVisualizationModel(id: string): boolean { return this.activityVizRegistry.has(id); }
+
+  // ─── Phase 20C: Signal Flow Model CRUD ───
+  private validateSignalFlowModel(model: SignalFlowModel): boolean {
+    const warnings = validateSignalFlowModel(model, '[Runtime Diagnostics] malformed signal flow:');
+    return warnings.length === 0;
+  }
+
+  public registerSignalFlowModel(model: SignalFlowModel): void {
+    if (!this.validateSignalFlowModel(model)) return;
+    if (this.signalFlowRegistry.has(model.flowId)) {
+      console.warn(`[Runtime Diagnostics] duplicate signal flow IDs: ID "${model.flowId}" already exists.`);
+    }
+    this.signalFlowRegistry.set(model.flowId, JSON.parse(JSON.stringify(model)));
+    if (!this.signalFlowOrder.includes(model.flowId)) {
+      this.signalFlowOrder.push(model.flowId);
+    }
+  }
+
+  public getSignalFlowModel(id: string): SignalFlowModel | undefined {
+    const m = this.signalFlowRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+
+  public getSignalFlowModels(): SignalFlowModel[] {
+    return this.signalFlowOrder
+      .map(id => this.signalFlowRegistry.get(id))
+      .filter((m): m is SignalFlowModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateSignalFlowModel(id: string, updates: Partial<SignalFlowModel>): void {
+    const existing = this.signalFlowRegistry.get(id);
+    if (!existing) { console.warn(`[Runtime Diagnostics] missing signal flow: Model "${id}" not found.`); return; }
+    const merged: SignalFlowModel = { ...existing, ...updates, flowId: existing.flowId };
+    this.registerSignalFlowModel(merged);
+  }
+
+  public removeSignalFlowModel(id: string): void {
+    if (!id) { console.warn('[Runtime Diagnostics] removeSignalFlowModel: empty ID provided.'); return; }
+    this.signalFlowRegistry.delete(id);
+    this.signalFlowOrder = this.signalFlowOrder.filter(e => e !== id);
+  }
+
+  public clearSignalFlowModels(): void {
+    this.signalFlowRegistry.clear();
+    this.signalFlowOrder = [];
+  }
+
+  public getSignalFlowModelKeys(): string[] { return [...this.signalFlowOrder]; }
+  public hasSignalFlowModel(id: string): boolean { return this.signalFlowRegistry.has(id); }
+
+  // ═══════════════════════════════════════════════════════════════
+  // Phase 21A: Virtual ESP32 Execution Runtime — CRUD Delegates
+  // ═══════════════════════════════════════════════════════════════
+
+  // ─── VirtualESP32Model CRUD ───
+
+  private validateVirtualESP32ModelInternal(model: VirtualESP32Model): boolean {
+    const warnings = validateVirtualESP32Model(model, '[Runtime Diagnostics] malformed virtual ESP32:');
+    return warnings.length === 0;
+  }
+
+  public registerVirtualESP32Model(model: VirtualESP32Model): void {
+    if (!this.validateVirtualESP32ModelInternal(model)) return;
+    if (this.esp32VirtualRegistry.has(model.esp32Id)) {
+      console.warn(`[Runtime Diagnostics] duplicate virtual ESP32 IDs: ID "${model.esp32Id}" already exists.`);
+    }
+    this.esp32VirtualRegistry.set(model.esp32Id, JSON.parse(JSON.stringify(model)));
+    if (!this.esp32VirtualOrder.includes(model.esp32Id)) {
+      this.esp32VirtualOrder.push(model.esp32Id);
+    }
+  }
+
+  public getVirtualESP32Model(id: string): VirtualESP32Model | undefined {
+    const m = this.esp32VirtualRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+
+  public getVirtualESP32Models(): VirtualESP32Model[] {
+    return this.esp32VirtualOrder
+      .map(id => this.esp32VirtualRegistry.get(id))
+      .filter((m): m is VirtualESP32Model => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateVirtualESP32Model(id: string, updates: Partial<VirtualESP32Model>): void {
+    const existing = this.esp32VirtualRegistry.get(id);
+    if (!existing) { console.warn(`[Runtime Diagnostics] missing virtual ESP32: Model "${id}" not found.`); return; }
+    const merged: VirtualESP32Model = { ...existing, ...updates, esp32Id: existing.esp32Id };
+    this.registerVirtualESP32Model(merged);
+  }
+
+  public removeVirtualESP32Model(id: string): void {
+    if (!id) { console.warn('[Runtime Diagnostics] removeVirtualESP32Model: empty ID provided.'); return; }
+    this.esp32VirtualRegistry.delete(id);
+    this.esp32VirtualOrder = this.esp32VirtualOrder.filter(e => e !== id);
+  }
+
+  public clearVirtualESP32Models(): void {
+    this.esp32VirtualRegistry.clear();
+    this.esp32VirtualOrder = [];
+  }
+
+  public getVirtualESP32ModelKeys(): string[] { return [...this.esp32VirtualOrder]; }
+  public hasVirtualESP32Model(id: string): boolean { return this.esp32VirtualRegistry.has(id); }
+
+  // ─── VirtualGPIOPinModel CRUD ───
+
+  private validateVirtualGPIOPinModelInternal(model: VirtualGPIOPinModel): boolean {
+    const warnings = validateVirtualGPIOPinModel(model, '[Runtime Diagnostics] malformed virtual GPIO pin:');
+    return warnings.length === 0;
+  }
+
+  public registerVirtualGPIOPinModel(model: VirtualGPIOPinModel): void {
+    if (!this.validateVirtualGPIOPinModelInternal(model)) return;
+    if (this.gpioPinRegistry.has(model.gpioPinId)) {
+      console.warn(`[Runtime Diagnostics] duplicate virtual GPIO pin IDs: ID "${model.gpioPinId}" already exists.`);
+    }
+    this.gpioPinRegistry.set(model.gpioPinId, JSON.parse(JSON.stringify(model)));
+    if (!this.gpioPinOrder.includes(model.gpioPinId)) {
+      this.gpioPinOrder.push(model.gpioPinId);
+    }
+  }
+
+  public getVirtualGPIOPinModel(id: string): VirtualGPIOPinModel | undefined {
+    const m = this.gpioPinRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+
+  public getVirtualGPIOPinModels(): VirtualGPIOPinModel[] {
+    return this.gpioPinOrder
+      .map(id => this.gpioPinRegistry.get(id))
+      .filter((m): m is VirtualGPIOPinModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateVirtualGPIOPinModel(id: string, updates: Partial<VirtualGPIOPinModel>): void {
+    const existing = this.gpioPinRegistry.get(id);
+    if (!existing) { console.warn(`[Runtime Diagnostics] missing virtual GPIO pin: Model "${id}" not found.`); return; }
+    const merged: VirtualGPIOPinModel = { ...existing, ...updates, gpioPinId: existing.gpioPinId };
+    this.registerVirtualGPIOPinModel(merged);
+  }
+
+  public removeVirtualGPIOPinModel(id: string): void {
+    if (!id) { console.warn('[Runtime Diagnostics] removeVirtualGPIOPinModel: empty ID provided.'); return; }
+    this.gpioPinRegistry.delete(id);
+    this.gpioPinOrder = this.gpioPinOrder.filter(e => e !== id);
+  }
+
+  public clearVirtualGPIOPinModels(): void {
+    this.gpioPinRegistry.clear();
+    this.gpioPinOrder = [];
+  }
+
+  public getVirtualGPIOPinModelKeys(): string[] { return [...this.gpioPinOrder]; }
+  public hasVirtualGPIOPinModel(id: string): boolean { return this.gpioPinRegistry.has(id); }
+
+  // ─── VirtualPWMChannelModel CRUD ───
+
+  private validateVirtualPWMChannelModelInternal(model: VirtualPWMChannelModel): boolean {
+    const warnings = validateVirtualPWMChannelModel(model, '[Runtime Diagnostics] malformed virtual PWM channel:');
+    return warnings.length === 0;
+  }
+
+  public registerVirtualPWMChannelModel(model: VirtualPWMChannelModel): void {
+    if (!this.validateVirtualPWMChannelModelInternal(model)) return;
+    if (this.pwmChannelRegistry.has(model.pwmChannelId)) {
+      console.warn(`[Runtime Diagnostics] duplicate virtual PWM channel IDs: ID "${model.pwmChannelId}" already exists.`);
+    }
+    this.pwmChannelRegistry.set(model.pwmChannelId, JSON.parse(JSON.stringify(model)));
+    if (!this.pwmChannelOrder.includes(model.pwmChannelId)) {
+      this.pwmChannelOrder.push(model.pwmChannelId);
+    }
+  }
+
+  public getVirtualPWMChannelModel(id: string): VirtualPWMChannelModel | undefined {
+    const m = this.pwmChannelRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+
+  public getVirtualPWMChannelModels(): VirtualPWMChannelModel[] {
+    return this.pwmChannelOrder
+      .map(id => this.pwmChannelRegistry.get(id))
+      .filter((m): m is VirtualPWMChannelModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateVirtualPWMChannelModel(id: string, updates: Partial<VirtualPWMChannelModel>): void {
+    const existing = this.pwmChannelRegistry.get(id);
+    if (!existing) { console.warn(`[Runtime Diagnostics] missing virtual PWM channel: Model "${id}" not found.`); return; }
+    const merged: VirtualPWMChannelModel = { ...existing, ...updates, pwmChannelId: existing.pwmChannelId };
+    this.registerVirtualPWMChannelModel(merged);
+  }
+
+  public removeVirtualPWMChannelModel(id: string): void {
+    if (!id) { console.warn('[Runtime Diagnostics] removeVirtualPWMChannelModel: empty ID provided.'); return; }
+    this.pwmChannelRegistry.delete(id);
+    this.pwmChannelOrder = this.pwmChannelOrder.filter(e => e !== id);
+  }
+
+  public clearVirtualPWMChannelModels(): void {
+    this.pwmChannelRegistry.clear();
+    this.pwmChannelOrder = [];
+  }
+
+  public getVirtualPWMChannelModelKeys(): string[] { return [...this.pwmChannelOrder]; }
+  public hasVirtualPWMChannelModel(id: string): boolean { return this.pwmChannelRegistry.has(id); }
+
+  // ─── VirtualTimerModel CRUD ───
+
+  private validateVirtualTimerModelInternal(model: VirtualTimerModel): boolean {
+    const warnings = validateVirtualTimerModel(model, '[Runtime Diagnostics] malformed virtual timer:');
+    return warnings.length === 0;
+  }
+
+  public registerVirtualTimerModel(model: VirtualTimerModel): void {
+    if (!this.validateVirtualTimerModelInternal(model)) return;
+    if (this.virtualTimerRegistry.has(model.timerId)) {
+      console.warn(`[Runtime Diagnostics] duplicate virtual timer IDs: ID "${model.timerId}" already exists.`);
+    }
+    this.virtualTimerRegistry.set(model.timerId, JSON.parse(JSON.stringify(model)));
+    if (!this.virtualTimerOrder.includes(model.timerId)) {
+      this.virtualTimerOrder.push(model.timerId);
+    }
+  }
+
+  public getVirtualTimerModel(id: string): VirtualTimerModel | undefined {
+    const m = this.virtualTimerRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+
+  public getVirtualTimerModels(): VirtualTimerModel[] {
+    return this.virtualTimerOrder
+      .map(id => this.virtualTimerRegistry.get(id))
+      .filter((m): m is VirtualTimerModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateVirtualTimerModel(id: string, updates: Partial<VirtualTimerModel>): void {
+    const existing = this.virtualTimerRegistry.get(id);
+    if (!existing) { console.warn(`[Runtime Diagnostics] missing virtual timer: Model "${id}" not found.`); return; }
+    const merged: VirtualTimerModel = { ...existing, ...updates, timerId: existing.timerId };
+    this.registerVirtualTimerModel(merged);
+  }
+
+  public removeVirtualTimerModel(id: string): void {
+    if (!id) { console.warn('[Runtime Diagnostics] removeVirtualTimerModel: empty ID provided.'); return; }
+    this.virtualTimerRegistry.delete(id);
+    this.virtualTimerOrder = this.virtualTimerOrder.filter(e => e !== id);
+  }
+
+  public clearVirtualTimerModels(): void {
+    this.virtualTimerRegistry.clear();
+    this.virtualTimerOrder = [];
+  }
+
+  public getVirtualTimerModelKeys(): string[] { return [...this.virtualTimerOrder]; }
+  public hasVirtualTimerModel(id: string): boolean { return this.virtualTimerRegistry.has(id); }
+
+  // ─── VirtualInterruptModel CRUD ───
+
+  private validateVirtualInterruptModelInternal(model: VirtualInterruptModel): boolean {
+    const warnings = validateVirtualInterruptModel(model, '[Runtime Diagnostics] malformed virtual interrupt:');
+    return warnings.length === 0;
+  }
+
+  public registerVirtualInterruptModel(model: VirtualInterruptModel): void {
+    if (!this.validateVirtualInterruptModelInternal(model)) return;
+    if (this.virtualInterruptRegistry.has(model.interruptId)) {
+      console.warn(`[Runtime Diagnostics] duplicate virtual interrupt IDs: ID "${model.interruptId}" already exists.`);
+    }
+    this.virtualInterruptRegistry.set(model.interruptId, JSON.parse(JSON.stringify(model)));
+    if (!this.virtualInterruptOrder.includes(model.interruptId)) {
+      this.virtualInterruptOrder.push(model.interruptId);
+    }
+  }
+
+  public getVirtualInterruptModel(id: string): VirtualInterruptModel | undefined {
+    const m = this.virtualInterruptRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+
+  public getVirtualInterruptModels(): VirtualInterruptModel[] {
+    return this.virtualInterruptOrder
+      .map(id => this.virtualInterruptRegistry.get(id))
+      .filter((m): m is VirtualInterruptModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateVirtualInterruptModel(id: string, updates: Partial<VirtualInterruptModel>): void {
+    const existing = this.virtualInterruptRegistry.get(id);
+    if (!existing) { console.warn(`[Runtime Diagnostics] missing virtual interrupt: Model "${id}" not found.`); return; }
+    const merged: VirtualInterruptModel = { ...existing, ...updates, interruptId: existing.interruptId };
+    this.registerVirtualInterruptModel(merged);
+  }
+
+  public removeVirtualInterruptModel(id: string): void {
+    if (!id) { console.warn('[Runtime Diagnostics] removeVirtualInterruptModel: empty ID provided.'); return; }
+    this.virtualInterruptRegistry.delete(id);
+    this.virtualInterruptOrder = this.virtualInterruptOrder.filter(e => e !== id);
+  }
+
+  public clearVirtualInterruptModels(): void {
+    this.virtualInterruptRegistry.clear();
+    this.virtualInterruptOrder = [];
+  }
+
+  public getVirtualInterruptModelKeys(): string[] { return [...this.virtualInterruptOrder]; }
+  public hasVirtualInterruptModel(id: string): boolean { return this.virtualInterruptRegistry.has(id); }
+
+  // ═══════════════════════════════════════════════════════════════
+  // Phase 21A: High-Level Virtual ESP32 Simulation APIs
+  // ═══════════════════════════════════════════════════════════════
+
+  /**
+   * Set the pin mode for a virtual GPIO pin.
+   * Creates the pin model if it doesn't exist.
+   */
+  public virtualPinMode(esp32Id: string, pinNumber: number, mode: GPIOPinMode): void {
+    try {
+      const pinId = `gpio_${esp32Id}_${pinNumber}`;
+      let pin = this.gpioPinRegistry.get(pinId);
+      if (!pin) {
+        pin = createDefaultVirtualGPIOPinModel(pinId, { esp32Id, pinNumber });
+        this.registerVirtualGPIOPinModel(pin);
+        pin = this.gpioPinRegistry.get(pinId)!;
+      }
+      const updated = applyPinMode(pin, mode);
+      this.gpioPinRegistry.set(pinId, JSON.parse(JSON.stringify(updated)));
+    } catch (e) {
+      console.warn('[ESP32 Runtime] virtualPinMode error:', e);
+    }
+  }
+
+  /**
+   * Write a digital value (HIGH/LOW) to a virtual GPIO pin.
+   * Propagates state into existing signal propagation and visualization systems.
+   */
+  public virtualDigitalWrite(esp32Id: string, pinNumber: number, state: GPIOPinState): void {
+    try {
+      const pinId = `gpio_${esp32Id}_${pinNumber}`;
+      const pin = this.gpioPinRegistry.get(pinId);
+      if (!pin) {
+        console.warn(`[ESP32 Runtime] virtualDigitalWrite: pin ${pinNumber} not found on ESP32 "${esp32Id}". Call virtualPinMode first.`);
+        return;
+      }
+      const esp32 = this.esp32VirtualRegistry.get(esp32Id);
+      const currentTick = esp32 ? esp32.clockTickCount : 0;
+      const previousState = pin.pinState;
+      const updated = applyDigitalWrite(pin, state, currentTick);
+      this.gpioPinRegistry.set(pinId, JSON.parse(JSON.stringify(updated)));
+
+      // Check interrupt triggers
+      if (previousState !== state) {
+        const interrupt = this.findInterruptForPin(esp32Id, pinNumber);
+        if (interrupt && interrupt.isEnabled && shouldTriggerInterrupt(previousState, state, interrupt.edge)) {
+          const updatedInterrupt: VirtualInterruptModel = {
+            ...interrupt,
+            triggerCount: interrupt.triggerCount + 1,
+            lastTriggerTick: currentTick,
+          };
+          this.virtualInterruptRegistry.set(interrupt.interruptId, JSON.parse(JSON.stringify(updatedInterrupt)));
+        }
+      }
+    } catch (e) {
+      console.warn('[ESP32 Runtime] virtualDigitalWrite error:', e);
+    }
+  }
+
+  /**
+   * Read the current digital state of a virtual GPIO pin.
+   */
+  public virtualDigitalRead(esp32Id: string, pinNumber: number): GPIOPinState {
+    try {
+      const pinId = `gpio_${esp32Id}_${pinNumber}`;
+      const pin = this.gpioPinRegistry.get(pinId);
+      if (!pin) {
+        console.warn(`[ESP32 Runtime] virtualDigitalRead: pin ${pinNumber} not found on ESP32 "${esp32Id}".`);
+        return 'FLOATING';
+      }
+      return readDigitalPin(pin);
+    } catch (e) {
+      console.warn('[ESP32 Runtime] virtualDigitalRead error:', e);
+      return 'FLOATING';
+    }
+  }
+
+  /**
+   * Toggle a virtual GPIO pin between HIGH and LOW.
+   */
+  public virtualTogglePin(esp32Id: string, pinNumber: number): void {
+    try {
+      const pinId = `gpio_${esp32Id}_${pinNumber}`;
+      const pin = this.gpioPinRegistry.get(pinId);
+      if (!pin) {
+        console.warn(`[ESP32 Runtime] virtualTogglePin: pin ${pinNumber} not found on ESP32 "${esp32Id}".`);
+        return;
+      }
+      const esp32 = this.esp32VirtualRegistry.get(esp32Id);
+      const currentTick = esp32 ? esp32.clockTickCount : 0;
+      const previousState = pin.pinState;
+      const updated = togglePin(pin, currentTick);
+      this.gpioPinRegistry.set(pinId, JSON.parse(JSON.stringify(updated)));
+
+      // Check interrupt triggers
+      const newState = updated.pinState;
+      if (previousState !== newState) {
+        const interrupt = this.findInterruptForPin(esp32Id, pinNumber);
+        if (interrupt && interrupt.isEnabled && shouldTriggerInterrupt(previousState, newState, interrupt.edge)) {
+          const updatedInterrupt: VirtualInterruptModel = {
+            ...interrupt,
+            triggerCount: interrupt.triggerCount + 1,
+            lastTriggerTick: currentTick,
+          };
+          this.virtualInterruptRegistry.set(interrupt.interruptId, JSON.parse(JSON.stringify(updatedInterrupt)));
+        }
+      }
+    } catch (e) {
+      console.warn('[ESP32 Runtime] virtualTogglePin error:', e);
+    }
+  }
+
+  /**
+   * Attach a virtual PWM channel to a pin. Creates the channel if it doesn't exist.
+   */
+  public virtualLedcAttachPin(esp32Id: string, channelNumber: number, pinNumber: number): void {
+    try {
+      const channelId = `pwm_${esp32Id}_${channelNumber}`;
+      let channel = this.pwmChannelRegistry.get(channelId);
+      if (!channel) {
+        channel = createDefaultVirtualPWMChannelModel(channelId, { esp32Id, channelNumber });
+        this.registerVirtualPWMChannelModel(channel);
+        channel = this.pwmChannelRegistry.get(channelId)!;
+      }
+      const updated = applyLedcAttachPin(channel, pinNumber);
+      this.pwmChannelRegistry.set(channelId, JSON.parse(JSON.stringify(updated)));
+
+      // Also link the GPIO pin to this PWM channel
+      const pinId = `gpio_${esp32Id}_${pinNumber}`;
+      const pin = this.gpioPinRegistry.get(pinId);
+      if (pin) {
+        const updatedPin: VirtualGPIOPinModel = { ...pin, pwmChannelId: channelId };
+        this.gpioPinRegistry.set(pinId, JSON.parse(JSON.stringify(updatedPin)));
+      }
+    } catch (e) {
+      console.warn('[ESP32 Runtime] virtualLedcAttachPin error:', e);
+    }
+  }
+
+  /**
+   * Write a duty value to a virtual PWM channel.
+   */
+  public virtualLedcWrite(esp32Id: string, channelNumber: number, dutyValue: number): void {
+    try {
+      const channelId = `pwm_${esp32Id}_${channelNumber}`;
+      const channel = this.pwmChannelRegistry.get(channelId);
+      if (!channel) {
+        console.warn(`[ESP32 Runtime] virtualLedcWrite: channel ${channelNumber} not found on ESP32 "${esp32Id}".`);
+        return;
+      }
+      const updated = applyLedcWrite(channel, dutyValue);
+      this.pwmChannelRegistry.set(channelId, JSON.parse(JSON.stringify(updated)));
+    } catch (e) {
+      console.warn('[ESP32 Runtime] virtualLedcWrite error:', e);
+    }
+  }
+
+  /**
+   * Attach an interrupt to a virtual GPIO pin.
+   */
+  public virtualAttachInterrupt(esp32Id: string, pinNumber: number, edge: InterruptEdge): void {
+    try {
+      const interruptId = `int_${esp32Id}_${pinNumber}`;
+      const interrupt = createDefaultVirtualInterruptModel(interruptId, {
+        esp32Id,
+        pinNumber,
+        edge,
+        isEnabled: true,
+      });
+      this.registerVirtualInterruptModel(interrupt);
+
+      // Link the GPIO pin to this interrupt
+      const pinId = `gpio_${esp32Id}_${pinNumber}`;
+      const pin = this.gpioPinRegistry.get(pinId);
+      if (pin) {
+        const updatedPin: VirtualGPIOPinModel = { ...pin, interruptId };
+        this.gpioPinRegistry.set(pinId, JSON.parse(JSON.stringify(updatedPin)));
+      }
+    } catch (e) {
+      console.warn('[ESP32 Runtime] virtualAttachInterrupt error:', e);
+    }
+  }
+
+  /**
+   * Detach an interrupt from a virtual GPIO pin.
+   */
+  public virtualDetachInterrupt(esp32Id: string, pinNumber: number): void {
+    try {
+      const interruptId = `int_${esp32Id}_${pinNumber}`;
+      this.removeVirtualInterruptModel(interruptId);
+
+      // Unlink from GPIO pin
+      const pinId = `gpio_${esp32Id}_${pinNumber}`;
+      const pin = this.gpioPinRegistry.get(pinId);
+      if (pin) {
+        const updatedPin: VirtualGPIOPinModel = { ...pin, interruptId: '' };
+        this.gpioPinRegistry.set(pinId, JSON.parse(JSON.stringify(updatedPin)));
+      }
+    } catch (e) {
+      console.warn('[ESP32 Runtime] virtualDetachInterrupt error:', e);
+    }
+  }
+
+  /**
+   * Advance the virtual clock and tick timers for an ESP32 instance.
+   */
+  public virtualTick(esp32Id: string, deltaMs: number): void {
+    try {
+      const esp32 = this.esp32VirtualRegistry.get(esp32Id);
+      if (!esp32) {
+        console.warn(`[ESP32 Runtime] virtualTick: ESP32 "${esp32Id}" not found.`);
+        return;
+      }
+      const updatedEsp32 = advanceClock(esp32, deltaMs);
+      this.esp32VirtualRegistry.set(esp32Id, JSON.parse(JSON.stringify(updatedEsp32)));
+
+      // Tick all timers belonging to this ESP32
+      const timers = this.virtualTimerOrder
+        .map(id => this.virtualTimerRegistry.get(id))
+        .filter((t): t is VirtualTimerModel => !!t && t.esp32Id === esp32Id);
+
+      if (timers.length > 0) {
+        const { updatedTimers } = tickTimers(timers, deltaMs, updatedEsp32.clockTickCount);
+        for (const t of updatedTimers) {
+          this.virtualTimerRegistry.set(t.timerId, JSON.parse(JSON.stringify(t)));
+        }
+      }
+    } catch (e) {
+      console.warn('[ESP32 Runtime] virtualTick error:', e);
+    }
+  }
+
+  /**
+   * Bridge method: called each animation frame to update virtual execution state.
+   * Scans all ESP32 models and syncs GPIO states with visualization systems.
+   */
+  public updateVirtualExecutionState(clockTick = 0): void {
+    try {
+      // Iterate all GPIO pins and sync PWM duty into activity visualization
+      for (const pinId of this.gpioPinOrder) {
+        const pin = this.gpioPinRegistry.get(pinId);
+        if (!pin) continue;
+        if (pin.pwmChannelId) {
+          const channel = this.pwmChannelRegistry.get(pin.pwmChannelId);
+          if (channel && channel.isActive) {
+            const duty = computeNormalizedDuty(channel);
+            // Update activity visualization for the attached pin's component
+            const actVizId = `act_pwm_${pinId}`;
+            const existingActViz = this.activityVizRegistry.get(actVizId);
+            if (existingActViz) {
+              const updated = { ...existingActViz, brightness: duty, isActive: duty > 0 };
+              this.activityVizRegistry.set(actVizId, JSON.parse(JSON.stringify(updated)));
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('[ESP32 Runtime] updateVirtualExecutionState error:', e);
+    }
+  }
+
+  /**
+   * Find the interrupt model attached to a specific pin on a specific ESP32.
+   */
+  private findInterruptForPin(esp32Id: string, pinNumber: number): VirtualInterruptModel | undefined {
+    for (const id of this.virtualInterruptOrder) {
+      const interrupt = this.virtualInterruptRegistry.get(id);
+      if (interrupt && interrupt.esp32Id === esp32Id && interrupt.pinNumber === pinNumber) {
+        return interrupt;
+      }
+    }
+    return undefined;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // Phase 21B: Blockly → Virtual ESP32 Execution Bridge — CRUD
+  // ═══════════════════════════════════════════════════════════════
+
+  // --- BlocklyExecutionModel CRUD ---
+  public registerBlocklyExecutionModel(model: BlocklyExecutionModel): void {
+    const warnings = validateBlocklyExecutionModel(model);
+    if (warnings.length > 0) {
+      console.warn('[Blockly Bridge] registerBlocklyExecutionModel warnings:', warnings);
+    }
+    this.blocklyExecutionRegistry.set(model.executionId, JSON.parse(JSON.stringify(model)));
+    if (!this.blocklyExecutionOrder.includes(model.executionId)) {
+      this.blocklyExecutionOrder.push(model.executionId);
+    }
+  }
+
+  public getBlocklyExecutionModel(id: string): BlocklyExecutionModel | undefined {
+    const model = this.blocklyExecutionRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getAllBlocklyExecutionModels(): BlocklyExecutionModel[] {
+    return this.blocklyExecutionOrder
+      .map(id => this.blocklyExecutionRegistry.get(id))
+      .filter((m): m is BlocklyExecutionModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateBlocklyExecutionModel(id: string, partial: Partial<BlocklyExecutionModel>): void {
+    const existing = this.blocklyExecutionRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Blockly Bridge] updateBlocklyExecutionModel: "${id}" not found.`);
+      return;
+    }
+    const merged: BlocklyExecutionModel = { ...existing, ...partial, executionId: existing.executionId };
+    this.registerBlocklyExecutionModel(merged);
+  }
+
+  public removeBlocklyExecutionModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Blockly Bridge] removeBlocklyExecutionModel: ID must be a non-empty string.');
+      return;
+    }
+    this.blocklyExecutionRegistry.delete(id);
+    this.blocklyExecutionOrder = this.blocklyExecutionOrder.filter(e => e !== id);
+  }
+
+  public clearBlocklyExecutionModels(): void {
+    this.blocklyExecutionRegistry.clear();
+    this.blocklyExecutionOrder = [];
+  }
+
+  public getBlocklyExecutionModelKeys(): string[] { return [...this.blocklyExecutionOrder]; }
+  public hasBlocklyExecutionModel(id: string): boolean { return this.blocklyExecutionRegistry.has(id); }
+
+  // --- BlocklyProgramModel CRUD ---
+  public registerBlocklyProgramModel(model: BlocklyProgramModel): void {
+    const warnings = validateBlocklyProgramModel(model);
+    if (warnings.length > 0) {
+      console.warn('[Blockly Bridge] registerBlocklyProgramModel warnings:', warnings);
+    }
+    this.blocklyProgramRegistry.set(model.programId, JSON.parse(JSON.stringify(model)));
+    if (!this.blocklyProgramOrder.includes(model.programId)) {
+      this.blocklyProgramOrder.push(model.programId);
+    }
+  }
+
+  public getBlocklyProgramModel(id: string): BlocklyProgramModel | undefined {
+    const model = this.blocklyProgramRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getAllBlocklyProgramModels(): BlocklyProgramModel[] {
+    return this.blocklyProgramOrder
+      .map(id => this.blocklyProgramRegistry.get(id))
+      .filter((m): m is BlocklyProgramModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateBlocklyProgramModel(id: string, partial: Partial<BlocklyProgramModel>): void {
+    const existing = this.blocklyProgramRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Blockly Bridge] updateBlocklyProgramModel: "${id}" not found.`);
+      return;
+    }
+    const merged: BlocklyProgramModel = { ...existing, ...partial, programId: existing.programId };
+    this.registerBlocklyProgramModel(merged);
+  }
+
+  public removeBlocklyProgramModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Blockly Bridge] removeBlocklyProgramModel: ID must be a non-empty string.');
+      return;
+    }
+    this.blocklyProgramRegistry.delete(id);
+    this.blocklyProgramOrder = this.blocklyProgramOrder.filter(e => e !== id);
+  }
+
+  public clearBlocklyProgramModels(): void {
+    this.blocklyProgramRegistry.clear();
+    this.blocklyProgramOrder = [];
+  }
+
+  public getBlocklyProgramModelKeys(): string[] { return [...this.blocklyProgramOrder]; }
+  public hasBlocklyProgramModel(id: string): boolean { return this.blocklyProgramRegistry.has(id); }
+
+  // --- BlocklyExecutionContextModel CRUD ---
+  public registerBlocklyContextModel(model: BlocklyExecutionContextModel): void {
+    const warnings = validateBlocklyExecutionContextModel(model);
+    if (warnings.length > 0) {
+      console.warn('[Blockly Bridge] registerBlocklyContextModel warnings:', warnings);
+    }
+    this.blocklyContextRegistry.set(model.contextId, JSON.parse(JSON.stringify(model)));
+    if (!this.blocklyContextOrder.includes(model.contextId)) {
+      this.blocklyContextOrder.push(model.contextId);
+    }
+  }
+
+  public getBlocklyContextModel(id: string): BlocklyExecutionContextModel | undefined {
+    const model = this.blocklyContextRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getAllBlocklyContextModels(): BlocklyExecutionContextModel[] {
+    return this.blocklyContextOrder
+      .map(id => this.blocklyContextRegistry.get(id))
+      .filter((m): m is BlocklyExecutionContextModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateBlocklyContextModel(id: string, partial: Partial<BlocklyExecutionContextModel>): void {
+    const existing = this.blocklyContextRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Blockly Bridge] updateBlocklyContextModel: "${id}" not found.`);
+      return;
+    }
+    const merged: BlocklyExecutionContextModel = { ...existing, ...partial, contextId: existing.contextId };
+    this.registerBlocklyContextModel(merged);
+  }
+
+  public removeBlocklyContextModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Blockly Bridge] removeBlocklyContextModel: ID must be a non-empty string.');
+      return;
+    }
+    this.blocklyContextRegistry.delete(id);
+    this.blocklyContextOrder = this.blocklyContextOrder.filter(e => e !== id);
+  }
+
+  public clearBlocklyContextModels(): void {
+    this.blocklyContextRegistry.clear();
+    this.blocklyContextOrder = [];
+  }
+
+  public getBlocklyContextModelKeys(): string[] { return [...this.blocklyContextOrder]; }
+  public hasBlocklyContextModel(id: string): boolean { return this.blocklyContextRegistry.has(id); }
+
+  // ═══════════════════════════════════════════════════════════════
+  // Phase 22A: HC-SR04 Virtual Ultrasonic Sensor Simulation — CRUD
+  // ═══════════════════════════════════════════════════════════════
+
+  // --- HCSR04Model CRUD ---
+  public registerHCSR04Model(model: HCSR04Model): void {
+    const warnings = validateHCSR04Model(model);
+    if (warnings.length > 0) {
+      console.warn('[HC-SR04] registerHCSR04Model warnings:', warnings);
+    }
+    this.hcsr04Registry.set(model.sensorId, JSON.parse(JSON.stringify(model)));
+    if (!this.hcsr04Order.includes(model.sensorId)) {
+      this.hcsr04Order.push(model.sensorId);
+    }
+  }
+
+  public getHCSR04Model(id: string): HCSR04Model | undefined {
+    const model = this.hcsr04Registry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getAllHCSR04Models(): HCSR04Model[] {
+    return this.hcsr04Order
+      .map(id => this.hcsr04Registry.get(id))
+      .filter((m): m is HCSR04Model => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateHCSR04Model(id: string, partial: Partial<HCSR04Model>): void {
+    const existing = this.hcsr04Registry.get(id);
+    if (!existing) {
+      console.warn(`[HC-SR04] updateHCSR04Model: "${id}" not found.`);
+      return;
+    }
+    const merged: HCSR04Model = { ...existing, ...partial, sensorId: existing.sensorId };
+    this.registerHCSR04Model(merged);
+  }
+
+  public removeHCSR04Model(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[HC-SR04] removeHCSR04Model: ID must be a non-empty string.');
+      return;
+    }
+    this.hcsr04Registry.delete(id);
+    this.hcsr04Order = this.hcsr04Order.filter(e => e !== id);
+  }
+
+  public clearHCSR04Models(): void {
+    this.hcsr04Registry.clear();
+    this.hcsr04Order = [];
+  }
+
+  public getHCSR04ModelKeys(): string[] { return [...this.hcsr04Order]; }
+  public hasHCSR04Model(id: string): boolean { return this.hcsr04Registry.has(id); }
+
+  // --- UltrasonicBeamModel CRUD ---
+  public registerUltrasonicBeamModel(model: UltrasonicBeamModel): void {
+    const warnings = validateUltrasonicBeamModel(model);
+    if (warnings.length > 0) {
+      console.warn('[Ultrasonic Beam] registerUltrasonicBeamModel warnings:', warnings);
+    }
+    this.ultrasonicBeamRegistry.set(model.beamId, JSON.parse(JSON.stringify(model)));
+    if (!this.ultrasonicBeamOrder.includes(model.beamId)) {
+      this.ultrasonicBeamOrder.push(model.beamId);
+    }
+  }
+
+  public getUltrasonicBeamModel(id: string): UltrasonicBeamModel | undefined {
+    const model = this.ultrasonicBeamRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getAllUltrasonicBeamModels(): UltrasonicBeamModel[] {
+    return this.ultrasonicBeamOrder
+      .map(id => this.ultrasonicBeamRegistry.get(id))
+      .filter((m): m is UltrasonicBeamModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateUltrasonicBeamModel(id: string, partial: Partial<UltrasonicBeamModel>): void {
+    const existing = this.ultrasonicBeamRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Ultrasonic Beam] updateUltrasonicBeamModel: "${id}" not found.`);
+      return;
+    }
+    const merged: UltrasonicBeamModel = { ...existing, ...partial, beamId: existing.beamId };
+    this.registerUltrasonicBeamModel(merged);
+  }
+
+  public removeUltrasonicBeamModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Ultrasonic Beam] removeUltrasonicBeamModel: ID must be a non-empty string.');
+      return;
+    }
+    this.ultrasonicBeamRegistry.delete(id);
+    this.ultrasonicBeamOrder = this.ultrasonicBeamOrder.filter(e => e !== id);
+  }
+
+  public clearUltrasonicBeamModels(): void {
+    this.ultrasonicBeamRegistry.clear();
+    this.ultrasonicBeamOrder = [];
+  }
+
+  public getUltrasonicBeamModelKeys(): string[] { return [...this.ultrasonicBeamOrder]; }
+  public hasUltrasonicBeamModel(id: string): boolean { return this.ultrasonicBeamRegistry.has(id); }
+
+  // --- EchoPulseModel CRUD ---
+  public registerEchoPulseModel(model: EchoPulseModel): void {
+    const warnings = validateEchoPulseModel(model);
+    if (warnings.length > 0) {
+      console.warn('[Echo Pulse] registerEchoPulseModel warnings:', warnings);
+    }
+    this.echoPulseRegistry.set(model.pulseId, JSON.parse(JSON.stringify(model)));
+    if (!this.echoPulseOrder.includes(model.pulseId)) {
+      this.echoPulseOrder.push(model.pulseId);
+    }
+  }
+
+  public getEchoPulseModel(id: string): EchoPulseModel | undefined {
+    const model = this.echoPulseRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getAllEchoPulseModels(): EchoPulseModel[] {
+    return this.echoPulseOrder
+      .map(id => this.echoPulseRegistry.get(id))
+      .filter((m): m is EchoPulseModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateEchoPulseModel(id: string, partial: Partial<EchoPulseModel>): void {
+    const existing = this.echoPulseRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Echo Pulse] updateEchoPulseModel: "${id}" not found.`);
+      return;
+    }
+    const merged: EchoPulseModel = { ...existing, ...partial, pulseId: existing.pulseId };
+    this.registerEchoPulseModel(merged);
+  }
+
+  public removeEchoPulseModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Echo Pulse] removeEchoPulseModel: ID must be a non-empty string.');
+      return;
+    }
+    this.echoPulseRegistry.delete(id);
+    this.echoPulseOrder = this.echoPulseOrder.filter(e => e !== id);
+  }
+
+  public clearEchoPulseModels(): void {
+    this.echoPulseRegistry.clear();
+    this.echoPulseOrder = [];
+  }
+
+  public getEchoPulseModelKeys(): string[] { return [...this.echoPulseOrder]; }
+  public hasEchoPulseModel(id: string): boolean { return this.echoPulseRegistry.has(id); }
+
+  // --- DistanceTargetModel CRUD ---
+  public registerDistanceTargetModel(model: DistanceTargetModel): void {
+    const warnings = validateDistanceTargetModel(model);
+    if (warnings.length > 0) {
+      console.warn('[Distance Target] registerDistanceTargetModel warnings:', warnings);
+    }
+    this.distanceTargetRegistry.set(model.targetId, JSON.parse(JSON.stringify(model)));
+    if (!this.distanceTargetOrder.includes(model.targetId)) {
+      this.distanceTargetOrder.push(model.targetId);
+    }
+  }
+
+  public getDistanceTargetModel(id: string): DistanceTargetModel | undefined {
+    const model = this.distanceTargetRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getAllDistanceTargetModels(): DistanceTargetModel[] {
+    return this.distanceTargetOrder
+      .map(id => this.distanceTargetRegistry.get(id))
+      .filter((m): m is DistanceTargetModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateDistanceTargetModel(id: string, partial: Partial<DistanceTargetModel>): void {
+    const existing = this.distanceTargetRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Distance Target] updateDistanceTargetModel: "${id}" not found.`);
+      return;
+    }
+    const merged: DistanceTargetModel = { ...existing, ...partial, targetId: existing.targetId };
+    this.registerDistanceTargetModel(merged);
+  }
+
+  public removeDistanceTargetModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Distance Target] removeDistanceTargetModel: ID must be a non-empty string.');
+      return;
+    }
+    this.distanceTargetRegistry.delete(id);
+    this.distanceTargetOrder = this.distanceTargetOrder.filter(e => e !== id);
+  }
+
+  public clearDistanceTargetModels(): void {
+    this.distanceTargetRegistry.clear();
+    this.distanceTargetOrder = [];
+  }
+
+  public getDistanceTargetModelKeys(): string[] { return [...this.distanceTargetOrder]; }
+  public hasDistanceTargetModel(id: string): boolean { return this.distanceTargetRegistry.has(id); }
+
+  // --- UltrasonicEnvironmentModel CRUD ---
+  public registerUltrasonicEnvironmentModel(model: UltrasonicEnvironmentModel): void {
+    const warnings = validateUltrasonicEnvironmentModel(model);
+    if (warnings.length > 0) {
+      console.warn('[Ultrasonic Env] registerUltrasonicEnvironmentModel warnings:', warnings);
+    }
+    this.ultrasonicEnvironmentRegistry.set(model.environmentId, JSON.parse(JSON.stringify(model)));
+    if (!this.ultrasonicEnvironmentOrder.includes(model.environmentId)) {
+      this.ultrasonicEnvironmentOrder.push(model.environmentId);
+    }
+  }
+
+  public getUltrasonicEnvironmentModel(id: string): UltrasonicEnvironmentModel | undefined {
+    const model = this.ultrasonicEnvironmentRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getAllUltrasonicEnvironmentModels(): UltrasonicEnvironmentModel[] {
+    return this.ultrasonicEnvironmentOrder
+      .map(id => this.ultrasonicEnvironmentRegistry.get(id))
+      .filter((m): m is UltrasonicEnvironmentModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateUltrasonicEnvironmentModel(id: string, partial: Partial<UltrasonicEnvironmentModel>): void {
+    const existing = this.ultrasonicEnvironmentRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Ultrasonic Env] updateUltrasonicEnvironmentModel: "${id}" not found.`);
+      return;
+    }
+    const merged: UltrasonicEnvironmentModel = { ...existing, ...partial, environmentId: existing.environmentId };
+    this.registerUltrasonicEnvironmentModel(merged);
+  }
+
+  public removeUltrasonicEnvironmentModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Ultrasonic Env] removeUltrasonicEnvironmentModel: ID must be a non-empty string.');
+      return;
+    }
+    this.ultrasonicEnvironmentRegistry.delete(id);
+    this.ultrasonicEnvironmentOrder = this.ultrasonicEnvironmentOrder.filter(e => e !== id);
+  }
+
+  public clearUltrasonicEnvironmentModels(): void {
+    this.ultrasonicEnvironmentRegistry.clear();
+    this.ultrasonicEnvironmentOrder = [];
+  }
+
+  public getUltrasonicEnvironmentModelKeys(): string[] { return [...this.ultrasonicEnvironmentOrder]; }
+  public hasUltrasonicEnvironmentModel(id: string): boolean { return this.ultrasonicEnvironmentRegistry.has(id); }
+
+  // ─── Phase 22A: HC-SR04 High-Level APIs ───
+
+  public hcsr04PlaceSensor(
+    esp32Id: string,
+    sensorId: string,
+    trigPin: number,
+    echoPin: number,
+    x = 0,
+    y = 0,
+    rotationDeg = 0,
+  ): string {
+    try {
+      const model = createDefaultHCSR04Model(sensorId, {
+        esp32Id,
+        trigPin,
+        echoPin,
+        positionX: x,
+        positionY: y,
+        rotationDeg,
+      });
+      this.registerHCSR04Model(model);
+      return sensorId;
+    } catch (e) {
+      console.warn('[HC-SR04] hcsr04PlaceSensor error:', e);
+      return '';
+    }
+  }
+
+  public hcsr04PlaceTarget(
+    targetId: string,
+    targetType: DistanceTargetModel['targetType'] = 'BOX',
+    x = 0,
+    y = 0,
+    width = 10,
+    height = 10,
+    reflectivity = 1.0,
+  ): string {
+    try {
+      const model = createDefaultDistanceTargetModel(targetId, {
+        targetType,
+        positionX: x,
+        positionY: y,
+        width,
+        height,
+        reflectivity,
+      });
+      this.registerDistanceTargetModel(model);
+      return targetId;
+    } catch (e) {
+      console.warn('[HC-SR04] hcsr04PlaceTarget error:', e);
+      return '';
+    }
+  }
+
+  public hcsr04TriggerMeasurement(
+    sensorId: string,
+  ): { distanceCm: number; echoDurationUs: number } | null {
+    try {
+      const sensor = this.hcsr04Registry.get(sensorId);
+      if (!sensor) {
+        console.warn(`[HC-SR04] hcsr04TriggerMeasurement: sensor "${sensorId}" not found.`);
+        return null;
+      }
+
+      const targets = this.getAllDistanceTargetModels();
+      const envs = this.getAllUltrasonicEnvironmentModels();
+      const env = envs.length > 0 ? envs[0] : null;
+      const timestamp = Date.now();
+
+      const result = simulateMeasurement(sensor, targets, env, timestamp);
+
+      // Update sensor in registry
+      this.hcsr04Registry.set(sensorId, JSON.parse(JSON.stringify(result.sensor)));
+      // Store beam
+      this.ultrasonicBeamRegistry.set(result.beam.beamId, JSON.parse(JSON.stringify(result.beam)));
+      if (!this.ultrasonicBeamOrder.includes(result.beam.beamId)) {
+        this.ultrasonicBeamOrder.push(result.beam.beamId);
+      }
+      // Store echo pulse
+      this.echoPulseRegistry.set(result.echoPulse.pulseId, JSON.parse(JSON.stringify(result.echoPulse)));
+      if (!this.echoPulseOrder.includes(result.echoPulse.pulseId)) {
+        this.echoPulseOrder.push(result.echoPulse.pulseId);
+      }
+
+      return {
+        distanceCm: result.sensor.lastMeasuredDistanceCm,
+        echoDurationUs: result.sensor.lastEchoDurationUs,
+      };
+    } catch (e) {
+      console.warn('[HC-SR04] hcsr04TriggerMeasurement error:', e);
+      return null;
+    }
+  }
+
+  public hcsr04GetDistance(sensorId: string): number {
+    const sensor = this.hcsr04Registry.get(sensorId);
+    if (!sensor) {
+      console.warn(`[HC-SR04] hcsr04GetDistance: sensor "${sensorId}" not found.`);
+      return 0;
+    }
+    return sensor.lastMeasuredDistanceCm;
+  }
+
+  public hcsr04MoveTarget(targetId: string, x: number, y: number): boolean {
+    const existing = this.distanceTargetRegistry.get(targetId);
+    if (!existing) {
+      console.warn(`[HC-SR04] hcsr04MoveTarget: target "${targetId}" not found.`);
+      return false;
+    }
+    existing.positionX = x;
+    existing.positionY = y;
+    this.distanceTargetRegistry.set(targetId, JSON.parse(JSON.stringify(existing)));
+    return true;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // Phase 22B: SG90 Servo Motor Virtual Simulation — CRUD Methods
+  // ═══════════════════════════════════════════════════════════════
+
+  // --- ServoMotorModel CRUD ---
+  public registerServoMotorModel(model: ServoMotorModel): void {
+    const warnings = validateServoMotorModel(model);
+    if (warnings.length > 0) {
+      console.warn('[Servo] registerServoMotorModel warnings:', warnings);
+    }
+    this.servoMotorRegistry.set(model.servoId, JSON.parse(JSON.stringify(model)));
+    if (!this.servoMotorOrder.includes(model.servoId)) {
+      this.servoMotorOrder.push(model.servoId);
+    }
+  }
+
+  public getServoMotorModel(id: string): ServoMotorModel | undefined {
+    const model = this.servoMotorRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getAllServoMotorModels(): ServoMotorModel[] {
+    return this.servoMotorOrder
+      .map(id => this.servoMotorRegistry.get(id))
+      .filter((m): m is ServoMotorModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateServoMotorModel(id: string, partial: Partial<ServoMotorModel>): void {
+    const existing = this.servoMotorRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Servo] updateServoMotorModel: "${id}" not found.`);
+      return;
+    }
+    const merged: ServoMotorModel = { ...existing, ...partial, servoId: existing.servoId };
+    this.registerServoMotorModel(merged);
+  }
+
+  public removeServoMotorModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Servo] removeServoMotorModel: ID must be a non-empty string.');
+      return;
+    }
+    this.servoMotorRegistry.delete(id);
+    this.servoMotorOrder = this.servoMotorOrder.filter(e => e !== id);
+  }
+
+  public clearServoMotorModels(): void {
+    this.servoMotorRegistry.clear();
+    this.servoMotorOrder = [];
+  }
+
+  public getServoMotorModelKeys(): string[] { return [...this.servoMotorOrder]; }
+  public hasServoMotorModel(id: string): boolean { return this.servoMotorRegistry.has(id); }
+
+  // --- ServoPositionModel CRUD ---
+  public registerServoPositionModel(model: ServoPositionModel): void {
+    const warnings = validateServoPositionModel(model);
+    if (warnings.length > 0) {
+      console.warn('[Servo Position] registerServoPositionModel warnings:', warnings);
+    }
+    this.servoPositionRegistry.set(model.positionId, JSON.parse(JSON.stringify(model)));
+    if (!this.servoPositionOrder.includes(model.positionId)) {
+      this.servoPositionOrder.push(model.positionId);
+    }
+  }
+
+  public getServoPositionModel(id: string): ServoPositionModel | undefined {
+    const model = this.servoPositionRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getAllServoPositionModels(): ServoPositionModel[] {
+    return this.servoPositionOrder
+      .map(id => this.servoPositionRegistry.get(id))
+      .filter((m): m is ServoPositionModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateServoPositionModel(id: string, partial: Partial<ServoPositionModel>): void {
+    const existing = this.servoPositionRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Servo Position] updateServoPositionModel: "${id}" not found.`);
+      return;
+    }
+    const merged: ServoPositionModel = { ...existing, ...partial, positionId: existing.positionId };
+    this.registerServoPositionModel(merged);
+  }
+
+  public removeServoPositionModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Servo Position] removeServoPositionModel: ID must be a non-empty string.');
+      return;
+    }
+    this.servoPositionRegistry.delete(id);
+    this.servoPositionOrder = this.servoPositionOrder.filter(e => e !== id);
+  }
+
+  public clearServoPositionModels(): void {
+    this.servoPositionRegistry.clear();
+    this.servoPositionOrder = [];
+  }
+
+  public getServoPositionModelKeys(): string[] { return [...this.servoPositionOrder]; }
+  public hasServoPositionModel(id: string): boolean { return this.servoPositionRegistry.has(id); }
+
+  // --- ServoMotionModel CRUD ---
+  public registerServoMotionModel(model: ServoMotionModel): void {
+    const warnings = validateServoMotionModel(model);
+    if (warnings.length > 0) {
+      console.warn('[Servo Motion] registerServoMotionModel warnings:', warnings);
+    }
+    this.servoMotionRegistry.set(model.motionId, JSON.parse(JSON.stringify(model)));
+    if (!this.servoMotionOrder.includes(model.motionId)) {
+      this.servoMotionOrder.push(model.motionId);
+    }
+  }
+
+  public getServoMotionModel(id: string): ServoMotionModel | undefined {
+    const model = this.servoMotionRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getAllServoMotionModels(): ServoMotionModel[] {
+    return this.servoMotionOrder
+      .map(id => this.servoMotionRegistry.get(id))
+      .filter((m): m is ServoMotionModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateServoMotionModel(id: string, partial: Partial<ServoMotionModel>): void {
+    const existing = this.servoMotionRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Servo Motion] updateServoMotionModel: "${id}" not found.`);
+      return;
+    }
+    const merged: ServoMotionModel = { ...existing, ...partial, motionId: existing.motionId };
+    this.registerServoMotionModel(merged);
+  }
+
+  public removeServoMotionModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Servo Motion] removeServoMotionModel: ID must be a non-empty string.');
+      return;
+    }
+    this.servoMotionRegistry.delete(id);
+    this.servoMotionOrder = this.servoMotionOrder.filter(e => e !== id);
+  }
+
+  public clearServoMotionModels(): void {
+    this.servoMotionRegistry.clear();
+    this.servoMotionOrder = [];
+  }
+
+  public getServoMotionModelKeys(): string[] { return [...this.servoMotionOrder]; }
+  public hasServoMotionModel(id: string): boolean { return this.servoMotionRegistry.has(id); }
+
+  // --- ServoConstraintModel CRUD ---
+  public registerServoConstraintModel(model: ServoConstraintModel): void {
+    const warnings = validateServoConstraintModel(model);
+    if (warnings.length > 0) {
+      console.warn('[Servo Constraint] registerServoConstraintModel warnings:', warnings);
+    }
+    this.servoConstraintRegistry.set(model.constraintId, JSON.parse(JSON.stringify(model)));
+    if (!this.servoConstraintOrder.includes(model.constraintId)) {
+      this.servoConstraintOrder.push(model.constraintId);
+    }
+  }
+
+  public getServoConstraintModel(id: string): ServoConstraintModel | undefined {
+    const model = this.servoConstraintRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getAllServoConstraintModels(): ServoConstraintModel[] {
+    return this.servoConstraintOrder
+      .map(id => this.servoConstraintRegistry.get(id))
+      .filter((m): m is ServoConstraintModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateServoConstraintModel(id: string, partial: Partial<ServoConstraintModel>): void {
+    const existing = this.servoConstraintRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Servo Constraint] updateServoConstraintModel: "${id}" not found.`);
+      return;
+    }
+    const merged: ServoConstraintModel = { ...existing, ...partial, constraintId: existing.constraintId };
+    this.registerServoConstraintModel(merged);
+  }
+
+  public removeServoConstraintModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Servo Constraint] removeServoConstraintModel: ID must be a non-empty string.');
+      return;
+    }
+    this.servoConstraintRegistry.delete(id);
+    this.servoConstraintOrder = this.servoConstraintOrder.filter(e => e !== id);
+  }
+
+  public clearServoConstraintModels(): void {
+    this.servoConstraintRegistry.clear();
+    this.servoConstraintOrder = [];
+  }
+
+  public getServoConstraintModelKeys(): string[] { return [...this.servoConstraintOrder]; }
+  public hasServoConstraintModel(id: string): boolean { return this.servoConstraintRegistry.has(id); }
+
+  // --- ServoAnimationModel CRUD ---
+  public registerServoAnimationModel(model: ServoAnimationModel): void {
+    const warnings = validateServoAnimationModel(model);
+    if (warnings.length > 0) {
+      console.warn('[Servo Animation] registerServoAnimationModel warnings:', warnings);
+    }
+    this.servoAnimationRegistry.set(model.animationId, JSON.parse(JSON.stringify(model)));
+    if (!this.servoAnimationOrder.includes(model.animationId)) {
+      this.servoAnimationOrder.push(model.animationId);
+    }
+  }
+
+  public getServoAnimationModel(id: string): ServoAnimationModel | undefined {
+    const model = this.servoAnimationRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getAllServoAnimationModels(): ServoAnimationModel[] {
+    return this.servoAnimationOrder
+      .map(id => this.servoAnimationRegistry.get(id))
+      .filter((m): m is ServoAnimationModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateServoAnimationModel(id: string, partial: Partial<ServoAnimationModel>): void {
+    const existing = this.servoAnimationRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Servo Animation] updateServoAnimationModel: "${id}" not found.`);
+      return;
+    }
+    const merged: ServoAnimationModel = { ...existing, ...partial, animationId: existing.animationId };
+    this.registerServoAnimationModel(merged);
+  }
+
+  public removeServoAnimationModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Servo Animation] removeServoAnimationModel: ID must be a non-empty string.');
+      return;
+    }
+    this.servoAnimationRegistry.delete(id);
+    this.servoAnimationOrder = this.servoAnimationOrder.filter(e => e !== id);
+  }
+
+  public clearServoAnimationModels(): void {
+    this.servoAnimationRegistry.clear();
+    this.servoAnimationOrder = [];
+  }
+
+  public getServoAnimationModelKeys(): string[] { return [...this.servoAnimationOrder]; }
+  public hasServoAnimationModel(id: string): boolean { return this.servoAnimationRegistry.has(id); }
+
+  // ─── Phase 22B: SG90 Servo High-Level APIs ───
+
+  public servoPlace(
+    servoId: string,
+    esp32Id: string,
+    signalPin: number,
+    x = 0,
+    y = 0,
+  ): string {
+    try {
+      const model = createDefaultServoMotorModel(servoId, {
+        esp32Id,
+        signalPin,
+        positionX: x,
+        positionY: y,
+      });
+      this.registerServoMotorModel(model);
+      return servoId;
+    } catch (e) {
+      console.warn('[Servo] servoPlace error:', e);
+      return '';
+    }
+  }
+
+  public servoAttach(servoId: string, pwmChannelId: string): boolean {
+    const existing = this.servoMotorRegistry.get(servoId);
+    if (!existing) {
+      console.warn(`[Servo] servoAttach: servo "${servoId}" not found.`);
+      return false;
+    }
+    const attached = attachServoFn(existing, pwmChannelId);
+    this.servoMotorRegistry.set(servoId, JSON.parse(JSON.stringify(attached)));
+    return true;
+  }
+
+  public servoWrite(servoId: string, angleDeg: number): boolean {
+    const existing = this.servoMotorRegistry.get(servoId);
+    if (!existing) {
+      console.warn(`[Servo] servoWrite: servo "${servoId}" not found.`);
+      return false;
+    }
+    const updated = writeAngleFn(existing, angleDeg, Date.now());
+    this.servoMotorRegistry.set(servoId, JSON.parse(JSON.stringify(updated)));
+
+    // Create and store motion
+    const motion = computeMotion(existing, angleDeg, Date.now());
+    this.servoMotionRegistry.set(motion.motionId, JSON.parse(JSON.stringify(motion)));
+    if (!this.servoMotionOrder.includes(motion.motionId)) {
+      this.servoMotionOrder.push(motion.motionId);
+    }
+    return true;
+  }
+
+  public servoRead(servoId: string): number {
+    const existing = this.servoMotorRegistry.get(servoId);
+    if (!existing) {
+      console.warn(`[Servo] servoRead: servo "${servoId}" not found.`);
+      return 0;
+    }
+    return readAngleFn(existing);
+  }
+
+  public servoDetach(servoId: string): boolean {
+    const existing = this.servoMotorRegistry.get(servoId);
+    if (!existing) {
+      console.warn(`[Servo] servoDetach: servo "${servoId}" not found.`);
+      return false;
+    }
+    const detached = detachServoFn(existing);
+    this.servoMotorRegistry.set(servoId, JSON.parse(JSON.stringify(detached)));
+    return true;
+  }
+
+  public servoStepSimulation(
+    servoId: string,
+    deltaMs: number,
+  ): { currentAngle: number; isMoving: boolean } | null {
+    const existing = this.servoMotorRegistry.get(servoId);
+    if (!existing) {
+      console.warn(`[Servo] servoStepSimulation: servo "${servoId}" not found.`);
+      return null;
+    }
+
+    // Find latest motion for this servo
+    let latestMotion: ServoMotionModel | null = null;
+    for (const [, m] of this.servoMotionRegistry) {
+      if (m.servoId === servoId && !m.isComplete) {
+        latestMotion = m;
+      }
+    }
+
+    if (!latestMotion) {
+      return { currentAngle: existing.currentAngleDeg, isMoving: false };
+    }
+
+    const result = simulateServoStep(existing, latestMotion, deltaMs);
+    this.servoMotorRegistry.set(servoId, JSON.parse(JSON.stringify(result.servo)));
+    this.servoMotionRegistry.set(latestMotion.motionId, JSON.parse(JSON.stringify(result.motion)));
+
+    return {
+      currentAngle: result.servo.currentAngleDeg,
+      isMoving: result.servo.servoState === 'MOVING',
+    };
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // Phase 22C: OLED & LCD Display Runtime Simulation — CRUD
+  // ═══════════════════════════════════════════════════════════════
+
+  // --- LCDDisplayModel CRUD ---
+  public registerLCDDisplayModel(model: LCDDisplayModel): void {
+    const warnings = validateLCDDisplayModel(model);
+    for (const w of warnings) console.warn(`[Display] ${w.message}`);
+    this.lcdDisplayRegistry.set(model.displayId, JSON.parse(JSON.stringify(model)));
+    if (!this.lcdDisplayOrder.includes(model.displayId)) {
+      this.lcdDisplayOrder.push(model.displayId);
+    }
+  }
+  public getLCDDisplayModel(id: string): LCDDisplayModel | undefined {
+    const m = this.lcdDisplayRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllLCDDisplayModels(): LCDDisplayModel[] {
+    return this.lcdDisplayOrder
+      .map(id => this.lcdDisplayRegistry.get(id))
+      .filter((m): m is LCDDisplayModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateLCDDisplayModel(id: string, partial: Partial<LCDDisplayModel>): void {
+    const existing = this.lcdDisplayRegistry.get(id);
+    if (!existing) { console.warn(`[Display] LCD display "${id}" not found.`); return; }
+    this.lcdDisplayRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, displayId: id })));
+  }
+  public removeLCDDisplayModel(id: string): void {
+    this.lcdDisplayRegistry.delete(id);
+    this.lcdDisplayOrder = this.lcdDisplayOrder.filter(e => e !== id);
+  }
+  public clearLCDDisplayModels(): void {
+    this.lcdDisplayRegistry.clear();
+    this.lcdDisplayOrder = [];
+  }
+  public getLCDDisplayModelKeys(): string[] { return [...this.lcdDisplayOrder]; }
+  public hasLCDDisplayModel(id: string): boolean { return this.lcdDisplayRegistry.has(id); }
+
+  // --- LCDCursorModel CRUD ---
+  public registerLCDCursorModel(model: LCDCursorModel): void {
+    const warnings = validateLCDCursorModel(model);
+    for (const w of warnings) console.warn(`[Display] ${w.message}`);
+    this.lcdCursorRegistry.set(model.cursorId, JSON.parse(JSON.stringify(model)));
+    if (!this.lcdCursorOrder.includes(model.cursorId)) {
+      this.lcdCursorOrder.push(model.cursorId);
+    }
+  }
+  public getLCDCursorModel(id: string): LCDCursorModel | undefined {
+    const m = this.lcdCursorRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllLCDCursorModels(): LCDCursorModel[] {
+    return this.lcdCursorOrder
+      .map(id => this.lcdCursorRegistry.get(id))
+      .filter((m): m is LCDCursorModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateLCDCursorModel(id: string, partial: Partial<LCDCursorModel>): void {
+    const existing = this.lcdCursorRegistry.get(id);
+    if (!existing) { console.warn(`[Display] LCD cursor "${id}" not found.`); return; }
+    this.lcdCursorRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, cursorId: id })));
+  }
+  public removeLCDCursorModel(id: string): void {
+    this.lcdCursorRegistry.delete(id);
+    this.lcdCursorOrder = this.lcdCursorOrder.filter(e => e !== id);
+  }
+  public clearLCDCursorModels(): void {
+    this.lcdCursorRegistry.clear();
+    this.lcdCursorOrder = [];
+  }
+  public getLCDCursorModelKeys(): string[] { return [...this.lcdCursorOrder]; }
+  public hasLCDCursorModel(id: string): boolean { return this.lcdCursorRegistry.has(id); }
+
+  // --- LCDCharacterModel CRUD ---
+  public registerLCDCharacterModel(model: LCDCharacterModel): void {
+    const warnings = validateLCDCharacterModel(model);
+    for (const w of warnings) console.warn(`[Display] ${w.message}`);
+    this.lcdCharacterRegistry.set(model.characterId, JSON.parse(JSON.stringify(model)));
+    if (!this.lcdCharacterOrder.includes(model.characterId)) {
+      this.lcdCharacterOrder.push(model.characterId);
+    }
+  }
+  public getLCDCharacterModel(id: string): LCDCharacterModel | undefined {
+    const m = this.lcdCharacterRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllLCDCharacterModels(): LCDCharacterModel[] {
+    return this.lcdCharacterOrder
+      .map(id => this.lcdCharacterRegistry.get(id))
+      .filter((m): m is LCDCharacterModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateLCDCharacterModel(id: string, partial: Partial<LCDCharacterModel>): void {
+    const existing = this.lcdCharacterRegistry.get(id);
+    if (!existing) { console.warn(`[Display] LCD character "${id}" not found.`); return; }
+    this.lcdCharacterRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, characterId: id })));
+  }
+  public removeLCDCharacterModel(id: string): void {
+    this.lcdCharacterRegistry.delete(id);
+    this.lcdCharacterOrder = this.lcdCharacterOrder.filter(e => e !== id);
+  }
+  public clearLCDCharacterModels(): void {
+    this.lcdCharacterRegistry.clear();
+    this.lcdCharacterOrder = [];
+  }
+  public getLCDCharacterModelKeys(): string[] { return [...this.lcdCharacterOrder]; }
+  public hasLCDCharacterModel(id: string): boolean { return this.lcdCharacterRegistry.has(id); }
+
+  // --- OLEDDisplayModel CRUD ---
+  public registerOLEDDisplayModel(model: OLEDDisplayModel): void {
+    const warnings = validateOLEDDisplayModel(model);
+    for (const w of warnings) console.warn(`[Display] ${w.message}`);
+    this.oledDisplayRegistry.set(model.displayId, JSON.parse(JSON.stringify(model)));
+    if (!this.oledDisplayOrder.includes(model.displayId)) {
+      this.oledDisplayOrder.push(model.displayId);
+    }
+  }
+  public getOLEDDisplayModel(id: string): OLEDDisplayModel | undefined {
+    const m = this.oledDisplayRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllOLEDDisplayModels(): OLEDDisplayModel[] {
+    return this.oledDisplayOrder
+      .map(id => this.oledDisplayRegistry.get(id))
+      .filter((m): m is OLEDDisplayModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateOLEDDisplayModel(id: string, partial: Partial<OLEDDisplayModel>): void {
+    const existing = this.oledDisplayRegistry.get(id);
+    if (!existing) { console.warn(`[Display] OLED display "${id}" not found.`); return; }
+    this.oledDisplayRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, displayId: id })));
+  }
+  public removeOLEDDisplayModel(id: string): void {
+    this.oledDisplayRegistry.delete(id);
+    this.oledDisplayOrder = this.oledDisplayOrder.filter(e => e !== id);
+  }
+  public clearOLEDDisplayModels(): void {
+    this.oledDisplayRegistry.clear();
+    this.oledDisplayOrder = [];
+  }
+  public getOLEDDisplayModelKeys(): string[] { return [...this.oledDisplayOrder]; }
+  public hasOLEDDisplayModel(id: string): boolean { return this.oledDisplayRegistry.has(id); }
+
+  // --- OLEDBufferModel CRUD ---
+  public registerOLEDBufferModel(model: OLEDBufferModel): void {
+    const warnings = validateOLEDBufferModel(model);
+    for (const w of warnings) console.warn(`[Display] ${w.message}`);
+    this.oledBufferRegistry.set(model.bufferId, JSON.parse(JSON.stringify(model)));
+    if (!this.oledBufferOrder.includes(model.bufferId)) {
+      this.oledBufferOrder.push(model.bufferId);
+    }
+  }
+  public getOLEDBufferModel(id: string): OLEDBufferModel | undefined {
+    const m = this.oledBufferRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllOLEDBufferModels(): OLEDBufferModel[] {
+    return this.oledBufferOrder
+      .map(id => this.oledBufferRegistry.get(id))
+      .filter((m): m is OLEDBufferModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateOLEDBufferModel(id: string, partial: Partial<OLEDBufferModel>): void {
+    const existing = this.oledBufferRegistry.get(id);
+    if (!existing) { console.warn(`[Display] OLED buffer "${id}" not found.`); return; }
+    this.oledBufferRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, bufferId: id })));
+  }
+  public removeOLEDBufferModel(id: string): void {
+    this.oledBufferRegistry.delete(id);
+    this.oledBufferOrder = this.oledBufferOrder.filter(e => e !== id);
+  }
+  public clearOLEDBufferModels(): void {
+    this.oledBufferRegistry.clear();
+    this.oledBufferOrder = [];
+  }
+  public getOLEDBufferModelKeys(): string[] { return [...this.oledBufferOrder]; }
+  public hasOLEDBufferModel(id: string): boolean { return this.oledBufferRegistry.has(id); }
+
+  // --- OLEDPixelModel CRUD ---
+  public registerOLEDPixelModel(model: OLEDPixelModel): void {
+    const warnings = validateOLEDPixelModel(model);
+    for (const w of warnings) console.warn(`[Display] ${w.message}`);
+    this.oledPixelRegistry.set(model.pixelId, JSON.parse(JSON.stringify(model)));
+    if (!this.oledPixelOrder.includes(model.pixelId)) {
+      this.oledPixelOrder.push(model.pixelId);
+    }
+  }
+  public getOLEDPixelModel(id: string): OLEDPixelModel | undefined {
+    const m = this.oledPixelRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllOLEDPixelModels(): OLEDPixelModel[] {
+    return this.oledPixelOrder
+      .map(id => this.oledPixelRegistry.get(id))
+      .filter((m): m is OLEDPixelModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateOLEDPixelModel(id: string, partial: Partial<OLEDPixelModel>): void {
+    const existing = this.oledPixelRegistry.get(id);
+    if (!existing) { console.warn(`[Display] OLED pixel "${id}" not found.`); return; }
+    this.oledPixelRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, pixelId: id })));
+  }
+  public removeOLEDPixelModel(id: string): void {
+    this.oledPixelRegistry.delete(id);
+    this.oledPixelOrder = this.oledPixelOrder.filter(e => e !== id);
+  }
+  public clearOLEDPixelModels(): void {
+    this.oledPixelRegistry.clear();
+    this.oledPixelOrder = [];
+  }
+  public getOLEDPixelModelKeys(): string[] { return [...this.oledPixelOrder]; }
+  public hasOLEDPixelModel(id: string): boolean { return this.oledPixelRegistry.has(id); }
+
+  // --- DisplayAnimationModel CRUD ---
+  public registerDisplayAnimationModel(model: DisplayAnimationModel): void {
+    const warnings = validateDisplayAnimationModel(model);
+    for (const w of warnings) console.warn(`[Display] ${w.message}`);
+    this.displayAnimationRegistry.set(model.animationId, JSON.parse(JSON.stringify(model)));
+    if (!this.displayAnimationOrder.includes(model.animationId)) {
+      this.displayAnimationOrder.push(model.animationId);
+    }
+  }
+  public getDisplayAnimationModel(id: string): DisplayAnimationModel | undefined {
+    const m = this.displayAnimationRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllDisplayAnimationModels(): DisplayAnimationModel[] {
+    return this.displayAnimationOrder
+      .map(id => this.displayAnimationRegistry.get(id))
+      .filter((m): m is DisplayAnimationModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateDisplayAnimationModel(id: string, partial: Partial<DisplayAnimationModel>): void {
+    const existing = this.displayAnimationRegistry.get(id);
+    if (!existing) { console.warn(`[Display] display animation "${id}" not found.`); return; }
+    this.displayAnimationRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, animationId: id })));
+  }
+  public removeDisplayAnimationModel(id: string): void {
+    this.displayAnimationRegistry.delete(id);
+    this.displayAnimationOrder = this.displayAnimationOrder.filter(e => e !== id);
+  }
+  public clearDisplayAnimationModels(): void {
+    this.displayAnimationRegistry.clear();
+    this.displayAnimationOrder = [];
+  }
+  public getDisplayAnimationModelKeys(): string[] { return [...this.displayAnimationOrder]; }
+  public hasDisplayAnimationModel(id: string): boolean { return this.displayAnimationRegistry.has(id); }
+
+  // ═══════════════════════════════════════════════════════════════
+  // Phase 22C: OLED & LCD Display Runtime — High-Level APIs
+  // ═══════════════════════════════════════════════════════════════
+
+  /**
+   * Place a virtual LCD1602 on the stage and create cursor + character buffer.
+   */
+  public lcdPlace(
+    displayId: string,
+    esp32Id: string,
+    sdaPin: number,
+    sclPin: number,
+    x: number,
+    y: number,
+  ): string {
+    const lcd = createDefaultLCDDisplayModel(displayId, {
+      esp32Id, sdaPin, sclPin, positionX: x, positionY: y,
+    });
+    this.registerLCDDisplayModel(lcd);
+
+    const cursorId = `${displayId}_cursor`;
+    const cursor = createDefaultLCDCursorModel(cursorId, { displayId });
+    this.registerLCDCursorModel(cursor);
+
+    const charId = `${displayId}_chars`;
+    const chars = createDefaultLCDCharacterModel(charId, lcd.rows, lcd.cols, { displayId });
+    this.registerLCDCharacterModel(chars);
+
+    return displayId;
+  }
+
+  /**
+   * Initialize the LCD display (calls lcdBegin).
+   */
+  public lcdBeginDisplay(displayId: string): boolean {
+    const lcd = this.lcdDisplayRegistry.get(displayId);
+    if (!lcd) {
+      console.warn(`[Display] lcdBeginDisplay: LCD "${displayId}" not found.`);
+      return false;
+    }
+    const updated = lcdBegin(lcd);
+    this.lcdDisplayRegistry.set(displayId, JSON.parse(JSON.stringify(updated)));
+    return true;
+  }
+
+  /**
+   * Clear the LCD display buffer and reset cursor.
+   */
+  public lcdClearDisplay(displayId: string): boolean {
+    const cursorId = `${displayId}_cursor`;
+    const charId = `${displayId}_chars`;
+    const cursor = this.lcdCursorRegistry.get(cursorId);
+    const chars = this.lcdCharacterRegistry.get(charId);
+    if (!cursor || !chars) {
+      console.warn(`[Display] lcdClearDisplay: cursor or chars for "${displayId}" not found.`);
+      return false;
+    }
+    const result = lcdClear(chars, cursor);
+    this.lcdCursorRegistry.set(cursorId, JSON.parse(JSON.stringify(result.cursor)));
+    this.lcdCharacterRegistry.set(charId, JSON.parse(JSON.stringify(result.charModel)));
+    return true;
+  }
+
+  /**
+   * Set cursor position on the LCD display.
+   */
+  public lcdSetCursorPosition(displayId: string, row: number, col: number): boolean {
+    const cursorId = `${displayId}_cursor`;
+    const cursor = this.lcdCursorRegistry.get(cursorId);
+    if (!cursor) {
+      console.warn(`[Display] lcdSetCursorPosition: cursor for "${displayId}" not found.`);
+      return false;
+    }
+    const updated = lcdSetCursor(cursor, row, col);
+    this.lcdCursorRegistry.set(cursorId, JSON.parse(JSON.stringify(updated)));
+    return true;
+  }
+
+  /**
+   * Print text on the LCD display at current cursor position.
+   */
+  public lcdPrintText(displayId: string, text: string): boolean {
+    const cursorId = `${displayId}_cursor`;
+    const charId = `${displayId}_chars`;
+    const cursor = this.lcdCursorRegistry.get(cursorId);
+    const chars = this.lcdCharacterRegistry.get(charId);
+    if (!cursor || !chars) {
+      console.warn(`[Display] lcdPrintText: cursor or chars for "${displayId}" not found.`);
+      return false;
+    }
+    const result = lcdPrint(chars, cursor, text);
+    this.lcdCursorRegistry.set(cursorId, JSON.parse(JSON.stringify(result.cursor)));
+    this.lcdCharacterRegistry.set(charId, JSON.parse(JSON.stringify(result.charModel)));
+    return true;
+  }
+
+  /**
+   * Place a virtual SSD1306 OLED on the stage and create framebuffer.
+   */
+  public oledPlace(
+    displayId: string,
+    esp32Id: string,
+    sdaPin: number,
+    sclPin: number,
+    x: number,
+    y: number,
+  ): string {
+    const oled = createDefaultOLEDDisplayModel(displayId, {
+      esp32Id, sdaPin, sclPin, positionX: x, positionY: y,
+    });
+    this.registerOLEDDisplayModel(oled);
+
+    const bufferId = `${displayId}_buffer`;
+    const buffer = createDefaultOLEDBufferModel(bufferId, oled.widthPx, oled.heightPx, { displayId });
+    this.registerOLEDBufferModel(buffer);
+
+    return displayId;
+  }
+
+  /**
+   * Initialize the OLED display.
+   */
+  public oledBeginDisplay(displayId: string): boolean {
+    const oled = this.oledDisplayRegistry.get(displayId);
+    if (!oled) {
+      console.warn(`[Display] oledBeginDisplay: OLED "${displayId}" not found.`);
+      return false;
+    }
+    const updated = oledBegin(oled);
+    this.oledDisplayRegistry.set(displayId, JSON.parse(JSON.stringify(updated)));
+    return true;
+  }
+
+  /**
+   * Clear the OLED framebuffer.
+   */
+  public oledClearBuffer(displayId: string): boolean {
+    const bufferId = `${displayId}_buffer`;
+    const buffer = this.oledBufferRegistry.get(bufferId);
+    if (!buffer) {
+      console.warn(`[Display] oledClearBuffer: buffer for "${displayId}" not found.`);
+      return false;
+    }
+    const updated = oledClearDisplay(buffer);
+    this.oledBufferRegistry.set(bufferId, JSON.parse(JSON.stringify(updated)));
+    return true;
+  }
+
+  /**
+   * Draw on the OLED buffer. Supports operations: 'pixel', 'line', 'rect', 'fillRect', 'circle', 'text'.
+   */
+  public oledDrawOnBuffer(
+    displayId: string,
+    op: string,
+    args: { x?: number; y?: number; x1?: number; y1?: number; w?: number; h?: number; r?: number; text?: string; color?: number },
+  ): boolean {
+    const bufferId = `${displayId}_buffer`;
+    let buffer = this.oledBufferRegistry.get(bufferId);
+    if (!buffer) {
+      console.warn(`[Display] oledDrawOnBuffer: buffer for "${displayId}" not found.`);
+      return false;
+    }
+    const color = args.color ?? 1;
+    switch (op) {
+      case 'pixel':
+        buffer = oledDrawPixelFn(buffer, args.x ?? 0, args.y ?? 0, color);
+        break;
+      case 'line':
+        buffer = oledDrawLineFn(buffer, args.x ?? 0, args.y ?? 0, args.x1 ?? 0, args.y1 ?? 0, color);
+        break;
+      case 'rect':
+        buffer = oledDrawRectFn(buffer, args.x ?? 0, args.y ?? 0, args.w ?? 0, args.h ?? 0, color);
+        break;
+      case 'fillRect':
+        buffer = oledFillRectFn(buffer, args.x ?? 0, args.y ?? 0, args.w ?? 0, args.h ?? 0, color);
+        break;
+      case 'circle':
+        buffer = oledDrawCircleFn(buffer, args.x ?? 0, args.y ?? 0, args.r ?? 0, color);
+        break;
+      case 'text':
+        buffer = oledDrawTextFn(buffer, args.x ?? 0, args.y ?? 0, args.text ?? '', color);
+        break;
+      default:
+        console.warn(`[Display] oledDrawOnBuffer: unknown operation "${op}".`);
+        return false;
+    }
+    this.oledBufferRegistry.set(bufferId, JSON.parse(JSON.stringify(buffer)));
+    return true;
+  }
+
+  /**
+   * Commit the OLED display buffer (marks as clean).
+   */
+  public oledCommitDisplay(displayId: string): boolean {
+    const bufferId = `${displayId}_buffer`;
+    const buffer = this.oledBufferRegistry.get(bufferId);
+    if (!buffer) {
+      console.warn(`[Display] oledCommitDisplay: buffer for "${displayId}" not found.`);
+      return false;
+    }
+    const updated = oledDisplayFn(buffer);
+    this.oledBufferRegistry.set(bufferId, JSON.parse(JSON.stringify(updated)));
+    return true;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // Phase 23A: Virtual Serial Monitor Runtime — CRUD
+  // ═══════════════════════════════════════════════════════════════
+
+  // --- SerialPortModel CRUD ---
+  public registerSerialPortModel(model: SerialPortModel): void {
+    const warnings = validateSerialPortModel(model);
+    for (const w of warnings) console.warn(`[Serial] ${w.message}`);
+    this.serialPortRegistry.set(model.portId, JSON.parse(JSON.stringify(model)));
+    if (!this.serialPortOrder.includes(model.portId)) {
+      this.serialPortOrder.push(model.portId);
+    }
+  }
+  public getSerialPortModel(id: string): SerialPortModel | undefined {
+    const m = this.serialPortRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllSerialPortModels(): SerialPortModel[] {
+    return this.serialPortOrder
+      .map(id => this.serialPortRegistry.get(id))
+      .filter((m): m is SerialPortModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateSerialPortModel(id: string, partial: Partial<SerialPortModel>): void {
+    const existing = this.serialPortRegistry.get(id);
+    if (!existing) { console.warn(`[Serial] Serial port "${id}" not found.`); return; }
+    this.serialPortRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, portId: id })));
+  }
+  public removeSerialPortModel(id: string): void {
+    this.serialPortRegistry.delete(id);
+    this.serialPortOrder = this.serialPortOrder.filter(e => e !== id);
+  }
+  public clearSerialPortModels(): void {
+    this.serialPortRegistry.clear();
+    this.serialPortOrder = [];
+  }
+  public getSerialPortModelKeys(): string[] { return [...this.serialPortOrder]; }
+  public hasSerialPortModel(id: string): boolean { return this.serialPortRegistry.has(id); }
+
+  // --- SerialMessageModel CRUD ---
+  public registerSerialMessageModel(model: SerialMessageModel): void {
+    const warnings = validateSerialMessageModel(model);
+    for (const w of warnings) console.warn(`[Serial] ${w.message}`);
+    this.serialMessageRegistry.set(model.messageId, JSON.parse(JSON.stringify(model)));
+    if (!this.serialMessageOrder.includes(model.messageId)) {
+      this.serialMessageOrder.push(model.messageId);
+    }
+  }
+  public getSerialMessageModel(id: string): SerialMessageModel | undefined {
+    const m = this.serialMessageRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllSerialMessageModels(): SerialMessageModel[] {
+    return this.serialMessageOrder
+      .map(id => this.serialMessageRegistry.get(id))
+      .filter((m): m is SerialMessageModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateSerialMessageModel(id: string, partial: Partial<SerialMessageModel>): void {
+    const existing = this.serialMessageRegistry.get(id);
+    if (!existing) { console.warn(`[Serial] Serial message "${id}" not found.`); return; }
+    this.serialMessageRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, messageId: id })));
+  }
+  public removeSerialMessageModel(id: string): void {
+    this.serialMessageRegistry.delete(id);
+    this.serialMessageOrder = this.serialMessageOrder.filter(e => e !== id);
+  }
+  public clearSerialMessageModels(): void {
+    this.serialMessageRegistry.clear();
+    this.serialMessageOrder = [];
+  }
+  public getSerialMessageModelKeys(): string[] { return [...this.serialMessageOrder]; }
+  public hasSerialMessageModel(id: string): boolean { return this.serialMessageRegistry.has(id); }
+
+  // --- SerialBufferModel CRUD ---
+  public registerSerialBufferModel(model: SerialBufferModel): void {
+    const warnings = validateSerialBufferModel(model);
+    for (const w of warnings) console.warn(`[Serial] ${w.message}`);
+    this.serialBufferRegistry.set(model.bufferId, JSON.parse(JSON.stringify(model)));
+    if (!this.serialBufferOrder.includes(model.bufferId)) {
+      this.serialBufferOrder.push(model.bufferId);
+    }
+  }
+  public getSerialBufferModel(id: string): SerialBufferModel | undefined {
+    const m = this.serialBufferRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllSerialBufferModels(): SerialBufferModel[] {
+    return this.serialBufferOrder
+      .map(id => this.serialBufferRegistry.get(id))
+      .filter((m): m is SerialBufferModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateSerialBufferModel(id: string, partial: Partial<SerialBufferModel>): void {
+    const existing = this.serialBufferRegistry.get(id);
+    if (!existing) { console.warn(`[Serial] Serial buffer "${id}" not found.`); return; }
+    this.serialBufferRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, bufferId: id })));
+  }
+  public removeSerialBufferModel(id: string): void {
+    this.serialBufferRegistry.delete(id);
+    this.serialBufferOrder = this.serialBufferOrder.filter(e => e !== id);
+  }
+  public clearSerialBufferModels(): void {
+    this.serialBufferRegistry.clear();
+    this.serialBufferOrder = [];
+  }
+  public getSerialBufferModelKeys(): string[] { return [...this.serialBufferOrder]; }
+  public hasSerialBufferModel(id: string): boolean { return this.serialBufferRegistry.has(id); }
+
+  // --- SerialCommandModel CRUD ---
+  public registerSerialCommandModel(model: SerialCommandModel): void {
+    const warnings = validateSerialCommandModel(model);
+    for (const w of warnings) console.warn(`[Serial] ${w.message}`);
+    this.serialCommandRegistry.set(model.commandId, JSON.parse(JSON.stringify(model)));
+    if (!this.serialCommandOrder.includes(model.commandId)) {
+      this.serialCommandOrder.push(model.commandId);
+    }
+  }
+  public getSerialCommandModel(id: string): SerialCommandModel | undefined {
+    const m = this.serialCommandRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllSerialCommandModels(): SerialCommandModel[] {
+    return this.serialCommandOrder
+      .map(id => this.serialCommandRegistry.get(id))
+      .filter((m): m is SerialCommandModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateSerialCommandModel(id: string, partial: Partial<SerialCommandModel>): void {
+    const existing = this.serialCommandRegistry.get(id);
+    if (!existing) { console.warn(`[Serial] Serial command "${id}" not found.`); return; }
+    this.serialCommandRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, commandId: id })));
+  }
+  public removeSerialCommandModel(id: string): void {
+    this.serialCommandRegistry.delete(id);
+    this.serialCommandOrder = this.serialCommandOrder.filter(e => e !== id);
+  }
+  public clearSerialCommandModels(): void {
+    this.serialCommandRegistry.clear();
+    this.serialCommandOrder = [];
+  }
+  public getSerialCommandModelKeys(): string[] { return [...this.serialCommandOrder]; }
+  public hasSerialCommandModel(id: string): boolean { return this.serialCommandRegistry.has(id); }
+
+  // --- SerialSessionModel CRUD ---
+  public registerSerialSessionModel(model: SerialSessionModel): void {
+    const warnings = validateSerialSessionModel(model);
+    for (const w of warnings) console.warn(`[Serial] ${w.message}`);
+    this.serialSessionRegistry.set(model.sessionId, JSON.parse(JSON.stringify(model)));
+    if (!this.serialSessionOrder.includes(model.sessionId)) {
+      this.serialSessionOrder.push(model.sessionId);
+    }
+  }
+  public getSerialSessionModel(id: string): SerialSessionModel | undefined {
+    const m = this.serialSessionRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllSerialSessionModels(): SerialSessionModel[] {
+    return this.serialSessionOrder
+      .map(id => this.serialSessionRegistry.get(id))
+      .filter((m): m is SerialSessionModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateSerialSessionModel(id: string, partial: Partial<SerialSessionModel>): void {
+    const existing = this.serialSessionRegistry.get(id);
+    if (!existing) { console.warn(`[Serial] Serial session "${id}" not found.`); return; }
+    this.serialSessionRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, sessionId: id })));
+  }
+  public removeSerialSessionModel(id: string): void {
+    this.serialSessionRegistry.delete(id);
+    this.serialSessionOrder = this.serialSessionOrder.filter(e => e !== id);
+  }
+  public clearSerialSessionModels(): void {
+    this.serialSessionRegistry.clear();
+    this.serialSessionOrder = [];
+  }
+  public getSerialSessionModelKeys(): string[] { return [...this.serialSessionOrder]; }
+  public hasSerialSessionModel(id: string): boolean { return this.serialSessionRegistry.has(id); }
+
+  // ═══════════════════════════════════════════════════════════════
+  // Phase 23A: Virtual Serial Monitor — High-Level APIs
+  // ═══════════════════════════════════════════════════════════════
+
+  /**
+   * Place a virtual serial monitor on the stage.
+   * Creates port, buffer, and session models.
+   */
+  public serialPlace(
+    portId: string,
+    esp32Id: string,
+    baudRate: number,
+    x: number,
+    y: number,
+  ): string {
+    const port = createDefaultSerialPortModel(portId, {
+      esp32Id, baudRate: baudRate as any, positionX: x, positionY: y,
+    });
+    this.registerSerialPortModel(port);
+
+    const bufferId = `${portId}_buffer`;
+    const buffer = createDefaultSerialBufferModel(bufferId, { portId });
+    this.registerSerialBufferModel(buffer);
+
+    return portId;
+  }
+
+  /**
+   * Serial.begin() — opens the serial port.
+   */
+  public serialBeginPort(portId: string, baudRate?: number): boolean {
+    const port = this.serialPortRegistry.get(portId);
+    if (!port) {
+      console.warn(`[Serial] serialBeginPort: port "${portId}" not found.`);
+      return false;
+    }
+    const updated = serialBeginFn(port, baudRate as any);
+    this.serialPortRegistry.set(portId, JSON.parse(JSON.stringify(updated)));
+
+    // Start a new session
+    const sessionId = `${portId}_session_${Date.now()}`;
+    const session = startSessionFn(portId, sessionId, Date.now());
+    this.registerSerialSessionModel(session);
+
+    return true;
+  }
+
+  /**
+   * Serial.print() — writes text without newline.
+   */
+  public serialPrintToPort(portId: string, text: string): boolean {
+    const port = this.serialPortRegistry.get(portId);
+    if (!port || !port.isOpen) {
+      console.warn(`[Serial] serialPrintToPort: port "${portId}" not open.`);
+      return false;
+    }
+    const session = this.getActiveSession(portId);
+    if (!session) {
+      console.warn(`[Serial] serialPrintToPort: no active session for "${portId}".`);
+      return false;
+    }
+    const result = serialPrintFn(port, session, text, Date.now());
+    this.registerSerialMessageModel(result.message);
+    this.serialSessionRegistry.set(session.sessionId, JSON.parse(JSON.stringify(result.session)));
+
+    // Trim if needed
+    this.trimPortMessages(portId);
+    return true;
+  }
+
+  /**
+   * Serial.println() — writes text with newline.
+   */
+  public serialPrintlnToPort(portId: string, text: string): boolean {
+    const port = this.serialPortRegistry.get(portId);
+    if (!port || !port.isOpen) {
+      console.warn(`[Serial] serialPrintlnToPort: port "${portId}" not open.`);
+      return false;
+    }
+    const session = this.getActiveSession(portId);
+    if (!session) {
+      console.warn(`[Serial] serialPrintlnToPort: no active session for "${portId}".`);
+      return false;
+    }
+    const result = serialPrintlnFn(port, session, text, Date.now());
+    this.registerSerialMessageModel(result.message);
+    this.serialSessionRegistry.set(session.sessionId, JSON.parse(JSON.stringify(result.session)));
+
+    this.trimPortMessages(portId);
+    return true;
+  }
+
+  /**
+   * Serial.write() — writes raw data.
+   */
+  public serialWriteToPort(portId: string, data: string): boolean {
+    const port = this.serialPortRegistry.get(portId);
+    if (!port || !port.isOpen) {
+      console.warn(`[Serial] serialWriteToPort: port "${portId}" not open.`);
+      return false;
+    }
+    const session = this.getActiveSession(portId);
+    if (!session) return false;
+    const result = serialWriteFn(port, session, data, Date.now());
+    this.registerSerialMessageModel(result.message);
+    this.serialSessionRegistry.set(session.sessionId, JSON.parse(JSON.stringify(result.session)));
+    return true;
+  }
+
+  /**
+   * Serial.read() — reads one character from input buffer.
+   */
+  public serialReadFromPort(portId: string): string {
+    const bufferId = `${portId}_buffer`;
+    const buffer = this.serialBufferRegistry.get(bufferId);
+    if (!buffer) {
+      console.warn(`[Serial] serialReadFromPort: buffer for "${portId}" not found.`);
+      return '';
+    }
+    const result = serialReadFn(buffer);
+    this.serialBufferRegistry.set(bufferId, JSON.parse(JSON.stringify(result.buffer)));
+    return result.char;
+  }
+
+  /**
+   * Serial.available() — returns bytes available in input buffer.
+   */
+  public serialAvailableOnPort(portId: string): number {
+    const bufferId = `${portId}_buffer`;
+    const buffer = this.serialBufferRegistry.get(bufferId);
+    if (!buffer) return 0;
+    return serialAvailableFn(buffer);
+  }
+
+  /**
+   * Serial.flush() — flush outgoing data.
+   */
+  public serialFlushPort(portId: string): boolean {
+    const port = this.serialPortRegistry.get(portId);
+    if (!port) return false;
+    const updated = serialFlushFn(port);
+    this.serialPortRegistry.set(portId, JSON.parse(JSON.stringify(updated)));
+    return true;
+  }
+
+  /**
+   * Serial monitor clear — removes all messages for a port.
+   */
+  public serialClearPort(portId: string): void {
+    const toRemove = this.serialMessageOrder.filter(id => {
+      const m = this.serialMessageRegistry.get(id);
+      return m && m.portId === portId;
+    });
+    for (const id of toRemove) {
+      this.removeSerialMessageModel(id);
+    }
+  }
+
+  /**
+   * Feed input text into the serial monitor (simulates user typing).
+   */
+  public serialFeedInputToPort(portId: string, text: string): boolean {
+    const bufferId = `${portId}_buffer`;
+    const buffer = this.serialBufferRegistry.get(bufferId);
+    if (!buffer) {
+      console.warn(`[Serial] serialFeedInputToPort: buffer for "${portId}" not found.`);
+      return false;
+    }
+    const updated = serialFeedInputFn(buffer, text);
+    this.serialBufferRegistry.set(bufferId, JSON.parse(JSON.stringify(updated)));
+    return true;
+  }
+
+  /**
+   * Get all output text for a port.
+   */
+  public serialGetOutput(portId: string): string {
+    const messages = this.getAllSerialMessageModels();
+    return getPortOutputText(messages, portId);
+  }
+
+  /** Internal helper: get active session for a port. */
+  private getActiveSession(portId: string): SerialSessionModel | undefined {
+    for (const id of this.serialSessionOrder) {
+      const s = this.serialSessionRegistry.get(id);
+      if (s && s.portId === portId && s.isActive) return s;
+    }
+    return undefined;
+  }
+
+  /** Internal helper: trim messages to maxBufferLines. */
+  private trimPortMessages(portId: string): void {
+    const port = this.serialPortRegistry.get(portId);
+    if (!port) return;
+    const portMsgIds = this.serialMessageOrder.filter(id => {
+      const m = this.serialMessageRegistry.get(id);
+      return m && m.portId === portId;
+    });
+    if (portMsgIds.length > port.maxBufferLines) {
+      const toRemove = portMsgIds.slice(0, portMsgIds.length - port.maxBufferLines);
+      for (const id of toRemove) {
+        this.removeSerialMessageModel(id);
+      }
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // Phase 23B: Virtual Logic Analyzer & Oscilloscope — CRUD
+  // ═══════════════════════════════════════════════════════════════
+
+  // --- LogicAnalyzerChannelModel CRUD ---
+  public registerLogicAnalyzerChannelModel(model: LogicAnalyzerChannelModel): void {
+    const warnings = validateLogicAnalyzerChannelModel(model);
+    for (const w of warnings) console.warn(`[LogicAnalyzer] ${w.message}`);
+    this.logicAnalyzerChannelRegistry.set(model.channelId, JSON.parse(JSON.stringify(model)));
+    if (!this.logicAnalyzerChannelOrder.includes(model.channelId)) {
+      this.logicAnalyzerChannelOrder.push(model.channelId);
+    }
+  }
+  public getLogicAnalyzerChannelModel(id: string): LogicAnalyzerChannelModel | undefined {
+    const m = this.logicAnalyzerChannelRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllLogicAnalyzerChannelModels(): LogicAnalyzerChannelModel[] {
+    return this.logicAnalyzerChannelOrder
+      .map(id => this.logicAnalyzerChannelRegistry.get(id))
+      .filter((m): m is LogicAnalyzerChannelModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateLogicAnalyzerChannelModel(id: string, partial: Partial<LogicAnalyzerChannelModel>): void {
+    const existing = this.logicAnalyzerChannelRegistry.get(id);
+    if (!existing) { console.warn(`[LogicAnalyzer] Logic analyzer channel "${id}" not found.`); return; }
+    this.logicAnalyzerChannelRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, channelId: id })));
+  }
+  public removeLogicAnalyzerChannelModel(id: string): void {
+    this.logicAnalyzerChannelRegistry.delete(id);
+    this.logicAnalyzerChannelOrder = this.logicAnalyzerChannelOrder.filter(e => e !== id);
+  }
+  public clearLogicAnalyzerChannelModels(): void {
+    this.logicAnalyzerChannelRegistry.clear();
+    this.logicAnalyzerChannelOrder = [];
+  }
+  public getLogicAnalyzerChannelModelKeys(): string[] { return [...this.logicAnalyzerChannelOrder]; }
+  public hasLogicAnalyzerChannelModel(id: string): boolean { return this.logicAnalyzerChannelRegistry.has(id); }
+
+  // --- LogicCaptureModel CRUD ---
+  public registerLogicCaptureModel(model: LogicCaptureModel): void {
+    const warnings = validateLogicCaptureModel(model);
+    for (const w of warnings) console.warn(`[LogicAnalyzer] ${w.message}`);
+    this.logicCaptureRegistry.set(model.captureId, JSON.parse(JSON.stringify(model)));
+    if (!this.logicCaptureOrder.includes(model.captureId)) {
+      this.logicCaptureOrder.push(model.captureId);
+    }
+  }
+  public getLogicCaptureModel(id: string): LogicCaptureModel | undefined {
+    const m = this.logicCaptureRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllLogicCaptureModels(): LogicCaptureModel[] {
+    return this.logicCaptureOrder
+      .map(id => this.logicCaptureRegistry.get(id))
+      .filter((m): m is LogicCaptureModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateLogicCaptureModel(id: string, partial: Partial<LogicCaptureModel>): void {
+    const existing = this.logicCaptureRegistry.get(id);
+    if (!existing) { console.warn(`[LogicAnalyzer] Logic capture "${id}" not found.`); return; }
+    this.logicCaptureRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, captureId: id })));
+  }
+  public removeLogicCaptureModel(id: string): void {
+    this.logicCaptureRegistry.delete(id);
+    this.logicCaptureOrder = this.logicCaptureOrder.filter(e => e !== id);
+  }
+  public clearLogicCaptureModels(): void {
+    this.logicCaptureRegistry.clear();
+    this.logicCaptureOrder = [];
+  }
+  public getLogicCaptureModelKeys(): string[] { return [...this.logicCaptureOrder]; }
+  public hasLogicCaptureModel(id: string): boolean { return this.logicCaptureRegistry.has(id); }
+
+  // --- LogicSampleModel CRUD ---
+  public registerLogicSampleModel(model: LogicSampleModel): void {
+    const warnings = validateLogicSampleModel(model);
+    for (const w of warnings) console.warn(`[LogicAnalyzer] ${w.message}`);
+    this.logicSampleRegistry.set(model.sampleId, JSON.parse(JSON.stringify(model)));
+    if (!this.logicSampleOrder.includes(model.sampleId)) {
+      this.logicSampleOrder.push(model.sampleId);
+    }
+  }
+  public getLogicSampleModel(id: string): LogicSampleModel | undefined {
+    const m = this.logicSampleRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllLogicSampleModels(): LogicSampleModel[] {
+    return this.logicSampleOrder
+      .map(id => this.logicSampleRegistry.get(id))
+      .filter((m): m is LogicSampleModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateLogicSampleModel(id: string, partial: Partial<LogicSampleModel>): void {
+    const existing = this.logicSampleRegistry.get(id);
+    if (!existing) { console.warn(`[LogicAnalyzer] Logic sample "${id}" not found.`); return; }
+    this.logicSampleRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, sampleId: id })));
+  }
+  public removeLogicSampleModel(id: string): void {
+    this.logicSampleRegistry.delete(id);
+    this.logicSampleOrder = this.logicSampleOrder.filter(e => e !== id);
+  }
+  public clearLogicSampleModels(): void {
+    this.logicSampleRegistry.clear();
+    this.logicSampleOrder = [];
+  }
+  public getLogicSampleModelKeys(): string[] { return [...this.logicSampleOrder]; }
+  public hasLogicSampleModel(id: string): boolean { return this.logicSampleRegistry.has(id); }
+
+  // --- OscilloscopeChannelModel CRUD ---
+  public registerOscilloscopeChannelModel(model: OscilloscopeChannelModel): void {
+    const warnings = validateOscilloscopeChannelModel(model);
+    for (const w of warnings) console.warn(`[Oscilloscope] ${w.message}`);
+    this.oscilloscopeChannelRegistry.set(model.channelId, JSON.parse(JSON.stringify(model)));
+    if (!this.oscilloscopeChannelOrder.includes(model.channelId)) {
+      this.oscilloscopeChannelOrder.push(model.channelId);
+    }
+  }
+  public getOscilloscopeChannelModel(id: string): OscilloscopeChannelModel | undefined {
+    const m = this.oscilloscopeChannelRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllOscilloscopeChannelModels(): OscilloscopeChannelModel[] {
+    return this.oscilloscopeChannelOrder
+      .map(id => this.oscilloscopeChannelRegistry.get(id))
+      .filter((m): m is OscilloscopeChannelModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateOscilloscopeChannelModel(id: string, partial: Partial<OscilloscopeChannelModel>): void {
+    const existing = this.oscilloscopeChannelRegistry.get(id);
+    if (!existing) { console.warn(`[Oscilloscope] Oscilloscope channel "${id}" not found.`); return; }
+    this.oscilloscopeChannelRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, channelId: id })));
+  }
+  public removeOscilloscopeChannelModel(id: string): void {
+    this.oscilloscopeChannelRegistry.delete(id);
+    this.oscilloscopeChannelOrder = this.oscilloscopeChannelOrder.filter(e => e !== id);
+  }
+  public clearOscilloscopeChannelModels(): void {
+    this.oscilloscopeChannelRegistry.clear();
+    this.oscilloscopeChannelOrder = [];
+  }
+  public getOscilloscopeChannelModelKeys(): string[] { return [...this.oscilloscopeChannelOrder]; }
+  public hasOscilloscopeChannelModel(id: string): boolean { return this.oscilloscopeChannelRegistry.has(id); }
+
+  // --- OscilloscopeCaptureModel CRUD ---
+  public registerOscilloscopeCaptureModel(model: OscilloscopeCaptureModel): void {
+    const warnings = validateOscilloscopeCaptureModel(model);
+    for (const w of warnings) console.warn(`[Oscilloscope] ${w.message}`);
+    this.oscilloscopeCaptureRegistry.set(model.captureId, JSON.parse(JSON.stringify(model)));
+    if (!this.oscilloscopeCaptureOrder.includes(model.captureId)) {
+      this.oscilloscopeCaptureOrder.push(model.captureId);
+    }
+  }
+  public getOscilloscopeCaptureModel(id: string): OscilloscopeCaptureModel | undefined {
+    const m = this.oscilloscopeCaptureRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllOscilloscopeCaptureModels(): OscilloscopeCaptureModel[] {
+    return this.oscilloscopeCaptureOrder
+      .map(id => this.oscilloscopeCaptureRegistry.get(id))
+      .filter((m): m is OscilloscopeCaptureModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateOscilloscopeCaptureModel(id: string, partial: Partial<OscilloscopeCaptureModel>): void {
+    const existing = this.oscilloscopeCaptureRegistry.get(id);
+    if (!existing) { console.warn(`[Oscilloscope] Oscilloscope capture "${id}" not found.`); return; }
+    this.oscilloscopeCaptureRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, captureId: id })));
+  }
+  public removeOscilloscopeCaptureModel(id: string): void {
+    this.oscilloscopeCaptureRegistry.delete(id);
+    this.oscilloscopeCaptureOrder = this.oscilloscopeCaptureOrder.filter(e => e !== id);
+  }
+  public clearOscilloscopeCaptureModels(): void {
+    this.oscilloscopeCaptureRegistry.clear();
+    this.oscilloscopeCaptureOrder = [];
+  }
+  public getOscilloscopeCaptureModelKeys(): string[] { return [...this.oscilloscopeCaptureOrder]; }
+  public hasOscilloscopeCaptureModel(id: string): boolean { return this.oscilloscopeCaptureRegistry.has(id); }
+
+  // --- WaveformBufferModel CRUD ---
+  public registerWaveformBufferModel(model: WaveformBufferModel): void {
+    const warnings = validateWaveformBufferModel(model);
+    for (const w of warnings) console.warn(`[Oscilloscope] ${w.message}`);
+    this.waveformBufferRegistry.set(model.bufferId, JSON.parse(JSON.stringify(model)));
+    if (!this.waveformBufferOrder.includes(model.bufferId)) {
+      this.waveformBufferOrder.push(model.bufferId);
+    }
+  }
+  public getWaveformBufferModel(id: string): WaveformBufferModel | undefined {
+    const m = this.waveformBufferRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllWaveformBufferModels(): WaveformBufferModel[] {
+    return this.waveformBufferOrder
+      .map(id => this.waveformBufferRegistry.get(id))
+      .filter((m): m is WaveformBufferModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateWaveformBufferModel(id: string, partial: Partial<WaveformBufferModel>): void {
+    const existing = this.waveformBufferRegistry.get(id);
+    if (!existing) { console.warn(`[Oscilloscope] Waveform buffer "${id}" not found.`); return; }
+    this.waveformBufferRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, bufferId: id })));
+  }
+  public removeWaveformBufferModel(id: string): void {
+    this.waveformBufferRegistry.delete(id);
+    this.waveformBufferOrder = this.waveformBufferOrder.filter(e => e !== id);
+  }
+  public clearWaveformBufferModels(): void {
+    this.waveformBufferRegistry.clear();
+    this.waveformBufferOrder = [];
+  }
+  public getWaveformBufferModelKeys(): string[] { return [...this.waveformBufferOrder]; }
+  public hasWaveformBufferModel(id: string): boolean { return this.waveformBufferRegistry.has(id); }
+
+  // ═══════════════════════════════════════════════════════════════
+  // Phase 23B: Logic Analyzer & Oscilloscope — High-Level APIs
+  // ═══════════════════════════════════════════════════════════════
+
+  public logicPlaceChannel(channelId: string, esp32Id: string, pinNumber: number, label: string, colorIndex: number = 0): string {
+    const channel = logicCreateChannelFn(esp32Id, channelId, pinNumber, label, colorIndex);
+    this.registerLogicAnalyzerChannelModel(channel);
+    return channelId;
+  }
+
+  public logicCreateCaptureSession(captureId: string, esp32Id: string, channelIds: string[], sampleRateHz: number = 1000000): string {
+    const capture = createDefaultLogicCaptureModel(captureId, { esp32Id, channelIds, sampleRateHz });
+    this.registerLogicCaptureModel(capture);
+    return captureId;
+  }
+
+  public logicArmCaptureSession(captureId: string, triggerChannelId: string, triggerMode: string): boolean {
+    const capture = this.logicCaptureRegistry.get(captureId);
+    if (!capture) { console.warn(`[LogicAnalyzer] logicArmCaptureSession: capture "${captureId}" not found.`); return false; }
+    const updated = logicArmCaptureFn(capture, triggerChannelId, triggerMode as any);
+    this.logicCaptureRegistry.set(captureId, JSON.parse(JSON.stringify(updated)));
+    return true;
+  }
+
+  public logicStartCaptureSession(captureId: string): boolean {
+    const capture = this.logicCaptureRegistry.get(captureId);
+    if (!capture) { console.warn(`[LogicAnalyzer] logicStartCaptureSession: capture "${captureId}" not found.`); return false; }
+    const updated = logicStartCaptureFn(capture, Date.now());
+    this.logicCaptureRegistry.set(captureId, JSON.parse(JSON.stringify(updated)));
+    return true;
+  }
+
+  public logicStopCaptureSession(captureId: string): boolean {
+    const capture = this.logicCaptureRegistry.get(captureId);
+    if (!capture) { console.warn(`[LogicAnalyzer] logicStopCaptureSession: capture "${captureId}" not found.`); return false; }
+    const updated = logicStopCaptureFn(capture, Date.now());
+    this.logicCaptureRegistry.set(captureId, JSON.parse(JSON.stringify(updated)));
+    return true;
+  }
+
+  public logicClearCaptureSession(captureId: string): void {
+    const capture = this.logicCaptureRegistry.get(captureId);
+    if (!capture) return;
+    const updated = logicClearCaptureFn(capture);
+    this.logicCaptureRegistry.set(captureId, JSON.parse(JSON.stringify(updated)));
+    // Remove samples for this capture
+    const toRemove = this.logicSampleOrder.filter(id => {
+      const s = this.logicSampleRegistry.get(id);
+      return s && s.captureId === captureId;
+    });
+    for (const id of toRemove) this.removeLogicSampleModel(id);
+  }
+
+  public logicExportCaptureSession(captureId: string): { capture: LogicCaptureModel | undefined; samples: LogicSampleModel[] } {
+    const capture = this.getLogicCaptureModel(captureId);
+    const samples = this.getAllLogicSampleModels().filter(s => s.captureId === captureId);
+    return { capture, samples };
+  }
+
+  public oscilloscopePlaceChannel(channelId: string, esp32Id: string, pinNumber: number, label: string): string {
+    const channel = createDefaultOscilloscopeChannelModel(channelId, { esp32Id, pinNumber, channelLabel: label });
+    this.registerOscilloscopeChannelModel(channel);
+    return channelId;
+  }
+
+  public oscilloscopeCreateCaptureSession(captureId: string, esp32Id: string, channelIds: string[]): string {
+    const capture = createDefaultOscilloscopeCaptureModel(captureId, { esp32Id, channelIds });
+    this.registerOscilloscopeCaptureModel(capture);
+    // Create waveform buffers for each channel
+    for (const chId of channelIds) {
+      const bufferId = `${captureId}_${chId}_waveform`;
+      const buffer = createDefaultWaveformBufferModel(bufferId, { captureId, channelId: chId });
+      this.registerWaveformBufferModel(buffer);
+    }
+    return captureId;
+  }
+
+  public oscilloscopeStartCaptureSession(captureId: string): boolean {
+    const capture = this.oscilloscopeCaptureRegistry.get(captureId);
+    if (!capture) { console.warn(`[Oscilloscope] oscilloscopeStartCaptureSession: capture "${captureId}" not found.`); return false; }
+    const updated = oscilloscopeStartCaptureFn(capture, Date.now());
+    this.oscilloscopeCaptureRegistry.set(captureId, JSON.parse(JSON.stringify(updated)));
+    return true;
+  }
+
+  public oscilloscopeStopCaptureSession(captureId: string): boolean {
+    const capture = this.oscilloscopeCaptureRegistry.get(captureId);
+    if (!capture) { console.warn(`[Oscilloscope] oscilloscopeStopCaptureSession: capture "${captureId}" not found.`); return false; }
+    const updated = oscilloscopeStopCaptureFn(capture, Date.now());
+    this.oscilloscopeCaptureRegistry.set(captureId, JSON.parse(JSON.stringify(updated)));
+    return true;
+  }
+
+  public oscilloscopeClearCaptureSession(captureId: string): void {
+    // Clear waveform buffers for this capture
+    const toRemove = this.waveformBufferOrder.filter(id => {
+      const b = this.waveformBufferRegistry.get(id);
+      return b && b.captureId === captureId;
+    });
+    for (const id of toRemove) {
+      const buf = this.waveformBufferRegistry.get(id);
+      if (buf) {
+        const cleared = clearWaveformFn(buf);
+        this.waveformBufferRegistry.set(id, JSON.parse(JSON.stringify(cleared)));
+      }
+    }
+  }
+
+  public oscilloscopeExportCaptureSession(captureId: string): { capture: OscilloscopeCaptureModel | undefined; buffers: WaveformBufferModel[] } {
+    const capture = this.getOscilloscopeCaptureModel(captureId);
+    const buffers = this.getAllWaveformBufferModels().filter(b => b.captureId === captureId);
+    return { capture, buffers };
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // Phase 24A: Virtual Robotics Physics Runtime — CRUD
+  // ═══════════════════════════════════════════════════════════════
+
+  // --- RobotPhysicsModel CRUD ---
+  public registerRobotPhysicsModel(model: RobotPhysicsModel): void {
+    const warnings = validateRobotPhysicsModel(model);
+    for (const w of warnings) console.warn(`[Physics] ${w.message}`);
+    this.robotPhysicsRegistry.set(model.robotId, JSON.parse(JSON.stringify(model)));
+    if (!this.robotPhysicsOrder.includes(model.robotId)) {
+      this.robotPhysicsOrder.push(model.robotId);
+    }
+  }
+  public getRobotPhysicsModel(id: string): RobotPhysicsModel | undefined {
+    const m = this.robotPhysicsRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllRobotPhysicsModels(): RobotPhysicsModel[] {
+    return this.robotPhysicsOrder
+      .map(id => this.robotPhysicsRegistry.get(id))
+      .filter((m): m is RobotPhysicsModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateRobotPhysicsModel(id: string, partial: Partial<RobotPhysicsModel>): void {
+    const existing = this.robotPhysicsRegistry.get(id);
+    if (!existing) { console.warn(`[Physics] Robot physics "${id}" not found.`); return; }
+    this.robotPhysicsRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, robotId: id })));
+  }
+  public removeRobotPhysicsModel(id: string): void {
+    this.robotPhysicsRegistry.delete(id);
+    this.robotPhysicsOrder = this.robotPhysicsOrder.filter(e => e !== id);
+  }
+  public clearRobotPhysicsModels(): void {
+    this.robotPhysicsRegistry.clear();
+    this.robotPhysicsOrder = [];
+  }
+  public getRobotPhysicsModelKeys(): string[] { return [...this.robotPhysicsOrder]; }
+  public hasRobotPhysicsModel(id: string): boolean { return this.robotPhysicsRegistry.has(id); }
+
+  // --- RobotPoseModel CRUD ---
+  public registerRobotPoseModel(model: RobotPoseModel): void {
+    const warnings = validateRobotPoseModel(model);
+    for (const w of warnings) console.warn(`[Physics] ${w.message}`);
+    this.robotPoseRegistry.set(model.poseId, JSON.parse(JSON.stringify(model)));
+    if (!this.robotPoseOrder.includes(model.poseId)) {
+      this.robotPoseOrder.push(model.poseId);
+    }
+  }
+  public getRobotPoseModel(id: string): RobotPoseModel | undefined {
+    const m = this.robotPoseRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllRobotPoseModels(): RobotPoseModel[] {
+    return this.robotPoseOrder
+      .map(id => this.robotPoseRegistry.get(id))
+      .filter((m): m is RobotPoseModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateRobotPoseModel(id: string, partial: Partial<RobotPoseModel>): void {
+    const existing = this.robotPoseRegistry.get(id);
+    if (!existing) { console.warn(`[Physics] Robot pose "${id}" not found.`); return; }
+    this.robotPoseRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, poseId: id })));
+  }
+  public removeRobotPoseModel(id: string): void {
+    this.robotPoseRegistry.delete(id);
+    this.robotPoseOrder = this.robotPoseOrder.filter(e => e !== id);
+  }
+  public clearRobotPoseModels(): void {
+    this.robotPoseRegistry.clear();
+    this.robotPoseOrder = [];
+  }
+  public getRobotPoseModelKeys(): string[] { return [...this.robotPoseOrder]; }
+  public hasRobotPoseModel(id: string): boolean { return this.robotPoseRegistry.has(id); }
+
+  // --- WheelRuntimeModel CRUD ---
+  public registerWheelRuntimeModel(model: WheelRuntimeModel): void {
+    const warnings = validateWheelRuntimeModel(model);
+    for (const w of warnings) console.warn(`[Physics] ${w.message}`);
+    this.wheelRuntimeRegistry.set(model.wheelId, JSON.parse(JSON.stringify(model)));
+    if (!this.wheelRuntimeOrder.includes(model.wheelId)) {
+      this.wheelRuntimeOrder.push(model.wheelId);
+    }
+  }
+  public getWheelRuntimeModel(id: string): WheelRuntimeModel | undefined {
+    const m = this.wheelRuntimeRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllWheelRuntimeModels(): WheelRuntimeModel[] {
+    return this.wheelRuntimeOrder
+      .map(id => this.wheelRuntimeRegistry.get(id))
+      .filter((m): m is WheelRuntimeModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateWheelRuntimeModel(id: string, partial: Partial<WheelRuntimeModel>): void {
+    const existing = this.wheelRuntimeRegistry.get(id);
+    if (!existing) { console.warn(`[Physics] Wheel "${id}" not found.`); return; }
+    this.wheelRuntimeRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, wheelId: id })));
+  }
+  public removeWheelRuntimeModel(id: string): void {
+    this.wheelRuntimeRegistry.delete(id);
+    this.wheelRuntimeOrder = this.wheelRuntimeOrder.filter(e => e !== id);
+  }
+  public clearWheelRuntimeModels(): void {
+    this.wheelRuntimeRegistry.clear();
+    this.wheelRuntimeOrder = [];
+  }
+  public getWheelRuntimeModelKeys(): string[] { return [...this.wheelRuntimeOrder]; }
+  public hasWheelRuntimeModel(id: string): boolean { return this.wheelRuntimeRegistry.has(id); }
+
+  // --- MotionCommandModel CRUD ---
+  public registerMotionCommandModel(model: MotionCommandModel): void {
+    const warnings = validateMotionCommandModel(model);
+    for (const w of warnings) console.warn(`[Physics] ${w.message}`);
+    this.motionCommandRegistry.set(model.commandId, JSON.parse(JSON.stringify(model)));
+    if (!this.motionCommandOrder.includes(model.commandId)) {
+      this.motionCommandOrder.push(model.commandId);
+    }
+  }
+  public getMotionCommandModel(id: string): MotionCommandModel | undefined {
+    const m = this.motionCommandRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllMotionCommandModels(): MotionCommandModel[] {
+    return this.motionCommandOrder
+      .map(id => this.motionCommandRegistry.get(id))
+      .filter((m): m is MotionCommandModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateMotionCommandModel(id: string, partial: Partial<MotionCommandModel>): void {
+    const existing = this.motionCommandRegistry.get(id);
+    if (!existing) { console.warn(`[Physics] Motion command "${id}" not found.`); return; }
+    this.motionCommandRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, commandId: id })));
+  }
+  public removeMotionCommandModel(id: string): void {
+    this.motionCommandRegistry.delete(id);
+    this.motionCommandOrder = this.motionCommandOrder.filter(e => e !== id);
+  }
+  public clearMotionCommandModels(): void {
+    this.motionCommandRegistry.clear();
+    this.motionCommandOrder = [];
+  }
+  public getMotionCommandModelKeys(): string[] { return [...this.motionCommandOrder]; }
+  public hasMotionCommandModel(id: string): boolean { return this.motionCommandRegistry.has(id); }
+
+  // --- CollisionModel CRUD ---
+  public registerCollisionModel(model: CollisionModel): void {
+    const warnings = validateCollisionModel(model);
+    for (const w of warnings) console.warn(`[Physics] ${w.message}`);
+    this.collisionRegistry.set(model.collisionId, JSON.parse(JSON.stringify(model)));
+    if (!this.collisionOrder.includes(model.collisionId)) {
+      this.collisionOrder.push(model.collisionId);
+    }
+  }
+  public getCollisionModel(id: string): CollisionModel | undefined {
+    const m = this.collisionRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllCollisionModels(): CollisionModel[] {
+    return this.collisionOrder
+      .map(id => this.collisionRegistry.get(id))
+      .filter((m): m is CollisionModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateCollisionModel(id: string, partial: Partial<CollisionModel>): void {
+    const existing = this.collisionRegistry.get(id);
+    if (!existing) { console.warn(`[Physics] Collision "${id}" not found.`); return; }
+    this.collisionRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, collisionId: id })));
+  }
+  public removeCollisionModel(id: string): void {
+    this.collisionRegistry.delete(id);
+    this.collisionOrder = this.collisionOrder.filter(e => e !== id);
+  }
+  public clearCollisionModels(): void {
+    this.collisionRegistry.clear();
+    this.collisionOrder = [];
+  }
+  public getCollisionModelKeys(): string[] { return [...this.collisionOrder]; }
+  public hasCollisionModel(id: string): boolean { return this.collisionRegistry.has(id); }
+
+  // --- PhysicsWorldModel CRUD ---
+  public registerPhysicsWorldModel(model: PhysicsWorldModel): void {
+    const warnings = validatePhysicsWorldModel(model);
+    for (const w of warnings) console.warn(`[Physics] ${w.message}`);
+    this.physicsWorldRegistry.set(model.worldId, JSON.parse(JSON.stringify(model)));
+    if (!this.physicsWorldOrder.includes(model.worldId)) {
+      this.physicsWorldOrder.push(model.worldId);
+    }
+  }
+  public getPhysicsWorldModel(id: string): PhysicsWorldModel | undefined {
+    const m = this.physicsWorldRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllPhysicsWorldModels(): PhysicsWorldModel[] {
+    return this.physicsWorldOrder
+      .map(id => this.physicsWorldRegistry.get(id))
+      .filter((m): m is PhysicsWorldModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updatePhysicsWorldModel(id: string, partial: Partial<PhysicsWorldModel>): void {
+    const existing = this.physicsWorldRegistry.get(id);
+    if (!existing) { console.warn(`[Physics] Physics world "${id}" not found.`); return; }
+    this.physicsWorldRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, worldId: id })));
+  }
+  public removePhysicsWorldModel(id: string): void {
+    this.physicsWorldRegistry.delete(id);
+    this.physicsWorldOrder = this.physicsWorldOrder.filter(e => e !== id);
+  }
+  public clearPhysicsWorldModels(): void {
+    this.physicsWorldRegistry.clear();
+    this.physicsWorldOrder = [];
+  }
+  public getPhysicsWorldModelKeys(): string[] { return [...this.physicsWorldOrder]; }
+  public hasPhysicsWorldModel(id: string): boolean { return this.physicsWorldRegistry.has(id); }
+
+  // ═══════════════════════════════════════════════════════════════
+  // Phase 24A: Virtual Robotics Physics Runtime — High-Level APIs
+  // ═══════════════════════════════════════════════════════════════
+
+  /**
+   * Create a robot with physics, pose, and wheels.
+   */
+  public robotCreate(
+    robotId: string,
+    esp32Id: string,
+    startX: number = 0,
+    startY: number = 0,
+    startHeadingDeg: number = 0,
+  ): string {
+    const physics = createDefaultRobotPhysicsModel(robotId, { esp32Id });
+    this.registerRobotPhysicsModel(physics);
+
+    const poseId = `${robotId}_pose`;
+    const pose = createDefaultRobotPoseModel(poseId, {
+      robotId,
+      positionX: startX,
+      positionY: startY,
+      headingDeg: startHeadingDeg,
+    });
+    this.registerRobotPoseModel(pose);
+
+    const leftWheelId = `${robotId}_wheel_left`;
+    const leftWheel = createDefaultWheelRuntimeModel(leftWheelId, {
+      robotId, side: 'LEFT',
+    });
+    this.registerWheelRuntimeModel(leftWheel);
+
+    const rightWheelId = `${robotId}_wheel_right`;
+    const rightWheel = createDefaultWheelRuntimeModel(rightWheelId, {
+      robotId, side: 'RIGHT',
+    });
+    this.registerWheelRuntimeModel(rightWheel);
+
+    return robotId;
+  }
+
+  /**
+   * Set robot pose directly.
+   */
+  public robotSetPose(
+    robotId: string,
+    x: number,
+    y: number,
+    headingDeg: number,
+  ): void {
+    const poseId = `${robotId}_pose`;
+    this.updateRobotPoseModel(poseId, {
+      positionX: x,
+      positionY: y,
+      headingDeg: ((headingDeg % 360) + 360) % 360,
+    });
+  }
+
+  /**
+   * Apply a motion command (FORWARD/BACKWARD/TURN_LEFT/TURN_RIGHT/STOP).
+   */
+  public robotApplyMotion(
+    robotId: string,
+    commandType: MotionCommandModel['commandType'],
+    speedCmPerSec: number = 15,
+  ): string {
+    const physics = this.robotPhysicsRegistry.get(robotId);
+    if (!physics) {
+      console.warn(`[Physics] robotApplyMotion: robot "${robotId}" not found.`);
+      return '';
+    }
+
+    const commandId = `${robotId}_cmd_${Date.now()}`;
+    const command = createDefaultMotionCommandModel(commandId, {
+      robotId,
+      commandType,
+      speedCmPerSec,
+      timestamp: Date.now(),
+    });
+    this.registerMotionCommandModel(command);
+
+    const leftWheelId = `${robotId}_wheel_left`;
+    const rightWheelId = `${robotId}_wheel_right`;
+    const leftWheel = this.wheelRuntimeRegistry.get(leftWheelId);
+    const rightWheel = this.wheelRuntimeRegistry.get(rightWheelId);
+    if (!leftWheel || !rightWheel) {
+      console.warn(`[Physics] robotApplyMotion: wheels not found for "${robotId}".`);
+      return commandId;
+    }
+
+    const result = applyMotionCommandFn(command, physics, leftWheel, rightWheel);
+    this.wheelRuntimeRegistry.set(leftWheelId, JSON.parse(JSON.stringify(result.leftWheel)));
+    this.wheelRuntimeRegistry.set(rightWheelId, JSON.parse(JSON.stringify(result.rightWheel)));
+
+    return commandId;
+  }
+
+  /**
+   * Step physics simulation for a robot.
+   */
+  public robotStepPhysics(
+    robotId: string,
+    worldId: string,
+    deltaMs: number,
+  ): void {
+    const physics = this.robotPhysicsRegistry.get(robotId);
+    const poseId = `${robotId}_pose`;
+    const pose = this.robotPoseRegistry.get(poseId);
+    const leftWheelId = `${robotId}_wheel_left`;
+    const rightWheelId = `${robotId}_wheel_right`;
+    const leftWheel = this.wheelRuntimeRegistry.get(leftWheelId);
+    const rightWheel = this.wheelRuntimeRegistry.get(rightWheelId);
+    const world = this.physicsWorldRegistry.get(worldId);
+
+    if (!physics || !pose || !leftWheel || !rightWheel || !world) {
+      console.warn(`[Physics] robotStepPhysics: missing data for robot "${robotId}" or world "${worldId}".`);
+      return;
+    }
+
+    const result = stepPhysicsFn(physics, pose, leftWheel, rightWheel, world, deltaMs, Date.now());
+    this.robotPoseRegistry.set(poseId, JSON.parse(JSON.stringify(result.pose)));
+    this.wheelRuntimeRegistry.set(leftWheelId, JSON.parse(JSON.stringify(result.leftWheel)));
+    this.wheelRuntimeRegistry.set(rightWheelId, JSON.parse(JSON.stringify(result.rightWheel)));
+  }
+
+  /**
+   * Get current robot pose.
+   */
+  public robotGetPose(robotId: string): RobotPoseModel | undefined {
+    const poseId = `${robotId}_pose`;
+    return this.getRobotPoseModel(poseId);
+  }
+
+  /**
+   * Register a collision manually.
+   */
+  public robotRegisterCollision(
+    objectAId: string,
+    objectAType: string,
+    objectBId: string,
+    objectBType: string,
+  ): string {
+    const collisionId = `${objectAId}_${objectBId}`;
+    const collision = createDefaultCollisionModel(collisionId, {
+      objectAId,
+      objectAType,
+      objectBId,
+      objectBType,
+      collisionState: 'ENTERING',
+      timestamp: Date.now(),
+    });
+    this.registerCollisionModel(collision);
+    return collisionId;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // Phase 24B: Differential Drive Robot Simulator — CRUD
+  // ═══════════════════════════════════════════════════════════════
+
+  // --- DifferentialDriveRobotModel CRUD ---
+  public registerDifferentialDriveRobotModel(model: DifferentialDriveRobotModel): void {
+    const warnings = validateDifferentialDriveRobotModel(model);
+    for (const w of warnings) console.warn(`[Drive] ${w.message}`);
+    this.differentialDriveRobotRegistry.set(model.driveId, JSON.parse(JSON.stringify(model)));
+    if (!this.differentialDriveRobotOrder.includes(model.driveId)) {
+      this.differentialDriveRobotOrder.push(model.driveId);
+    }
+  }
+  public getDifferentialDriveRobotModel(id: string): DifferentialDriveRobotModel | undefined {
+    const m = this.differentialDriveRobotRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllDifferentialDriveRobotModels(): DifferentialDriveRobotModel[] {
+    return this.differentialDriveRobotOrder
+      .map(id => this.differentialDriveRobotRegistry.get(id))
+      .filter((m): m is DifferentialDriveRobotModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateDifferentialDriveRobotModel(id: string, partial: Partial<DifferentialDriveRobotModel>): void {
+    const existing = this.differentialDriveRobotRegistry.get(id);
+    if (!existing) { console.warn(`[Drive] Differential drive "${id}" not found.`); return; }
+    this.differentialDriveRobotRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, driveId: id })));
+  }
+  public removeDifferentialDriveRobotModel(id: string): void {
+    this.differentialDriveRobotRegistry.delete(id);
+    this.differentialDriveRobotOrder = this.differentialDriveRobotOrder.filter(e => e !== id);
+  }
+  public clearDifferentialDriveRobotModels(): void {
+    this.differentialDriveRobotRegistry.clear();
+    this.differentialDriveRobotOrder = [];
+  }
+  public getDifferentialDriveRobotModelKeys(): string[] { return [...this.differentialDriveRobotOrder]; }
+  public hasDifferentialDriveRobotModel(id: string): boolean { return this.differentialDriveRobotRegistry.has(id); }
+
+  // --- WheelEncoderModel CRUD ---
+  public registerWheelEncoderModel(model: WheelEncoderModel): void {
+    const warnings = validateWheelEncoderModel(model);
+    for (const w of warnings) console.warn(`[Drive] ${w.message}`);
+    this.wheelEncoderRegistry.set(model.encoderId, JSON.parse(JSON.stringify(model)));
+    if (!this.wheelEncoderOrder.includes(model.encoderId)) {
+      this.wheelEncoderOrder.push(model.encoderId);
+    }
+  }
+  public getWheelEncoderModel(id: string): WheelEncoderModel | undefined {
+    const m = this.wheelEncoderRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllWheelEncoderModels(): WheelEncoderModel[] {
+    return this.wheelEncoderOrder
+      .map(id => this.wheelEncoderRegistry.get(id))
+      .filter((m): m is WheelEncoderModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateWheelEncoderModel(id: string, partial: Partial<WheelEncoderModel>): void {
+    const existing = this.wheelEncoderRegistry.get(id);
+    if (!existing) { console.warn(`[Drive] Wheel encoder "${id}" not found.`); return; }
+    this.wheelEncoderRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, encoderId: id })));
+  }
+  public removeWheelEncoderModel(id: string): void {
+    this.wheelEncoderRegistry.delete(id);
+    this.wheelEncoderOrder = this.wheelEncoderOrder.filter(e => e !== id);
+  }
+  public clearWheelEncoderModels(): void {
+    this.wheelEncoderRegistry.clear();
+    this.wheelEncoderOrder = [];
+  }
+  public getWheelEncoderModelKeys(): string[] { return [...this.wheelEncoderOrder]; }
+  public hasWheelEncoderModel(id: string): boolean { return this.wheelEncoderRegistry.has(id); }
+
+  // --- MotorDriverModel CRUD ---
+  public registerMotorDriverModel(model: MotorDriverModel): void {
+    const warnings = validateMotorDriverModel(model);
+    for (const w of warnings) console.warn(`[Drive] ${w.message}`);
+    this.motorDriverRegistry.set(model.driverId, JSON.parse(JSON.stringify(model)));
+    if (!this.motorDriverOrder.includes(model.driverId)) {
+      this.motorDriverOrder.push(model.driverId);
+    }
+  }
+  public getMotorDriverModel(id: string): MotorDriverModel | undefined {
+    const m = this.motorDriverRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllMotorDriverModels(): MotorDriverModel[] {
+    return this.motorDriverOrder
+      .map(id => this.motorDriverRegistry.get(id))
+      .filter((m): m is MotorDriverModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateMotorDriverModel(id: string, partial: Partial<MotorDriverModel>): void {
+    const existing = this.motorDriverRegistry.get(id);
+    if (!existing) { console.warn(`[Drive] Motor driver "${id}" not found.`); return; }
+    this.motorDriverRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, driverId: id })));
+  }
+  public removeMotorDriverModel(id: string): void {
+    this.motorDriverRegistry.delete(id);
+    this.motorDriverOrder = this.motorDriverOrder.filter(e => e !== id);
+  }
+  public clearMotorDriverModels(): void {
+    this.motorDriverRegistry.clear();
+    this.motorDriverOrder = [];
+  }
+  public getMotorDriverModelKeys(): string[] { return [...this.motorDriverOrder]; }
+  public hasMotorDriverModel(id: string): boolean { return this.motorDriverRegistry.has(id); }
+
+  // --- RobotCommandQueueModel CRUD ---
+  public registerRobotCommandQueueModel(model: RobotCommandQueueModel): void {
+    const warnings = validateRobotCommandQueueModel(model);
+    for (const w of warnings) console.warn(`[Drive] ${w.message}`);
+    this.robotCommandQueueRegistry.set(model.queueId, JSON.parse(JSON.stringify(model)));
+    if (!this.robotCommandQueueOrder.includes(model.queueId)) {
+      this.robotCommandQueueOrder.push(model.queueId);
+    }
+  }
+  public getRobotCommandQueueModel(id: string): RobotCommandQueueModel | undefined {
+    const m = this.robotCommandQueueRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllRobotCommandQueueModels(): RobotCommandQueueModel[] {
+    return this.robotCommandQueueOrder
+      .map(id => this.robotCommandQueueRegistry.get(id))
+      .filter((m): m is RobotCommandQueueModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateRobotCommandQueueModel(id: string, partial: Partial<RobotCommandQueueModel>): void {
+    const existing = this.robotCommandQueueRegistry.get(id);
+    if (!existing) { console.warn(`[Drive] Robot command queue "${id}" not found.`); return; }
+    this.robotCommandQueueRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, queueId: id })));
+  }
+  public removeRobotCommandQueueModel(id: string): void {
+    this.robotCommandQueueRegistry.delete(id);
+    this.robotCommandQueueOrder = this.robotCommandQueueOrder.filter(e => e !== id);
+  }
+  public clearRobotCommandQueueModels(): void {
+    this.robotCommandQueueRegistry.clear();
+    this.robotCommandQueueOrder = [];
+  }
+  public getRobotCommandQueueModelKeys(): string[] { return [...this.robotCommandQueueOrder]; }
+  public hasRobotCommandQueueModel(id: string): boolean { return this.robotCommandQueueRegistry.has(id); }
+
+  // --- RobotPathModel CRUD ---
+  public registerRobotPathModel(model: RobotPathModel): void {
+    const warnings = validateRobotPathModel(model);
+    for (const w of warnings) console.warn(`[Drive] ${w.message}`);
+    this.robotPathRegistry.set(model.pathId, JSON.parse(JSON.stringify(model)));
+    if (!this.robotPathOrder.includes(model.pathId)) {
+      this.robotPathOrder.push(model.pathId);
+    }
+  }
+  public getRobotPathModel(id: string): RobotPathModel | undefined {
+    const m = this.robotPathRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllRobotPathModels(): RobotPathModel[] {
+    return this.robotPathOrder
+      .map(id => this.robotPathRegistry.get(id))
+      .filter((m): m is RobotPathModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateRobotPathModel(id: string, partial: Partial<RobotPathModel>): void {
+    const existing = this.robotPathRegistry.get(id);
+    if (!existing) { console.warn(`[Drive] Robot path "${id}" not found.`); return; }
+    this.robotPathRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, pathId: id })));
+  }
+  public removeRobotPathModel(id: string): void {
+    this.robotPathRegistry.delete(id);
+    this.robotPathOrder = this.robotPathOrder.filter(e => e !== id);
+  }
+  public clearRobotPathModels(): void {
+    this.robotPathRegistry.clear();
+    this.robotPathOrder = [];
+  }
+  public getRobotPathModelKeys(): string[] { return [...this.robotPathOrder]; }
+  public hasRobotPathModel(id: string): boolean { return this.robotPathRegistry.has(id); }
+
+  // --- RobotTelemetryModel CRUD ---
+  public registerRobotTelemetryModel(model: RobotTelemetryModel): void {
+    const warnings = validateRobotTelemetryModel(model);
+    for (const w of warnings) console.warn(`[Drive] ${w.message}`);
+    this.robotTelemetryRegistry.set(model.telemetryId, JSON.parse(JSON.stringify(model)));
+    if (!this.robotTelemetryOrder.includes(model.telemetryId)) {
+      this.robotTelemetryOrder.push(model.telemetryId);
+    }
+  }
+  public getRobotTelemetryModel(id: string): RobotTelemetryModel | undefined {
+    const m = this.robotTelemetryRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllRobotTelemetryModels(): RobotTelemetryModel[] {
+    return this.robotTelemetryOrder
+      .map(id => this.robotTelemetryRegistry.get(id))
+      .filter((m): m is RobotTelemetryModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateRobotTelemetryModel(id: string, partial: Partial<RobotTelemetryModel>): void {
+    const existing = this.robotTelemetryRegistry.get(id);
+    if (!existing) { console.warn(`[Drive] Robot telemetry "${id}" not found.`); return; }
+    this.robotTelemetryRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, telemetryId: id })));
+  }
+  public removeRobotTelemetryModel(id: string): void {
+    this.robotTelemetryRegistry.delete(id);
+    this.robotTelemetryOrder = this.robotTelemetryOrder.filter(e => e !== id);
+  }
+  public clearRobotTelemetryModels(): void {
+    this.robotTelemetryRegistry.clear();
+    this.robotTelemetryOrder = [];
+  }
+  public getRobotTelemetryModelKeys(): string[] { return [...this.robotTelemetryOrder]; }
+  public hasRobotTelemetryModel(id: string): boolean { return this.robotTelemetryRegistry.has(id); }
+
+  // ═══════════════════════════════════════════════════════════════
+  // Phase 24B: Differential Drive Robot — High-Level APIs
+  // ═══════════════════════════════════════════════════════════════
+
+  /**
+   * Create a differential drive robot with motor driver, encoders, path, and telemetry.
+   */
+  public robotCreateDifferentialDrive(
+    driveId: string,
+    esp32Id: string,
+    pinConfig?: { enablePinA?: number; enablePinB?: number; in1Pin?: number; in2Pin?: number; in3Pin?: number; in4Pin?: number; leftEncoderPin?: number; rightEncoderPin?: number },
+  ): string {
+    const motorDriverId = `${driveId}_driver`;
+    const leftEncoderId = `${driveId}_encoder_left`;
+    const rightEncoderId = `${driveId}_encoder_right`;
+
+    const drive = createDefaultDifferentialDriveRobotModel(driveId, {
+      esp32Id,
+      motorDriverId,
+      leftEncoderId,
+      rightEncoderId,
+      ...(pinConfig || {}),
+    });
+    this.registerDifferentialDriveRobotModel(drive);
+
+    const driver = createDefaultMotorDriverModel(motorDriverId, { driveId });
+    this.registerMotorDriverModel(driver);
+
+    const leftEncoder = createDefaultWheelEncoderModel(leftEncoderId, { driveId, side: 'LEFT' });
+    this.registerWheelEncoderModel(leftEncoder);
+
+    const rightEncoder = createDefaultWheelEncoderModel(rightEncoderId, { driveId, side: 'RIGHT' });
+    this.registerWheelEncoderModel(rightEncoder);
+
+    const pathId = `${driveId}_path`;
+    const path = createDefaultRobotPathModel(pathId, { driveId });
+    this.registerRobotPathModel(path);
+
+    const telemetryId = `${driveId}_telemetry`;
+    const telemetry = createDefaultRobotTelemetryModel(telemetryId, { driveId });
+    this.registerRobotTelemetryModel(telemetry);
+
+    return driveId;
+  }
+
+  /**
+   * Set motor speed and direction for a drive robot.
+   */
+  public robotSetMotor(
+    driveId: string,
+    channel: 'LEFT' | 'RIGHT',
+    pwmDuty: number,
+    direction: MotorDirection = 'FORWARD',
+  ): void {
+    const drive = this.differentialDriveRobotRegistry.get(driveId);
+    if (!drive) { console.warn(`[Drive] robotSetMotor: drive "${driveId}" not found.`); return; }
+    let driver = this.motorDriverRegistry.get(drive.motorDriverId);
+    if (!driver) { console.warn(`[Drive] robotSetMotor: driver not found for "${driveId}".`); return; }
+    driver = setMotorSpeedFn(driver, channel, pwmDuty);
+    driver = setMotorDirectionFn(driver, channel, direction);
+    this.motorDriverRegistry.set(drive.motorDriverId, JSON.parse(JSON.stringify(driver)));
+  }
+
+  /**
+   * Queue a motion command for a drive robot.
+   */
+  public robotDriveQueueCommand(
+    driveId: string,
+    commandType: string,
+    speedCmPerSec: number = 15,
+    durationMs: number = 1000,
+    angleDeg: number = 0,
+  ): void {
+    const drive = this.differentialDriveRobotRegistry.get(driveId);
+    if (!drive) { console.warn(`[Drive] robotDriveQueueCommand: drive "${driveId}" not found.`); return; }
+    const queueId = `${driveId}_queue`;
+    let queue = this.robotCommandQueueRegistry.get(queueId);
+    if (!queue) {
+      queue = createDefaultRobotCommandQueueModel(queueId, { driveId });
+    }
+    const updated = enqueueCommandFn(queue, commandType, speedCmPerSec, durationMs, angleDeg);
+    this.robotCommandQueueRegistry.set(queueId, JSON.parse(JSON.stringify(updated)));
+    if (!this.robotCommandQueueOrder.includes(queueId)) {
+      this.robotCommandQueueOrder.push(queueId);
+    }
+  }
+
+  /**
+   * Execute the next queued command for a drive robot.
+   */
+  public robotDriveExecuteQueue(driveId: string): void {
+    const drive = this.differentialDriveRobotRegistry.get(driveId);
+    if (!drive) { console.warn(`[Drive] robotDriveExecuteQueue: drive "${driveId}" not found.`); return; }
+    const queueId = `${driveId}_queue`;
+    const queue = this.robotCommandQueueRegistry.get(queueId);
+    const driver = this.motorDriverRegistry.get(drive.motorDriverId);
+    if (!queue || !driver) { console.warn(`[Drive] robotDriveExecuteQueue: queue or driver not found.`); return; }
+    const result = executeNextCommandFn(queue, drive, driver);
+    this.robotCommandQueueRegistry.set(queueId, JSON.parse(JSON.stringify(result.queue)));
+    this.differentialDriveRobotRegistry.set(driveId, JSON.parse(JSON.stringify(result.drive)));
+    this.motorDriverRegistry.set(drive.motorDriverId, JSON.parse(JSON.stringify(result.motorDriver)));
+  }
+
+  /**
+   * Step the differential drive simulation.
+   */
+  public robotDriveStep(
+    driveId: string,
+    deltaMs: number,
+  ): void {
+    const drive = this.differentialDriveRobotRegistry.get(driveId);
+    if (!drive) { console.warn(`[Drive] robotDriveStep: drive "${driveId}" not found.`); return; }
+    const driver = this.motorDriverRegistry.get(drive.motorDriverId);
+    const leftEncoder = this.wheelEncoderRegistry.get(drive.leftEncoderId);
+    const rightEncoder = this.wheelEncoderRegistry.get(drive.rightEncoderId);
+    if (!driver || !leftEncoder || !rightEncoder) {
+      console.warn(`[Drive] robotDriveStep: missing components for "${driveId}".`);
+      return;
+    }
+    const timestamp = Date.now();
+    const result = simulateDriveStepFn(drive, driver, leftEncoder, rightEncoder, deltaMs, timestamp);
+    this.differentialDriveRobotRegistry.set(driveId, JSON.parse(JSON.stringify(result.drive)));
+    this.wheelEncoderRegistry.set(drive.leftEncoderId, JSON.parse(JSON.stringify(result.leftEncoder)));
+    this.wheelEncoderRegistry.set(drive.rightEncoderId, JSON.parse(JSON.stringify(result.rightEncoder)));
+
+    // Record waypoint
+    const pathId = `${driveId}_path`;
+    const path = this.robotPathRegistry.get(pathId);
+    if (path) {
+      const updated = recordWaypointFn(path, result.newX, result.newY, result.newHeadingDeg, timestamp);
+      this.robotPathRegistry.set(pathId, JSON.parse(JSON.stringify(updated)));
+    }
+
+    // Update telemetry
+    const telemetryId = `${driveId}_telemetry`;
+    const telemetry = this.robotTelemetryRegistry.get(telemetryId);
+    if (telemetry) {
+      const driverOutput = simulateDriverOutputFn(driver, drive.maxSpeedCmPerSec);
+      const linVel = (driverOutput.leftSpeedCmPerSec + driverOutput.rightSpeedCmPerSec) / 2;
+      const angVel = drive.wheelBaseCm > 0
+        ? ((driverOutput.rightSpeedCmPerSec - driverOutput.leftSpeedCmPerSec) / drive.wheelBaseCm) * (180 / Math.PI)
+        : 0;
+      const updated = updateTelemetryFn(
+        telemetry, result.newX, result.newY, result.newHeadingDeg,
+        linVel, angVel, result.leftEncoder, result.rightEncoder,
+        7.4, timestamp,
+      );
+      this.robotTelemetryRegistry.set(telemetryId, JSON.parse(JSON.stringify(updated)));
+    }
+  }
+
+  /**
+   * Get current telemetry for a drive robot.
+   */
+  public robotDriveGetTelemetry(driveId: string): RobotTelemetryModel | undefined {
+    const telemetryId = `${driveId}_telemetry`;
+    return this.getRobotTelemetryModel(telemetryId);
+  }
+
+  /**
+   * Get telemetry summary string.
+   */
+  public robotDriveGetTelemetrySummary(driveId: string): string {
+    const telemetryId = `${driveId}_telemetry`;
+    const telemetry = this.robotTelemetryRegistry.get(telemetryId);
+    if (!telemetry) return '';
+    return getTelemetrySummaryFn(telemetry);
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // Phase 25A: Line Following Sensor Runtime — CRUD
+  // ═══════════════════════════════════════════════════════════════
+
+  // --- LineTrackModel CRUD ---
+  public registerLineTrackModel(model: LineTrackModel): void {
+    const warnings = validateLineTrackModel(model);
+    for (const w of warnings) console.warn(`[LineFollow] ${w.message}`);
+    this.lineTrackRegistry.set(model.trackId, JSON.parse(JSON.stringify(model)));
+    if (!this.lineTrackOrder.includes(model.trackId)) {
+      this.lineTrackOrder.push(model.trackId);
+    }
+  }
+  public getLineTrackModel(id: string): LineTrackModel | undefined {
+    const m = this.lineTrackRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllLineTrackModels(): LineTrackModel[] {
+    return this.lineTrackOrder
+      .map(id => this.lineTrackRegistry.get(id))
+      .filter((m): m is LineTrackModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateLineTrackModel(id: string, partial: Partial<LineTrackModel>): void {
+    const existing = this.lineTrackRegistry.get(id);
+    if (!existing) { console.warn(`[LineFollow] Line track "${id}" not found.`); return; }
+    this.lineTrackRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, trackId: id })));
+  }
+  public removeLineTrackModel(id: string): void {
+    this.lineTrackRegistry.delete(id);
+    this.lineTrackOrder = this.lineTrackOrder.filter(e => e !== id);
+  }
+  public clearLineTrackModels(): void {
+    this.lineTrackRegistry.clear();
+    this.lineTrackOrder = [];
+  }
+  public getLineTrackModelKeys(): string[] { return [...this.lineTrackOrder]; }
+  public hasLineTrackModel(id: string): boolean { return this.lineTrackRegistry.has(id); }
+
+  // --- LineSensorModel CRUD ---
+  public registerLineSensorModel(model: LineSensorModel): void {
+    const warnings = validateLineSensorModel(model);
+    for (const w of warnings) console.warn(`[LineFollow] ${w.message}`);
+    this.lineSensorRegistry.set(model.sensorId, JSON.parse(JSON.stringify(model)));
+    if (!this.lineSensorOrder.includes(model.sensorId)) {
+      this.lineSensorOrder.push(model.sensorId);
+    }
+  }
+  public getLineSensorModel(id: string): LineSensorModel | undefined {
+    const m = this.lineSensorRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllLineSensorModels(): LineSensorModel[] {
+    return this.lineSensorOrder
+      .map(id => this.lineSensorRegistry.get(id))
+      .filter((m): m is LineSensorModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateLineSensorModel(id: string, partial: Partial<LineSensorModel>): void {
+    const existing = this.lineSensorRegistry.get(id);
+    if (!existing) { console.warn(`[LineFollow] Line sensor "${id}" not found.`); return; }
+    this.lineSensorRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, sensorId: id })));
+  }
+  public removeLineSensorModel(id: string): void {
+    this.lineSensorRegistry.delete(id);
+    this.lineSensorOrder = this.lineSensorOrder.filter(e => e !== id);
+  }
+  public clearLineSensorModels(): void {
+    this.lineSensorRegistry.clear();
+    this.lineSensorOrder = [];
+  }
+  public getLineSensorModelKeys(): string[] { return [...this.lineSensorOrder]; }
+  public hasLineSensorModel(id: string): boolean { return this.lineSensorRegistry.has(id); }
+
+  // --- TrackSegmentModel CRUD ---
+  public registerTrackSegmentModel(model: TrackSegmentModel): void {
+    const warnings = validateTrackSegmentModel(model);
+    for (const w of warnings) console.warn(`[LineFollow] ${w.message}`);
+    this.trackSegmentRegistry.set(model.segmentId, JSON.parse(JSON.stringify(model)));
+    if (!this.trackSegmentOrder.includes(model.segmentId)) {
+      this.trackSegmentOrder.push(model.segmentId);
+    }
+  }
+  public getTrackSegmentModel(id: string): TrackSegmentModel | undefined {
+    const m = this.trackSegmentRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllTrackSegmentModels(): TrackSegmentModel[] {
+    return this.trackSegmentOrder
+      .map(id => this.trackSegmentRegistry.get(id))
+      .filter((m): m is TrackSegmentModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateTrackSegmentModel(id: string, partial: Partial<TrackSegmentModel>): void {
+    const existing = this.trackSegmentRegistry.get(id);
+    if (!existing) { console.warn(`[LineFollow] Track segment "${id}" not found.`); return; }
+    this.trackSegmentRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, segmentId: id })));
+  }
+  public removeTrackSegmentModel(id: string): void {
+    this.trackSegmentRegistry.delete(id);
+    this.trackSegmentOrder = this.trackSegmentOrder.filter(e => e !== id);
+  }
+  public clearTrackSegmentModels(): void {
+    this.trackSegmentRegistry.clear();
+    this.trackSegmentOrder = [];
+  }
+  public getTrackSegmentModelKeys(): string[] { return [...this.trackSegmentOrder]; }
+  public hasTrackSegmentModel(id: string): boolean { return this.trackSegmentRegistry.has(id); }
+
+  // --- TrackIntersectionModel CRUD ---
+  public registerTrackIntersectionModel(model: TrackIntersectionModel): void {
+    const warnings = validateTrackIntersectionModel(model);
+    for (const w of warnings) console.warn(`[LineFollow] ${w.message}`);
+    this.trackIntersectionRegistry.set(model.intersectionId, JSON.parse(JSON.stringify(model)));
+    if (!this.trackIntersectionOrder.includes(model.intersectionId)) {
+      this.trackIntersectionOrder.push(model.intersectionId);
+    }
+  }
+  public getTrackIntersectionModel(id: string): TrackIntersectionModel | undefined {
+    const m = this.trackIntersectionRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllTrackIntersectionModels(): TrackIntersectionModel[] {
+    return this.trackIntersectionOrder
+      .map(id => this.trackIntersectionRegistry.get(id))
+      .filter((m): m is TrackIntersectionModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateTrackIntersectionModel(id: string, partial: Partial<TrackIntersectionModel>): void {
+    const existing = this.trackIntersectionRegistry.get(id);
+    if (!existing) { console.warn(`[LineFollow] Track intersection "${id}" not found.`); return; }
+    this.trackIntersectionRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, intersectionId: id })));
+  }
+  public removeTrackIntersectionModel(id: string): void {
+    this.trackIntersectionRegistry.delete(id);
+    this.trackIntersectionOrder = this.trackIntersectionOrder.filter(e => e !== id);
+  }
+  public clearTrackIntersectionModels(): void {
+    this.trackIntersectionRegistry.clear();
+    this.trackIntersectionOrder = [];
+  }
+  public getTrackIntersectionModelKeys(): string[] { return [...this.trackIntersectionOrder]; }
+  public hasTrackIntersectionModel(id: string): boolean { return this.trackIntersectionRegistry.has(id); }
+
+  // --- TrackMarkerModel CRUD ---
+  public registerTrackMarkerModel(model: TrackMarkerModel): void {
+    const warnings = validateTrackMarkerModel(model);
+    for (const w of warnings) console.warn(`[LineFollow] ${w.message}`);
+    this.trackMarkerRegistry.set(model.markerId, JSON.parse(JSON.stringify(model)));
+    if (!this.trackMarkerOrder.includes(model.markerId)) {
+      this.trackMarkerOrder.push(model.markerId);
+    }
+  }
+  public getTrackMarkerModel(id: string): TrackMarkerModel | undefined {
+    const m = this.trackMarkerRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllTrackMarkerModels(): TrackMarkerModel[] {
+    return this.trackMarkerOrder
+      .map(id => this.trackMarkerRegistry.get(id))
+      .filter((m): m is TrackMarkerModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateTrackMarkerModel(id: string, partial: Partial<TrackMarkerModel>): void {
+    const existing = this.trackMarkerRegistry.get(id);
+    if (!existing) { console.warn(`[LineFollow] Track marker "${id}" not found.`); return; }
+    this.trackMarkerRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, markerId: id })));
+  }
+  public removeTrackMarkerModel(id: string): void {
+    this.trackMarkerRegistry.delete(id);
+    this.trackMarkerOrder = this.trackMarkerOrder.filter(e => e !== id);
+  }
+  public clearTrackMarkerModels(): void {
+    this.trackMarkerRegistry.clear();
+    this.trackMarkerOrder = [];
+  }
+  public getTrackMarkerModelKeys(): string[] { return [...this.trackMarkerOrder]; }
+  public hasTrackMarkerModel(id: string): boolean { return this.trackMarkerRegistry.has(id); }
+
+  // --- SensorReadingModel CRUD ---
+  public registerSensorReadingModel(model: SensorReadingModel): void {
+    const warnings = validateSensorReadingModel(model);
+    for (const w of warnings) console.warn(`[LineFollow] ${w.message}`);
+    this.sensorReadingRegistry.set(model.readingId, JSON.parse(JSON.stringify(model)));
+    if (!this.sensorReadingOrder.includes(model.readingId)) {
+      this.sensorReadingOrder.push(model.readingId);
+    }
+  }
+  public getSensorReadingModel(id: string): SensorReadingModel | undefined {
+    const m = this.sensorReadingRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllSensorReadingModels(): SensorReadingModel[] {
+    return this.sensorReadingOrder
+      .map(id => this.sensorReadingRegistry.get(id))
+      .filter((m): m is SensorReadingModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateSensorReadingModel(id: string, partial: Partial<SensorReadingModel>): void {
+    const existing = this.sensorReadingRegistry.get(id);
+    if (!existing) { console.warn(`[LineFollow] Sensor reading "${id}" not found.`); return; }
+    this.sensorReadingRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, readingId: id })));
+  }
+  public removeSensorReadingModel(id: string): void {
+    this.sensorReadingRegistry.delete(id);
+    this.sensorReadingOrder = this.sensorReadingOrder.filter(e => e !== id);
+  }
+  public clearSensorReadingModels(): void {
+    this.sensorReadingRegistry.clear();
+    this.sensorReadingOrder = [];
+  }
+  public getSensorReadingModelKeys(): string[] { return [...this.sensorReadingOrder]; }
+  public hasSensorReadingModel(id: string): boolean { return this.sensorReadingRegistry.has(id); }
+
+  // ═══════════════════════════════════════════════════════════════
+  // Phase 25A: Line Following — High-Level APIs
+  // ═══════════════════════════════════════════════════════════════
+
+  /** Create a line track with default settings. */
+  public lineTrackCreate(
+    trackId: string,
+    options?: Partial<LineTrackModel>,
+  ): string {
+    const track = createDefaultLineTrackModel(trackId, options);
+    this.registerLineTrackModel(track);
+    return trackId;
+  }
+
+  /** Add a segment to a track. */
+  public lineTrackAddSegment(
+    trackId: string,
+    segmentType: TrackType,
+    startX: number, startY: number,
+    endX: number, endY: number,
+    curveParams?: { curveCenterX?: number; curveCenterY?: number; curveRadiusCm?: number; curveStartAngleDeg?: number; curveSweepAngleDeg?: number },
+  ): string {
+    const track = this.lineTrackRegistry.get(trackId);
+    if (!track) { console.warn(`[LineFollow] lineTrackAddSegment: track "${trackId}" not found.`); return ''; }
+    const segmentId = `${trackId}_seg_${this.trackSegmentOrder.length}`;
+    const lengthCm = segmentType === 'STRAIGHT'
+      ? Math.sqrt((endX - startX) ** 2 + (endY - startY) ** 2)
+      : segmentType === 'CURVE' && curveParams?.curveRadiusCm && curveParams?.curveSweepAngleDeg
+        ? Math.abs(curveParams.curveRadiusCm * curveParams.curveSweepAngleDeg * Math.PI / 180)
+        : 0;
+    const segment = createDefaultTrackSegmentModel(segmentId, {
+      trackId, segmentType, startX, startY, endX, endY, lengthCm,
+      orderIndex: this.trackSegmentOrder.filter(id => {
+        const s = this.trackSegmentRegistry.get(id);
+        return s && s.trackId === trackId;
+      }).length,
+      ...(curveParams || {}),
+    });
+    this.registerTrackSegmentModel(segment);
+    // Update track total length
+    const allSegs = this.trackSegmentOrder
+      .map(id => this.trackSegmentRegistry.get(id))
+      .filter(s => s && s.trackId === trackId) as TrackSegmentModel[];
+    const totalLen = allSegs.reduce((sum, s) => sum + (s.lengthCm || 0), 0);
+    this.lineTrackRegistry.set(trackId, JSON.parse(JSON.stringify({ ...track, totalLengthCm: totalLen, timestamp: Date.now() })));
+    return segmentId;
+  }
+
+  /** Add an intersection to a track. */
+  public lineTrackAddIntersection(
+    trackId: string,
+    x: number, y: number,
+    connectedSegmentIds: string[],
+  ): string {
+    const track = this.lineTrackRegistry.get(trackId);
+    if (!track) { console.warn(`[LineFollow] lineTrackAddIntersection: track "${trackId}" not found.`); return ''; }
+    const intersectionId = `${trackId}_int_${this.trackIntersectionOrder.length}`;
+    const intersection = createDefaultTrackIntersectionModel(intersectionId, {
+      trackId, positionX: x, positionY: y, connectedSegmentIds: [...connectedSegmentIds],
+    });
+    this.registerTrackIntersectionModel(intersection);
+    return intersectionId;
+  }
+
+  /** Create a line sensor attached to a drive robot. */
+  public lineSensorCreate(
+    sensorId: string,
+    driveId: string,
+    position: LineSensorModel['sensorPosition'] = 'CENTER_SENSOR',
+    offsetConfig?: { sensorOffsetXCm?: number; sensorOffsetYCm?: number; servoMountId?: string },
+  ): string {
+    const sensor = createDefaultLineSensorModel(sensorId, {
+      driveId, sensorPosition: position,
+      ...(offsetConfig || {}),
+    });
+    this.registerLineSensorModel(sensor);
+    return sensorId;
+  }
+
+  /** Calibrate a sensor with white/black reference values. */
+  public lineSensorCalibrate(sensorId: string, whiteValue: number = 100, blackValue: number = 3800): void {
+    const sensor = this.lineSensorRegistry.get(sensorId);
+    if (!sensor) { console.warn(`[LineFollow] lineSensorCalibrate: sensor "${sensorId}" not found.`); return; }
+    const calibrated = calibrateSensorFn(sensor, whiteValue, blackValue);
+    this.lineSensorRegistry.set(sensorId, JSON.parse(JSON.stringify(calibrated)));
+  }
+
+  /** Read a single line sensor. */
+  public lineSensorRead(sensorId: string, robotX: number = 0, robotY: number = 0, headingDeg: number = 0): SensorReadingModel | undefined {
+    const sensor = this.lineSensorRegistry.get(sensorId);
+    if (!sensor) { console.warn(`[LineFollow] lineSensorRead: sensor "${sensorId}" not found.`); return undefined; }
+    const segments = this.trackSegmentOrder
+      .map(id => this.trackSegmentRegistry.get(id))
+      .filter(Boolean) as TrackSegmentModel[];
+    const trackWidth = this.lineTrackOrder.length > 0
+      ? (this.lineTrackRegistry.get(this.lineTrackOrder[0])?.trackWidthCm || 2.0)
+      : 2.0;
+    const reading = readLineSensorFn(sensor, segments, robotX, robotY, headingDeg, trackWidth, Date.now());
+    const readingId = `${sensorId}_reading_${Date.now()}`;
+    const readingModel = { ...reading, readingId };
+    this.registerSensorReadingModel(JSON.parse(JSON.stringify(readingModel)));
+    return JSON.parse(JSON.stringify(readingModel));
+  }
+
+  /** Read all sensors for a drive robot. */
+  public lineSensorReadAll(driveId: string, robotX: number = 0, robotY: number = 0, headingDeg: number = 0): SensorReadingModel[] {
+    const sensors = this.lineSensorOrder
+      .map(id => this.lineSensorRegistry.get(id))
+      .filter(s => s && s.driveId === driveId) as LineSensorModel[];
+    if (sensors.length === 0) return [];
+    const segments = this.trackSegmentOrder
+      .map(id => this.trackSegmentRegistry.get(id))
+      .filter(Boolean) as TrackSegmentModel[];
+    const intersections = this.trackIntersectionOrder
+      .map(id => this.trackIntersectionRegistry.get(id))
+      .filter(Boolean) as TrackIntersectionModel[];
+    const trackWidth = this.lineTrackOrder.length > 0
+      ? (this.lineTrackRegistry.get(this.lineTrackOrder[0])?.trackWidthCm || 2.0)
+      : 2.0;
+    const readings = readAllLineSensorsFn(sensors, segments, intersections, robotX, robotY, headingDeg, trackWidth, Date.now());
+    return JSON.parse(JSON.stringify(readings));
+  }
+
+  /** Sample the track at a world coordinate. */
+  public lineTrackSample(trackId: string, worldX: number, worldY: number): { analogValue: number; digitalValue: boolean; detectedColor: string } {
+    const track = this.lineTrackRegistry.get(trackId);
+    if (!track) { console.warn(`[LineFollow] lineTrackSample: track "${trackId}" not found.`); return { analogValue: 0, digitalValue: false, detectedColor: 'UNKNOWN' }; }
+    const segments = this.trackSegmentOrder
+      .map(id => this.trackSegmentRegistry.get(id))
+      .filter(s => s && s.trackId === trackId) as TrackSegmentModel[];
+    return sampleTrackFn(segments, worldX, worldY, track.trackWidthCm);
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // Phase 25B: Obstacle Avoidance Runtime — CRUD Methods
+  // ═══════════════════════════════════════════════════════════════
+
+  // --- ObstacleAvoidanceModel CRUD ---
+  public registerObstacleAvoidanceModel(model: ObstacleAvoidanceModel): void {
+    const warnings = validateObstacleAvoidanceModel(model);
+    for (const w of warnings) console.warn(`[ObstAvoid] ${w}`);
+    this.obstacleAvoidanceRegistry.set(model.avoidanceId, JSON.parse(JSON.stringify(model)));
+    if (!this.obstacleAvoidanceOrder.includes(model.avoidanceId)) {
+      this.obstacleAvoidanceOrder.push(model.avoidanceId);
+    }
+  }
+  public getObstacleAvoidanceModel(id: string): ObstacleAvoidanceModel | undefined {
+    const m = this.obstacleAvoidanceRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllObstacleAvoidanceModels(): ObstacleAvoidanceModel[] {
+    return this.obstacleAvoidanceOrder
+      .map(id => this.obstacleAvoidanceRegistry.get(id))
+      .filter((m): m is ObstacleAvoidanceModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateObstacleAvoidanceModel(id: string, partial: Partial<ObstacleAvoidanceModel>): void {
+    const existing = this.obstacleAvoidanceRegistry.get(id);
+    if (!existing) { console.warn(`[ObstAvoid] Obstacle avoidance "${id}" not found.`); return; }
+    this.obstacleAvoidanceRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, avoidanceId: id })));
+  }
+  public removeObstacleAvoidanceModel(id: string): void {
+    this.obstacleAvoidanceRegistry.delete(id);
+    this.obstacleAvoidanceOrder = this.obstacleAvoidanceOrder.filter(e => e !== id);
+  }
+  public clearObstacleAvoidanceModels(): void {
+    this.obstacleAvoidanceRegistry.clear();
+    this.obstacleAvoidanceOrder = [];
+  }
+  public getObstacleAvoidanceModelKeys(): string[] { return [...this.obstacleAvoidanceOrder]; }
+  public hasObstacleAvoidanceModel(id: string): boolean { return this.obstacleAvoidanceRegistry.has(id); }
+
+  // --- AvoidanceRuleModel CRUD ---
+  public registerAvoidanceRuleModel(model: AvoidanceRuleModel): void {
+    const warnings = validateAvoidanceRuleModel(model);
+    for (const w of warnings) console.warn(`[ObstAvoid] ${w}`);
+    this.avoidanceRuleRegistry.set(model.ruleId, JSON.parse(JSON.stringify(model)));
+    if (!this.avoidanceRuleOrder.includes(model.ruleId)) {
+      this.avoidanceRuleOrder.push(model.ruleId);
+    }
+  }
+  public getAvoidanceRuleModel(id: string): AvoidanceRuleModel | undefined {
+    const m = this.avoidanceRuleRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllAvoidanceRuleModels(): AvoidanceRuleModel[] {
+    return this.avoidanceRuleOrder
+      .map(id => this.avoidanceRuleRegistry.get(id))
+      .filter((m): m is AvoidanceRuleModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateAvoidanceRuleModel(id: string, partial: Partial<AvoidanceRuleModel>): void {
+    const existing = this.avoidanceRuleRegistry.get(id);
+    if (!existing) { console.warn(`[ObstAvoid] Avoidance rule "${id}" not found.`); return; }
+    this.avoidanceRuleRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, ruleId: id })));
+  }
+  public removeAvoidanceRuleModel(id: string): void {
+    this.avoidanceRuleRegistry.delete(id);
+    this.avoidanceRuleOrder = this.avoidanceRuleOrder.filter(e => e !== id);
+  }
+  public clearAvoidanceRuleModels(): void {
+    this.avoidanceRuleRegistry.clear();
+    this.avoidanceRuleOrder = [];
+  }
+  public getAvoidanceRuleModelKeys(): string[] { return [...this.avoidanceRuleOrder]; }
+  public hasAvoidanceRuleModel(id: string): boolean { return this.avoidanceRuleRegistry.has(id); }
+
+  // --- ObstacleDetectionModel CRUD ---
+  public registerObstacleDetectionModel(model: ObstacleDetectionModel): void {
+    const warnings = validateObstacleDetectionModel(model);
+    for (const w of warnings) console.warn(`[ObstAvoid] ${w}`);
+    this.obstacleDetectionRegistry.set(model.detectionId, JSON.parse(JSON.stringify(model)));
+    if (!this.obstacleDetectionOrder.includes(model.detectionId)) {
+      this.obstacleDetectionOrder.push(model.detectionId);
+    }
+  }
+  public getObstacleDetectionModel(id: string): ObstacleDetectionModel | undefined {
+    const m = this.obstacleDetectionRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllObstacleDetectionModels(): ObstacleDetectionModel[] {
+    return this.obstacleDetectionOrder
+      .map(id => this.obstacleDetectionRegistry.get(id))
+      .filter((m): m is ObstacleDetectionModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateObstacleDetectionModel(id: string, partial: Partial<ObstacleDetectionModel>): void {
+    const existing = this.obstacleDetectionRegistry.get(id);
+    if (!existing) { console.warn(`[ObstAvoid] Obstacle detection "${id}" not found.`); return; }
+    this.obstacleDetectionRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, detectionId: id })));
+  }
+  public removeObstacleDetectionModel(id: string): void {
+    this.obstacleDetectionRegistry.delete(id);
+    this.obstacleDetectionOrder = this.obstacleDetectionOrder.filter(e => e !== id);
+  }
+  public clearObstacleDetectionModels(): void {
+    this.obstacleDetectionRegistry.clear();
+    this.obstacleDetectionOrder = [];
+  }
+  public getObstacleDetectionModelKeys(): string[] { return [...this.obstacleDetectionOrder]; }
+  public hasObstacleDetectionModel(id: string): boolean { return this.obstacleDetectionRegistry.has(id); }
+
+  // --- NavigationDecisionModel CRUD ---
+  public registerNavigationDecisionModel(model: NavigationDecisionModel): void {
+    const warnings = validateNavigationDecisionModel(model);
+    for (const w of warnings) console.warn(`[ObstAvoid] ${w}`);
+    this.navigationDecisionRegistry.set(model.decisionId, JSON.parse(JSON.stringify(model)));
+    if (!this.navigationDecisionOrder.includes(model.decisionId)) {
+      this.navigationDecisionOrder.push(model.decisionId);
+    }
+  }
+  public getNavigationDecisionModel(id: string): NavigationDecisionModel | undefined {
+    const m = this.navigationDecisionRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllNavigationDecisionModels(): NavigationDecisionModel[] {
+    return this.navigationDecisionOrder
+      .map(id => this.navigationDecisionRegistry.get(id))
+      .filter((m): m is NavigationDecisionModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateNavigationDecisionModel(id: string, partial: Partial<NavigationDecisionModel>): void {
+    const existing = this.navigationDecisionRegistry.get(id);
+    if (!existing) { console.warn(`[ObstAvoid] Navigation decision "${id}" not found.`); return; }
+    this.navigationDecisionRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, decisionId: id })));
+  }
+  public removeNavigationDecisionModel(id: string): void {
+    this.navigationDecisionRegistry.delete(id);
+    this.navigationDecisionOrder = this.navigationDecisionOrder.filter(e => e !== id);
+  }
+  public clearNavigationDecisionModels(): void {
+    this.navigationDecisionRegistry.clear();
+    this.navigationDecisionOrder = [];
+  }
+  public getNavigationDecisionModelKeys(): string[] { return [...this.navigationDecisionOrder]; }
+  public hasNavigationDecisionModel(id: string): boolean { return this.navigationDecisionRegistry.has(id); }
+
+  // --- SafeZoneModel CRUD ---
+  public registerSafeZoneModel(model: SafeZoneModel): void {
+    const warnings = validateSafeZoneModel(model);
+    for (const w of warnings) console.warn(`[ObstAvoid] ${w}`);
+    this.safeZoneRegistry.set(model.zoneId, JSON.parse(JSON.stringify(model)));
+    if (!this.safeZoneOrder.includes(model.zoneId)) {
+      this.safeZoneOrder.push(model.zoneId);
+    }
+  }
+  public getSafeZoneModel(id: string): SafeZoneModel | undefined {
+    const m = this.safeZoneRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllSafeZoneModels(): SafeZoneModel[] {
+    return this.safeZoneOrder
+      .map(id => this.safeZoneRegistry.get(id))
+      .filter((m): m is SafeZoneModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateSafeZoneModel(id: string, partial: Partial<SafeZoneModel>): void {
+    const existing = this.safeZoneRegistry.get(id);
+    if (!existing) { console.warn(`[ObstAvoid] Safe zone "${id}" not found.`); return; }
+    this.safeZoneRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, zoneId: id })));
+  }
+  public removeSafeZoneModel(id: string): void {
+    this.safeZoneRegistry.delete(id);
+    this.safeZoneOrder = this.safeZoneOrder.filter(e => e !== id);
+  }
+  public clearSafeZoneModels(): void {
+    this.safeZoneRegistry.clear();
+    this.safeZoneOrder = [];
+  }
+  public getSafeZoneModelKeys(): string[] { return [...this.safeZoneOrder]; }
+  public hasSafeZoneModel(id: string): boolean { return this.safeZoneRegistry.has(id); }
+
+  // --- CollisionPredictionModel CRUD ---
+  public registerCollisionPredictionModel(model: CollisionPredictionModel): void {
+    const warnings = validateCollisionPredictionModel(model);
+    for (const w of warnings) console.warn(`[ObstAvoid] ${w}`);
+    this.collisionPredictionRegistry.set(model.predictionId, JSON.parse(JSON.stringify(model)));
+    if (!this.collisionPredictionOrder.includes(model.predictionId)) {
+      this.collisionPredictionOrder.push(model.predictionId);
+    }
+  }
+  public getCollisionPredictionModel(id: string): CollisionPredictionModel | undefined {
+    const m = this.collisionPredictionRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllCollisionPredictionModels(): CollisionPredictionModel[] {
+    return this.collisionPredictionOrder
+      .map(id => this.collisionPredictionRegistry.get(id))
+      .filter((m): m is CollisionPredictionModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateCollisionPredictionModel(id: string, partial: Partial<CollisionPredictionModel>): void {
+    const existing = this.collisionPredictionRegistry.get(id);
+    if (!existing) { console.warn(`[ObstAvoid] Collision prediction "${id}" not found.`); return; }
+    this.collisionPredictionRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, predictionId: id })));
+  }
+  public removeCollisionPredictionModel(id: string): void {
+    this.collisionPredictionRegistry.delete(id);
+    this.collisionPredictionOrder = this.collisionPredictionOrder.filter(e => e !== id);
+  }
+  public clearCollisionPredictionModels(): void {
+    this.collisionPredictionRegistry.clear();
+    this.collisionPredictionOrder = [];
+  }
+  public getCollisionPredictionModelKeys(): string[] { return [...this.collisionPredictionOrder]; }
+  public hasCollisionPredictionModel(id: string): boolean { return this.collisionPredictionRegistry.has(id); }
+
+  // --- ComponentTextureModel CRUD ---
+  public registerComponentTextureModel(model: ComponentTextureModel): void {
+    const warnings = validateComponentTextureModel(model);
+    for (const w of warnings) console.warn(`[HiFi] ${w}`);
+    this.componentTextureRegistry.set(model.textureId, JSON.parse(JSON.stringify(model)));
+    if (!this.componentTextureOrder.includes(model.textureId)) {
+      this.componentTextureOrder.push(model.textureId);
+    }
+  }
+  public getComponentTextureModel(id: string): ComponentTextureModel | undefined {
+    const m = this.componentTextureRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllComponentTextureModels(): ComponentTextureModel[] {
+    return this.componentTextureOrder
+      .map(id => this.componentTextureRegistry.get(id))
+      .filter((m): m is ComponentTextureModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateComponentTextureModel(id: string, partial: Partial<ComponentTextureModel>): void {
+    const existing = this.componentTextureRegistry.get(id);
+    if (!existing) { console.warn(`[HiFi] ComponentTexture "${id}" not found.`); return; }
+    this.componentTextureRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, textureId: id })));
+  }
+  public removeComponentTextureModel(id: string): void {
+    this.componentTextureRegistry.delete(id);
+    this.componentTextureOrder = this.componentTextureOrder.filter(e => e !== id);
+  }
+  public clearComponentTextureModels(): void {
+    this.componentTextureRegistry.clear();
+    this.componentTextureOrder = [];
+  }
+  public getComponentTextureModelKeys(): string[] { return [...this.componentTextureOrder]; }
+  public hasComponentTextureModel(id: string): boolean { return this.componentTextureRegistry.has(id); }
+
+  // --- TextureAtlasModel CRUD ---
+  public registerTextureAtlasModel(model: TextureAtlasModel): void {
+    const warnings = validateTextureAtlasModel(model);
+    for (const w of warnings) console.warn(`[HiFi] ${w}`);
+    this.textureAtlasRegistry.set(model.atlasId, JSON.parse(JSON.stringify(model)));
+    if (!this.textureAtlasOrder.includes(model.atlasId)) {
+      this.textureAtlasOrder.push(model.atlasId);
+    }
+  }
+  public getTextureAtlasModel(id: string): TextureAtlasModel | undefined {
+    const m = this.textureAtlasRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllTextureAtlasModels(): TextureAtlasModel[] {
+    return this.textureAtlasOrder
+      .map(id => this.textureAtlasRegistry.get(id))
+      .filter((m): m is TextureAtlasModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateTextureAtlasModel(id: string, partial: Partial<TextureAtlasModel>): void {
+    const existing = this.textureAtlasRegistry.get(id);
+    if (!existing) { console.warn(`[HiFi] TextureAtlas "${id}" not found.`); return; }
+    this.textureAtlasRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, atlasId: id })));
+  }
+  public removeTextureAtlasModel(id: string): void {
+    this.textureAtlasRegistry.delete(id);
+    this.textureAtlasOrder = this.textureAtlasOrder.filter(e => e !== id);
+  }
+  public clearTextureAtlasModels(): void {
+    this.textureAtlasRegistry.clear();
+    this.textureAtlasOrder = [];
+  }
+  public getTextureAtlasModelKeys(): string[] { return [...this.textureAtlasOrder]; }
+  public hasTextureAtlasModel(id: string): boolean { return this.textureAtlasRegistry.has(id); }
+
+  // --- TextureCacheModel CRUD ---
+  public registerTextureCacheModel(model: TextureCacheModel): void {
+    const warnings = validateTextureCacheModel(model);
+    for (const w of warnings) console.warn(`[HiFi] ${w}`);
+    this.textureCacheRegistry.set(model.cacheId, JSON.parse(JSON.stringify(model)));
+    if (!this.textureCacheOrder.includes(model.cacheId)) {
+      this.textureCacheOrder.push(model.cacheId);
+    }
+  }
+  public getTextureCacheModel(id: string): TextureCacheModel | undefined {
+    const m = this.textureCacheRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllTextureCacheModels(): TextureCacheModel[] {
+    return this.textureCacheOrder
+      .map(id => this.textureCacheRegistry.get(id))
+      .filter((m): m is TextureCacheModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateTextureCacheModel(id: string, partial: Partial<TextureCacheModel>): void {
+    const existing = this.textureCacheRegistry.get(id);
+    if (!existing) { console.warn(`[HiFi] TextureCache "${id}" not found.`); return; }
+    this.textureCacheRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, cacheId: id })));
+  }
+  public removeTextureCacheModel(id: string): void {
+    this.textureCacheRegistry.delete(id);
+    this.textureCacheOrder = this.textureCacheOrder.filter(e => e !== id);
+  }
+  public clearTextureCacheModels(): void {
+    this.textureCacheRegistry.clear();
+    this.textureCacheOrder = [];
+  }
+  public getTextureCacheModelKeys(): string[] { return [...this.textureCacheOrder]; }
+  public hasTextureCacheModel(id: string): boolean { return this.textureCacheRegistry.has(id); }
+
+  // --- TextureMetadataModel CRUD ---
+  public registerTextureMetadataModel(model: TextureMetadataModel): void {
+    const warnings = validateTextureMetadataModel(model);
+    for (const w of warnings) console.warn(`[HiFi] ${w}`);
+    this.textureMetadataRegistry.set(model.metadataId, JSON.parse(JSON.stringify(model)));
+    if (!this.textureMetadataOrder.includes(model.metadataId)) {
+      this.textureMetadataOrder.push(model.metadataId);
+    }
+  }
+  public getTextureMetadataModel(id: string): TextureMetadataModel | undefined {
+    const m = this.textureMetadataRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllTextureMetadataModels(): TextureMetadataModel[] {
+    return this.textureMetadataOrder
+      .map(id => this.textureMetadataRegistry.get(id))
+      .filter((m): m is TextureMetadataModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateTextureMetadataModel(id: string, partial: Partial<TextureMetadataModel>): void {
+    const existing = this.textureMetadataRegistry.get(id);
+    if (!existing) { console.warn(`[HiFi] TextureMetadata "${id}" not found.`); return; }
+    this.textureMetadataRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, metadataId: id })));
+  }
+  public removeTextureMetadataModel(id: string): void {
+    this.textureMetadataRegistry.delete(id);
+    this.textureMetadataOrder = this.textureMetadataOrder.filter(e => e !== id);
+  }
+  public clearTextureMetadataModels(): void {
+    this.textureMetadataRegistry.clear();
+    this.textureMetadataOrder = [];
+  }
+  public getTextureMetadataModelKeys(): string[] { return [...this.textureMetadataOrder]; }
+  public hasTextureMetadataModel(id: string): boolean { return this.textureMetadataRegistry.has(id); }
+
+  // --- RenderPerformanceModel CRUD ---
+  public registerRenderPerformanceModel(model: RenderPerformanceModel): void {
+    const warnings = validateRenderPerformanceModel(model);
+    for (const w of warnings) console.warn(`[HiFi] ${w}`);
+    this.renderPerformanceRegistry.set(model.perfId, JSON.parse(JSON.stringify(model)));
+    if (!this.renderPerformanceOrder.includes(model.perfId)) {
+      this.renderPerformanceOrder.push(model.perfId);
+    }
+  }
+  public getRenderPerformanceModel(id: string): RenderPerformanceModel | undefined {
+    const m = this.renderPerformanceRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllRenderPerformanceModels(): RenderPerformanceModel[] {
+    return this.renderPerformanceOrder
+      .map(id => this.renderPerformanceRegistry.get(id))
+      .filter((m): m is RenderPerformanceModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateRenderPerformanceModel(id: string, partial: Partial<RenderPerformanceModel>): void {
+    const existing = this.renderPerformanceRegistry.get(id);
+    if (!existing) { console.warn(`[HiFi] RenderPerformance "${id}" not found.`); return; }
+    this.renderPerformanceRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, perfId: id })));
+  }
+  public removeRenderPerformanceModel(id: string): void {
+    this.renderPerformanceRegistry.delete(id);
+    this.renderPerformanceOrder = this.renderPerformanceOrder.filter(e => e !== id);
+  }
+  public clearRenderPerformanceModels(): void {
+    this.renderPerformanceRegistry.clear();
+    this.renderPerformanceOrder = [];
+  }
+  public getRenderPerformanceModelKeys(): string[] { return [...this.renderPerformanceOrder]; }
+  public hasRenderPerformanceModel(id: string): boolean { return this.renderPerformanceRegistry.has(id); }
+
+  // --- ViewportCullingModel CRUD ---
+  public registerViewportCullingModel(model: ViewportCullingModel): void {
+    const warnings = validateViewportCullingModel(model);
+    for (const w of warnings) console.warn(`[HiFi] ${w}`);
+    this.viewportCullingRegistry.set(model.cullingId, JSON.parse(JSON.stringify(model)));
+    if (!this.viewportCullingOrder.includes(model.cullingId)) {
+      this.viewportCullingOrder.push(model.cullingId);
+    }
+  }
+  public getViewportCullingModel(id: string): ViewportCullingModel | undefined {
+    const m = this.viewportCullingRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllViewportCullingModels(): ViewportCullingModel[] {
+    return this.viewportCullingOrder
+      .map(id => this.viewportCullingRegistry.get(id))
+      .filter((m): m is ViewportCullingModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateViewportCullingModel(id: string, partial: Partial<ViewportCullingModel>): void {
+    const existing = this.viewportCullingRegistry.get(id);
+    if (!existing) { console.warn(`[HiFi] ViewportCulling "${id}" not found.`); return; }
+    this.viewportCullingRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, cullingId: id })));
+  }
+  public removeViewportCullingModel(id: string): void {
+    this.viewportCullingRegistry.delete(id);
+    this.viewportCullingOrder = this.viewportCullingOrder.filter(e => e !== id);
+  }
+  public clearViewportCullingModels(): void {
+    this.viewportCullingRegistry.clear();
+    this.viewportCullingOrder = [];
+  }
+  public getViewportCullingModelKeys(): string[] { return [...this.viewportCullingOrder]; }
+  public hasViewportCullingModel(id: string): boolean { return this.viewportCullingRegistry.has(id); }
+
+  // --- ObjectPoolModel CRUD ---
+  public registerObjectPoolModel(model: ObjectPoolModel): void {
+    const warnings = validateObjectPoolModel(model);
+    for (const w of warnings) console.warn(`[HiFi] ${w}`);
+    this.objectPoolRegistry.set(model.poolId, JSON.parse(JSON.stringify(model)));
+    if (!this.objectPoolOrder.includes(model.poolId)) {
+      this.objectPoolOrder.push(model.poolId);
+    }
+  }
+  public getObjectPoolModel(id: string): ObjectPoolModel | undefined {
+    const m = this.objectPoolRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllObjectPoolModels(): ObjectPoolModel[] {
+    return this.objectPoolOrder
+      .map(id => this.objectPoolRegistry.get(id))
+      .filter((m): m is ObjectPoolModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateObjectPoolModel(id: string, partial: Partial<ObjectPoolModel>): void {
+    const existing = this.objectPoolRegistry.get(id);
+    if (!existing) { console.warn(`[HiFi] ObjectPool "${id}" not found.`); return; }
+    this.objectPoolRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, poolId: id })));
+  }
+  public removeObjectPoolModel(id: string): void {
+    this.objectPoolRegistry.delete(id);
+    this.objectPoolOrder = this.objectPoolOrder.filter(e => e !== id);
+  }
+  public clearObjectPoolModels(): void {
+    this.objectPoolRegistry.clear();
+    this.objectPoolOrder = [];
+  }
+  public getObjectPoolModelKeys(): string[] { return [...this.objectPoolOrder]; }
+  public hasObjectPoolModel(id: string): boolean { return this.objectPoolRegistry.has(id); }
+
+  // --- DirtyRectModel CRUD ---
+  public registerDirtyRectModel(model: DirtyRectModel): void {
+    const warnings = validateDirtyRectModel(model);
+    for (const w of warnings) console.warn(`[HiFi] ${w}`);
+    this.dirtyRectRegistry.set(model.dirtyRectId, JSON.parse(JSON.stringify(model)));
+    if (!this.dirtyRectOrder.includes(model.dirtyRectId)) {
+      this.dirtyRectOrder.push(model.dirtyRectId);
+    }
+  }
+  public getDirtyRectModel(id: string): DirtyRectModel | undefined {
+    const m = this.dirtyRectRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllDirtyRectModels(): DirtyRectModel[] {
+    return this.dirtyRectOrder
+      .map(id => this.dirtyRectRegistry.get(id))
+      .filter((m): m is DirtyRectModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateDirtyRectModel(id: string, partial: Partial<DirtyRectModel>): void {
+    const existing = this.dirtyRectRegistry.get(id);
+    if (!existing) { console.warn(`[HiFi] DirtyRect "${id}" not found.`); return; }
+    this.dirtyRectRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, dirtyRectId: id })));
+  }
+  public removeDirtyRectModel(id: string): void {
+    this.dirtyRectRegistry.delete(id);
+    this.dirtyRectOrder = this.dirtyRectOrder.filter(e => e !== id);
+  }
+  public clearDirtyRectModels(): void {
+    this.dirtyRectRegistry.clear();
+    this.dirtyRectOrder = [];
+  }
+  public getDirtyRectModelKeys(): string[] { return [...this.dirtyRectOrder]; }
+  public hasDirtyRectModel(id: string): boolean { return this.dirtyRectRegistry.has(id); }
+
+  // --- SpatialIndexModel CRUD ---
+  public registerSpatialIndexModel(model: SpatialIndexModel): void {
+    const warnings = validateSpatialIndexModel(model);
+    for (const w of warnings) console.warn(`[HiFi] ${w}`);
+    this.spatialIndexRegistry.set(model.spatialId, JSON.parse(JSON.stringify(model)));
+    if (!this.spatialIndexOrder.includes(model.spatialId)) {
+      this.spatialIndexOrder.push(model.spatialId);
+    }
+  }
+  public getSpatialIndexModel(id: string): SpatialIndexModel | undefined {
+    const m = this.spatialIndexRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllSpatialIndexModels(): SpatialIndexModel[] {
+    return this.spatialIndexOrder
+      .map(id => this.spatialIndexRegistry.get(id))
+      .filter((m): m is SpatialIndexModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateSpatialIndexModel(id: string, partial: Partial<SpatialIndexModel>): void {
+    const existing = this.spatialIndexRegistry.get(id);
+    if (!existing) { console.warn(`[HiFi] SpatialIndex "${id}" not found.`); return; }
+    this.spatialIndexRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, spatialId: id })));
+  }
+  public removeSpatialIndexModel(id: string): void {
+    this.spatialIndexRegistry.delete(id);
+    this.spatialIndexOrder = this.spatialIndexOrder.filter(e => e !== id);
+  }
+  public clearSpatialIndexModels(): void {
+    this.spatialIndexRegistry.clear();
+    this.spatialIndexOrder = [];
+  }
+  public getSpatialIndexModelKeys(): string[] { return [...this.spatialIndexOrder]; }
+  public hasSpatialIndexModel(id: string): boolean { return this.spatialIndexRegistry.has(id); }
+
+  // --- RenderBatchModel CRUD ---
+  public registerRenderBatchModel(model: RenderBatchModel): void {
+    const warnings = validateRenderBatchModel(model);
+    for (const w of warnings) console.warn(`[HiFi] ${w}`);
+    this.renderBatchRegistry.set(model.batchId, JSON.parse(JSON.stringify(model)));
+    if (!this.renderBatchOrder.includes(model.batchId)) {
+      this.renderBatchOrder.push(model.batchId);
+    }
+  }
+  public getRenderBatchModel(id: string): RenderBatchModel | undefined {
+    const m = this.renderBatchRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllRenderBatchModels(): RenderBatchModel[] {
+    return this.renderBatchOrder
+      .map(id => this.renderBatchRegistry.get(id))
+      .filter((m): m is RenderBatchModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateRenderBatchModel(id: string, partial: Partial<RenderBatchModel>): void {
+    const existing = this.renderBatchRegistry.get(id);
+    if (!existing) { console.warn(`[HiFi] RenderBatch "${id}" not found.`); return; }
+    this.renderBatchRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, batchId: id })));
+  }
+  public removeRenderBatchModel(id: string): void {
+    this.renderBatchRegistry.delete(id);
+    this.renderBatchOrder = this.renderBatchOrder.filter(e => e !== id);
+  }
+  public clearRenderBatchModels(): void {
+    this.renderBatchRegistry.clear();
+    this.renderBatchOrder = [];
+  }
+  public getRenderBatchModelKeys(): string[] { return [...this.renderBatchOrder]; }
+  public hasRenderBatchModel(id: string): boolean { return this.renderBatchRegistry.has(id); }
+
+  // --- CadGridModel CRUD ---
+  public registerCadGridModel(model: CadGridModel): void {
+    const warnings = validateCadGridModel(model);
+    for (const w of warnings) console.warn(`[HiFi] ${w}`);
+    this.cadGridRegistry.set(model.cadGridId, JSON.parse(JSON.stringify(model)));
+    if (!this.cadGridOrder.includes(model.cadGridId)) {
+      this.cadGridOrder.push(model.cadGridId);
+    }
+  }
+  public getCadGridModel(id: string): CadGridModel | undefined {
+    const m = this.cadGridRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllCadGridModels(): CadGridModel[] {
+    return this.cadGridOrder
+      .map(id => this.cadGridRegistry.get(id))
+      .filter((m): m is CadGridModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateCadGridModel(id: string, partial: Partial<CadGridModel>): void {
+    const existing = this.cadGridRegistry.get(id);
+    if (!existing) { console.warn(`[HiFi] CadGrid "${id}" not found.`); return; }
+    this.cadGridRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, cadGridId: id })));
+  }
+  public removeCadGridModel(id: string): void {
+    this.cadGridRegistry.delete(id);
+    this.cadGridOrder = this.cadGridOrder.filter(e => e !== id);
+  }
+  public clearCadGridModels(): void {
+    this.cadGridRegistry.clear();
+    this.cadGridOrder = [];
+  }
+  public getCadGridModelKeys(): string[] { return [...this.cadGridOrder]; }
+  public hasCadGridModel(id: string): boolean { return this.cadGridRegistry.has(id); }
+
+  // --- DebugOverlayModel CRUD ---
+  public registerDebugOverlayModel(model: DebugOverlayModel): void {
+    const warnings = validateDebugOverlayModel(model);
+    for (const w of warnings) console.warn(`[HiFi] ${w}`);
+    this.debugOverlayRegistry.set(model.debugId, JSON.parse(JSON.stringify(model)));
+    if (!this.debugOverlayOrder.includes(model.debugId)) {
+      this.debugOverlayOrder.push(model.debugId);
+    }
+  }
+  public getDebugOverlayModel(id: string): DebugOverlayModel | undefined {
+    const m = this.debugOverlayRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllDebugOverlayModels(): DebugOverlayModel[] {
+    return this.debugOverlayOrder
+      .map(id => this.debugOverlayRegistry.get(id))
+      .filter((m): m is DebugOverlayModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateDebugOverlayModel(id: string, partial: Partial<DebugOverlayModel>): void {
+    const existing = this.debugOverlayRegistry.get(id);
+    if (!existing) { console.warn(`[HiFi] DebugOverlay "${id}" not found.`); return; }
+    this.debugOverlayRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, debugId: id })));
+  }
+  public removeDebugOverlayModel(id: string): void {
+    this.debugOverlayRegistry.delete(id);
+    this.debugOverlayOrder = this.debugOverlayOrder.filter(e => e !== id);
+  }
+  public clearDebugOverlayModels(): void {
+    this.debugOverlayRegistry.clear();
+    this.debugOverlayOrder = [];
+  }
+  public getDebugOverlayModelKeys(): string[] { return [...this.debugOverlayOrder]; }
+  public hasDebugOverlayModel(id: string): boolean { return this.debugOverlayRegistry.has(id); }
+
+  // --- StartupSceneModel CRUD ---
+  public registerStartupSceneModel(model: StartupSceneModel): void {
+    const warnings = validateStartupSceneModel(model);
+    for (const w of warnings) console.warn(`[HiFi] ${w}`);
+    this.startupSceneRegistry.set(model.sceneId, JSON.parse(JSON.stringify(model)));
+    if (!this.startupSceneOrder.includes(model.sceneId)) {
+      this.startupSceneOrder.push(model.sceneId);
+    }
+  }
+  public getStartupSceneModel(id: string): StartupSceneModel | undefined {
+    const m = this.startupSceneRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllStartupSceneModels(): StartupSceneModel[] {
+    return this.startupSceneOrder
+      .map(id => this.startupSceneRegistry.get(id))
+      .filter((m): m is StartupSceneModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateStartupSceneModel(id: string, partial: Partial<StartupSceneModel>): void {
+    const existing = this.startupSceneRegistry.get(id);
+    if (!existing) { console.warn(`[HiFi] StartupScene "${id}" not found.`); return; }
+    this.startupSceneRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, sceneId: id })));
+  }
+  public removeStartupSceneModel(id: string): void {
+    this.startupSceneRegistry.delete(id);
+    this.startupSceneOrder = this.startupSceneOrder.filter(e => e !== id);
+  }
+  public clearStartupSceneModels(): void {
+    this.startupSceneRegistry.clear();
+    this.startupSceneOrder = [];
+  }
+  public getStartupSceneModelKeys(): string[] { return [...this.startupSceneOrder]; }
+  public hasStartupSceneModel(id: string): boolean { return this.startupSceneRegistry.has(id); }
+
+  // --- PinRenderStateModel CRUD ---
+  public registerPinRenderStateModel(model: PinRenderStateModel): void {
+    const warnings = validatePinRenderStateModel(model);
+    for (const w of warnings) console.warn(`[HiFi] ${w}`);
+    this.pinRenderStateRegistry.set(model.pinRenderId, JSON.parse(JSON.stringify(model)));
+    if (!this.pinRenderStateOrder.includes(model.pinRenderId)) {
+      this.pinRenderStateOrder.push(model.pinRenderId);
+    }
+  }
+  public getPinRenderStateModel(id: string): PinRenderStateModel | undefined {
+    const m = this.pinRenderStateRegistry.get(id);
+    return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllPinRenderStateModels(): PinRenderStateModel[] {
+    return this.pinRenderStateOrder
+      .map(id => this.pinRenderStateRegistry.get(id))
+      .filter((m): m is PinRenderStateModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updatePinRenderStateModel(id: string, partial: Partial<PinRenderStateModel>): void {
+    const existing = this.pinRenderStateRegistry.get(id);
+    if (!existing) { console.warn(`[HiFi] PinRenderState "${id}" not found.`); return; }
+    this.pinRenderStateRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, pinRenderId: id })));
+  }
+  public removePinRenderStateModel(id: string): void {
+    this.pinRenderStateRegistry.delete(id);
+    this.pinRenderStateOrder = this.pinRenderStateOrder.filter(e => e !== id);
+  }
+  public clearPinRenderStateModels(): void {
+    this.pinRenderStateRegistry.clear();
+    this.pinRenderStateOrder = [];
+  }
+  public getPinRenderStateModelKeys(): string[] { return [...this.pinRenderStateOrder]; }
+  public hasPinRenderStateModel(id: string): boolean { return this.pinRenderStateRegistry.has(id); }
+
+  // ═══════════════════════════════════════════════════════════════
+  // Phase 26A: Simulator UI Foundation — CRUD Methods
+  // ═══════════════════════════════════════════════════════════════
+
+  // --- UndoHistoryModel CRUD ---
+  public registerUndoHistoryModel(model: UndoHistoryModel): void {
+    const warnings = validateUndoHistoryModel(model);
+    for (const w of warnings) console.warn(`[SimUI] ${w}`);
+    this.undoHistoryRegistry.set(model.historyId, JSON.parse(JSON.stringify(model)));
+    if (!this.undoHistoryOrder.includes(model.historyId)) { this.undoHistoryOrder.push(model.historyId); }
+  }
+  public getUndoHistoryModel(id: string): UndoHistoryModel | undefined {
+    const m = this.undoHistoryRegistry.get(id); return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllUndoHistoryModels(): UndoHistoryModel[] {
+    return this.undoHistoryOrder.map(id => this.undoHistoryRegistry.get(id)).filter((m): m is UndoHistoryModel => !!m).map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateUndoHistoryModel(id: string, partial: Partial<UndoHistoryModel>): void {
+    const existing = this.undoHistoryRegistry.get(id);
+    if (!existing) { console.warn(`[SimUI] UndoHistory "${id}" not found.`); return; }
+    this.undoHistoryRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, historyId: id })));
+  }
+  public removeUndoHistoryModel(id: string): void {
+    this.undoHistoryRegistry.delete(id); this.undoHistoryOrder = this.undoHistoryOrder.filter(e => e !== id);
+  }
+  public clearUndoHistoryModels(): void { this.undoHistoryRegistry.clear(); this.undoHistoryOrder = []; }
+  public getUndoHistoryModelKeys(): string[] { return [...this.undoHistoryOrder]; }
+  public hasUndoHistoryModel(id: string): boolean { return this.undoHistoryRegistry.has(id); }
+
+  // --- CameraGestureModel CRUD ---
+  public registerCameraGestureModel(model: CameraGestureModel): void {
+    const warnings = validateCameraGestureModel(model);
+    for (const w of warnings) console.warn(`[SimUI] ${w}`);
+    this.cameraGestureRegistry.set(model.gestureId, JSON.parse(JSON.stringify(model)));
+    if (!this.cameraGestureOrder.includes(model.gestureId)) { this.cameraGestureOrder.push(model.gestureId); }
+  }
+  public getCameraGestureModel(id: string): CameraGestureModel | undefined {
+    const m = this.cameraGestureRegistry.get(id); return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllCameraGestureModels(): CameraGestureModel[] {
+    return this.cameraGestureOrder.map(id => this.cameraGestureRegistry.get(id)).filter((m): m is CameraGestureModel => !!m).map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateCameraGestureModel(id: string, partial: Partial<CameraGestureModel>): void {
+    const existing = this.cameraGestureRegistry.get(id);
+    if (!existing) { console.warn(`[SimUI] CameraGesture "${id}" not found.`); return; }
+    this.cameraGestureRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, gestureId: id })));
+  }
+  public removeCameraGestureModel(id: string): void {
+    this.cameraGestureRegistry.delete(id); this.cameraGestureOrder = this.cameraGestureOrder.filter(e => e !== id);
+  }
+  public clearCameraGestureModels(): void { this.cameraGestureRegistry.clear(); this.cameraGestureOrder = []; }
+  public getCameraGestureModelKeys(): string[] { return [...this.cameraGestureOrder]; }
+  public hasCameraGestureModel(id: string): boolean { return this.cameraGestureRegistry.has(id); }
+
+  // --- ConnectionValidationModel CRUD ---
+  public registerConnectionValidationModel(model: ConnectionValidationModel): void {
+    const warnings = validateConnectionValidationModel(model);
+    for (const w of warnings) console.warn(`[SimUI] ${w}`);
+    this.connectionValidationRegistry.set(model.validationId, JSON.parse(JSON.stringify(model)));
+    if (!this.connectionValidationOrder.includes(model.validationId)) { this.connectionValidationOrder.push(model.validationId); }
+  }
+  public getConnectionValidationModel(id: string): ConnectionValidationModel | undefined {
+    const m = this.connectionValidationRegistry.get(id); return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllConnectionValidationModels(): ConnectionValidationModel[] {
+    return this.connectionValidationOrder.map(id => this.connectionValidationRegistry.get(id)).filter((m): m is ConnectionValidationModel => !!m).map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateConnectionValidationModel(id: string, partial: Partial<ConnectionValidationModel>): void {
+    const existing = this.connectionValidationRegistry.get(id);
+    if (!existing) { console.warn(`[SimUI] ConnectionValidation "${id}" not found.`); return; }
+    this.connectionValidationRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, validationId: id })));
+  }
+  public removeConnectionValidationModel(id: string): void {
+    this.connectionValidationRegistry.delete(id); this.connectionValidationOrder = this.connectionValidationOrder.filter(e => e !== id);
+  }
+  public clearConnectionValidationModels(): void { this.connectionValidationRegistry.clear(); this.connectionValidationOrder = []; }
+  public getConnectionValidationModelKeys(): string[] { return [...this.connectionValidationOrder]; }
+  public hasConnectionValidationModel(id: string): boolean { return this.connectionValidationRegistry.has(id); }
+
+  // --- ConnectionWarningModel CRUD ---
+  public registerConnectionWarningModel(model: ConnectionWarningModel): void {
+    const warnings = validateConnectionWarningModel(model);
+    for (const w of warnings) console.warn(`[SimUI] ${w}`);
+    this.connectionWarningRegistry.set(model.warningId, JSON.parse(JSON.stringify(model)));
+    if (!this.connectionWarningOrder.includes(model.warningId)) { this.connectionWarningOrder.push(model.warningId); }
+  }
+  public getConnectionWarningModel(id: string): ConnectionWarningModel | undefined {
+    const m = this.connectionWarningRegistry.get(id); return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllConnectionWarningModels(): ConnectionWarningModel[] {
+    return this.connectionWarningOrder.map(id => this.connectionWarningRegistry.get(id)).filter((m): m is ConnectionWarningModel => !!m).map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateConnectionWarningModel(id: string, partial: Partial<ConnectionWarningModel>): void {
+    const existing = this.connectionWarningRegistry.get(id);
+    if (!existing) { console.warn(`[SimUI] ConnectionWarning "${id}" not found.`); return; }
+    this.connectionWarningRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, warningId: id })));
+  }
+  public removeConnectionWarningModel(id: string): void {
+    this.connectionWarningRegistry.delete(id); this.connectionWarningOrder = this.connectionWarningOrder.filter(e => e !== id);
+  }
+  public clearConnectionWarningModels(): void { this.connectionWarningRegistry.clear(); this.connectionWarningOrder = []; }
+  public getConnectionWarningModelKeys(): string[] { return [...this.connectionWarningOrder]; }
+  public hasConnectionWarningModel(id: string): boolean { return this.connectionWarningRegistry.has(id); }
+
+  // --- PaletteComponentModel CRUD ---
+  public registerPaletteComponentModel(model: PaletteComponentModel): void {
+    const warnings = validatePaletteComponentModel(model);
+    for (const w of warnings) console.warn(`[SimUI] ${w}`);
+    this.paletteComponentRegistry.set(model.componentId, JSON.parse(JSON.stringify(model)));
+    if (!this.paletteComponentOrder.includes(model.componentId)) { this.paletteComponentOrder.push(model.componentId); }
+  }
+  public getPaletteComponentModel(id: string): PaletteComponentModel | undefined {
+    const m = this.paletteComponentRegistry.get(id); return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllPaletteComponentModels(): PaletteComponentModel[] {
+    return this.paletteComponentOrder.map(id => this.paletteComponentRegistry.get(id)).filter((m): m is PaletteComponentModel => !!m).map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updatePaletteComponentModel(id: string, partial: Partial<PaletteComponentModel>): void {
+    const existing = this.paletteComponentRegistry.get(id);
+    if (!existing) { console.warn(`[SimUI] PaletteComponent "${id}" not found.`); return; }
+    this.paletteComponentRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, componentId: id })));
+  }
+  public removePaletteComponentModel(id: string): void {
+    this.paletteComponentRegistry.delete(id); this.paletteComponentOrder = this.paletteComponentOrder.filter(e => e !== id);
+  }
+  public clearPaletteComponentModels(): void { this.paletteComponentRegistry.clear(); this.paletteComponentOrder = []; }
+  public getPaletteComponentModelKeys(): string[] { return [...this.paletteComponentOrder]; }
+  public hasPaletteComponentModel(id: string): boolean { return this.paletteComponentRegistry.has(id); }
+
+  // --- PaletteCategoryModel CRUD ---
+  public registerPaletteCategoryModel(model: PaletteCategoryModel): void {
+    const warnings = validatePaletteCategoryModel(model);
+    for (const w of warnings) console.warn(`[SimUI] ${w}`);
+    this.paletteCategoryRegistry.set(model.categoryId, JSON.parse(JSON.stringify(model)));
+    if (!this.paletteCategoryOrder.includes(model.categoryId)) { this.paletteCategoryOrder.push(model.categoryId); }
+  }
+  public getPaletteCategoryModel(id: string): PaletteCategoryModel | undefined {
+    const m = this.paletteCategoryRegistry.get(id); return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllPaletteCategoryModels(): PaletteCategoryModel[] {
+    return this.paletteCategoryOrder.map(id => this.paletteCategoryRegistry.get(id)).filter((m): m is PaletteCategoryModel => !!m).map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updatePaletteCategoryModel(id: string, partial: Partial<PaletteCategoryModel>): void {
+    const existing = this.paletteCategoryRegistry.get(id);
+    if (!existing) { console.warn(`[SimUI] PaletteCategory "${id}" not found.`); return; }
+    this.paletteCategoryRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, categoryId: id })));
+  }
+  public removePaletteCategoryModel(id: string): void {
+    this.paletteCategoryRegistry.delete(id); this.paletteCategoryOrder = this.paletteCategoryOrder.filter(e => e !== id);
+  }
+  public clearPaletteCategoryModels(): void { this.paletteCategoryRegistry.clear(); this.paletteCategoryOrder = []; }
+  public getPaletteCategoryModelKeys(): string[] { return [...this.paletteCategoryOrder]; }
+  public hasPaletteCategoryModel(id: string): boolean { return this.paletteCategoryRegistry.has(id); }
+
+  // --- PaletteStateModel CRUD ---
+  public registerPaletteStateModel(model: PaletteStateModel): void {
+    const warnings = validatePaletteStateModel(model);
+    for (const w of warnings) console.warn(`[SimUI] ${w}`);
+    this.paletteStateRegistry.set(model.stateId, JSON.parse(JSON.stringify(model)));
+    if (!this.paletteStateOrder.includes(model.stateId)) { this.paletteStateOrder.push(model.stateId); }
+  }
+  public getPaletteStateModel(id: string): PaletteStateModel | undefined {
+    const m = this.paletteStateRegistry.get(id); return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllPaletteStateModels(): PaletteStateModel[] {
+    return this.paletteStateOrder.map(id => this.paletteStateRegistry.get(id)).filter((m): m is PaletteStateModel => !!m).map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updatePaletteStateModel(id: string, partial: Partial<PaletteStateModel>): void {
+    const existing = this.paletteStateRegistry.get(id);
+    if (!existing) { console.warn(`[SimUI] PaletteState "${id}" not found.`); return; }
+    this.paletteStateRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, stateId: id })));
+  }
+  public removePaletteStateModel(id: string): void {
+    this.paletteStateRegistry.delete(id); this.paletteStateOrder = this.paletteStateOrder.filter(e => e !== id);
+  }
+  public clearPaletteStateModels(): void { this.paletteStateRegistry.clear(); this.paletteStateOrder = []; }
+  public getPaletteStateModelKeys(): string[] { return [...this.paletteStateOrder]; }
+  public hasPaletteStateModel(id: string): boolean { return this.paletteStateRegistry.has(id); }
+
+  // --- WorkspaceToolModel CRUD ---
+  public registerWorkspaceToolModel(model: WorkspaceToolModel): void {
+    const warnings = validateWorkspaceToolModel(model);
+    for (const w of warnings) console.warn(`[SimUI] ${w}`);
+    this.workspaceToolRegistry.set(model.toolId, JSON.parse(JSON.stringify(model)));
+    if (!this.workspaceToolOrder.includes(model.toolId)) { this.workspaceToolOrder.push(model.toolId); }
+  }
+  public getWorkspaceToolModel(id: string): WorkspaceToolModel | undefined {
+    const m = this.workspaceToolRegistry.get(id); return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllWorkspaceToolModels(): WorkspaceToolModel[] {
+    return this.workspaceToolOrder.map(id => this.workspaceToolRegistry.get(id)).filter((m): m is WorkspaceToolModel => !!m).map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updateWorkspaceToolModel(id: string, partial: Partial<WorkspaceToolModel>): void {
+    const existing = this.workspaceToolRegistry.get(id);
+    if (!existing) { console.warn(`[SimUI] WorkspaceTool "${id}" not found.`); return; }
+    this.workspaceToolRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, toolId: id })));
+  }
+  public removeWorkspaceToolModel(id: string): void {
+    this.workspaceToolRegistry.delete(id); this.workspaceToolOrder = this.workspaceToolOrder.filter(e => e !== id);
+  }
+  public clearWorkspaceToolModels(): void { this.workspaceToolRegistry.clear(); this.workspaceToolOrder = []; }
+  public getWorkspaceToolModelKeys(): string[] { return [...this.workspaceToolOrder]; }
+  public hasWorkspaceToolModel(id: string): boolean { return this.workspaceToolRegistry.has(id); }
+
+  // --- PinInspectorModel CRUD ---
+  public registerPinInspectorModel(model: PinInspectorModel): void {
+    const warnings = validatePinInspectorModel(model);
+    for (const w of warnings) console.warn(`[SimUI] ${w}`);
+    this.pinInspectorRegistry.set(model.inspectorId, JSON.parse(JSON.stringify(model)));
+    if (!this.pinInspectorOrder.includes(model.inspectorId)) { this.pinInspectorOrder.push(model.inspectorId); }
+  }
+  public getPinInspectorModel(id: string): PinInspectorModel | undefined {
+    const m = this.pinInspectorRegistry.get(id); return m ? JSON.parse(JSON.stringify(m)) : undefined;
+  }
+  public getAllPinInspectorModels(): PinInspectorModel[] {
+    return this.pinInspectorOrder.map(id => this.pinInspectorRegistry.get(id)).filter((m): m is PinInspectorModel => !!m).map(m => JSON.parse(JSON.stringify(m)));
+  }
+  public updatePinInspectorModel(id: string, partial: Partial<PinInspectorModel>): void {
+    const existing = this.pinInspectorRegistry.get(id);
+    if (!existing) { console.warn(`[SimUI] PinInspector "${id}" not found.`); return; }
+    this.pinInspectorRegistry.set(id, JSON.parse(JSON.stringify({ ...existing, ...partial, inspectorId: id })));
+  }
+  public removePinInspectorModel(id: string): void {
+    this.pinInspectorRegistry.delete(id); this.pinInspectorOrder = this.pinInspectorOrder.filter(e => e !== id);
+  }
+  public clearPinInspectorModels(): void { this.pinInspectorRegistry.clear(); this.pinInspectorOrder = []; }
+  public getPinInspectorModelKeys(): string[] { return [...this.pinInspectorOrder]; }
+  public hasPinInspectorModel(id: string): boolean { return this.pinInspectorRegistry.has(id); }
+
+
+  // ═══════════════════════════════════════════════════════════════
+  // Phase 25B: Obstacle Avoidance — High-Level APIs
+  // ═══════════════════════════════════════════════════════════════
+
+  public obstacleAvoidanceCreate(avoidanceId: string, driveId: string, options?: Partial<ObstacleAvoidanceModel>): string {
+    const model = createDefaultObstacleAvoidanceModel({ avoidanceId, driveId, ...options });
+    this.registerObstacleAvoidanceModel(model);
+    return avoidanceId;
+  }
+
+  public obstacleAvoidanceStart(avoidanceId: string): void {
+    this.updateObstacleAvoidanceModel(avoidanceId, { avoidanceState: 'SCANNING' as AvoidanceState, isEnabled: true });
+  }
+
+  public obstacleAvoidanceStop(avoidanceId: string): void {
+    this.updateObstacleAvoidanceModel(avoidanceId, { avoidanceState: 'STOPPED' as AvoidanceState, isEnabled: false });
+  }
+
+  public obstacleAvoidanceScan(avoidanceId: string, frontDist: number, leftDist: number, rightDist: number, rearDist: number): ObstacleDetectionModel[] {
+    const avoidance = this.obstacleAvoidanceRegistry.get(avoidanceId);
+    if (!avoidance) { console.warn(`[ObstAvoid] avoidance "${avoidanceId}" not found.`); return []; }
+    const detections: ObstacleDetectionModel[] = [];
+    const zones: Array<{ zone: 'FRONT' | 'LEFT' | 'RIGHT' | 'REAR'; dist: number; threshold: number }> = [
+      { zone: 'FRONT', dist: frontDist, threshold: 20 },
+      { zone: 'LEFT', dist: leftDist, threshold: 15 },
+      { zone: 'RIGHT', dist: rightDist, threshold: 15 },
+      { zone: 'REAR', dist: rearDist, threshold: 10 },
+    ];
+    for (const z of zones) {
+      const det = detectObstacleInZoneFn(z.dist, 0, z.zone, z.threshold);
+      if (det) {
+        det.avoidanceId = avoidanceId;
+        det.detectionId = `det-${avoidanceId}-${z.zone}-${Date.now()}`;
+        this.registerObstacleDetectionModel(det);
+        detections.push(JSON.parse(JSON.stringify(det)));
+      }
+    }
+    return detections;
+  }
+
+  public obstacleAvoidancePredict(avoidanceId: string, velocityCmPerSec: number, headingDeg: number): CollisionPredictionModel[] {
+    const detections = this.obstacleDetectionOrder
+      .map(id => this.obstacleDetectionRegistry.get(id))
+      .filter(d => d && d.avoidanceId === avoidanceId) as ObstacleDetectionModel[];
+    const predictions: CollisionPredictionModel[] = [];
+    for (const det of detections) {
+      const ttc = predictTimeToCollisionFn(det.distanceCm, velocityCmPerSec);
+      const pred = createDefaultCollisionPredictionModel({
+        predictionId: `pred-${det.detectionId}`,
+        avoidanceId,
+        detectionId: det.detectionId,
+        timeToCollisionMs: ttc,
+        robotVelocityCmPerSec: velocityCmPerSec,
+        robotHeadingDeg: headingDeg,
+        predictionTimestamp: Date.now(),
+      });
+      this.registerCollisionPredictionModel(pred);
+      predictions.push(JSON.parse(JSON.stringify(pred)));
+    }
+    return predictions;
+  }
+
+  public obstacleAvoidanceDecide(avoidanceId: string): NavigationDecisionModel | null {
+    const avoidance = this.obstacleAvoidanceRegistry.get(avoidanceId);
+    if (!avoidance) { console.warn(`[ObstAvoid] avoidance "${avoidanceId}" not found.`); return null; }
+    const detections = this.obstacleDetectionOrder
+      .map(id => this.obstacleDetectionRegistry.get(id))
+      .filter(d => d && d.avoidanceId === avoidanceId) as ObstacleDetectionModel[];
+    let frontDist = 400, leftDist = 400, rightDist = 400, rearDist = 400;
+    for (const d of detections) {
+      if (d.detectionZone === 'FRONT' && d.distanceCm < frontDist) frontDist = d.distanceCm;
+      if (d.detectionZone === 'LEFT' && d.distanceCm < leftDist) leftDist = d.distanceCm;
+      if (d.detectionZone === 'RIGHT' && d.distanceCm < rightDist) rightDist = d.distanceCm;
+      if (d.detectionZone === 'REAR' && d.distanceCm < rearDist) rearDist = d.distanceCm;
+    }
+    const result = decideNavigationActionFn(frontDist, leftDist, rightDist, rearDist, 20, 15, 5, avoidance.currentAction);
+    const decision = createDefaultNavigationDecisionModel({
+      decisionId: `decision-${avoidanceId}-${Date.now()}`,
+      avoidanceId,
+      selectedAction: result.action,
+      previousAction: avoidance.currentAction,
+      decisionReason: result.reason,
+      frontDistanceCm: frontDist,
+      leftDistanceCm: leftDist,
+      rightDistanceCm: rightDist,
+      rearDistanceCm: rearDist,
+      decisionTimestamp: Date.now(),
+    });
+    this.registerNavigationDecisionModel(decision);
+    this.updateObstacleAvoidanceModel(avoidanceId, {
+      currentAction: result.action,
+      lastDecisionId: decision.decisionId,
+      avoidanceState: (result.action === 'STOP' ? 'STOPPED' : result.action === 'FORWARD' ? 'SCANNING' : 'AVOIDING') as AvoidanceState,
+    });
+    return JSON.parse(JSON.stringify(decision));
+  }
+
+  public obstacleAvoidanceExecute(avoidanceId: string): NavigationAction | null {
+    const avoidance = this.obstacleAvoidanceRegistry.get(avoidanceId);
+    if (!avoidance) { console.warn(`[ObstAvoid] avoidance "${avoidanceId}" not found.`); return null; }
+    return avoidance.currentAction;
+  }
+
+  public obstacleAvoidanceGetState(avoidanceId: string): AvoidanceState | null {
+    const avoidance = this.obstacleAvoidanceRegistry.get(avoidanceId);
+    if (!avoidance) { console.warn(`[ObstAvoid] avoidance "${avoidanceId}" not found.`); return null; }
+    return avoidance.avoidanceState;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // Phase 21B: Blockly → Virtual ESP32 Execution Bridge — High-Level APIs
+  // ═══════════════════════════════════════════════════════════════
+
+  /**
+   * Load a Blockly program into the runtime. Creates Execution, Program,
+   * and Context models, then stores them in all three registries.
+   */
+  public blocklyLoadProgram(
+    esp32Id: string,
+    programId: string,
+    setupInstructions: BlocklyInstructionModel[],
+    loopInstructions: BlocklyInstructionModel[],
+    programName = 'Untitled Program'
+  ): string {
+    try {
+      const executionId = `blockly_exec_${esp32Id}_${programId}`;
+      const contextId = `blockly_ctx_${esp32Id}_${programId}`;
+
+      // Create the program model
+      const program = createDefaultBlocklyProgramModel(programId, {
+        esp32Id,
+        programName,
+        setupInstructions: JSON.parse(JSON.stringify(setupInstructions)),
+        loopInstructions: JSON.parse(JSON.stringify(loopInstructions)),
+        createdAt: Date.now(),
+      });
+      this.registerBlocklyProgramModel(program);
+
+      // Create the execution context
+      const context = createDefaultBlocklyExecutionContextModel(contextId, {
+        esp32Id,
+        programId,
+      });
+      this.registerBlocklyContextModel(context);
+
+      // Create the execution model (self-contained with program + context)
+      const execution = createDefaultBlocklyExecutionModel(executionId, {
+        program: JSON.parse(JSON.stringify(program)),
+        context: JSON.parse(JSON.stringify(context)),
+        isActive: false,
+      });
+      this.registerBlocklyExecutionModel(execution);
+
+      return executionId;
+    } catch (e) {
+      console.warn('[Blockly Bridge] blocklyLoadProgram error:', e);
+      return '';
+    }
+  }
+
+  /**
+   * Build a BlocklyRuntimeBridge that delegates to the virtual ESP32 runtime.
+   */
+  private buildBlocklyBridge(): BlocklyRuntimeBridge {
+    return {
+      pinMode: (esp32Id, pin, mode) => this.virtualPinMode(esp32Id, pin, mode),
+      digitalWrite: (esp32Id, pin, state) => this.virtualDigitalWrite(esp32Id, pin, state),
+      digitalRead: (esp32Id, pin) => this.virtualDigitalRead(esp32Id, pin),
+      ledcWrite: (esp32Id, channel, duty) => this.virtualLedcWrite(esp32Id, channel, duty),
+      tick: (_esp32Id, _deltaMs) => { /* tick is managed externally by the simulation loop */ },
+    };
+  }
+
+  /**
+   * Start execution of a loaded Blockly program.
+   * Runs the setup phase first, then sets state to RUNNING.
+   */
+  public blocklyStartExecution(executionId: string): boolean {
+    try {
+      const execution = this.blocklyExecutionRegistry.get(executionId);
+      if (!execution) {
+        console.warn(`[Blockly Bridge] blocklyStartExecution: "${executionId}" not found.`);
+        return false;
+      }
+
+      const bridge = this.buildBlocklyBridge();
+
+      // Run setup phase
+      const afterSetup = runSetup(execution, bridge);
+      afterSetup.isActive = true;
+
+      // Save updated execution (includes updated program + context inside)
+      this.blocklyExecutionRegistry.set(executionId, JSON.parse(JSON.stringify(afterSetup)));
+
+      // Also sync the context and program registries
+      this.blocklyContextRegistry.set(afterSetup.context.contextId, JSON.parse(JSON.stringify(afterSetup.context)));
+      this.blocklyProgramRegistry.set(afterSetup.program.programId, JSON.parse(JSON.stringify(afterSetup.program)));
+
+      return true;
+    } catch (e) {
+      console.warn('[Blockly Bridge] blocklyStartExecution error:', e);
+      return false;
+    }
+  }
+
+  /**
+   * Execute one step (single instruction) of a running Blockly program.
+   */
+  public blocklyStepExecution(executionId: string): boolean {
+    try {
+      const execution = this.blocklyExecutionRegistry.get(executionId);
+      if (!execution) {
+        console.warn(`[Blockly Bridge] blocklyStepExecution: "${executionId}" not found.`);
+        return false;
+      }
+
+      const bridge = this.buildBlocklyBridge();
+      const result = stepExecution(execution, bridge);
+
+      // Save updated execution
+      this.blocklyExecutionRegistry.set(executionId, JSON.parse(JSON.stringify(result.execution)));
+      // Sync context registry
+      this.blocklyContextRegistry.set(result.execution.context.contextId, JSON.parse(JSON.stringify(result.execution.context)));
+
+      return true;
+    } catch (e) {
+      console.warn('[Blockly Bridge] blocklyStepExecution error:', e);
+      return false;
+    }
+  }
+
+  /**
+   * Pause a running Blockly execution.
+   */
+  public blocklyPauseExecution(executionId: string): boolean {
+    try {
+      const execution = this.blocklyExecutionRegistry.get(executionId);
+      if (!execution) return false;
+
+      const pausedContext = pauseExecution(execution.context);
+      execution.context = pausedContext;
+      this.blocklyExecutionRegistry.set(executionId, JSON.parse(JSON.stringify(execution)));
+      this.blocklyContextRegistry.set(pausedContext.contextId, JSON.parse(JSON.stringify(pausedContext)));
+      return true;
+    } catch (e) {
+      console.warn('[Blockly Bridge] blocklyPauseExecution error:', e);
+      return false;
+    }
+  }
+
+  /**
+   * Resume a paused Blockly execution.
+   */
+  public blocklyResumeExecution(executionId: string): boolean {
+    try {
+      const execution = this.blocklyExecutionRegistry.get(executionId);
+      if (!execution) return false;
+
+      const resumedContext = resumeExecution(execution.context);
+      execution.context = resumedContext;
+      this.blocklyExecutionRegistry.set(executionId, JSON.parse(JSON.stringify(execution)));
+      this.blocklyContextRegistry.set(resumedContext.contextId, JSON.parse(JSON.stringify(resumedContext)));
+      return true;
+    } catch (e) {
+      console.warn('[Blockly Bridge] blocklyResumeExecution error:', e);
+      return false;
+    }
+  }
+
+  /**
+   * Stop a running/paused Blockly execution.
+   */
+  public blocklyStopExecution(executionId: string): boolean {
+    try {
+      const execution = this.blocklyExecutionRegistry.get(executionId);
+      if (!execution) return false;
+
+      const stoppedContext = stopBlocklyExecution(execution.context);
+      execution.context = stoppedContext;
+      execution.isActive = false;
+      this.blocklyExecutionRegistry.set(executionId, JSON.parse(JSON.stringify(execution)));
+      this.blocklyContextRegistry.set(stoppedContext.contextId, JSON.parse(JSON.stringify(stoppedContext)));
+      return true;
+    } catch (e) {
+      console.warn('[Blockly Bridge] blocklyStopExecution error:', e);
+      return false;
+    }
+  }
+
+  /**
+   * Reset a Blockly execution back to initial state.
+   */
+  public blocklyResetExecution(executionId: string): boolean {
+    try {
+      const execution = this.blocklyExecutionRegistry.get(executionId);
+      if (!execution) return false;
+
+      const reset = resetExecution(execution);
+      this.blocklyExecutionRegistry.set(executionId, JSON.parse(JSON.stringify(reset)));
+      this.blocklyContextRegistry.set(reset.context.contextId, JSON.parse(JSON.stringify(reset.context)));
+
+      return true;
+    } catch (e) {
+      console.warn('[Blockly Bridge] blocklyResetExecution error:', e);
+      return false;
+    }
+  }
+
+  /**
+   * Get a snapshot of all Blockly execution state.
+   */
+  public blocklyGetSnapshot(executionId: string): BlocklyExecutionSnapshot | null {
+    try {
+      const execution = this.blocklyExecutionRegistry.get(executionId);
+      if (!execution) return null;
+
+      const snapshot: BlocklyExecutionSnapshot = {
+        executions: [JSON.parse(JSON.stringify(execution))],
+        programs: [JSON.parse(JSON.stringify(execution.program))],
+        contexts: [JSON.parse(JSON.stringify(execution.context))],
+      };
+      return snapshot;
+    } catch (e) {
+      console.warn('[Blockly Bridge] blocklyGetSnapshot error:', e);
+      return null;
+    }
+  }
+
+  // ─── Phase 20C: Bridge – Update Electrical Visualization State ───
+  /**
+   * Derives live visualization models from electrical connectivity and signal propagation state.
+   * Maps logic states from ElectricalNodes to LogicStateVisualizationModel.
+   * Maps wire connections to CurrentVisualizationModel via signal packets.
+   * Maps LED/HC-SR04 components to ActivityVisualizationModel.
+   * WARNING-ONLY: never throws, always produces safe output.
+   */
+  public updateElectricalVisualizationState(clockTick = 0): void {
+    try {
+      // Sync logic state visualizations from electrical nodes
+      const electricalNodes = this.getElectricalNodeModels();
+      for (const node of electricalNodes) {
+        const logicState = (node.logicState as any) || 'FLOATING';
+        const glowColor = resolveGlowColor(logicState);
+        const isPwm = logicState === 'PWM';
+        const pulsePhase = isPwm ? ((clockTick % 100) / 100) : 0;
+        const glowAlpha = logicState === 'HIGH' ? 0.9 : logicState === 'PWM' ? 0.5 + 0.4 * Math.sin(pulsePhase * Math.PI * 2) : logicState === 'LOW' ? 0 : 0.3;
+
+        const existingLogic = this.getLogicStateVisualizationModel(`logic_viz_${node.nodeId}`);
+        const logicViz = createDefaultLogicStateVisualizationModel(`logic_viz_${node.nodeId}`, {
+          nodeId: node.nodeId,
+          logicState,
+          dutyCycle: isPwm ? 0.5 : (logicState === 'HIGH' ? 1.0 : 0.0),
+          glowColor,
+          glowAlpha: Math.max(0, Math.min(1, glowAlpha)),
+          pulsePhase,
+          futureLogicHints: existingLogic?.futureLogicHints ?? {},
+        });
+
+        this.logicVizRegistry.set(logicViz.logicVizId, JSON.parse(JSON.stringify(logicViz)));
+        if (!this.logicVizOrder.includes(logicViz.logicVizId)) {
+          this.logicVizOrder.push(logicViz.logicVizId);
+        }
+
+        // Derive voltage viz from node voltage
+        const normalizedLevel = Math.max(0, Math.min(1, Math.abs(node.voltage) / 5.0));
+        const voltageColor = logicState === 'HIGH' ? 0x22c55e : logicState === 'PWM' ? 0x3b82f6 : 0x6b7280;
+        const voltViz = createDefaultVoltageVisualizationModel(`voltage_viz_${node.nodeId}`, {
+          nodeId: node.nodeId,
+          voltageV: node.voltage,
+          normalizedLevel,
+          visualColor: voltageColor,
+          visualState: logicState !== 'FLOATING' && node.voltage !== 0 ? 'ACTIVE' : 'INACTIVE',
+          futureVoltageHints: {},
+        });
+        this.voltageVizRegistry.set(voltViz.voltageVizId, JSON.parse(JSON.stringify(voltViz)));
+        if (!this.voltageVizOrder.includes(voltViz.voltageVizId)) {
+          this.voltageVizOrder.push(voltViz.voltageVizId);
+        }
+      }
+
+      // Sync signal flow models from active signal packets
+      const signalPackets = this.getSignalPacketModels();
+      for (const packet of signalPackets) {
+        const wireConn = this.getWireConnectionModel(packet.targetNodeId) ||
+                         this.getWireConnectionModel(packet.sourceNodeId);
+        const wireConnectionId = wireConn?.connectionId ?? `wire_${packet.packetId}`;
+        const logicState = (packet.logicState as any) || 'FLOATING';
+        const flowColor = resolveGlowColor(logicState);
+        const flowProgress = ((clockTick % 60) / 60);
+
+        const flowViz = createDefaultSignalFlowModel(`flow_${packet.packetId}`, {
+          wireConnectionId,
+          packetId: packet.packetId,
+          flowProgress: Math.max(0, Math.min(1, flowProgress)),
+          flowColor,
+          isActive: true,
+          futureFlowHints: {},
+        });
+        this.signalFlowRegistry.set(flowViz.flowId, JSON.parse(JSON.stringify(flowViz)));
+        if (!this.signalFlowOrder.includes(flowViz.flowId)) {
+          this.signalFlowOrder.push(flowViz.flowId);
+        }
+      }
+
+      // Sync current viz from electrical connections
+      const electricalConns = this.getElectricalConnectionModels();
+      for (const conn of electricalConns) {
+        const sourceNode = electricalNodes.find((n: any) => n.nodeId === conn.sourceNodeId);
+        const logicActive = (sourceNode as any)?.logicState === 'HIGH' || (sourceNode as any)?.logicState === 'PWM';
+        const currentMa = logicActive ? Math.abs((sourceNode as any)?.voltage ?? 0) * 20 : 0;
+        const normalizedFlow = Math.max(0, Math.min(1, currentMa / 100));
+
+        const currViz = createDefaultCurrentVisualizationModel(`current_viz_${conn.connectionId}`, {
+          connectionId: conn.connectionId,
+          currentMa,
+          normalizedFlow,
+          flowDirection: logicActive ? 'FORWARD' : 'NONE',
+          visualState: logicActive ? 'ACTIVE' : 'INACTIVE',
+          futureCurrentHints: {},
+        });
+        this.currentVizRegistry.set(currViz.currentVizId, JSON.parse(JSON.stringify(currViz)));
+        if (!this.currentVizOrder.includes(currViz.currentVizId)) {
+          this.currentVizOrder.push(currViz.currentVizId);
+        }
+      }
+
+      // Sync activity models from workspace objects (LED, HC-SR04)
+      const workspaceObjects = this.getWorkspaceObjectModels();
+      for (const obj of workspaceObjects) {
+        const objType = obj.objectType?.toLowerCase() ?? '';
+        const isLed = objType.includes('led');
+        const isHcSr04 = objType.includes('hc_sr04') || objType.includes('ultrasonic');
+
+        if (!isLed && !isHcSr04) continue;
+
+        // Find the electrical node connected to this component
+        const connectedNode = electricalNodes.find((n: any) => n.componentId === obj.objectId);
+        const logicState = (connectedNode as any)?.logicState ?? 'FLOATING';
+        const isPwm = logicState === 'PWM';
+        const isHigh = logicState === 'HIGH';
+
+        // LED brightness: HIGH=1.0, PWM=dutyCycle, else 0
+        const brightness = isHigh ? 1.0 : isPwm ? 0.5 : 0;
+
+        // HC-SR04: derive from nearest sensor runtime
+        const sensorRuntimes = this.getSensorRuntimeModels();
+        const sensorRuntime = sensorRuntimes.find((sr: any) => sr.runtimeId === obj.objectId || sr.runtimeId === `sensor_${obj.objectId}`);
+        const measuredDistanceCm = sensorRuntime ? (sensorRuntime as any).currentValue : 0;
+        const triggerActive = isHcSr04 && isHigh;
+        const echoActive = isHcSr04 && measuredDistanceCm > 0;
+
+        const existing = this.getActivityVisualizationModel(`activity_viz_${obj.objectId}`);
+        const actViz = createDefaultActivityVisualizationModel(`activity_viz_${obj.objectId}`, {
+          componentId: obj.objectId,
+          componentType: isLed ? 'LED' : 'HC_SR04',
+          isActive: isHigh || isPwm,
+          brightness: Math.max(0, Math.min(1, brightness)),
+          triggerActive,
+          echoActive,
+          measuredDistanceCm,
+          futureActivityHints: existing?.futureActivityHints ?? {},
+        });
+        this.activityVizRegistry.set(actViz.activityVizId, JSON.parse(JSON.stringify(actViz)));
+        if (!this.activityVizOrder.includes(actViz.activityVizId)) {
+          this.activityVizOrder.push(actViz.activityVizId);
+        }
+      }
+    } catch (err) {
+      console.warn('[Runtime Diagnostics] updateElectricalVisualizationState failed gracefully:', err);
+    }
+  }
+
   // ─── Animation Playback Model CRUD ───
+
   public registerAnimationPlaybackModel(model: AnimationPlaybackModel): void {
     if (!this.validateAnimationPlaybackModel(model)) return;
     if (this.animationPlaybackRegistry.has(model.playbackId)) {
@@ -5159,8 +12299,2518 @@ export class BaseRuntime implements IRuntime {
     return this.visualCompositionRegistry.has(id);
   }
 
+  // ─── Scene Assembly Model CRUD ───
+  public registerSceneAssemblyModel(model: SceneAssemblyModel): void {
+    if (!this.validateSceneAssemblyModel(model)) return;
+    if (this.sceneAssemblyRegistry.has(model.assemblyId)) {
+      console.warn(`[Runtime Diagnostics] duplicate scene assembly IDs: ID "${model.assemblyId}" already exists.`);
+    }
+    this.sceneAssemblyRegistry.set(model.assemblyId, JSON.parse(JSON.stringify(model)));
+    if (!this.sceneAssemblyOrder.includes(model.assemblyId)) {
+      this.sceneAssemblyOrder.push(model.assemblyId);
+    }
+  }
+
+  public getSceneAssemblyModel(id: string): SceneAssemblyModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed scene assembly: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.sceneAssemblyRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getSceneAssemblyModels(): SceneAssemblyModel[] {
+    return this.sceneAssemblyOrder
+      .map(id => this.sceneAssemblyRegistry.get(id))
+      .filter((m): m is SceneAssemblyModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateSceneAssemblyModel(id: string, updates: Partial<SceneAssemblyModel>): void {
+    const existing = this.sceneAssemblyRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing scene assembly: Model "${id}" not found.`);
+      return;
+    }
+    const merged: SceneAssemblyModel = {
+      ...existing,
+      ...updates,
+      assemblyId: existing.assemblyId,
+    };
+    this.registerSceneAssemblyModel(merged);
+  }
+
+  public removeSceneAssemblyModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed scene assembly: ID must be a non-empty string.');
+      return;
+    }
+    this.sceneAssemblyRegistry.delete(id);
+    this.sceneAssemblyOrder = this.sceneAssemblyOrder.filter(existing => existing !== id);
+  }
+
+  public clearSceneAssemblyModels(): void {
+    this.sceneAssemblyRegistry.clear();
+    this.sceneAssemblyOrder = [];
+  }
+
+  public getSceneAssemblyModelKeys(): string[] {
+    return [...this.sceneAssemblyOrder];
+  }
+
+  public hasSceneAssemblyModel(id: string): boolean {
+    return this.sceneAssemblyRegistry.has(id);
+  }
+
+  // ─── Visual Assembly Model CRUD ───
+  public registerVisualAssemblyModel(model: VisualAssemblyModel): void {
+    if (!this.validateVisualAssemblyModel(model)) return;
+    if (this.visualAssemblyRegistry.has(model.visualAssemblyId)) {
+      console.warn(`[Runtime Diagnostics] duplicate visual assembly IDs: ID "${model.visualAssemblyId}" already exists.`);
+    }
+    this.visualAssemblyRegistry.set(model.visualAssemblyId, JSON.parse(JSON.stringify(model)));
+    if (!this.visualAssemblyOrder.includes(model.visualAssemblyId)) {
+      this.visualAssemblyOrder.push(model.visualAssemblyId);
+    }
+  }
+
+  public getVisualAssemblyModel(id: string): VisualAssemblyModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed visual assembly: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.visualAssemblyRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getVisualAssemblyModels(): VisualAssemblyModel[] {
+    return this.visualAssemblyOrder
+      .map(id => this.visualAssemblyRegistry.get(id))
+      .filter((m): m is VisualAssemblyModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateVisualAssemblyModel(id: string, updates: Partial<VisualAssemblyModel>): void {
+    const existing = this.visualAssemblyRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing visual assembly: Model "${id}" not found.`);
+      return;
+    }
+    const merged: VisualAssemblyModel = {
+      ...existing,
+      ...updates,
+      visualAssemblyId: existing.visualAssemblyId,
+    };
+    this.registerVisualAssemblyModel(merged);
+  }
+
+  public removeVisualAssemblyModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed visual assembly: ID must be a non-empty string.');
+      return;
+    }
+    this.visualAssemblyRegistry.delete(id);
+    this.visualAssemblyOrder = this.visualAssemblyOrder.filter(existing => existing !== id);
+  }
+
+  public clearVisualAssemblyModels(): void {
+    this.visualAssemblyRegistry.clear();
+    this.visualAssemblyOrder = [];
+  }
+
+  public getVisualAssemblyModelKeys(): string[] {
+    return [...this.visualAssemblyOrder];
+  }
+
+  public hasVisualAssemblyModel(id: string): boolean {
+    return this.visualAssemblyRegistry.has(id);
+  }
+
+  // ─── Board Assembly Model CRUD ───
+  public registerBoardAssemblyModel(model: BoardAssemblyModel): void {
+    if (!this.validateBoardAssemblyModel(model)) return;
+    if (this.boardAssemblyRegistry.has(model.boardAssemblyId)) {
+      console.warn(`[Runtime Diagnostics] duplicate board assembly IDs: ID "${model.boardAssemblyId}" already exists.`);
+    }
+    this.boardAssemblyRegistry.set(model.boardAssemblyId, JSON.parse(JSON.stringify(model)));
+    if (!this.boardAssemblyOrder.includes(model.boardAssemblyId)) {
+      this.boardAssemblyOrder.push(model.boardAssemblyId);
+    }
+  }
+
+  public getBoardAssemblyModel(id: string): BoardAssemblyModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed board assembly: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.boardAssemblyRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getBoardAssemblyModels(): BoardAssemblyModel[] {
+    return this.boardAssemblyOrder
+      .map(id => this.boardAssemblyRegistry.get(id))
+      .filter((m): m is BoardAssemblyModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateBoardAssemblyModel(id: string, updates: Partial<BoardAssemblyModel>): void {
+    const existing = this.boardAssemblyRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing board assembly: Model "${id}" not found.`);
+      return;
+    }
+    const merged: BoardAssemblyModel = {
+      ...existing,
+      ...updates,
+      boardAssemblyId: existing.boardAssemblyId,
+    };
+    this.registerBoardAssemblyModel(merged);
+  }
+
+  public removeBoardAssemblyModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed board assembly: ID must be a non-empty string.');
+      return;
+    }
+    this.boardAssemblyRegistry.delete(id);
+    this.boardAssemblyOrder = this.boardAssemblyOrder.filter(existing => existing !== id);
+  }
+
+  public clearBoardAssemblyModels(): void {
+    this.boardAssemblyRegistry.clear();
+    this.boardAssemblyOrder = [];
+  }
+
+  public getBoardAssemblyModelKeys(): string[] {
+    return [...this.boardAssemblyOrder];
+  }
+
+  public hasBoardAssemblyModel(id: string): boolean {
+    return this.boardAssemblyRegistry.has(id);
+  }
+
+  // ─── Component Assembly Model CRUD ───
+  public registerComponentAssemblyModel(model: ComponentAssemblyModel): void {
+    if (!this.validateComponentAssemblyModel(model)) return;
+    if (this.componentAssemblyRegistry.has(model.componentAssemblyId)) {
+      console.warn(`[Runtime Diagnostics] duplicate component assembly IDs: ID "${model.componentAssemblyId}" already exists.`);
+    }
+    this.componentAssemblyRegistry.set(model.componentAssemblyId, JSON.parse(JSON.stringify(model)));
+    if (!this.componentAssemblyOrder.includes(model.componentAssemblyId)) {
+      this.componentAssemblyOrder.push(model.componentAssemblyId);
+    }
+  }
+
+  public getComponentAssemblyModel(id: string): ComponentAssemblyModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed component assembly: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.componentAssemblyRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getComponentAssemblyModels(): ComponentAssemblyModel[] {
+    return this.componentAssemblyOrder
+      .map(id => this.componentAssemblyRegistry.get(id))
+      .filter((m): m is ComponentAssemblyModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateComponentAssemblyModel(id: string, updates: Partial<ComponentAssemblyModel>): void {
+    const existing = this.componentAssemblyRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing component assembly: Model "${id}" not found.`);
+      return;
+    }
+    const merged: ComponentAssemblyModel = {
+      ...existing,
+      ...updates,
+      componentAssemblyId: existing.componentAssemblyId,
+    };
+    this.registerComponentAssemblyModel(merged);
+  }
+
+  public removeComponentAssemblyModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed component assembly: ID must be a non-empty string.');
+      return;
+    }
+    this.componentAssemblyRegistry.delete(id);
+    this.componentAssemblyOrder = this.componentAssemblyOrder.filter(existing => existing !== id);
+  }
+
+  public clearComponentAssemblyModels(): void {
+    this.componentAssemblyRegistry.clear();
+    this.componentAssemblyOrder = [];
+  }
+
+  public getComponentAssemblyModelKeys(): string[] {
+    return [...this.componentAssemblyOrder];
+  }
+
+  public hasComponentAssemblyModel(id: string): boolean {
+    return this.componentAssemblyRegistry.has(id);
+  }
+
+  // ─── Wire Assembly Model CRUD ───
+  public registerWireAssemblyModel(model: WireAssemblyModel): void {
+    if (!this.validateWireAssemblyModel(model)) return;
+    if (this.wireAssemblyRegistry.has(model.wireAssemblyId)) {
+      console.warn(`[Runtime Diagnostics] duplicate wire assembly IDs: ID "${model.wireAssemblyId}" already exists.`);
+    }
+    this.wireAssemblyRegistry.set(model.wireAssemblyId, JSON.parse(JSON.stringify(model)));
+    if (!this.wireAssemblyOrder.includes(model.wireAssemblyId)) {
+      this.wireAssemblyOrder.push(model.wireAssemblyId);
+    }
+  }
+
+  public getWireAssemblyModel(id: string): WireAssemblyModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed wire assembly: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.wireAssemblyRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getWireAssemblyModels(): WireAssemblyModel[] {
+    return this.wireAssemblyOrder
+      .map(id => this.wireAssemblyRegistry.get(id))
+      .filter((m): m is WireAssemblyModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateWireAssemblyModel(id: string, updates: Partial<WireAssemblyModel>): void {
+    const existing = this.wireAssemblyRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing wire assembly: Model "${id}" not found.`);
+      return;
+    }
+    const merged: WireAssemblyModel = {
+      ...existing,
+      ...updates,
+      wireAssemblyId: existing.wireAssemblyId,
+    };
+    this.registerWireAssemblyModel(merged);
+  }
+
+  public removeWireAssemblyModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed wire assembly: ID must be a non-empty string.');
+      return;
+    }
+    this.wireAssemblyRegistry.delete(id);
+    this.wireAssemblyOrder = this.wireAssemblyOrder.filter(existing => existing !== id);
+  }
+
+  public clearWireAssemblyModels(): void {
+    this.wireAssemblyRegistry.clear();
+    this.wireAssemblyOrder = [];
+  }
+
+  public getWireAssemblyModelKeys(): string[] {
+    return [...this.wireAssemblyOrder];
+  }
+
+  public hasWireAssemblyModel(id: string): boolean {
+    return this.wireAssemblyRegistry.has(id);
+  }
+
+  // ─── Signal Assembly Model CRUD ───
+  public registerSignalAssemblyModel(model: SignalAssemblyModel): void {
+    if (!this.validateSignalAssemblyModel(model)) return;
+    if (this.signalAssemblyRegistry.has(model.signalAssemblyId)) {
+      console.warn(`[Runtime Diagnostics] duplicate signal assembly IDs: ID "${model.signalAssemblyId}" already exists.`);
+    }
+    this.signalAssemblyRegistry.set(model.signalAssemblyId, JSON.parse(JSON.stringify(model)));
+    if (!this.signalAssemblyOrder.includes(model.signalAssemblyId)) {
+      this.signalAssemblyOrder.push(model.signalAssemblyId);
+    }
+  }
+
+  public getSignalAssemblyModel(id: string): SignalAssemblyModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed signal assembly: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.signalAssemblyRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getSignalAssemblyModels(): SignalAssemblyModel[] {
+    return this.signalAssemblyOrder
+      .map(id => this.signalAssemblyRegistry.get(id))
+      .filter((m): m is SignalAssemblyModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateSignalAssemblyModel(id: string, updates: Partial<SignalAssemblyModel>): void {
+    const existing = this.signalAssemblyRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing signal assembly: Model "${id}" not found.`);
+      return;
+    }
+    const merged: SignalAssemblyModel = {
+      ...existing,
+      ...updates,
+      signalAssemblyId: existing.signalAssemblyId,
+    };
+    this.registerSignalAssemblyModel(merged);
+  }
+
+  public removeSignalAssemblyModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed signal assembly: ID must be a non-empty string.');
+      return;
+    }
+    this.signalAssemblyRegistry.delete(id);
+    this.signalAssemblyOrder = this.signalAssemblyOrder.filter(existing => existing !== id);
+  }
+
+  public clearSignalAssemblyModels(): void {
+    this.signalAssemblyRegistry.clear();
+    this.signalAssemblyOrder = [];
+  }
+
+  public getSignalAssemblyModelKeys(): string[] {
+    return [...this.signalAssemblyOrder];
+  }
+
+  public hasSignalAssemblyModel(id: string): boolean {
+    return this.signalAssemblyRegistry.has(id);
+  }
+
+  // ─── Visual Object Model CRUD ───
+  public registerVisualObjectModel(model: VisualObjectModel): void {
+    if (!this.validateVisualObjectModel(model)) return;
+    if (this.visualObjectRegistry.has(model.objectId)) {
+      console.warn(`[Runtime Diagnostics] duplicate visual object IDs: ID "${model.objectId}" already exists.`);
+    }
+    this.visualObjectRegistry.set(model.objectId, JSON.parse(JSON.stringify(model)));
+    if (!this.visualObjectOrder.includes(model.objectId)) {
+      this.visualObjectOrder.push(model.objectId);
+    }
+  }
+
+  public getVisualObjectModel(id: string): VisualObjectModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed visual object: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.visualObjectRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getVisualObjectModels(): VisualObjectModel[] {
+    return this.visualObjectOrder
+      .map(id => this.visualObjectRegistry.get(id))
+      .filter((m): m is VisualObjectModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateVisualObjectModel(id: string, updates: Partial<VisualObjectModel>): void {
+    const existing = this.visualObjectRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing visual object: Model "${id}" not found.`);
+      return;
+    }
+    const merged: VisualObjectModel = {
+      ...existing,
+      ...updates,
+      objectId: existing.objectId,
+    };
+    this.registerVisualObjectModel(merged);
+  }
+
+  public removeVisualObjectModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed visual object: ID must be a non-empty string.');
+      return;
+    }
+    this.visualObjectRegistry.delete(id);
+    this.visualObjectOrder = this.visualObjectOrder.filter(existing => existing !== id);
+  }
+
+  public clearVisualObjectModels(): void {
+    this.visualObjectRegistry.clear();
+    this.visualObjectOrder = [];
+  }
+
+  public getVisualObjectModelKeys(): string[] {
+    return [...this.visualObjectOrder];
+  }
+
+  public hasVisualObjectModel(id: string): boolean {
+    return this.visualObjectRegistry.has(id);
+  }
+
+  // ─── Board Object Model CRUD ───
+  public registerBoardObjectModel(model: BoardObjectModel): void {
+    if (!this.validateBoardObjectModel(model)) return;
+    if (this.boardObjectRegistry.has(model.boardObjectId)) {
+      console.warn(`[Runtime Diagnostics] duplicate board object IDs: ID "${model.boardObjectId}" already exists.`);
+    }
+    this.boardObjectRegistry.set(model.boardObjectId, JSON.parse(JSON.stringify(model)));
+    if (!this.boardObjectOrder.includes(model.boardObjectId)) {
+      this.boardObjectOrder.push(model.boardObjectId);
+    }
+  }
+
+  public getBoardObjectModel(id: string): BoardObjectModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed board object: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.boardObjectRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getBoardObjectModels(): BoardObjectModel[] {
+    return this.boardObjectOrder
+      .map(id => this.boardObjectRegistry.get(id))
+      .filter((m): m is BoardObjectModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateBoardObjectModel(id: string, updates: Partial<BoardObjectModel>): void {
+    const existing = this.boardObjectRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing board object: Model "${id}" not found.`);
+      return;
+    }
+    const merged: BoardObjectModel = {
+      ...existing,
+      ...updates,
+      boardObjectId: existing.boardObjectId,
+    };
+    this.registerBoardObjectModel(merged);
+  }
+
+  public removeBoardObjectModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed board object: ID must be a non-empty string.');
+      return;
+    }
+    this.boardObjectRegistry.delete(id);
+    this.boardObjectOrder = this.boardObjectOrder.filter(existing => existing !== id);
+  }
+
+  public clearBoardObjectModels(): void {
+    this.boardObjectRegistry.clear();
+    this.boardObjectOrder = [];
+  }
+
+  public getBoardObjectModelKeys(): string[] {
+    return [...this.boardObjectOrder];
+  }
+
+  public hasBoardObjectModel(id: string): boolean {
+    return this.boardObjectRegistry.has(id);
+  }
+
+  // ─── Component Object Model CRUD ───
+  public registerComponentObjectModel(model: ComponentObjectModel): void {
+    if (!this.validateComponentObjectModel(model)) return;
+    if (this.componentObjectRegistry.has(model.componentObjectId)) {
+      console.warn(`[Runtime Diagnostics] duplicate component object IDs: ID "${model.componentObjectId}" already exists.`);
+    }
+    this.componentObjectRegistry.set(model.componentObjectId, JSON.parse(JSON.stringify(model)));
+    if (!this.componentObjectOrder.includes(model.componentObjectId)) {
+      this.componentObjectOrder.push(model.componentObjectId);
+    }
+  }
+
+  public getComponentObjectModel(id: string): ComponentObjectModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed component object: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.componentObjectRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getComponentObjectModels(): ComponentObjectModel[] {
+    return this.componentObjectOrder
+      .map(id => this.componentObjectRegistry.get(id))
+      .filter((m): m is ComponentObjectModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateComponentObjectModel(id: string, updates: Partial<ComponentObjectModel>): void {
+    const existing = this.componentObjectRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing component object: Model "${id}" not found.`);
+      return;
+    }
+    const merged: ComponentObjectModel = {
+      ...existing,
+      ...updates,
+      componentObjectId: existing.componentObjectId,
+    };
+    this.registerComponentObjectModel(merged);
+  }
+
+  public removeComponentObjectModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed component object: ID must be a non-empty string.');
+      return;
+    }
+    this.componentObjectRegistry.delete(id);
+    this.componentObjectOrder = this.componentObjectOrder.filter(existing => existing !== id);
+  }
+
+  public clearComponentObjectModels(): void {
+    this.componentObjectRegistry.clear();
+    this.componentObjectOrder = [];
+  }
+
+  public getComponentObjectModelKeys(): string[] {
+    return [...this.componentObjectOrder];
+  }
+
+  public hasComponentObjectModel(id: string): boolean {
+    return this.componentObjectRegistry.has(id);
+  }
+
+  // ─── Wire Object Model CRUD ───
+  public registerWireObjectModel(model: WireObjectModel): void {
+    if (!this.validateWireObjectModel(model)) return;
+    if (this.wireObjectRegistry.has(model.wireObjectId)) {
+      console.warn(`[Runtime Diagnostics] duplicate wire object IDs: ID "${model.wireObjectId}" already exists.`);
+    }
+    this.wireObjectRegistry.set(model.wireObjectId, JSON.parse(JSON.stringify(model)));
+    if (!this.wireObjectOrder.includes(model.wireObjectId)) {
+      this.wireObjectOrder.push(model.wireObjectId);
+    }
+  }
+
+  public getWireObjectModel(id: string): WireObjectModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed wire object: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.wireObjectRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getWireObjectModels(): WireObjectModel[] {
+    return this.wireObjectOrder
+      .map(id => this.wireObjectRegistry.get(id))
+      .filter((m): m is WireObjectModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateWireObjectModel(id: string, updates: Partial<WireObjectModel>): void {
+    const existing = this.wireObjectRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing wire object: Model "${id}" not found.`);
+      return;
+    }
+    const merged: WireObjectModel = {
+      ...existing,
+      ...updates,
+      wireObjectId: existing.wireObjectId,
+    };
+    this.registerWireObjectModel(merged);
+  }
+
+  public removeWireObjectModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed wire object: ID must be a non-empty string.');
+      return;
+    }
+    this.wireObjectRegistry.delete(id);
+    this.wireObjectOrder = this.wireObjectOrder.filter(existing => existing !== id);
+  }
+
+  public clearWireObjectModels(): void {
+    this.wireObjectRegistry.clear();
+    this.wireObjectOrder = [];
+  }
+
+  public getWireObjectModelKeys(): string[] {
+    return [...this.wireObjectOrder];
+  }
+
+  public hasWireObjectModel(id: string): boolean {
+    return this.wireObjectRegistry.has(id);
+  }
+
+  // ─── Signal Object Model CRUD ───
+  public registerSignalObjectModel(model: SignalObjectModel): void {
+    if (!this.validateSignalObjectModel(model)) return;
+    if (this.signalObjectRegistry.has(model.signalObjectId)) {
+      console.warn(`[Runtime Diagnostics] duplicate signal object IDs: ID "${model.signalObjectId}" already exists.`);
+    }
+    this.signalObjectRegistry.set(model.signalObjectId, JSON.parse(JSON.stringify(model)));
+    if (!this.signalObjectOrder.includes(model.signalObjectId)) {
+      this.signalObjectOrder.push(model.signalObjectId);
+    }
+  }
+
+  public getSignalObjectModel(id: string): SignalObjectModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed signal object: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.signalObjectRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getSignalObjectModels(): SignalObjectModel[] {
+    return this.signalObjectOrder
+      .map(id => this.signalObjectRegistry.get(id))
+      .filter((m): m is SignalObjectModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateSignalObjectModel(id: string, updates: Partial<SignalObjectModel>): void {
+    const existing = this.signalObjectRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing signal object: Model "${id}" not found.`);
+      return;
+    }
+    const merged: SignalObjectModel = {
+      ...existing,
+      ...updates,
+      signalObjectId: existing.signalObjectId,
+    };
+    this.registerSignalObjectModel(merged);
+  }
+
+  public removeSignalObjectModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed signal object: ID must be a non-empty string.');
+      return;
+    }
+    this.signalObjectRegistry.delete(id);
+    this.signalObjectOrder = this.signalObjectOrder.filter(existing => existing !== id);
+  }
+
+  public clearSignalObjectModels(): void {
+    this.signalObjectRegistry.clear();
+    this.signalObjectOrder = [];
+  }
+
+  public getSignalObjectModelKeys(): string[] {
+    return [...this.signalObjectOrder];
+  }
+
+  public hasSignalObjectModel(id: string): boolean {
+    return this.signalObjectRegistry.has(id);
+  }
+
+  // ─── Theme Object Model CRUD ───
+  public registerThemeObjectModel(model: ThemeObjectModel): void {
+    if (!this.validateThemeObjectModel(model)) return;
+    if (this.themeObjectRegistry.has(model.themeObjectId)) {
+      console.warn(`[Runtime Diagnostics] duplicate theme object IDs: ID "${model.themeObjectId}" already exists.`);
+    }
+    this.themeObjectRegistry.set(model.themeObjectId, JSON.parse(JSON.stringify(model)));
+    if (!this.themeObjectOrder.includes(model.themeObjectId)) {
+      this.themeObjectOrder.push(model.themeObjectId);
+    }
+  }
+
+  public getThemeObjectModel(id: string): ThemeObjectModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed theme object: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.themeObjectRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getThemeObjectModels(): ThemeObjectModel[] {
+    return this.themeObjectOrder
+      .map(id => this.themeObjectRegistry.get(id))
+      .filter((m): m is ThemeObjectModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateThemeObjectModel(id: string, updates: Partial<ThemeObjectModel>): void {
+    const existing = this.themeObjectRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing theme object: Model "${id}" not found.`);
+      return;
+    }
+    const merged: ThemeObjectModel = {
+      ...existing,
+      ...updates,
+      themeObjectId: existing.themeObjectId,
+    };
+    this.registerThemeObjectModel(merged);
+  }
+
+  public removeThemeObjectModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed theme object: ID must be a non-empty string.');
+      return;
+    }
+    this.themeObjectRegistry.delete(id);
+    this.themeObjectOrder = this.themeObjectOrder.filter(existing => existing !== id);
+  }
+
+  public clearThemeObjectModels(): void {
+    this.themeObjectRegistry.clear();
+    this.themeObjectOrder = [];
+  }
+
+  public getThemeObjectModelKeys(): string[] {
+    return [...this.themeObjectOrder];
+  }
+
+  public hasThemeObjectModel(id: string): boolean {
+    return this.themeObjectRegistry.has(id);
+  }
+
+  // ─── Animation Object Model CRUD ───
+  public registerAnimationObjectModel(model: AnimationObjectModel): void {
+    if (!this.validateAnimationObjectModel(model)) return;
+    if (this.animationObjectRegistry.has(model.animationObjectId)) {
+      console.warn(`[Runtime Diagnostics] duplicate animation object IDs: ID "${model.animationObjectId}" already exists.`);
+    }
+    this.animationObjectRegistry.set(model.animationObjectId, JSON.parse(JSON.stringify(model)));
+    if (!this.animationObjectOrder.includes(model.animationObjectId)) {
+      this.animationObjectOrder.push(model.animationObjectId);
+    }
+  }
+
+  public getAnimationObjectModel(id: string): AnimationObjectModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed animation object: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.animationObjectRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getAnimationObjectModels(): AnimationObjectModel[] {
+    return this.animationObjectOrder
+      .map(id => this.animationObjectRegistry.get(id))
+      .filter((m): m is AnimationObjectModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateAnimationObjectModel(id: string, updates: Partial<AnimationObjectModel>): void {
+    const existing = this.animationObjectRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing animation object: Model "${id}" not found.`);
+      return;
+    }
+    const merged: AnimationObjectModel = {
+      ...existing,
+      ...updates,
+      animationObjectId: existing.animationObjectId,
+    };
+    this.registerAnimationObjectModel(merged);
+  }
+
+  public removeAnimationObjectModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed animation object: ID must be a non-empty string.');
+      return;
+    }
+    this.animationObjectRegistry.delete(id);
+    this.animationObjectOrder = this.animationObjectOrder.filter(existing => existing !== id);
+  }
+
+  public clearAnimationObjectModels(): void {
+    this.animationObjectRegistry.clear();
+    this.animationObjectOrder = [];
+  }
+
+  public getAnimationObjectModelKeys(): string[] {
+    return [...this.animationObjectOrder];
+  }
+
+  public hasAnimationObjectModel(id: string): boolean {
+    return this.animationObjectRegistry.has(id);
+  }
+
+  // ─── Electrical Node Model CRUD ───
+  public registerElectricalNodeModel(model: ElectricalNodeModel): void {
+    if (!this.validateElectricalNodeModel(model)) return;
+    if (this.electricalNodeRegistry.has(model.nodeId)) {
+      console.warn(`[Runtime Diagnostics] duplicate electrical node IDs: ID "${model.nodeId}" already exists.`);
+    }
+    this.electricalNodeRegistry.set(model.nodeId, JSON.parse(JSON.stringify(model)));
+    if (!this.electricalNodeOrder.includes(model.nodeId)) {
+      this.electricalNodeOrder.push(model.nodeId);
+    }
+  }
+
+  public getElectricalNodeModel(id: string): ElectricalNodeModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed electrical node: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.electricalNodeRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getElectricalNodeModels(): ElectricalNodeModel[] {
+    return this.electricalNodeOrder
+      .map(id => this.electricalNodeRegistry.get(id))
+      .filter((m): m is ElectricalNodeModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateElectricalNodeModel(id: string, updates: Partial<ElectricalNodeModel>): void {
+    const existing = this.electricalNodeRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing electrical node: Model "${id}" not found.`);
+      return;
+    }
+    const merged: ElectricalNodeModel = {
+      ...existing,
+      ...updates,
+      nodeId: existing.nodeId,
+    };
+    this.registerElectricalNodeModel(merged);
+  }
+
+  public removeElectricalNodeModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed electrical node: ID must be a non-empty string.');
+      return;
+    }
+    this.electricalNodeRegistry.delete(id);
+    this.electricalNodeOrder = this.electricalNodeOrder.filter(existing => existing !== id);
+  }
+
+  public clearElectricalNodeModels(): void {
+    this.electricalNodeRegistry.clear();
+    this.electricalNodeOrder = [];
+  }
+
+  public getElectricalNodeModelKeys(): string[] {
+    return [...this.electricalNodeOrder];
+  }
+
+  public hasElectricalNodeModel(id: string): boolean {
+    return this.electricalNodeRegistry.has(id);
+  }
+
+  // ─── Electrical Net Model CRUD ───
+  public registerElectricalNetModel(model: ElectricalNetModel): void {
+    if (!this.validateElectricalNetModel(model)) return;
+    if (this.electricalNetRegistry.has(model.netId)) {
+      console.warn(`[Runtime Diagnostics] duplicate electrical net IDs: ID "${model.netId}" already exists.`);
+    }
+    this.electricalNetRegistry.set(model.netId, JSON.parse(JSON.stringify(model)));
+    if (!this.electricalNetOrder.includes(model.netId)) {
+      this.electricalNetOrder.push(model.netId);
+    }
+  }
+
+  public getElectricalNetModel(id: string): ElectricalNetModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed electrical net: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.electricalNetRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getElectricalNetModels(): ElectricalNetModel[] {
+    return this.electricalNetOrder
+      .map(id => this.electricalNetRegistry.get(id))
+      .filter((m): m is ElectricalNetModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateElectricalNetModel(id: string, updates: Partial<ElectricalNetModel>): void {
+    const existing = this.electricalNetRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing electrical net: Model "${id}" not found.`);
+      return;
+    }
+    const merged: ElectricalNetModel = {
+      ...existing,
+      ...updates,
+      netId: existing.netId,
+    };
+    this.registerElectricalNetModel(merged);
+  }
+
+  public removeElectricalNetModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed electrical net: ID must be a non-empty string.');
+      return;
+    }
+    this.electricalNetRegistry.delete(id);
+    this.electricalNetOrder = this.electricalNetOrder.filter(existing => existing !== id);
+  }
+
+  public clearElectricalNetModels(): void {
+    this.electricalNetRegistry.clear();
+    this.electricalNetOrder = [];
+  }
+
+  public getElectricalNetModelKeys(): string[] {
+    return [...this.electricalNetOrder];
+  }
+
+  public hasElectricalNetModel(id: string): boolean {
+    return this.electricalNetRegistry.has(id);
+  }
+
+  // ─── Electrical Connection Model CRUD ───
+  public registerElectricalConnectionModel(model: ElectricalConnectionModel): void {
+    if (!this.validateElectricalConnectionModel(model)) return;
+    if (this.electricalConnectionRegistry.has(model.connectionId)) {
+      console.warn(`[Runtime Diagnostics] duplicate electrical connection IDs: ID "${model.connectionId}" already exists.`);
+    }
+    this.electricalConnectionRegistry.set(model.connectionId, JSON.parse(JSON.stringify(model)));
+    if (!this.electricalConnectionOrder.includes(model.connectionId)) {
+      this.electricalConnectionOrder.push(model.connectionId);
+    }
+  }
+
+  public getElectricalConnectionModel(id: string): ElectricalConnectionModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed electrical connection: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.electricalConnectionRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getElectricalConnectionModels(): ElectricalConnectionModel[] {
+    return this.electricalConnectionOrder
+      .map(id => this.electricalConnectionRegistry.get(id))
+      .filter((m): m is ElectricalConnectionModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateElectricalConnectionModel(id: string, updates: Partial<ElectricalConnectionModel>): void {
+    const existing = this.electricalConnectionRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing electrical connection: Model "${id}" not found.`);
+      return;
+    }
+    const merged: ElectricalConnectionModel = {
+      ...existing,
+      ...updates,
+      connectionId: existing.connectionId,
+    };
+    this.registerElectricalConnectionModel(merged);
+  }
+
+  public removeElectricalConnectionModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed electrical connection: ID must be a non-empty string.');
+      return;
+    }
+    this.electricalConnectionRegistry.delete(id);
+    this.electricalConnectionOrder = this.electricalConnectionOrder.filter(existing => existing !== id);
+  }
+
+  public clearElectricalConnectionModels(): void {
+    this.electricalConnectionRegistry.clear();
+    this.electricalConnectionOrder = [];
+  }
+
+  public getElectricalConnectionModelKeys(): string[] {
+    return [...this.electricalConnectionOrder];
+  }
+
+  public hasElectricalConnectionModel(id: string): boolean {
+    return this.electricalConnectionRegistry.has(id);
+  }
+
+  // ─── Breadboard Rail Model CRUD ───
+  public registerBreadboardRailModel(model: BreadboardRailModel): void {
+    if (!this.validateBreadboardRailModel(model)) return;
+    if (this.breadboardRailRegistry.has(model.railId)) {
+      console.warn(`[Runtime Diagnostics] duplicate breadboard rail IDs: ID "${model.railId}" already exists.`);
+    }
+    this.breadboardRailRegistry.set(model.railId, JSON.parse(JSON.stringify(model)));
+    if (!this.breadboardRailOrder.includes(model.railId)) {
+      this.breadboardRailOrder.push(model.railId);
+    }
+  }
+
+  public getBreadboardRailModel(id: string): BreadboardRailModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed breadboard rail: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.breadboardRailRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getBreadboardRailModels(): BreadboardRailModel[] {
+    return this.breadboardRailOrder
+      .map(id => this.breadboardRailRegistry.get(id))
+      .filter((m): m is BreadboardRailModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateBreadboardRailModel(id: string, updates: Partial<BreadboardRailModel>): void {
+    const existing = this.breadboardRailRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing breadboard rail: Model "${id}" not found.`);
+      return;
+    }
+    const merged: BreadboardRailModel = {
+      ...existing,
+      ...updates,
+      railId: existing.railId,
+    };
+    this.registerBreadboardRailModel(merged);
+  }
+
+  public removeBreadboardRailModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed breadboard rail: ID must be a non-empty string.');
+      return;
+    }
+    this.breadboardRailRegistry.delete(id);
+    this.breadboardRailOrder = this.breadboardRailOrder.filter(existing => existing !== id);
+  }
+
+  public clearBreadboardRailModels(): void {
+    this.breadboardRailRegistry.clear();
+    this.breadboardRailOrder = [];
+  }
+
+  public getBreadboardRailModelKeys(): string[] {
+    return [...this.breadboardRailOrder];
+  }
+
+  public hasBreadboardRailModel(id: string): boolean {
+    return this.breadboardRailRegistry.has(id);
+  }
+
+  // ─── Breadboard Row Model CRUD ───
+  public registerBreadboardRowModel(model: BreadboardRowModel): void {
+    if (!this.validateBreadboardRowModel(model)) return;
+    if (this.breadboardRowRegistry.has(model.rowId)) {
+      console.warn(`[Runtime Diagnostics] duplicate breadboard row IDs: ID "${model.rowId}" already exists.`);
+    }
+    this.breadboardRowRegistry.set(model.rowId, JSON.parse(JSON.stringify(model)));
+    if (!this.breadboardRowOrder.includes(model.rowId)) {
+      this.breadboardRowOrder.push(model.rowId);
+    }
+  }
+
+  public getBreadboardRowModel(id: string): BreadboardRowModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed breadboard row: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.breadboardRowRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getBreadboardRowModels(): BreadboardRowModel[] {
+    return this.breadboardRowOrder
+      .map(id => this.breadboardRowRegistry.get(id))
+      .filter((m): m is BreadboardRowModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateBreadboardRowModel(id: string, updates: Partial<BreadboardRowModel>): void {
+    const existing = this.breadboardRowRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing breadboard row: Model "${id}" not found.`);
+      return;
+    }
+    const merged: BreadboardRowModel = {
+      ...existing,
+      ...updates,
+      rowId: existing.rowId,
+    };
+    this.registerBreadboardRowModel(merged);
+  }
+
+  public removeBreadboardRowModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed breadboard row: ID must be a non-empty string.');
+      return;
+    }
+    this.breadboardRowRegistry.delete(id);
+    this.breadboardRowOrder = this.breadboardRowOrder.filter(existing => existing !== id);
+  }
+
+  public clearBreadboardRowModels(): void {
+    this.breadboardRowRegistry.clear();
+    this.breadboardRowOrder = [];
+  }
+
+  public getBreadboardRowModelKeys(): string[] {
+    return [...this.breadboardRowOrder];
+  }
+
+  public hasBreadboardRowModel(id: string): boolean {
+    return this.breadboardRowRegistry.has(id);
+  }
+
+  // ─── Electrical Connectivity Solver ───
+  public solveElectricalConnectivity(): void {
+    const nodes = this.getElectricalNodeModels();
+    const conns = this.getElectricalConnectionModels();
+    const rails = this.getBreadboardRailModels();
+    const rows = this.getBreadboardRowModels();
+    const nets = this.getElectricalNetModels();
+
+    solveConnectivity(nodes, conns, rails, rows, nets);
+
+    // Save updated node states back into registries
+    for (const node of nodes) {
+      this.electricalNodeRegistry.set(node.nodeId, JSON.parse(JSON.stringify(node)));
+    }
+  }
+
+  // ─── Signal Packet Model CRUD ───
+  public registerSignalPacketModel(model: SignalPacketModel): void {
+    if (!this.validateSignalPacketModel(model)) return;
+    if (this.signalPacketRegistry.has(model.packetId)) {
+      console.warn(`[Runtime Diagnostics] duplicate signal packet IDs: ID "${model.packetId}" already exists.`);
+    }
+    this.signalPacketRegistry.set(model.packetId, JSON.parse(JSON.stringify(model)));
+    if (!this.signalPacketOrder.includes(model.packetId)) {
+      this.signalPacketOrder.push(model.packetId);
+    }
+  }
+
+  public getSignalPacketModel(id: string): SignalPacketModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed signal packet: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.signalPacketRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getSignalPacketModels(): SignalPacketModel[] {
+    return this.signalPacketOrder
+      .map(id => this.signalPacketRegistry.get(id))
+      .filter((m): m is SignalPacketModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateSignalPacketModel(id: string, updates: Partial<SignalPacketModel>): void {
+    const existing = this.signalPacketRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing signal packet: Model "${id}" not found.`);
+      return;
+    }
+    const merged: SignalPacketModel = {
+      ...existing,
+      ...updates,
+      packetId: existing.packetId,
+    };
+    this.registerSignalPacketModel(merged);
+  }
+
+  public removeSignalPacketModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed signal packet: ID must be a non-empty string.');
+      return;
+    }
+    this.signalPacketRegistry.delete(id);
+    this.signalPacketOrder = this.signalPacketOrder.filter(existing => existing !== id);
+  }
+
+  public clearSignalPacketModels(): void {
+    this.signalPacketRegistry.clear();
+    this.signalPacketOrder = [];
+  }
+
+  public getSignalPacketModelKeys(): string[] {
+    return [...this.signalPacketOrder];
+  }
+
+  public hasSignalPacketModel(id: string): boolean {
+    return this.signalPacketRegistry.has(id);
+  }
+
+  // ─── Signal Propagation Runtime Model CRUD ───
+  public registerSignalPropagationRuntimeModel(model: SignalPropagationRuntimeModel): void {
+    if (!this.validateSignalPropagationRuntimeModel(model)) return;
+    if (this.signalPropagationRuntimeRegistry.has(model.runtimeId)) {
+      console.warn(`[Runtime Diagnostics] duplicate signal propagation runtime IDs: ID "${model.runtimeId}" already exists.`);
+    }
+    this.signalPropagationRuntimeRegistry.set(model.runtimeId, JSON.parse(JSON.stringify(model)));
+    if (!this.signalPropagationRuntimeOrder.includes(model.runtimeId)) {
+      this.signalPropagationRuntimeOrder.push(model.runtimeId);
+    }
+  }
+
+  public getSignalPropagationRuntimeModel(id: string): SignalPropagationRuntimeModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed signal propagation runtime: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.signalPropagationRuntimeRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getSignalPropagationRuntimeModels(): SignalPropagationRuntimeModel[] {
+    return this.signalPropagationRuntimeOrder
+      .map(id => this.signalPropagationRuntimeRegistry.get(id))
+      .filter((m): m is SignalPropagationRuntimeModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateSignalPropagationRuntimeModel(id: string, updates: Partial<SignalPropagationRuntimeModel>): void {
+    const existing = this.signalPropagationRuntimeRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing signal propagation runtime: Model "${id}" not found.`);
+      return;
+    }
+    const merged: SignalPropagationRuntimeModel = {
+      ...existing,
+      ...updates,
+      runtimeId: existing.runtimeId,
+    };
+    this.registerSignalPropagationRuntimeModel(merged);
+  }
+
+  public removeSignalPropagationRuntimeModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed signal propagation runtime: ID must be a non-empty string.');
+      return;
+    }
+    this.signalPropagationRuntimeRegistry.delete(id);
+    this.signalPropagationRuntimeOrder = this.signalPropagationRuntimeOrder.filter(existing => existing !== id);
+  }
+
+  public clearSignalPropagationRuntimeModels(): void {
+    this.signalPropagationRuntimeRegistry.clear();
+    this.signalPropagationRuntimeOrder = [];
+  }
+
+  public getSignalPropagationRuntimeModelKeys(): string[] {
+    return [...this.signalPropagationRuntimeOrder];
+  }
+
+  public hasSignalPropagationRuntimeModel(id: string): boolean {
+    return this.signalPropagationRuntimeRegistry.has(id);
+  }
+
+  // ─── Propagation Path Model CRUD ───
+  public registerPropagationPathModel(model: PropagationPathModel): void {
+    if (!this.validatePropagationPathModel(model)) return;
+    if (this.propagationPathRegistry.has(model.pathId)) {
+      console.warn(`[Runtime Diagnostics] duplicate propagation path IDs: ID "${model.pathId}" already exists.`);
+    }
+    this.propagationPathRegistry.set(model.pathId, JSON.parse(JSON.stringify(model)));
+    if (!this.propagationPathOrder.includes(model.pathId)) {
+      this.propagationPathOrder.push(model.pathId);
+    }
+  }
+
+  public getPropagationPathModel(id: string): PropagationPathModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed propagation path: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.propagationPathRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getPropagationPathModels(): PropagationPathModel[] {
+    return this.propagationPathOrder
+      .map(id => this.propagationPathRegistry.get(id))
+      .filter((m): m is PropagationPathModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updatePropagationPathModel(id: string, updates: Partial<PropagationPathModel>): void {
+    const existing = this.propagationPathRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing propagation path: Model "${id}" not found.`);
+      return;
+    }
+    const merged: PropagationPathModel = {
+      ...existing,
+      ...updates,
+      pathId: existing.pathId,
+    };
+    this.registerPropagationPathModel(merged);
+  }
+
+  public removePropagationPathModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed propagation path: ID must be a non-empty string.');
+      return;
+    }
+    this.propagationPathRegistry.delete(id);
+    this.propagationPathOrder = this.propagationPathOrder.filter(existing => existing !== id);
+  }
+
+  public clearPropagationPathModels(): void {
+    this.propagationPathRegistry.clear();
+    this.propagationPathOrder = [];
+  }
+
+  public getPropagationPathModelKeys(): string[] {
+    return [...this.propagationPathOrder];
+  }
+
+  public hasPropagationPathModel(id: string): boolean {
+    return this.propagationPathRegistry.has(id);
+  }
+
+  // ─── Timing Model CRUD ───
+  public registerTimingModel(model: TimingModel): void {
+    if (!this.validateTimingModel(model)) return;
+    if (this.timingModelRegistry.has(model.timingId)) {
+      console.warn(`[Runtime Diagnostics] duplicate timing IDs: ID "${model.timingId}" already exists.`);
+    }
+    this.timingModelRegistry.set(model.timingId, JSON.parse(JSON.stringify(model)));
+    if (!this.timingModelOrder.includes(model.timingId)) {
+      this.timingModelOrder.push(model.timingId);
+    }
+  }
+
+  public getTimingModel(id: string): TimingModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed timing model: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.timingModelRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getTimingModels(): TimingModel[] {
+    return this.timingModelOrder
+      .map(id => this.timingModelRegistry.get(id))
+      .filter((m): m is TimingModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateTimingModel(id: string, updates: Partial<TimingModel>): void {
+    const existing = this.timingModelRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing timing model: Model "${id}" not found.`);
+      return;
+    }
+    const merged: TimingModel = {
+      ...existing,
+      ...updates,
+      timingId: existing.timingId,
+    };
+    this.registerTimingModel(merged);
+  }
+
+  public removeTimingModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed timing model: ID must be a non-empty string.');
+      return;
+    }
+    this.timingModelRegistry.delete(id);
+    this.timingModelOrder = this.timingModelOrder.filter(existing => existing !== id);
+  }
+
+  public clearTimingModels(): void {
+    this.timingModelRegistry.clear();
+    this.timingModelOrder = [];
+  }
+
+  public getTimingModelKeys(): string[] {
+    return [...this.timingModelOrder];
+  }
+
+  public hasTimingModel(id: string): boolean {
+    return this.timingModelRegistry.has(id);
+  }
+
+  // ─── Virtual Object Model CRUD ───
+  public registerVirtualObjectModel(model: VirtualObjectModel): void {
+    if (!this.validateVirtualObjectModel(model)) return;
+    if (this.virtualObjectRegistry.has(model.objectId)) {
+      console.warn(`[Runtime Diagnostics] duplicate virtual object IDs: ID "${model.objectId}" already exists.`);
+    }
+    this.virtualObjectRegistry.set(model.objectId, JSON.parse(JSON.stringify(model)));
+    if (!this.virtualObjectOrder.includes(model.objectId)) {
+      this.virtualObjectOrder.push(model.objectId);
+    }
+  }
+
+  public getVirtualObjectModel(id: string): VirtualObjectModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed virtual object: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.virtualObjectRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getVirtualObjectModels(): VirtualObjectModel[] {
+    return this.virtualObjectOrder
+      .map(id => this.virtualObjectRegistry.get(id))
+      .filter((m): m is VirtualObjectModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateVirtualObjectModel(id: string, updates: Partial<VirtualObjectModel>): void {
+    const existing = this.virtualObjectRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing virtual object: Model "${id}" not found.`);
+      return;
+    }
+    const merged: VirtualObjectModel = {
+      ...existing,
+      ...updates,
+      objectId: existing.objectId,
+    };
+    this.registerVirtualObjectModel(merged);
+  }
+
+  public removeVirtualObjectModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed virtual object: ID must be a non-empty string.');
+      return;
+    }
+    this.virtualObjectRegistry.delete(id);
+    this.virtualObjectOrder = this.virtualObjectOrder.filter(existing => existing !== id);
+  }
+
+  public clearVirtualObjectModels(): void {
+    this.virtualObjectRegistry.clear();
+    this.virtualObjectOrder = [];
+  }
+
+  public getVirtualObjectModelKeys(): string[] {
+    return [...this.virtualObjectOrder];
+  }
+
+  public hasVirtualObjectModel(id: string): boolean {
+    return this.virtualObjectRegistry.has(id);
+  }
+
+  // ─── Obstacle Model CRUD ───
+  public registerObstacleModel(model: ObstacleModel): void {
+    if (!this.validateObstacleModel(model)) return;
+    if (this.obstacleRegistry.has(model.obstacleId)) {
+      console.warn(`[Runtime Diagnostics] duplicate obstacle IDs: ID "${model.obstacleId}" already exists.`);
+    }
+    this.obstacleRegistry.set(model.obstacleId, JSON.parse(JSON.stringify(model)));
+    if (!this.obstacleOrder.includes(model.obstacleId)) {
+      this.obstacleOrder.push(model.obstacleId);
+    }
+  }
+
+  public getObstacleModel(id: string): ObstacleModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed obstacle: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.obstacleRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getObstacleModels(): ObstacleModel[] {
+    return this.obstacleOrder
+      .map(id => this.obstacleRegistry.get(id))
+      .filter((m): m is ObstacleModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateObstacleModel(id: string, updates: Partial<ObstacleModel>): void {
+    const existing = this.obstacleRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing obstacle: Model "${id}" not found.`);
+      return;
+    }
+    const merged: ObstacleModel = {
+      ...existing,
+      ...updates,
+      obstacleId: existing.obstacleId,
+    };
+    this.registerObstacleModel(merged);
+  }
+
+  public removeObstacleModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed obstacle: ID must be a non-empty string.');
+      return;
+    }
+    this.obstacleRegistry.delete(id);
+    this.obstacleOrder = this.obstacleOrder.filter(existing => existing !== id);
+  }
+
+  public clearObstacleModels(): void {
+    this.obstacleRegistry.clear();
+    this.obstacleOrder = [];
+  }
+
+  public getObstacleModelKeys(): string[] {
+    return [...this.obstacleOrder];
+  }
+
+  public hasObstacleModel(id: string): boolean {
+    return this.obstacleRegistry.has(id);
+  }
+
+  // ─── Sensor Runtime Model CRUD ───
+  public registerSensorRuntimeModel(model: SensorRuntimeModel): void {
+    if (!this.validateSensorRuntimeModel(model)) return;
+    if (this.sensorRuntimeRegistry.has(model.runtimeId)) {
+      console.warn(`[Runtime Diagnostics] duplicate sensor runtime IDs: ID "${model.runtimeId}" already exists.`);
+    }
+    this.sensorRuntimeRegistry.set(model.runtimeId, JSON.parse(JSON.stringify(model)));
+    if (!this.sensorRuntimeOrder.includes(model.runtimeId)) {
+      this.sensorRuntimeOrder.push(model.runtimeId);
+    }
+  }
+
+  public getSensorRuntimeModel(id: string): SensorRuntimeModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed sensor runtime: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.sensorRuntimeRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getSensorRuntimeModels(): SensorRuntimeModel[] {
+    return this.sensorRuntimeOrder
+      .map(id => this.sensorRuntimeRegistry.get(id))
+      .filter((m): m is SensorRuntimeModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateSensorRuntimeModel(id: string, updates: Partial<SensorRuntimeModel>): void {
+    const existing = this.sensorRuntimeRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing sensor runtime: Model "${id}" not found.`);
+      return;
+    }
+    const merged: SensorRuntimeModel = {
+      ...existing,
+      ...updates,
+      runtimeId: existing.runtimeId,
+    };
+    this.registerSensorRuntimeModel(merged);
+  }
+
+  public removeSensorRuntimeModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed sensor runtime: ID must be a non-empty string.');
+      return;
+    }
+    this.sensorRuntimeRegistry.delete(id);
+    this.sensorRuntimeOrder = this.sensorRuntimeOrder.filter(existing => existing !== id);
+  }
+
+  public clearSensorRuntimeModels(): void {
+    this.sensorRuntimeRegistry.clear();
+    this.sensorRuntimeOrder = [];
+  }
+
+  public getSensorRuntimeModelKeys(): string[] {
+    return [...this.sensorRuntimeOrder];
+  }
+
+  public hasSensorRuntimeModel(id: string): boolean {
+    return this.sensorRuntimeRegistry.has(id);
+  }
+
+  // ─── Distance Measurement Model CRUD ───
+  public registerDistanceMeasurementModel(model: DistanceMeasurementModel): void {
+    if (!this.validateDistanceMeasurementModel(model)) return;
+    if (this.distanceMeasurementRegistry.has(model.measurementId)) {
+      console.warn(`[Runtime Diagnostics] duplicate distance measurement IDs: ID "${model.measurementId}" already exists.`);
+    }
+    this.distanceMeasurementRegistry.set(model.measurementId, JSON.parse(JSON.stringify(model)));
+    if (!this.distanceMeasurementOrder.includes(model.measurementId)) {
+      this.distanceMeasurementOrder.push(model.measurementId);
+    }
+  }
+
+  public getDistanceMeasurementModel(id: string): DistanceMeasurementModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed distance measurement: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.distanceMeasurementRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getDistanceMeasurementModels(): DistanceMeasurementModel[] {
+    return this.distanceMeasurementOrder
+      .map(id => this.distanceMeasurementRegistry.get(id))
+      .filter((m): m is DistanceMeasurementModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateDistanceMeasurementModel(id: string, updates: Partial<DistanceMeasurementModel>): void {
+    const existing = this.distanceMeasurementRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing distance measurement: Model "${id}" not found.`);
+      return;
+    }
+    const merged: DistanceMeasurementModel = {
+      ...existing,
+      ...updates,
+      measurementId: existing.measurementId,
+    };
+    this.registerDistanceMeasurementModel(merged);
+  }
+
+  public removeDistanceMeasurementModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed distance measurement: ID must be a non-empty string.');
+      return;
+    }
+    this.distanceMeasurementRegistry.delete(id);
+    this.distanceMeasurementOrder = this.distanceMeasurementOrder.filter(existing => existing !== id);
+  }
+
+  public clearDistanceMeasurementModels(): void {
+    this.distanceMeasurementRegistry.clear();
+    this.distanceMeasurementOrder = [];
+  }
+
+  public getDistanceMeasurementModelKeys(): string[] {
+    return [...this.distanceMeasurementOrder];
+  }
+
+  public hasDistanceMeasurementModel(id: string): boolean {
+    return this.distanceMeasurementRegistry.has(id);
+  }
+
+  // ─── Sensor Interaction Model CRUD ───
+  public registerSensorInteractionModel(model: SensorInteractionModel): void {
+    if (!this.validateSensorInteractionModel(model)) return;
+    if (this.sensorInteractionRegistry.has(model.interactionId)) {
+      console.warn(`[Runtime Diagnostics] duplicate sensor interaction IDs: ID "${model.interactionId}" already exists.`);
+    }
+    this.sensorInteractionRegistry.set(model.interactionId, JSON.parse(JSON.stringify(model)));
+    if (!this.sensorInteractionOrder.includes(model.interactionId)) {
+      this.sensorInteractionOrder.push(model.interactionId);
+    }
+  }
+
+  public getSensorInteractionModel(id: string): SensorInteractionModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed sensor interaction: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.sensorInteractionRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getSensorInteractionModels(): SensorInteractionModel[] {
+    return this.sensorInteractionOrder
+      .map(id => this.sensorInteractionRegistry.get(id))
+      .filter((m): m is SensorInteractionModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateSensorInteractionModel(id: string, updates: Partial<SensorInteractionModel>): void {
+    const existing = this.sensorInteractionRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing sensor interaction: Model "${id}" not found.`);
+      return;
+    }
+    const merged: SensorInteractionModel = {
+      ...existing,
+      ...updates,
+      interactionId: existing.interactionId,
+    };
+    this.registerSensorInteractionModel(merged);
+  }
+
+  public removeSensorInteractionModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed sensor interaction: ID must be a non-empty string.');
+      return;
+    }
+    this.sensorInteractionRegistry.delete(id);
+    this.sensorInteractionOrder = this.sensorInteractionOrder.filter(existing => existing !== id);
+  }
+
+  public clearSensorInteractionModels(): void {
+    this.sensorInteractionRegistry.clear();
+    this.sensorInteractionOrder = [];
+  }
+
+  public getSensorInteractionModelKeys(): string[] {
+    return [...this.sensorInteractionOrder];
+  }
+
+  public hasSensorInteractionModel(id: string): boolean {
+    return this.sensorInteractionRegistry.has(id);
+  }
+
+  // ─── Environment State Model CRUD ───
+  public registerEnvironmentStateModel(model: EnvironmentStateModel): void {
+    if (!this.validateEnvironmentStateModel(model)) return;
+    if (this.environmentStateRegistry.has(model.stateId)) {
+      console.warn(`[Runtime Diagnostics] duplicate environment state IDs: ID "${model.stateId}" already exists.`);
+    }
+    this.environmentStateRegistry.set(model.stateId, JSON.parse(JSON.stringify(model)));
+    if (!this.environmentStateOrder.includes(model.stateId)) {
+      this.environmentStateOrder.push(model.stateId);
+    }
+  }
+
+  public getEnvironmentStateModel(id: string): EnvironmentStateModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed environment state: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.environmentStateRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getEnvironmentStateModels(): EnvironmentStateModel[] {
+    return this.environmentStateOrder
+      .map(id => this.environmentStateRegistry.get(id))
+      .filter((m): m is EnvironmentStateModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateEnvironmentStateModel(id: string, updates: Partial<EnvironmentStateModel>): void {
+    const existing = this.environmentStateRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing environment state: Model "${id}" not found.`);
+      return;
+    }
+    const merged: EnvironmentStateModel = {
+      ...existing,
+      ...updates,
+      stateId: existing.stateId,
+    };
+    this.registerEnvironmentStateModel(merged);
+  }
+
+  public removeEnvironmentStateModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed environment state: ID must be a non-empty string.');
+      return;
+    }
+    this.environmentStateRegistry.delete(id);
+    this.environmentStateOrder = this.environmentStateOrder.filter(existing => existing !== id);
+  }
+
+  public clearEnvironmentStateModels(): void {
+    this.environmentStateRegistry.clear();
+    this.environmentStateOrder = [];
+  }
+
+  public getEnvironmentStateModelKeys(): string[] {
+    return [...this.environmentStateOrder];
+  }
+
+  public hasEnvironmentStateModel(id: string): boolean {
+    return this.environmentStateRegistry.has(id);
+  }
+
+  // ─── Phase 18A: Workspace Runtime Model CRUD ───
+  public registerWorkspaceRuntimeModel(model: WorkspaceRuntimeModel): void {
+    if (!this.validateWorkspaceRuntimeModel(model)) return;
+    if (this.workspaceRuntimeRegistry.has(model.workspaceId)) {
+      console.warn(`[Runtime Diagnostics] duplicate workspace runtime IDs: ID "${model.workspaceId}" already exists.`);
+    }
+    this.workspaceRuntimeRegistry.set(model.workspaceId, JSON.parse(JSON.stringify(model)));
+    if (!this.workspaceRuntimeOrder.includes(model.workspaceId)) {
+      this.workspaceRuntimeOrder.push(model.workspaceId);
+    }
+  }
+
+  public getWorkspaceRuntimeModel(id: string): WorkspaceRuntimeModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed workspace runtime: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.workspaceRuntimeRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getWorkspaceRuntimeModels(): WorkspaceRuntimeModel[] {
+    return this.workspaceRuntimeOrder
+      .map(id => this.workspaceRuntimeRegistry.get(id))
+      .filter((m): m is WorkspaceRuntimeModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateWorkspaceRuntimeModel(id: string, updates: Partial<WorkspaceRuntimeModel>): void {
+    const existing = this.workspaceRuntimeRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing workspace runtime: Model "${id}" not found.`);
+      return;
+    }
+    const merged: WorkspaceRuntimeModel = {
+      ...existing,
+      ...updates,
+      workspaceId: existing.workspaceId,
+    };
+    this.registerWorkspaceRuntimeModel(merged);
+  }
+
+  public removeWorkspaceRuntimeModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed workspace runtime: ID must be a non-empty string.');
+      return;
+    }
+    this.workspaceRuntimeRegistry.delete(id);
+    this.workspaceRuntimeOrder = this.workspaceRuntimeOrder.filter(existing => existing !== id);
+  }
+
+  public clearWorkspaceRuntimeModels(): void {
+    this.workspaceRuntimeRegistry.clear();
+    this.workspaceRuntimeOrder = [];
+  }
+
+  public getWorkspaceRuntimeModelKeys(): string[] {
+    return [...this.workspaceRuntimeOrder];
+  }
+
+  public hasWorkspaceRuntimeModel(id: string): boolean {
+    return this.workspaceRuntimeRegistry.has(id);
+  }
+
+  // ─── Workspace Camera Model CRUD ───
+  public registerWorkspaceCameraModel(model: WorkspaceCameraModel): void {
+    if (!this.validateWorkspaceCameraModel(model)) return;
+    if (this.workspaceCameraRegistry.has(model.cameraId)) {
+      console.warn(`[Runtime Diagnostics] duplicate workspace camera IDs: ID "${model.cameraId}" already exists.`);
+    }
+    this.workspaceCameraRegistry.set(model.cameraId, JSON.parse(JSON.stringify(model)));
+    if (!this.workspaceCameraOrder.includes(model.cameraId)) {
+      this.workspaceCameraOrder.push(model.cameraId);
+    }
+  }
+
+  public getWorkspaceCameraModel(id: string): WorkspaceCameraModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed workspace camera: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.workspaceCameraRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getWorkspaceCameraModels(): WorkspaceCameraModel[] {
+    return this.workspaceCameraOrder
+      .map(id => this.workspaceCameraRegistry.get(id))
+      .filter((m): m is WorkspaceCameraModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateWorkspaceCameraModel(id: string, updates: Partial<WorkspaceCameraModel>): void {
+    const existing = this.workspaceCameraRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing workspace camera: Model "${id}" not found.`);
+      return;
+    }
+    const merged: WorkspaceCameraModel = {
+      ...existing,
+      ...updates,
+      cameraId: existing.cameraId,
+    };
+    this.registerWorkspaceCameraModel(merged);
+  }
+
+  public removeWorkspaceCameraModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed workspace camera: ID must be a non-empty string.');
+      return;
+    }
+    this.workspaceCameraRegistry.delete(id);
+    this.workspaceCameraOrder = this.workspaceCameraOrder.filter(existing => existing !== id);
+  }
+
+  public clearWorkspaceCameraModels(): void {
+    this.workspaceCameraRegistry.clear();
+    this.workspaceCameraOrder = [];
+  }
+
+  public getWorkspaceCameraModelKeys(): string[] {
+    return [...this.workspaceCameraOrder];
+  }
+
+  public hasWorkspaceCameraModel(id: string): boolean {
+    return this.workspaceCameraRegistry.has(id);
+  }
+
+  // ─── Workspace Selection Model CRUD ───
+  public registerWorkspaceSelectionModel(model: WorkspaceSelectionModel): void {
+    if (!this.validateWorkspaceSelectionModel(model)) return;
+    if (this.workspaceSelectionRegistry.has(model.selectionId)) {
+      console.warn(`[Runtime Diagnostics] duplicate workspace selection IDs: ID "${model.selectionId}" already exists.`);
+    }
+    this.workspaceSelectionRegistry.set(model.selectionId, JSON.parse(JSON.stringify(model)));
+    if (!this.workspaceSelectionOrder.includes(model.selectionId)) {
+      this.workspaceSelectionOrder.push(model.selectionId);
+    }
+  }
+
+  public getWorkspaceSelectionModel(id: string): WorkspaceSelectionModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed workspace selection: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.workspaceSelectionRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getWorkspaceSelectionModels(): WorkspaceSelectionModel[] {
+    return this.workspaceSelectionOrder
+      .map(id => this.workspaceSelectionRegistry.get(id))
+      .filter((m): m is WorkspaceSelectionModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateWorkspaceSelectionModel(id: string, updates: Partial<WorkspaceSelectionModel>): void {
+    const existing = this.workspaceSelectionRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing workspace selection: Model "${id}" not found.`);
+      return;
+    }
+    const merged: WorkspaceSelectionModel = {
+      ...existing,
+      ...updates,
+      selectionId: existing.selectionId,
+    };
+    this.registerWorkspaceSelectionModel(merged);
+  }
+
+  public removeWorkspaceSelectionModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed workspace selection: ID must be a non-empty string.');
+      return;
+    }
+    this.workspaceSelectionRegistry.delete(id);
+    this.workspaceSelectionOrder = this.workspaceSelectionOrder.filter(existing => existing !== id);
+  }
+
+  public clearWorkspaceSelectionModels(): void {
+    this.workspaceSelectionRegistry.clear();
+    this.workspaceSelectionOrder = [];
+  }
+
+  public getWorkspaceSelectionModelKeys(): string[] {
+    return [...this.workspaceSelectionOrder];
+  }
+
+  public hasWorkspaceSelectionModel(id: string): boolean {
+    return this.workspaceSelectionRegistry.has(id);
+  }
+
+  // ─── Workspace Object Model CRUD ───
+  public registerWorkspaceObjectModel(model: WorkspaceObjectModel): void {
+    if (!this.validateWorkspaceObjectModel(model)) return;
+    if (this.workspaceObjectRegistry.has(model.objectId)) {
+      console.warn(`[Runtime Diagnostics] duplicate workspace object IDs: ID "${model.objectId}" already exists.`);
+    }
+    this.workspaceObjectRegistry.set(model.objectId, JSON.parse(JSON.stringify(model)));
+    if (!this.workspaceObjectOrder.includes(model.objectId)) {
+      this.workspaceObjectOrder.push(model.objectId);
+    }
+  }
+
+  public getWorkspaceObjectModel(id: string): WorkspaceObjectModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed workspace object: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.workspaceObjectRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getWorkspaceObjectModels(): WorkspaceObjectModel[] {
+    return this.workspaceObjectOrder
+      .map(id => this.workspaceObjectRegistry.get(id))
+      .filter((m): m is WorkspaceObjectModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateWorkspaceObjectModel(id: string, updates: Partial<WorkspaceObjectModel>): void {
+    const existing = this.workspaceObjectRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing workspace object: Model "${id}" not found.`);
+      return;
+    }
+    const merged: WorkspaceObjectModel = {
+      ...existing,
+      ...updates,
+      objectId: existing.objectId,
+    };
+    this.registerWorkspaceObjectModel(merged);
+  }
+
+  public removeWorkspaceObjectModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed workspace object: ID must be a non-empty string.');
+      return;
+    }
+    this.workspaceObjectRegistry.delete(id);
+    this.workspaceObjectOrder = this.workspaceObjectOrder.filter(existing => existing !== id);
+  }
+
+  public clearWorkspaceObjectModels(): void {
+    this.workspaceObjectRegistry.clear();
+    this.workspaceObjectOrder = [];
+  }
+
+  public getWorkspaceObjectModelKeys(): string[] {
+    return [...this.workspaceObjectOrder];
+  }
+
+  public hasWorkspaceObjectModel(id: string): boolean {
+    return this.workspaceObjectRegistry.has(id);
+  }
+
+  // ─── Workspace Interaction Model CRUD ───
+  public registerWorkspaceInteractionModel(model: WorkspaceInteractionModel): void {
+    if (!this.validateWorkspaceInteractionModel(model)) return;
+    if (this.workspaceInteractionRegistry.has(model.interactionId)) {
+      console.warn(`[Runtime Diagnostics] duplicate workspace interaction IDs: ID "${model.interactionId}" already exists.`);
+    }
+    this.workspaceInteractionRegistry.set(model.interactionId, JSON.parse(JSON.stringify(model)));
+    if (!this.workspaceInteractionOrder.includes(model.interactionId)) {
+      this.workspaceInteractionOrder.push(model.interactionId);
+    }
+  }
+
+  public getWorkspaceInteractionModel(id: string): WorkspaceInteractionModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed workspace interaction: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.workspaceInteractionRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getWorkspaceInteractionModels(): WorkspaceInteractionModel[] {
+    return this.workspaceInteractionOrder
+      .map(id => this.workspaceInteractionRegistry.get(id))
+      .filter((m): m is WorkspaceInteractionModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateWorkspaceInteractionModel(id: string, updates: Partial<WorkspaceInteractionModel>): void {
+    const existing = this.workspaceInteractionRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing workspace interaction: Model "${id}" not found.`);
+      return;
+    }
+    const merged: WorkspaceInteractionModel = {
+      ...existing,
+      ...updates,
+      interactionId: existing.interactionId,
+    };
+    this.registerWorkspaceInteractionModel(merged);
+  }
+
+  public removeWorkspaceInteractionModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed workspace interaction: ID must be a non-empty string.');
+      return;
+    }
+    this.workspaceInteractionRegistry.delete(id);
+    this.workspaceInteractionOrder = this.workspaceInteractionOrder.filter(existing => existing !== id);
+  }
+
+  public clearWorkspaceInteractionModels(): void {
+    this.workspaceInteractionRegistry.clear();
+    this.workspaceInteractionOrder = [];
+  }
+
+  public getWorkspaceInteractionModelKeys(): string[] {
+    return [...this.workspaceInteractionOrder];
+  }
+
+  public hasWorkspaceInteractionModel(id: string): boolean {
+    return this.workspaceInteractionRegistry.has(id);
+  }
+
+  // ─── Workspace Grid Model CRUD ───
+  public registerWorkspaceGridModel(model: WorkspaceGridModel): void {
+    if (!this.validateWorkspaceGridModel(model)) return;
+    if (this.workspaceGridRegistry.has(model.gridId)) {
+      console.warn(`[Runtime Diagnostics] duplicate workspace grid IDs: ID "${model.gridId}" already exists.`);
+    }
+    this.workspaceGridRegistry.set(model.gridId, JSON.parse(JSON.stringify(model)));
+    if (!this.workspaceGridOrder.includes(model.gridId)) {
+      this.workspaceGridOrder.push(model.gridId);
+    }
+  }
+
+  public getWorkspaceGridModel(id: string): WorkspaceGridModel | undefined {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed workspace grid: ID must be a non-empty string.');
+      return undefined;
+    }
+    const model = this.workspaceGridRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getWorkspaceGridModels(): WorkspaceGridModel[] {
+    return this.workspaceGridOrder
+      .map(id => this.workspaceGridRegistry.get(id))
+      .filter((m): m is WorkspaceGridModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateWorkspaceGridModel(id: string, updates: Partial<WorkspaceGridModel>): void {
+    const existing = this.workspaceGridRegistry.get(id);
+    if (!existing) {
+      console.warn(`[Runtime Diagnostics] missing workspace grid: Model "${id}" not found.`);
+      return;
+    }
+    const merged: WorkspaceGridModel = {
+      ...existing,
+      ...updates,
+      gridId: existing.gridId,
+    };
+    this.registerWorkspaceGridModel(merged);
+  }
+
+  public removeWorkspaceGridModel(id: string): void {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[Runtime Diagnostics] malformed workspace grid: ID must be a non-empty string.');
+      return;
+    }
+    this.workspaceGridRegistry.delete(id);
+    this.workspaceGridOrder = this.workspaceGridOrder.filter(existing => existing !== id);
+  }
+
+  public clearWorkspaceGridModels(): void {
+    this.workspaceGridRegistry.clear();
+    this.workspaceGridOrder = [];
+  }
+
+  public getWorkspaceGridModelKeys(): string[] {
+    return [...this.workspaceGridOrder];
+  }
+
+  public hasWorkspaceGridModel(id: string): boolean {
+    return this.workspaceGridRegistry.has(id);
+  }
+
+  // ─── Phase 18B: Component Asset Model CRUD ───
+  public registerComponentAsset(model: ComponentAssetDefinition): void {
+    this.componentAssetLibrary.registerAsset(model);
+  }
+
+  public getComponentAsset(id: string): ComponentAssetDefinition | undefined {
+    return this.componentAssetLibrary.getAsset(id);
+  }
+
+  public getComponentAssets(): ComponentAssetDefinition[] {
+    return this.componentAssetLibrary.getAssets();
+  }
+
+  public updateComponentAsset(id: string, updates: Partial<ComponentAssetDefinition>): void {
+    this.componentAssetLibrary.updateAsset(id, updates);
+  }
+
+  public removeComponentAsset(id: string): void {
+    this.componentAssetLibrary.removeAsset(id);
+  }
+
+  public clearComponentAssets(): void {
+    this.componentAssetLibrary.clearAssets();
+  }
+
+  public getComponentAssetKeys(): string[] {
+    return this.componentAssetLibrary.getAssetKeys();
+  }
+
+  public hasComponentAsset(id: string): boolean {
+    return this.componentAssetLibrary.hasAsset(id);
+  }
+
+  // ─── Phase 18C: Breadboard Visual Model CRUD ───
+  public registerBreadboardVisual(model: BreadboardVisualModel): void {
+    const warnings = validateBreadboardVisualModel(model, '[BaseRuntime]');
+    if (warnings.some(w => w.code === 'INVALID_VISUAL_MODEL' || w.code === 'INVALID_BREADBOARD_ID')) {
+      return;
+    }
+    if (!this.breadboardVisualRegistry.has(model.breadboardId)) {
+      this.breadboardVisualOrderList.push(model.breadboardId);
+    }
+    this.breadboardVisualRegistry.set(model.breadboardId, JSON.parse(JSON.stringify(model)));
+  }
+
+  public getBreadboardVisual(id: string): BreadboardVisualModel | undefined {
+    const model = this.breadboardVisualRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getBreadboardVisuals(): BreadboardVisualModel[] {
+    return this.breadboardVisualOrderList
+      .map(id => this.breadboardVisualRegistry.get(id))
+      .filter((m): m is BreadboardVisualModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateBreadboardVisual(id: string, updates: Partial<BreadboardVisualModel>): void {
+    const existing = this.breadboardVisualRegistry.get(id);
+    if (!existing) {
+      console.warn(`[BaseRuntime] updateBreadboardVisual called for missing key "${id}".`);
+      return;
+    }
+    const merged = { ...existing, ...updates };
+    const warnings = validateBreadboardVisualModel(merged, '[BaseRuntime]');
+    if (warnings.some(w => w.code === 'INVALID_VISUAL_MODEL' || w.code === 'INVALID_BREADBOARD_ID')) {
+      return;
+    }
+    this.breadboardVisualRegistry.set(id, JSON.parse(JSON.stringify(merged)));
+  }
+
+  public removeBreadboardVisual(id: string): void {
+    this.breadboardVisualRegistry.delete(id);
+    this.breadboardVisualOrderList = this.breadboardVisualOrderList.filter(k => k !== id);
+  }
+
+  public clearBreadboardVisuals(): void {
+    this.breadboardVisualRegistry.clear();
+    this.breadboardVisualOrderList = [];
+  }
+
+  public getBreadboardVisualKeys(): string[] {
+    return [...this.breadboardVisualOrderList];
+  }
+
+  public hasBreadboardVisual(id: string): boolean {
+    return this.breadboardVisualRegistry.has(id);
+  }
+
+  // ─── Phase 18C: Query Helpers ───
+  public getHoleAtPosition(x: number, y: number, tolerance = 6): { breadboardId: string; hole: BreadboardHoleVisual } | undefined {
+    for (const visual of this.getBreadboardVisuals()) {
+      for (const hole of visual.holes) {
+        const dx = x - hole.positionX;
+        const dy = y - hole.positionY;
+        if (Math.sqrt(dx * dx + dy * dy) <= tolerance) {
+          return { breadboardId: visual.breadboardId, hole };
+        }
+      }
+    }
+    return undefined;
+  }
+
+  public getHolesInConnectedGroup(breadboardId: string, connectedGroupId: string): BreadboardHoleVisual[] {
+    const visual = this.getBreadboardVisual(breadboardId);
+    if (!visual) return [];
+    return visual.holes.filter(h => h.connectedGroupId === connectedGroupId);
+  }
+
+  public getSelectedRail(breadboardId: string): BreadboardRailVisual | undefined {
+    const visual = this.getBreadboardVisual(breadboardId);
+    if (!visual) return undefined;
+    return visual.rails.find(r => r.visualState === 'SELECTED');
+  }
+
+  public getWireSnapPosition(x: number, y: number, tolerance = 10): { x: number; y: number; holeId: string } | undefined {
+    let closestHole: BreadboardHoleVisual | undefined = undefined;
+    let minDistance = Infinity;
+    for (const visual of this.getBreadboardVisuals()) {
+      for (const hole of visual.holes) {
+        const dx = x - hole.positionX;
+        const dy = y - hole.positionY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist <= tolerance && dist < minDistance) {
+          minDistance = dist;
+          closestHole = hole;
+        }
+      }
+    }
+    if (closestHole) {
+      return { x: closestHole.positionX, y: closestHole.positionY, holeId: closestHole.holeId };
+    }
+    return undefined;
+  }
+
+  // ─── Phase 18D: Wire Routing & Geometry CRUD ───
+  // Wire Geometry CRUD
+  public registerWireGeometry(model: WireGeometryModel): void {
+    const warnings = validateWireGeometryModel(model, '[BaseRuntime]');
+    if (warnings.some(w => w.code === 'INVALID_WIRE_GEOMETRY' || w.code === 'INVALID_WIRE_ID')) {
+      return;
+    }
+    if (!this.wireGeometryRegistry.has(model.wireId)) {
+      this.wireGeometryOrderList.push(model.wireId);
+    }
+    this.wireGeometryRegistry.set(model.wireId, JSON.parse(JSON.stringify(model)));
+  }
+
+  public getWireGeometry(id: string): WireGeometryModel | undefined {
+    const model = this.wireGeometryRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getWireGeometries(): WireGeometryModel[] {
+    return this.wireGeometryOrderList
+      .map(id => this.wireGeometryRegistry.get(id))
+      .filter((m): m is WireGeometryModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateWireGeometry(id: string, updates: Partial<WireGeometryModel>): void {
+    const existing = this.wireGeometryRegistry.get(id);
+    if (!existing) {
+      console.warn(`[BaseRuntime] updateWireGeometry called for missing key "${id}".`);
+      return;
+    }
+    const merged = { ...existing, ...updates };
+    const warnings = validateWireGeometryModel(merged, '[BaseRuntime]');
+    if (warnings.some(w => w.code === 'INVALID_WIRE_GEOMETRY' || w.code === 'INVALID_WIRE_ID')) {
+      return;
+    }
+    this.wireGeometryRegistry.set(id, JSON.parse(JSON.stringify(merged)));
+  }
+
+  public removeWireGeometry(id: string): void {
+    this.wireGeometryRegistry.delete(id);
+    this.wireGeometryOrderList = this.wireGeometryOrderList.filter(k => k !== id);
+  }
+
+  public clearWireGeometries(): void {
+    this.wireGeometryRegistry.clear();
+    this.wireGeometryOrderList = [];
+  }
+
+  public getWireGeometryKeys(): string[] {
+    return [...this.wireGeometryOrderList];
+  }
+
+  public hasWireGeometry(id: string): boolean {
+    return this.wireGeometryRegistry.has(id);
+  }
+
+  // Wire Route CRUD
+  public registerWireRoute(model: WireRouteModel): void {
+    const warnings = validateWireRouteModel(model, '[BaseRuntime]');
+    if (warnings.some(w => w.code === 'INVALID_WIRE_ROUTE' || w.code === 'INVALID_ROUTE_ID')) {
+      return;
+    }
+    if (!this.wireRouteRegistry.has(model.routeId)) {
+      this.wireRouteOrderList.push(model.routeId);
+    }
+    this.wireRouteRegistry.set(model.routeId, JSON.parse(JSON.stringify(model)));
+  }
+
+  public getWireRoute(id: string): WireRouteModel | undefined {
+    const model = this.wireRouteRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getWireRoutes(): WireRouteModel[] {
+    return this.wireRouteOrderList
+      .map(id => this.wireRouteRegistry.get(id))
+      .filter((m): m is WireRouteModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateWireRoute(id: string, updates: Partial<WireRouteModel>): void {
+    const existing = this.wireRouteRegistry.get(id);
+    if (!existing) {
+      console.warn(`[BaseRuntime] updateWireRoute called for missing key "${id}".`);
+      return;
+    }
+    const merged = { ...existing, ...updates };
+    const warnings = validateWireRouteModel(merged, '[BaseRuntime]');
+    if (warnings.some(w => w.code === 'INVALID_WIRE_ROUTE' || w.code === 'INVALID_ROUTE_ID')) {
+      return;
+    }
+    this.wireRouteRegistry.set(id, JSON.parse(JSON.stringify(merged)));
+  }
+
+  public removeWireRoute(id: string): void {
+    this.wireRouteRegistry.delete(id);
+    this.wireRouteOrderList = this.wireRouteOrderList.filter(k => k !== id);
+  }
+
+  public clearWireRoutes(): void {
+    this.wireRouteRegistry.clear();
+    this.wireRouteOrderList = [];
+  }
+
+  public getWireRouteKeys(): string[] {
+    return [...this.wireRouteOrderList];
+  }
+
+  public hasWireRoute(id: string): boolean {
+    return this.wireRouteRegistry.has(id);
+  }
+
+  // Wire Anchor CRUD
+  public registerWireAnchor(model: WireAnchorModel): void {
+    const warnings = validateWireAnchorModel(model, '[BaseRuntime]');
+    if (warnings.some(w => w.code === 'INVALID_WIRE_ANCHOR' || w.code === 'INVALID_ANCHOR_ID')) {
+      return;
+    }
+    if (!this.wireRoutingAnchorRegistry.has(model.anchorId)) {
+      this.wireRoutingAnchorOrderList.push(model.anchorId);
+    }
+    this.wireRoutingAnchorRegistry.set(model.anchorId, JSON.parse(JSON.stringify(model)));
+  }
+
+  public getWireAnchor(id: string): WireAnchorModel | undefined {
+    const model = this.wireRoutingAnchorRegistry.get(id);
+    return model ? JSON.parse(JSON.stringify(model)) : undefined;
+  }
+
+  public getWireAnchors(): WireAnchorModel[] {
+    return this.wireRoutingAnchorOrderList
+      .map(id => this.wireRoutingAnchorRegistry.get(id))
+      .filter((m): m is WireAnchorModel => !!m)
+      .map(m => JSON.parse(JSON.stringify(m)));
+  }
+
+  public updateWireAnchor(id: string, updates: Partial<WireAnchorModel>): void {
+    const existing = this.wireRoutingAnchorRegistry.get(id);
+    if (!existing) {
+      console.warn(`[BaseRuntime] updateWireAnchor called for missing key "${id}".`);
+      return;
+    }
+    const merged = { ...existing, ...updates };
+    const warnings = validateWireAnchorModel(merged, '[BaseRuntime]');
+    if (warnings.some(w => w.code === 'INVALID_WIRE_ANCHOR' || w.code === 'INVALID_ANCHOR_ID')) {
+      return;
+    }
+    this.wireRoutingAnchorRegistry.set(id, JSON.parse(JSON.stringify(merged)));
+  }
+
+  public removeWireAnchor(id: string): void {
+    this.wireRoutingAnchorRegistry.delete(id);
+    this.wireRoutingAnchorOrderList = this.wireRoutingAnchorOrderList.filter(k => k !== id);
+  }
+
+  public clearWireAnchors(): void {
+    this.wireRoutingAnchorRegistry.clear();
+    this.wireRoutingAnchorOrderList = [];
+  }
+
+  public getWireAnchorKeys(): string[] {
+    return [...this.wireRoutingAnchorOrderList];
+  }
+
+  public hasWireAnchor(id: string): boolean {
+    return this.wireRoutingAnchorRegistry.has(id);
+  }
+
+  // ─── Simulation Loop Runner Hooks ───
+  public tickSimulation(): void {
+    processSensorInteractions(this);
+    tickSimulation(this);
+  }
+
+  public stepSimulation(steps = 1): void {
+    stepSimulation(this, steps);
+  }
+
+  public generateDefaultPaths(): void {
+    generateDefaultPaths(this);
+  }
 
   public reset(): void {
+
     this.clearBoardRenderModels();
     this.clearBoardBoundsModels();
     this.clearBoardConnectorModels();
@@ -5191,7 +14841,166 @@ export class BaseRuntime implements IRuntime {
     this.clearSceneTreeModels();
     this.clearLayerCompositionModels();
     this.clearVisualCompositionModels();
+
+    // Reset Phase 15B scene assembly foundation registries
+    this.clearSceneAssemblyModels();
+    this.clearVisualAssemblyModels();
+    this.clearBoardAssemblyModels();
+    this.clearComponentAssemblyModels();
+    this.clearWireAssemblyModels();
+    this.clearSignalAssemblyModels();
+
+    // Reset Phase 16A visible object runtime foundation registries
+    this.clearVisualObjectModels();
+    this.clearBoardObjectModels();
+    this.clearComponentObjectModels();
+    this.clearWireObjectModels();
+    this.clearSignalObjectModels();
+    this.clearThemeObjectModels();
+    this.clearAnimationObjectModels();
+
+    // Reset Phase 17A electrical connectivity foundation registries
+    this.clearElectricalNodeModels();
+    this.clearElectricalNetModels();
+    this.clearElectricalConnectionModels();
+    this.clearBreadboardRailModels();
+    this.clearBreadboardRowModels();
+
+    // Reset Phase 17B signal propagation foundation registries
+    this.clearSignalPacketModels();
+    this.clearSignalPropagationRuntimeModels();
+    this.clearPropagationPathModels();
+    this.clearTimingModels();
+
+    // Reset Phase 17C interactive sensor foundation registries
+    this.clearVirtualObjectModels();
+    this.clearObstacleModels();
+    this.clearSensorRuntimeModels();
+    this.clearDistanceMeasurementModels();
+    this.clearSensorInteractionModels();
+    this.clearEnvironmentStateModels();
+
+    // Reset Phase 18A visible simulator workspace foundation registries
+    this.clearWorkspaceRuntimeModels();
+    this.clearWorkspaceCameraModels();
+    this.clearWorkspaceSelectionModels();
+    this.clearWorkspaceObjectModels();
+    this.clearWorkspaceInteractionModels();
+    this.clearWorkspaceGridModels();
+
+    // Reset Phase 18B Component Asset Library
+    this.clearComponentAssets();
+
+    // Reset Phase 18C Breadboard Visual Rendering
+    this.clearBreadboardVisuals();
+
+    // Reset Phase 18D Wire Rendering Engine
+    this.clearWireGeometries();
+    this.clearWireRoutes();
+    this.clearWireAnchors();
+
+    // Reset Phase 20A Interactive Placement
+    this.clearComponentSelectionModels();
+    this.clearSelectionBoundsModels();
+    this.clearSelectionStateModels();
+    this.clearPinOccupancies();
+    this.clearWirePlacements();
+
+    // Reset Phase 20B Interactive Wiring
+    this.clearWiringSessionModels();
+    this.clearWirePreviewModels();
+    this.clearWireConnectionModels();
+    this.clearPinConnectionModels();
+
+    // Reset Phase 20C Live Electrical Visualization
+    this.clearVoltageVisualizationModels();
+    this.clearCurrentVisualizationModels();
+    this.clearLogicStateVisualizationModels();
+    this.clearActivityVisualizationModels();
+    this.clearSignalFlowModels();
+    // Phase 21A: Virtual ESP32 Execution Runtime
+    this.clearVirtualESP32Models();
+    this.clearVirtualGPIOPinModels();
+    this.clearVirtualPWMChannelModels();
+    this.clearVirtualTimerModels();
+    this.clearVirtualInterruptModels();
+    // Phase 21B: Blockly → Virtual ESP32 Execution Bridge
+    this.clearBlocklyExecutionModels();
+    this.clearBlocklyProgramModels();
+    this.clearBlocklyContextModels();
+    // Phase 22A: HC-SR04 Virtual Ultrasonic Sensor Simulation
+    this.clearHCSR04Models();
+    this.clearUltrasonicBeamModels();
+    this.clearEchoPulseModels();
+    this.clearDistanceTargetModels();
+    this.clearUltrasonicEnvironmentModels();
+    // Phase 22B: SG90 Servo Motor Virtual Simulation
+    this.clearServoMotorModels();
+    this.clearServoPositionModels();
+    this.clearServoMotionModels();
+    this.clearServoConstraintModels();
+    this.clearServoAnimationModels();
+    // Phase 22C: OLED & LCD Display Runtime Simulation
+    this.clearLCDDisplayModels();
+    this.clearLCDCursorModels();
+    this.clearLCDCharacterModels();
+    this.clearOLEDDisplayModels();
+    this.clearOLEDBufferModels();
+    this.clearOLEDPixelModels();
+    this.clearDisplayAnimationModels();
+    // Phase 23A: Virtual Serial Monitor Runtime Simulation
+    this.clearSerialPortModels();
+    this.clearSerialMessageModels();
+    this.clearSerialBufferModels();
+    this.clearSerialCommandModels();
+    this.clearSerialSessionModels();
+    // Phase 23B: Virtual Logic Analyzer & Oscilloscope Foundation
+    this.clearLogicAnalyzerChannelModels();
+    this.clearLogicCaptureModels();
+    this.clearLogicSampleModels();
+    this.clearOscilloscopeChannelModels();
+    this.clearOscilloscopeCaptureModels();
+    this.clearWaveformBufferModels();
+    // Phase 24A: Virtual Robotics Physics Runtime Foundation
+    this.clearRobotPhysicsModels();
+    this.clearRobotPoseModels();
+    this.clearWheelRuntimeModels();
+    this.clearMotionCommandModels();
+    this.clearCollisionModels();
+    this.clearPhysicsWorldModels();
+    // Phase 24B: Differential Drive Robot Simulator
+    this.clearDifferentialDriveRobotModels();
+    this.clearWheelEncoderModels();
+    this.clearMotorDriverModels();
+    this.clearRobotCommandQueueModels();
+    this.clearRobotPathModels();
+    this.clearRobotTelemetryModels();
+    // Phase 25A: Line Following Sensor Runtime
+    this.clearLineTrackModels();
+    this.clearLineSensorModels();
+    this.clearTrackSegmentModels();
+    this.clearTrackIntersectionModels();
+    this.clearTrackMarkerModels();
+    this.clearSensorReadingModels();
+    // Phase 25B: Obstacle Avoidance Runtime
+    this.clearObstacleAvoidanceModels();
+    this.clearAvoidanceRuleModels();
+    this.clearObstacleDetectionModels();
+    this.clearNavigationDecisionModels();
+    this.clearSafeZoneModels();
+    this.clearCollisionPredictionModels();
+    // Phase 26A: Simulator UI Foundation
+    this.clearUndoHistoryModels();
+    this.clearCameraGestureModels();
+    this.clearConnectionValidationModels();
+    this.clearConnectionWarningModels();
+    this.clearPaletteComponentModels();
+    this.clearPaletteCategoryModels();
+    this.clearPaletteStateModels();
+    this.clearWorkspaceToolModels();
+    this.clearPinInspectorModels();
   }
+
 
   public destroy(): void {
     this.reset();
@@ -8745,6 +18554,15 @@ export class BaseRuntime implements IRuntime {
     this.soundRegistry.clear();
     this.backdropRegistry.clear();
 
+    // Reset and Seed Phase 18B Component Asset Library
+    this.componentAssetLibrary.clearAssets();
+    this.componentAssetLibrary.seedDefaults();
+
+    // Reset and Seed Phase 18C Breadboard Visual Rendering
+    this.clearBreadboardVisuals();
+    const defaultVisual = generateBreadboardVisual('default_breadboard', 'breadboard_830');
+    this.registerBreadboardVisual(defaultVisual);
+
     // Reset Phase 7M Asset loading state registry
     this.assetStates.clear();
 
@@ -8894,6 +18712,46 @@ export class BaseRuntime implements IRuntime {
     this.clearLayerCompositionModels();
     this.clearVisualCompositionModels();
 
+    // Reset Phase 15B scene assembly foundation registries
+    this.clearSceneAssemblyModels();
+    this.clearVisualAssemblyModels();
+    this.clearBoardAssemblyModels();
+    this.clearComponentAssemblyModels();
+    this.clearWireAssemblyModels();
+    this.clearSignalAssemblyModels();
+
+    // Reset Phase 16A visible object runtime foundation registries
+    this.clearVisualObjectModels();
+    this.clearBoardObjectModels();
+    this.clearComponentObjectModels();
+    this.clearWireObjectModels();
+    this.clearSignalObjectModels();
+    this.clearThemeObjectModels();
+    this.clearAnimationObjectModels();
+
+    // Reset Phase 17A electrical connectivity foundation registries
+    this.clearElectricalNodeModels();
+    this.clearElectricalNetModels();
+    this.clearElectricalConnectionModels();
+    this.clearBreadboardRailModels();
+    this.clearBreadboardRowModels();
+
+    // Reset Phase 17B signal propagation foundation registries
+    this.clearSignalPacketModels();
+    this.clearSignalPropagationRuntimeModels();
+    this.clearPropagationPathModels();
+    this.clearTimingModels();
+
+    // Reset Phase 17C interactive sensor foundation registries
+    this.clearVirtualObjectModels();
+    this.clearObstacleModels();
+    this.clearSensorRuntimeModels();
+    this.clearDistanceMeasurementModels();
+    this.clearSensorInteractionModels();
+    this.clearEnvironmentStateModels();
+
+
+
     // Reset Phase 8A.1 HAL state registry
     this.clearHALStates();
 
@@ -8926,6 +18784,23 @@ export class BaseRuntime implements IRuntime {
 
     // Reset Phase 8H protocol command execution results
     this.clearProtocolCommandExecutionResults();
+
+    // Reset Phase 20C Live Electrical Visualization
+    this.clearVoltageVisualizationModels();
+    this.clearCurrentVisualizationModels();
+    this.clearLogicStateVisualizationModels();
+    this.clearActivityVisualizationModels();
+    this.clearSignalFlowModels();
+    // Phase 21A: Virtual ESP32 Execution Runtime
+    this.clearVirtualESP32Models();
+    this.clearVirtualGPIOPinModels();
+    this.clearVirtualPWMChannelModels();
+    this.clearVirtualTimerModels();
+    this.clearVirtualInterruptModels();
+    // Phase 21B: Blockly → Virtual ESP32 Execution Bridge
+    this.clearBlocklyExecutionModels();
+    this.clearBlocklyProgramModels();
+    this.clearBlocklyContextModels();
   }
 
   public start(): void {
@@ -8993,6 +18868,9 @@ export class BaseRuntime implements IRuntime {
     this.costumeRegistry.clear();
     this.soundRegistry.clear();
     this.backdropRegistry.clear();
+
+    // Reset Phase 18B Component Asset Library
+    this.componentAssetLibrary.clearAssets();
 
     // Reset Phase 7M Asset loading state registry
     this.assetStates.clear();
@@ -9174,6 +19052,90 @@ export class BaseRuntime implements IRuntime {
     this.clearSceneTreeModels();
     this.clearLayerCompositionModels();
     this.clearVisualCompositionModels();
+
+    // Reset Phase 15B scene assembly foundation registries
+    this.clearSceneAssemblyModels();
+    this.clearVisualAssemblyModels();
+    this.clearBoardAssemblyModels();
+    this.clearComponentAssemblyModels();
+    this.clearWireAssemblyModels();
+    this.clearSignalAssemblyModels();
+
+    // Reset Phase 16A visible object runtime foundation registries
+    this.clearVisualObjectModels();
+    this.clearBoardObjectModels();
+    this.clearComponentObjectModels();
+    this.clearWireObjectModels();
+    this.clearSignalObjectModels();
+    this.clearThemeObjectModels();
+    this.clearAnimationObjectModels();
+
+    // Reset Phase 17A electrical connectivity foundation registries
+    this.clearElectricalNodeModels();
+    this.clearElectricalNetModels();
+    this.clearElectricalConnectionModels();
+    this.clearBreadboardRailModels();
+    this.clearBreadboardRowModels();
+
+    // Reset Phase 17B signal propagation foundation registries
+    this.clearSignalPacketModels();
+    this.clearSignalPropagationRuntimeModels();
+    this.clearPropagationPathModels();
+    this.clearTimingModels();
+
+    // Reset Phase 17C interactive sensor foundation registries
+    this.clearVirtualObjectModels();
+    this.clearObstacleModels();
+    this.clearSensorRuntimeModels();
+    this.clearDistanceMeasurementModels();
+    this.clearSensorInteractionModels();
+    this.clearEnvironmentStateModels();
+
+    // Reset Phase 18A visible simulator workspace foundation registries
+    this.clearWorkspaceRuntimeModels();
+    this.clearWorkspaceCameraModels();
+    this.clearWorkspaceSelectionModels();
+    this.clearWorkspaceObjectModels();
+    this.clearWorkspaceInteractionModels();
+    this.clearWorkspaceGridModels();
+
+    // Reset Phase 18C Breadboard Visual Rendering
+    this.clearBreadboardVisuals();
+
+    // Reset Phase 18D Wire Rendering Engine
+    this.clearWireGeometries();
+    this.clearWireRoutes();
+    this.clearWireAnchors();
+
+    // Reset Phase 20A Interactive Placement
+    this.clearComponentSelectionModels();
+    this.clearSelectionBoundsModels();
+    this.clearSelectionStateModels();
+    this.clearPinOccupancies();
+    this.clearWirePlacements();
+
+    // Reset Phase 20B Interactive Wiring
+    this.clearWiringSessionModels();
+    this.clearWirePreviewModels();
+    this.clearWireConnectionModels();
+    this.clearPinConnectionModels();
+
+    // Reset Phase 20C Live Electrical Visualization
+    this.clearVoltageVisualizationModels();
+    this.clearCurrentVisualizationModels();
+    this.clearLogicStateVisualizationModels();
+    this.clearActivityVisualizationModels();
+    this.clearSignalFlowModels();
+    // Phase 21A: Virtual ESP32 Execution Runtime
+    this.clearVirtualESP32Models();
+    this.clearVirtualGPIOPinModels();
+    this.clearVirtualPWMChannelModels();
+    this.clearVirtualTimerModels();
+    this.clearVirtualInterruptModels();
+    // Phase 21B: Blockly → Virtual ESP32 Execution Bridge
+    this.clearBlocklyExecutionModels();
+    this.clearBlocklyProgramModels();
+    this.clearBlocklyContextModels();
 
     // Reset Phase 8A-8F hardware and ESP32 metadata registries
     this.clearHALStates();
@@ -10083,6 +20045,458 @@ export class BaseRuntime implements IRuntime {
         stageSnap.visualCompositions = this.getVisualCompositionModels();
       }
 
+      // Phase 15B: Attach scene assembly foundation to stage snapshot entry
+      if (this.sceneAssemblyRegistry.size > 0) {
+        stageSnap.sceneAssemblies = this.getSceneAssemblyModels();
+      }
+      if (this.visualAssemblyRegistry.size > 0) {
+        stageSnap.visualAssemblies = this.getVisualAssemblyModels();
+      }
+      if (this.boardAssemblyRegistry.size > 0) {
+        stageSnap.boardAssemblies = this.getBoardAssemblyModels();
+      }
+      if (this.componentAssemblyRegistry.size > 0) {
+        stageSnap.componentAssemblies = this.getComponentAssemblyModels();
+      }
+      if (this.wireAssemblyRegistry.size > 0) {
+        stageSnap.wireAssemblies = this.getWireAssemblyModels();
+      }
+      if (this.signalAssemblyRegistry.size > 0) {
+        stageSnap.signalAssemblies = this.getSignalAssemblyModels();
+      }
+
+      // Phase 16A: Attach visible object runtime foundation to stage snapshot entry
+      if (this.visualObjectRegistry.size > 0) {
+        stageSnap.visualObjects = this.getVisualObjectModels();
+      }
+      if (this.boardObjectRegistry.size > 0) {
+        stageSnap.boardObjects = this.getBoardObjectModels();
+      }
+      if (this.componentObjectRegistry.size > 0) {
+        stageSnap.componentObjects = this.getComponentObjectModels();
+      }
+      if (this.wireObjectRegistry.size > 0) {
+        stageSnap.wireObjects = this.getWireObjectModels();
+      }
+      if (this.signalObjectRegistry.size > 0) {
+        stageSnap.signalObjects = this.getSignalObjectModels();
+      }
+      if (this.themeObjectRegistry.size > 0) {
+        stageSnap.themeObjects = this.getThemeObjectModels();
+      }
+      if (this.animationObjectRegistry.size > 0) {
+        stageSnap.animationObjects = this.getAnimationObjectModels();
+      }
+
+      // Phase 17A: Attach electrical connectivity foundation to stage snapshot entry
+      if (this.electricalNodeRegistry.size > 0) {
+        stageSnap.electricalNodes = this.getElectricalNodeModels();
+      }
+      if (this.electricalNetRegistry.size > 0) {
+        stageSnap.electricalNets = this.getElectricalNetModels();
+      }
+      if (this.electricalConnectionRegistry.size > 0) {
+        stageSnap.electricalConnections = this.getElectricalConnectionModels();
+      }
+      if (this.breadboardRailRegistry.size > 0) {
+        stageSnap.breadboardRails = this.getBreadboardRailModels();
+      }
+      if (this.breadboardRowRegistry.size > 0) {
+        stageSnap.breadboardRows = this.getBreadboardRowModels();
+      }
+
+      // Phase 17B: Attach signal propagation runtime foundation to stage snapshot entry
+      if (this.signalPacketRegistry.size > 0) {
+        stageSnap.signalPackets = this.getSignalPacketModels();
+      }
+      if (this.signalPropagationRuntimeRegistry.size > 0) {
+        stageSnap.signalPropagationRuntimes = this.getSignalPropagationRuntimeModels();
+      }
+      if (this.propagationPathRegistry.size > 0) {
+        stageSnap.propagationPaths = this.getPropagationPathModels();
+      }
+      if (this.timingModelRegistry.size > 0) {
+        stageSnap.timingModels = this.getTimingModels();
+      }
+
+      // Phase 17C: Attach interactive sensor runtime foundation to stage snapshot entry
+      if (this.virtualObjectRegistry.size > 0) {
+        stageSnap.virtualObjects = this.getVirtualObjectModels();
+      }
+      if (this.obstacleRegistry.size > 0) {
+        stageSnap.obstacles = this.getObstacleModels();
+      }
+      if (this.sensorRuntimeRegistry.size > 0) {
+        stageSnap.sensorRuntimes = this.getSensorRuntimeModels();
+      }
+      if (this.distanceMeasurementRegistry.size > 0) {
+        stageSnap.distanceMeasurements = this.getDistanceMeasurementModels();
+      }
+      if (this.sensorInteractionRegistry.size > 0) {
+        stageSnap.sensorInteractions = this.getSensorInteractionModels();
+      }
+      if (this.environmentStateRegistry.size > 0) {
+        stageSnap.environmentStates = this.getEnvironmentStateModels();
+      }
+
+      // Phase 18A: Attach visible simulator workspace foundation to stage snapshot entry
+      if (this.workspaceRuntimeRegistry.size > 0) {
+        stageSnap.workspaceRuntimes = this.getWorkspaceRuntimeModels();
+      }
+      if (this.workspaceCameraRegistry.size > 0) {
+        stageSnap.workspaceCameras = this.getWorkspaceCameraModels();
+      }
+      if (this.workspaceSelectionRegistry.size > 0) {
+        stageSnap.workspaceSelections = this.getWorkspaceSelectionModels();
+      }
+      if (this.workspaceObjectRegistry.size > 0) {
+        stageSnap.workspaceObjects = this.getWorkspaceObjectModels();
+      }
+      if (this.workspaceInteractionRegistry.size > 0) {
+        stageSnap.workspaceInteractions = this.getWorkspaceInteractionModels();
+      }
+      if (this.workspaceGridRegistry.size > 0) {
+        stageSnap.workspaceGrids = this.getWorkspaceGridModels();
+      }
+
+      // Phase 18B: Attach component assets to stage snapshot entry
+      if (this.componentAssetLibrary.getAssets().length > 0) {
+        stageSnap.componentAssets = this.componentAssetLibrary.getAssets();
+      }
+
+      // Phase 18C: Attach breadboard visuals to stage snapshot entry
+      if (this.breadboardVisualRegistry.size > 0) {
+        stageSnap.breadboardVisuals = this.getBreadboardVisuals();
+      }
+
+      // Phase 18D: Attach wire routing & geometry metadata to stage snapshot entry
+      if (this.wireGeometryRegistry.size > 0) {
+        stageSnap.wireGeometries = this.getWireGeometries();
+      }
+      if (this.wireRouteRegistry.size > 0) {
+        stageSnap.wireRoutes = this.getWireRoutes();
+      }
+      if (this.wireRoutingAnchorRegistry.size > 0) {
+        stageSnap.wireRoutingAnchors = this.getWireAnchors();
+      }
+      if (this.wireGeometryRegistry.size > 0 || this.wireRouteRegistry.size > 0 || this.wireRoutingAnchorRegistry.size > 0) {
+        stageSnap.wireRoutingSnapshot = {
+          wireGeometries: this.getWireGeometries(),
+          wireRoutes: this.getWireRoutes(),
+          wireAnchors: this.getWireAnchors(),
+        };
+      }
+
+      // Phase 20A: Attach interactive placement metadata to stage snapshot entry
+      if (this.componentSelectionRegistry.size > 0) {
+        stageSnap.componentSelections = this.getComponentSelectionModels();
+      }
+      if (this.selectionBoundsRegistry.size > 0) {
+        stageSnap.selectionBounds = this.getSelectionBoundsModels();
+      }
+      if (this.selectionStateRegistry.size > 0) {
+        stageSnap.selectionStates = this.getSelectionStateModels();
+      }
+      if (this.pinOccupancyRegistry.size > 0) {
+        stageSnap.pinOccupancies = this.getPinOccupancies();
+      }
+      if (this.wirePlacementRegistry.size > 0) {
+        stageSnap.wirePlacements = this.getWirePlacements();
+      }
+      if (this.componentSelectionRegistry.size > 0 || this.selectionBoundsRegistry.size > 0 || this.selectionStateRegistry.size > 0 || this.pinOccupancyRegistry.size > 0 || this.wirePlacementRegistry.size > 0) {
+        stageSnap.interactivePlacementSnapshot = {
+          componentSelections: this.getComponentSelectionModels(),
+          selectionBounds: this.getSelectionBoundsModels(),
+          selectionStates: this.getSelectionStateModels(),
+          pinOccupancies: this.getPinOccupancies(),
+          wirePlacements: this.getWirePlacements(),
+        };
+      }
+
+      // Phase 20B: Attach interactive wiring metadata to stage snapshot entry
+      if (this.wiringSessionRegistry.size > 0) {
+        stageSnap.wiringSessions = this.getWiringSessionModels();
+      }
+      if (this.wirePreviewRegistry.size > 0) {
+        stageSnap.wirePreviews = this.getWirePreviewModels();
+      }
+      if (this.wireConnectionRegistry.size > 0) {
+        stageSnap.wireConnections = this.getWireConnectionModels();
+      }
+      if (this.pinConnectionRegistry.size > 0) {
+        stageSnap.pinConnections = this.getPinConnectionModels();
+      }
+      if (this.wiringSessionRegistry.size > 0 || this.wirePreviewRegistry.size > 0 || this.wireConnectionRegistry.size > 0 || this.pinConnectionRegistry.size > 0) {
+        stageSnap.interactiveWiringSnapshot = {
+          wiringSessions: this.getWiringSessionModels(),
+          wirePreviews: this.getWirePreviewModels(),
+          wireConnections: this.getWireConnectionModels(),
+          pinConnections: this.getPinConnectionModels(),
+        };
+      }
+
+      // Phase 20C: Attach live electrical visualization models to stage snapshot
+      if (this.voltageVizRegistry.size > 0) {
+        stageSnap.voltageVisualizations = this.getVoltageVisualizationModels();
+      }
+      if (this.currentVizRegistry.size > 0) {
+        stageSnap.currentVisualizations = this.getCurrentVisualizationModels();
+      }
+      if (this.logicVizRegistry.size > 0) {
+        stageSnap.logicStateVisualizations = this.getLogicStateVisualizationModels();
+      }
+      if (this.activityVizRegistry.size > 0) {
+        stageSnap.activityVisualizations = this.getActivityVisualizationModels();
+      }
+      if (this.signalFlowRegistry.size > 0) {
+        stageSnap.signalFlows = this.getSignalFlowModels();
+      }
+      // Phase 21A: Virtual ESP32 Execution Runtime snapshot
+      if (this.esp32VirtualRegistry.size > 0) {
+        stageSnap.virtualESP32Models = this.getVirtualESP32Models();
+      }
+      if (this.gpioPinRegistry.size > 0) {
+        stageSnap.virtualGPIOPins = this.getVirtualGPIOPinModels();
+      }
+      if (this.pwmChannelRegistry.size > 0) {
+        stageSnap.virtualPWMChannels = this.getVirtualPWMChannelModels();
+      }
+      if (this.virtualTimerRegistry.size > 0) {
+        stageSnap.virtualTimers = this.getVirtualTimerModels();
+      }
+      if (this.virtualInterruptRegistry.size > 0) {
+        stageSnap.virtualInterrupts = this.getVirtualInterruptModels();
+      }
+      // Phase 21B: Blockly Execution Bridge snapshot
+      if (this.blocklyExecutionRegistry.size > 0) {
+        stageSnap.blocklyExecutions = this.getAllBlocklyExecutionModels();
+      }
+      if (this.blocklyProgramRegistry.size > 0) {
+        stageSnap.blocklyPrograms = this.getAllBlocklyProgramModels();
+      }
+      if (this.blocklyContextRegistry.size > 0) {
+        stageSnap.blocklyContexts = this.getAllBlocklyContextModels();
+      }
+      // Phase 22A: HC-SR04 Virtual Ultrasonic Sensor Simulation snapshot
+      if (this.hcsr04Registry.size > 0) {
+        stageSnap.hcsr04Sensors = this.getAllHCSR04Models();
+      }
+      if (this.ultrasonicBeamRegistry.size > 0) {
+        stageSnap.ultrasonicBeams = this.getAllUltrasonicBeamModels();
+      }
+      if (this.echoPulseRegistry.size > 0) {
+        stageSnap.echoPulses = this.getAllEchoPulseModels();
+      }
+      if (this.distanceTargetRegistry.size > 0) {
+        stageSnap.distanceTargets = this.getAllDistanceTargetModels();
+      }
+      if (this.ultrasonicEnvironmentRegistry.size > 0) {
+        stageSnap.ultrasonicEnvironments = this.getAllUltrasonicEnvironmentModels();
+      }
+      // Phase 22B: SG90 Servo Motor Virtual Simulation snapshot
+      if (this.servoMotorRegistry.size > 0) {
+        stageSnap.servoMotors = this.getAllServoMotorModels();
+      }
+      if (this.servoPositionRegistry.size > 0) {
+        stageSnap.servoPositions = this.getAllServoPositionModels();
+      }
+      if (this.servoMotionRegistry.size > 0) {
+        stageSnap.servoMotions = this.getAllServoMotionModels();
+      }
+      if (this.servoConstraintRegistry.size > 0) {
+        stageSnap.servoConstraints = this.getAllServoConstraintModels();
+      }
+      if (this.servoAnimationRegistry.size > 0) {
+        stageSnap.servoAnimations = this.getAllServoAnimationModels();
+      }
+      // Phase 22C: OLED & LCD Display Runtime Simulation
+      if (this.lcdDisplayRegistry.size > 0) {
+        stageSnap.lcdDisplays = this.getAllLCDDisplayModels();
+      }
+      if (this.lcdCursorRegistry.size > 0) {
+        stageSnap.lcdCursors = this.getAllLCDCursorModels();
+      }
+      if (this.lcdCharacterRegistry.size > 0) {
+        stageSnap.lcdCharacters = this.getAllLCDCharacterModels();
+      }
+      if (this.oledDisplayRegistry.size > 0) {
+        stageSnap.oledDisplays = this.getAllOLEDDisplayModels();
+      }
+      if (this.oledBufferRegistry.size > 0) {
+        stageSnap.oledBuffers = this.getAllOLEDBufferModels();
+      }
+      if (this.oledPixelRegistry.size > 0) {
+        stageSnap.oledPixels = this.getAllOLEDPixelModels();
+      }
+      if (this.displayAnimationRegistry.size > 0) {
+        stageSnap.displayAnimations = this.getAllDisplayAnimationModels();
+      }
+      // Phase 23A: Virtual Serial Monitor Runtime Simulation
+      if (this.serialPortRegistry.size > 0) {
+        stageSnap.serialPorts = this.getAllSerialPortModels();
+      }
+      if (this.serialMessageRegistry.size > 0) {
+        stageSnap.serialMessages = this.getAllSerialMessageModels();
+      }
+      if (this.serialBufferRegistry.size > 0) {
+        stageSnap.serialBuffers = this.getAllSerialBufferModels();
+      }
+      if (this.serialCommandRegistry.size > 0) {
+        stageSnap.serialCommands = this.getAllSerialCommandModels();
+      }
+      if (this.serialSessionRegistry.size > 0) {
+        stageSnap.serialSessions = this.getAllSerialSessionModels();
+      }
+      // Phase 23B: Virtual Logic Analyzer & Oscilloscope Foundation
+      if (this.logicAnalyzerChannelRegistry.size > 0) {
+        stageSnap.logicAnalyzerChannels = this.getAllLogicAnalyzerChannelModels();
+      }
+      if (this.logicCaptureRegistry.size > 0) {
+        stageSnap.logicCaptures = this.getAllLogicCaptureModels();
+      }
+      if (this.logicSampleRegistry.size > 0) {
+        stageSnap.logicSamples = this.getAllLogicSampleModels();
+      }
+      if (this.oscilloscopeChannelRegistry.size > 0) {
+        stageSnap.oscilloscopeChannels = this.getAllOscilloscopeChannelModels();
+      }
+      if (this.oscilloscopeCaptureRegistry.size > 0) {
+        stageSnap.oscilloscopeCaptures = this.getAllOscilloscopeCaptureModels();
+      }
+      if (this.waveformBufferRegistry.size > 0) {
+        stageSnap.waveformBuffers = this.getAllWaveformBufferModels();
+      }
+      // Phase 24A: Virtual Robotics Physics Runtime Foundation
+      if (this.robotPhysicsRegistry.size > 0) {
+        stageSnap.robotPhysics = this.getAllRobotPhysicsModels();
+      }
+      if (this.robotPoseRegistry.size > 0) {
+        stageSnap.robotPoses = this.getAllRobotPoseModels();
+      }
+      if (this.wheelRuntimeRegistry.size > 0) {
+        stageSnap.wheelRuntimes = this.getAllWheelRuntimeModels();
+      }
+      if (this.motionCommandRegistry.size > 0) {
+        stageSnap.motionCommands = this.getAllMotionCommandModels();
+      }
+      if (this.collisionRegistry.size > 0) {
+        stageSnap.collisions = this.getAllCollisionModels();
+      }
+      if (this.physicsWorldRegistry.size > 0) {
+        stageSnap.physicsWorlds = this.getAllPhysicsWorldModels();
+      }
+      // Phase 24B: Differential Drive Robot Simulator
+      if (this.differentialDriveRobotRegistry.size > 0) {
+        stageSnap.differentialDriveRobots = this.getAllDifferentialDriveRobotModels();
+      }
+      if (this.wheelEncoderRegistry.size > 0) {
+        stageSnap.wheelEncoders = this.getAllWheelEncoderModels();
+      }
+      if (this.motorDriverRegistry.size > 0) {
+        stageSnap.motorDrivers = this.getAllMotorDriverModels();
+      }
+      if (this.robotCommandQueueRegistry.size > 0) {
+        stageSnap.robotCommandQueues = this.getAllRobotCommandQueueModels();
+      }
+      if (this.robotPathRegistry.size > 0) {
+        stageSnap.robotPaths = this.getAllRobotPathModels();
+      }
+      if (this.robotTelemetryRegistry.size > 0) {
+        stageSnap.robotTelemetry = this.getAllRobotTelemetryModels();
+      }
+      // Phase 25A: Line Following Sensor Runtime
+      if (this.lineTrackRegistry.size > 0) {
+        stageSnap.lineTracks = this.getAllLineTrackModels();
+      }
+      if (this.lineSensorRegistry.size > 0) {
+        stageSnap.lineSensors = this.getAllLineSensorModels();
+      }
+      if (this.trackSegmentRegistry.size > 0) {
+        stageSnap.trackSegments = this.getAllTrackSegmentModels();
+      }
+      if (this.trackIntersectionRegistry.size > 0) {
+        stageSnap.trackIntersections = this.getAllTrackIntersectionModels();
+      }
+      if (this.trackMarkerRegistry.size > 0) {
+        stageSnap.trackMarkers = this.getAllTrackMarkerModels();
+      }
+      if (this.sensorReadingRegistry.size > 0) {
+        stageSnap.sensorReadings = this.getAllSensorReadingModels();
+      }
+      // Phase 25B: Obstacle Avoidance Runtime
+      if (this.obstacleAvoidanceRegistry.size > 0) {
+        stageSnap.obstacleAvoidances = this.getAllObstacleAvoidanceModels();
+      }
+      if (this.avoidanceRuleRegistry.size > 0) {
+        stageSnap.avoidanceRules = this.getAllAvoidanceRuleModels();
+      }
+      if (this.obstacleDetectionRegistry.size > 0) {
+        stageSnap.obstacleDetections = this.getAllObstacleDetectionModels();
+      }
+      if (this.navigationDecisionRegistry.size > 0) {
+        stageSnap.navigationDecisions = this.getAllNavigationDecisionModels();
+      }
+      if (this.safeZoneRegistry.size > 0) {
+        stageSnap.safeZones = this.getAllSafeZoneModels();
+      }
+      if (this.collisionPredictionRegistry.size > 0) {
+        stageSnap.collisionPredictions = this.getAllCollisionPredictionModels();
+      }
+      // Phase 19D: High Fidelity Renderer snapshot
+      if (this.componentTextureRegistry.size > 0) {
+        stageSnap.componentTextures = this.getAllComponentTextureModels();
+      }
+      if (this.textureAtlasRegistry.size > 0) {
+        stageSnap.textureAtlases = this.getAllTextureAtlasModels();
+      }
+      if (this.textureCacheRegistry.size > 0) {
+        stageSnap.textureCaches = this.getAllTextureCacheModels();
+      }
+      if (this.textureMetadataRegistry.size > 0) {
+        stageSnap.textureMetadata = this.getAllTextureMetadataModels();
+      }
+      if (this.renderPerformanceRegistry.size > 0) {
+        stageSnap.renderPerformance = this.getAllRenderPerformanceModels();
+      }
+      if (this.viewportCullingRegistry.size > 0) {
+        stageSnap.viewportCullings = this.getAllViewportCullingModels();
+      }
+      if (this.objectPoolRegistry.size > 0) {
+        stageSnap.objectPools = this.getAllObjectPoolModels();
+      }
+      if (this.dirtyRectRegistry.size > 0) {
+        stageSnap.dirtyRects = this.getAllDirtyRectModels();
+      }
+      if (this.spatialIndexRegistry.size > 0) {
+        stageSnap.spatialIndices = this.getAllSpatialIndexModels();
+      }
+      if (this.renderBatchRegistry.size > 0) {
+        stageSnap.renderBatches = this.getAllRenderBatchModels();
+      }
+      if (this.cadGridRegistry.size > 0) {
+        stageSnap.cadGrids = this.getAllCadGridModels();
+      }
+      if (this.debugOverlayRegistry.size > 0) {
+        stageSnap.debugOverlays = this.getAllDebugOverlayModels();
+      }
+      if (this.startupSceneRegistry.size > 0) {
+        stageSnap.startupScenes = this.getAllStartupSceneModels();
+      }
+      if (this.pinRenderStateRegistry.size > 0) {
+        stageSnap.pinRenderStates = this.getAllPinRenderStateModels();
+      }
+      // Phase 26A: Simulator UI Foundation snapshot
+      if (this.undoHistoryRegistry.size > 0) { stageSnap.undoHistories = this.getAllUndoHistoryModels(); }
+      if (this.cameraGestureRegistry.size > 0) { stageSnap.cameraGestures = this.getAllCameraGestureModels(); }
+      if (this.connectionValidationRegistry.size > 0) { stageSnap.connectionValidations = this.getAllConnectionValidationModels(); }
+      if (this.connectionWarningRegistry.size > 0) { stageSnap.connectionWarnings = this.getAllConnectionWarningModels(); }
+      if (this.paletteComponentRegistry.size > 0) { stageSnap.paletteComponents = this.getAllPaletteComponentModels(); }
+      if (this.paletteCategoryRegistry.size > 0) { stageSnap.paletteCategories = this.getAllPaletteCategoryModels(); }
+      if (this.paletteStateRegistry.size > 0) { stageSnap.paletteStates = this.getAllPaletteStateModels(); }
+      if (this.workspaceToolRegistry.size > 0) { stageSnap.workspaceTools = this.getAllWorkspaceToolModels(); }
+      if (this.pinInspectorRegistry.size > 0) { stageSnap.pinInspectors = this.getAllPinInspectorModels(); }
+
+
       // Phase 7R: Attach connection metadata to stage snapshot entry
       if (this.connectionRegistry.size > 0) {
         stageSnap.connections = this.getConnections();
@@ -10413,6 +20827,404 @@ export class BaseRuntime implements IRuntime {
       }
       if (isStage && this.visualCompositionRegistry.size > 0) {
         serializedTarget.visualCompositions = this.getVisualCompositionModels();
+      }
+
+      // Phase 15B: Serialize scene assembly foundation
+      if (isStage && this.sceneAssemblyRegistry.size > 0) {
+        serializedTarget.sceneAssemblies = this.getSceneAssemblyModels();
+      }
+      if (isStage && this.visualAssemblyRegistry.size > 0) {
+        serializedTarget.visualAssemblies = this.getVisualAssemblyModels();
+      }
+      if (isStage && this.boardAssemblyRegistry.size > 0) {
+        serializedTarget.boardAssemblies = this.getBoardAssemblyModels();
+      }
+      if (isStage && this.componentAssemblyRegistry.size > 0) {
+        serializedTarget.componentAssemblies = this.getComponentAssemblyModels();
+      }
+      if (isStage && this.wireAssemblyRegistry.size > 0) {
+        serializedTarget.wireAssemblies = this.getWireAssemblyModels();
+      }
+      if (isStage && this.signalAssemblyRegistry.size > 0) {
+        serializedTarget.signalAssemblies = this.getSignalAssemblyModels();
+      }
+
+      // Phase 16A: Serialize visible object runtime foundation
+      if (isStage && this.visualObjectRegistry.size > 0) {
+        serializedTarget.visualObjects = this.getVisualObjectModels();
+      }
+      if (isStage && this.boardObjectRegistry.size > 0) {
+        serializedTarget.boardObjects = this.getBoardObjectModels();
+      }
+      if (isStage && this.componentObjectRegistry.size > 0) {
+        serializedTarget.componentObjects = this.getComponentObjectModels();
+      }
+      if (isStage && this.wireObjectRegistry.size > 0) {
+        serializedTarget.wireObjects = this.getWireObjectModels();
+      }
+      if (isStage && this.signalObjectRegistry.size > 0) {
+        serializedTarget.signalObjects = this.getSignalObjectModels();
+      }
+      if (isStage && this.themeObjectRegistry.size > 0) {
+        serializedTarget.themeObjects = this.getThemeObjectModels();
+      }
+      if (isStage && this.animationObjectRegistry.size > 0) {
+        serializedTarget.animationObjects = this.getAnimationObjectModels();
+      }
+
+      // Phase 17A: Serialize electrical connectivity foundation
+      if (isStage && this.electricalNodeRegistry.size > 0) {
+        serializedTarget.electricalNodes = this.getElectricalNodeModels();
+      }
+      if (isStage && this.electricalNetRegistry.size > 0) {
+        serializedTarget.electricalNets = this.getElectricalNetModels();
+      }
+      if (isStage && this.electricalConnectionRegistry.size > 0) {
+        serializedTarget.electricalConnections = this.getElectricalConnectionModels();
+      }
+      if (isStage && this.breadboardRailRegistry.size > 0) {
+        serializedTarget.breadboardRails = this.getBreadboardRailModels();
+      }
+      if (isStage && this.breadboardRowRegistry.size > 0) {
+        serializedTarget.breadboardRows = this.getBreadboardRowModels();
+      }
+
+      // Phase 17B: Serialize signal propagation runtime foundation
+      if (isStage && this.signalPacketRegistry.size > 0) {
+        serializedTarget.signalPackets = this.getSignalPacketModels();
+      }
+      if (isStage && this.signalPropagationRuntimeRegistry.size > 0) {
+        serializedTarget.signalPropagationRuntimes = this.getSignalPropagationRuntimeModels();
+      }
+      if (isStage && this.propagationPathRegistry.size > 0) {
+        serializedTarget.propagationPaths = this.getPropagationPathModels();
+      }
+      if (isStage && this.timingModelRegistry.size > 0) {
+        serializedTarget.timingModels = this.getTimingModels();
+      }
+
+      // Phase 17C: Serialize interactive sensor runtime foundation
+      if (isStage && this.virtualObjectRegistry.size > 0) {
+        serializedTarget.virtualObjects = this.getVirtualObjectModels();
+      }
+      if (isStage && this.obstacleRegistry.size > 0) {
+        serializedTarget.obstacles = this.getObstacleModels();
+      }
+      if (isStage && this.sensorRuntimeRegistry.size > 0) {
+        serializedTarget.sensorRuntimes = this.getSensorRuntimeModels();
+      }
+      if (isStage && this.distanceMeasurementRegistry.size > 0) {
+        serializedTarget.distanceMeasurements = this.getDistanceMeasurementModels();
+      }
+      if (isStage && this.sensorInteractionRegistry.size > 0) {
+        serializedTarget.sensorInteractions = this.getSensorInteractionModels();
+      }
+      if (isStage && this.environmentStateRegistry.size > 0) {
+        serializedTarget.environmentStates = this.getEnvironmentStateModels();
+      }
+
+      // Phase 18A: Serialize visible simulator workspace foundation
+      if (isStage && this.workspaceRuntimeRegistry.size > 0) {
+        serializedTarget.workspaceRuntimes = this.getWorkspaceRuntimeModels();
+      }
+      if (isStage && this.workspaceCameraRegistry.size > 0) {
+        serializedTarget.workspaceCameras = this.getWorkspaceCameraModels();
+      }
+      if (isStage && this.workspaceSelectionRegistry.size > 0) {
+        serializedTarget.workspaceSelections = this.getWorkspaceSelectionModels();
+      }
+      if (isStage && this.workspaceObjectRegistry.size > 0) {
+        serializedTarget.workspaceObjects = this.getWorkspaceObjectModels();
+      }
+      if (isStage && this.workspaceInteractionRegistry.size > 0) {
+        serializedTarget.workspaceInteractions = this.getWorkspaceInteractionModels();
+      }
+      if (isStage && this.workspaceGridRegistry.size > 0) {
+        serializedTarget.workspaceGrids = this.getWorkspaceGridModels();
+      }
+
+      // Phase 18B: Serialize component assets
+      if (isStage && this.componentAssetLibrary.getAssets().length > 0) {
+        serializedTarget.componentAssets = this.componentAssetLibrary.getAssets();
+      }
+
+      // Phase 18C: Serialize breadboard visuals
+      if (isStage && this.breadboardVisualRegistry.size > 0) {
+        serializedTarget.breadboardVisuals = this.getBreadboardVisuals();
+      }
+
+      // Phase 18D: Serialize wire routing & geometry metadata
+      if (isStage && this.wireGeometryRegistry.size > 0) {
+        serializedTarget.wireGeometries = this.getWireGeometries();
+      }
+      if (isStage && this.wireRouteRegistry.size > 0) {
+        serializedTarget.wireRoutes = this.getWireRoutes();
+      }
+      if (isStage && this.wireRoutingAnchorRegistry.size > 0) {
+        serializedTarget.wireRoutingAnchors = this.getWireAnchors();
+      }
+      if (isStage && (this.wireGeometryRegistry.size > 0 || this.wireRouteRegistry.size > 0 || this.wireRoutingAnchorRegistry.size > 0)) {
+        serializedTarget.wireRoutingSnapshot = {
+          wireGeometries: this.getWireGeometries(),
+          wireRoutes: this.getWireRoutes(),
+          wireAnchors: this.getWireAnchors(),
+        };
+      }
+
+      // Phase 20A: Serialize interactive placement metadata
+      if (isStage && this.componentSelectionRegistry.size > 0) {
+        serializedTarget.componentSelections = this.getComponentSelectionModels();
+      }
+      if (isStage && this.selectionBoundsRegistry.size > 0) {
+        serializedTarget.selectionBounds = this.getSelectionBoundsModels();
+      }
+      if (isStage && this.selectionStateRegistry.size > 0) {
+        serializedTarget.selectionStates = this.getSelectionStateModels();
+      }
+      if (isStage && this.pinOccupancyRegistry.size > 0) {
+        serializedTarget.pinOccupancies = this.getPinOccupancies();
+      }
+      if (isStage && this.wirePlacementRegistry.size > 0) {
+        serializedTarget.wirePlacements = this.getWirePlacements();
+      }
+      if (isStage && (this.componentSelectionRegistry.size > 0 || this.selectionBoundsRegistry.size > 0 || this.selectionStateRegistry.size > 0 || this.pinOccupancyRegistry.size > 0 || this.wirePlacementRegistry.size > 0)) {
+        serializedTarget.interactivePlacementSnapshot = {
+          componentSelections: this.getComponentSelectionModels(),
+          selectionBounds: this.getSelectionBoundsModels(),
+          selectionStates: this.getSelectionStateModels(),
+          pinOccupancies: this.getPinOccupancies(),
+          wirePlacements: this.getWirePlacements(),
+        };
+      }
+
+      // Phase 20B: Serialize interactive wiring metadata
+      if (isStage && this.wiringSessionRegistry.size > 0) {
+        serializedTarget.wiringSessions = this.getWiringSessionModels();
+      }
+      if (isStage && this.wirePreviewRegistry.size > 0) {
+        serializedTarget.wirePreviews = this.getWirePreviewModels();
+      }
+      if (isStage && this.wireConnectionRegistry.size > 0) {
+        serializedTarget.wireConnections = this.getWireConnectionModels();
+      }
+      if (isStage && this.pinConnectionRegistry.size > 0) {
+        serializedTarget.pinConnections = this.getPinConnectionModels();
+      }
+      if (isStage && (this.wiringSessionRegistry.size > 0 || this.wirePreviewRegistry.size > 0 || this.wireConnectionRegistry.size > 0 || this.pinConnectionRegistry.size > 0)) {
+        serializedTarget.interactiveWiringSnapshot = {
+          wiringSessions: this.getWiringSessionModels(),
+          wirePreviews: this.getWirePreviewModels(),
+          wireConnections: this.getWireConnectionModels(),
+          pinConnections: this.getPinConnectionModels(),
+        };
+      }
+
+      // Phase 20C: Serialize live electrical visualization models
+      if (isStage && this.voltageVizRegistry.size > 0) {
+        serializedTarget.voltageVisualizations = this.getVoltageVisualizationModels();
+      }
+      if (isStage && this.currentVizRegistry.size > 0) {
+        serializedTarget.currentVisualizations = this.getCurrentVisualizationModels();
+      }
+      if (isStage && this.logicVizRegistry.size > 0) {
+        serializedTarget.logicStateVisualizations = this.getLogicStateVisualizationModels();
+      }
+      if (isStage && this.activityVizRegistry.size > 0) {
+        serializedTarget.activityVisualizations = this.getActivityVisualizationModels();
+      }
+      if (isStage && this.signalFlowRegistry.size > 0) {
+        serializedTarget.signalFlows = this.getSignalFlowModels();
+      }
+      // Phase 21A: Virtual ESP32 Execution Runtime serialization
+      if (isStage && this.esp32VirtualRegistry.size > 0) {
+        serializedTarget.virtualESP32Models = this.getVirtualESP32Models();
+      }
+      if (isStage && this.gpioPinRegistry.size > 0) {
+        serializedTarget.virtualGPIOPins = this.getVirtualGPIOPinModels();
+      }
+      if (isStage && this.pwmChannelRegistry.size > 0) {
+        serializedTarget.virtualPWMChannels = this.getVirtualPWMChannelModels();
+      }
+      if (isStage && this.virtualTimerRegistry.size > 0) {
+        serializedTarget.virtualTimers = this.getVirtualTimerModels();
+      }
+      if (isStage && this.virtualInterruptRegistry.size > 0) {
+        serializedTarget.virtualInterrupts = this.getVirtualInterruptModels();
+      }
+      // Phase 21B: Blockly Execution Bridge serialization
+      if (isStage && this.blocklyExecutionRegistry.size > 0) {
+        serializedTarget.blocklyExecutions = this.getAllBlocklyExecutionModels();
+      }
+      if (isStage && this.blocklyProgramRegistry.size > 0) {
+        serializedTarget.blocklyPrograms = this.getAllBlocklyProgramModels();
+      }
+      if (isStage && this.blocklyContextRegistry.size > 0) {
+        serializedTarget.blocklyContexts = this.getAllBlocklyContextModels();
+      }
+      // Phase 22A: HC-SR04 Virtual Ultrasonic Sensor Simulation serialization
+      if (isStage && this.hcsr04Registry.size > 0) {
+        serializedTarget.hcsr04Sensors = this.getAllHCSR04Models();
+      }
+      if (isStage && this.ultrasonicBeamRegistry.size > 0) {
+        serializedTarget.ultrasonicBeams = this.getAllUltrasonicBeamModels();
+      }
+      if (isStage && this.echoPulseRegistry.size > 0) {
+        serializedTarget.echoPulses = this.getAllEchoPulseModels();
+      }
+      if (isStage && this.distanceTargetRegistry.size > 0) {
+        serializedTarget.distanceTargets = this.getAllDistanceTargetModels();
+      }
+      if (isStage && this.ultrasonicEnvironmentRegistry.size > 0) {
+        serializedTarget.ultrasonicEnvironments = this.getAllUltrasonicEnvironmentModels();
+      }
+      // Phase 22B: SG90 Servo Motor Virtual Simulation serialization
+      if (isStage && this.servoMotorRegistry.size > 0) {
+        serializedTarget.servoMotors = this.getAllServoMotorModels();
+      }
+      if (isStage && this.servoPositionRegistry.size > 0) {
+        serializedTarget.servoPositions = this.getAllServoPositionModels();
+      }
+      if (isStage && this.servoMotionRegistry.size > 0) {
+        serializedTarget.servoMotions = this.getAllServoMotionModels();
+      }
+      if (isStage && this.servoConstraintRegistry.size > 0) {
+        serializedTarget.servoConstraints = this.getAllServoConstraintModels();
+      }
+      if (isStage && this.servoAnimationRegistry.size > 0) {
+        serializedTarget.servoAnimations = this.getAllServoAnimationModels();
+      }
+      // Phase 22C: OLED & LCD Display Runtime Simulation
+      if (isStage && this.lcdDisplayRegistry.size > 0) {
+        serializedTarget.lcdDisplays = this.getAllLCDDisplayModels();
+      }
+      if (isStage && this.lcdCursorRegistry.size > 0) {
+        serializedTarget.lcdCursors = this.getAllLCDCursorModels();
+      }
+      if (isStage && this.lcdCharacterRegistry.size > 0) {
+        serializedTarget.lcdCharacters = this.getAllLCDCharacterModels();
+      }
+      if (isStage && this.oledDisplayRegistry.size > 0) {
+        serializedTarget.oledDisplays = this.getAllOLEDDisplayModels();
+      }
+      if (isStage && this.oledBufferRegistry.size > 0) {
+        serializedTarget.oledBuffers = this.getAllOLEDBufferModels();
+      }
+      if (isStage && this.oledPixelRegistry.size > 0) {
+        serializedTarget.oledPixels = this.getAllOLEDPixelModels();
+      }
+      if (isStage && this.displayAnimationRegistry.size > 0) {
+        serializedTarget.displayAnimations = this.getAllDisplayAnimationModels();
+      }
+      // Phase 23A: Virtual Serial Monitor Runtime Simulation
+      if (isStage && this.serialPortRegistry.size > 0) {
+        serializedTarget.serialPorts = this.getAllSerialPortModels();
+      }
+      if (isStage && this.serialMessageRegistry.size > 0) {
+        serializedTarget.serialMessages = this.getAllSerialMessageModels();
+      }
+      if (isStage && this.serialBufferRegistry.size > 0) {
+        serializedTarget.serialBuffers = this.getAllSerialBufferModels();
+      }
+      if (isStage && this.serialCommandRegistry.size > 0) {
+        serializedTarget.serialCommands = this.getAllSerialCommandModels();
+      }
+      if (isStage && this.serialSessionRegistry.size > 0) {
+        serializedTarget.serialSessions = this.getAllSerialSessionModels();
+      }
+      // Phase 23B: Virtual Logic Analyzer & Oscilloscope Foundation
+      if (isStage && this.logicAnalyzerChannelRegistry.size > 0) {
+        serializedTarget.logicAnalyzerChannels = this.getAllLogicAnalyzerChannelModels();
+      }
+      if (isStage && this.logicCaptureRegistry.size > 0) {
+        serializedTarget.logicCaptures = this.getAllLogicCaptureModels();
+      }
+      if (isStage && this.logicSampleRegistry.size > 0) {
+        serializedTarget.logicSamples = this.getAllLogicSampleModels();
+      }
+      if (isStage && this.oscilloscopeChannelRegistry.size > 0) {
+        serializedTarget.oscilloscopeChannels = this.getAllOscilloscopeChannelModels();
+      }
+      if (isStage && this.oscilloscopeCaptureRegistry.size > 0) {
+        serializedTarget.oscilloscopeCaptures = this.getAllOscilloscopeCaptureModels();
+      }
+      if (isStage && this.waveformBufferRegistry.size > 0) {
+        serializedTarget.waveformBuffers = this.getAllWaveformBufferModels();
+      }
+      // Phase 24A: Virtual Robotics Physics Runtime Foundation
+      if (isStage && this.robotPhysicsRegistry.size > 0) {
+        serializedTarget.robotPhysics = this.getAllRobotPhysicsModels();
+      }
+      if (isStage && this.robotPoseRegistry.size > 0) {
+        serializedTarget.robotPoses = this.getAllRobotPoseModels();
+      }
+      if (isStage && this.wheelRuntimeRegistry.size > 0) {
+        serializedTarget.wheelRuntimes = this.getAllWheelRuntimeModels();
+      }
+      if (isStage && this.motionCommandRegistry.size > 0) {
+        serializedTarget.motionCommands = this.getAllMotionCommandModels();
+      }
+      if (isStage && this.collisionRegistry.size > 0) {
+        serializedTarget.collisions = this.getAllCollisionModels();
+      }
+      if (isStage && this.physicsWorldRegistry.size > 0) {
+        serializedTarget.physicsWorlds = this.getAllPhysicsWorldModels();
+      }
+      // Phase 24B: Differential Drive Robot Simulator
+      if (isStage && this.differentialDriveRobotRegistry.size > 0) {
+        serializedTarget.differentialDriveRobots = this.getAllDifferentialDriveRobotModels();
+      }
+      if (isStage && this.wheelEncoderRegistry.size > 0) {
+        serializedTarget.wheelEncoders = this.getAllWheelEncoderModels();
+      }
+      if (isStage && this.motorDriverRegistry.size > 0) {
+        serializedTarget.motorDrivers = this.getAllMotorDriverModels();
+      }
+      if (isStage && this.robotCommandQueueRegistry.size > 0) {
+        serializedTarget.robotCommandQueues = this.getAllRobotCommandQueueModels();
+      }
+      if (isStage && this.robotPathRegistry.size > 0) {
+        serializedTarget.robotPaths = this.getAllRobotPathModels();
+      }
+      if (isStage && this.robotTelemetryRegistry.size > 0) {
+        serializedTarget.robotTelemetry = this.getAllRobotTelemetryModels();
+      }
+      // Phase 25A: Line Following Sensor Runtime
+      if (isStage && this.lineTrackRegistry.size > 0) {
+        serializedTarget.lineTracks = this.getAllLineTrackModels();
+      }
+      if (isStage && this.lineSensorRegistry.size > 0) {
+        serializedTarget.lineSensors = this.getAllLineSensorModels();
+      }
+      if (isStage && this.trackSegmentRegistry.size > 0) {
+        serializedTarget.trackSegments = this.getAllTrackSegmentModels();
+      }
+      if (isStage && this.trackIntersectionRegistry.size > 0) {
+        serializedTarget.trackIntersections = this.getAllTrackIntersectionModels();
+      }
+      if (isStage && this.trackMarkerRegistry.size > 0) {
+        serializedTarget.trackMarkers = this.getAllTrackMarkerModels();
+      }
+      if (isStage && this.sensorReadingRegistry.size > 0) {
+        serializedTarget.sensorReadings = this.getAllSensorReadingModels();
+      }
+      // Phase 25B: Obstacle Avoidance Runtime
+      if (isStage && this.obstacleAvoidanceRegistry.size > 0) {
+        serializedTarget.obstacleAvoidances = this.getAllObstacleAvoidanceModels();
+      }
+      if (isStage && this.avoidanceRuleRegistry.size > 0) {
+        serializedTarget.avoidanceRules = this.getAllAvoidanceRuleModels();
+      }
+      if (isStage && this.obstacleDetectionRegistry.size > 0) {
+        serializedTarget.obstacleDetections = this.getAllObstacleDetectionModels();
+      }
+      if (isStage && this.navigationDecisionRegistry.size > 0) {
+        serializedTarget.navigationDecisions = this.getAllNavigationDecisionModels();
+      }
+      if (isStage && this.safeZoneRegistry.size > 0) {
+        serializedTarget.safeZones = this.getAllSafeZoneModels();
+      }
+      if (isStage && this.collisionPredictionRegistry.size > 0) {
+        serializedTarget.collisionPredictions = this.getAllCollisionPredictionModels();
       }
 
       // Phase 7W: Serialize board definitions & workspace boards
@@ -11080,6 +21892,723 @@ export class BaseRuntime implements IRuntime {
         for (const model of stageTarget.visualCompositions) {
           this.registerVisualCompositionModel(JSON.parse(JSON.stringify(model)));
         }
+      }
+
+      // Phase 15B: Restore scene assembly foundation from stage target
+      if (Array.isArray(stageTarget.sceneAssemblies)) {
+        for (const model of stageTarget.sceneAssemblies) {
+          this.registerSceneAssemblyModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.visualAssemblies)) {
+        for (const model of stageTarget.visualAssemblies) {
+          this.registerVisualAssemblyModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.boardAssemblies)) {
+        for (const model of stageTarget.boardAssemblies) {
+          this.registerBoardAssemblyModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.componentAssemblies)) {
+        for (const model of stageTarget.componentAssemblies) {
+          this.registerComponentAssemblyModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.wireAssemblies)) {
+        for (const model of stageTarget.wireAssemblies) {
+          this.registerWireAssemblyModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.signalAssemblies)) {
+        for (const model of stageTarget.signalAssemblies) {
+          this.registerSignalAssemblyModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+
+      // Phase 16A: Restore visible object runtime foundation from stage target
+      if (Array.isArray(stageTarget.visualObjects)) {
+        for (const model of stageTarget.visualObjects) {
+          this.registerVisualObjectModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.boardObjects)) {
+        for (const model of stageTarget.boardObjects) {
+          this.registerBoardObjectModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.componentObjects)) {
+        for (const model of stageTarget.componentObjects) {
+          this.registerComponentObjectModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.wireObjects)) {
+        for (const model of stageTarget.wireObjects) {
+          this.registerWireObjectModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.signalObjects)) {
+        for (const model of stageTarget.signalObjects) {
+          this.registerSignalObjectModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.themeObjects)) {
+        for (const model of stageTarget.themeObjects) {
+          this.registerThemeObjectModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.animationObjects)) {
+        for (const model of stageTarget.animationObjects) {
+          this.registerAnimationObjectModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+
+      // Phase 17A: Restore electrical connectivity foundation from stage target
+      if (Array.isArray(stageTarget.electricalNodes)) {
+        for (const model of stageTarget.electricalNodes) {
+          this.registerElectricalNodeModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.electricalNets)) {
+        for (const model of stageTarget.electricalNets) {
+          this.registerElectricalNetModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.electricalConnections)) {
+        for (const model of stageTarget.electricalConnections) {
+          this.registerElectricalConnectionModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.breadboardRails)) {
+        for (const model of stageTarget.breadboardRails) {
+          this.registerBreadboardRailModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.breadboardRows)) {
+        for (const model of stageTarget.breadboardRows) {
+          this.registerBreadboardRowModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+
+      // Phase 17B: Restore signal propagation runtime foundation from stage target
+      if (Array.isArray(stageTarget.signalPackets)) {
+        for (const model of stageTarget.signalPackets) {
+          this.registerSignalPacketModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.signalPropagationRuntimes)) {
+        for (const model of stageTarget.signalPropagationRuntimes) {
+          this.registerSignalPropagationRuntimeModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.propagationPaths)) {
+        for (const model of stageTarget.propagationPaths) {
+          this.registerPropagationPathModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.timingModels)) {
+        for (const model of stageTarget.timingModels) {
+          this.registerTimingModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+
+      // Phase 17C: Restore interactive sensor runtime foundation from stage target
+      if (Array.isArray(stageTarget.virtualObjects)) {
+        for (const model of stageTarget.virtualObjects) {
+          this.registerVirtualObjectModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.obstacles)) {
+        for (const model of stageTarget.obstacles) {
+          this.registerObstacleModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.sensorRuntimes)) {
+        for (const model of stageTarget.sensorRuntimes) {
+          this.registerSensorRuntimeModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.distanceMeasurements)) {
+        for (const model of stageTarget.distanceMeasurements) {
+          this.registerDistanceMeasurementModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.sensorInteractions)) {
+        for (const model of stageTarget.sensorInteractions) {
+          this.registerSensorInteractionModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.environmentStates)) {
+        for (const model of stageTarget.environmentStates) {
+          this.registerEnvironmentStateModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+
+      // Phase 18A: Restore visible simulator workspace foundation from stage target
+      if (Array.isArray(stageTarget.workspaceRuntimes)) {
+        for (const model of stageTarget.workspaceRuntimes) {
+          this.registerWorkspaceRuntimeModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.workspaceCameras)) {
+        for (const model of stageTarget.workspaceCameras) {
+          this.registerWorkspaceCameraModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.workspaceSelections)) {
+        for (const model of stageTarget.workspaceSelections) {
+          this.registerWorkspaceSelectionModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.workspaceObjects)) {
+        for (const model of stageTarget.workspaceObjects) {
+          this.registerWorkspaceObjectModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.workspaceInteractions)) {
+        for (const model of stageTarget.workspaceInteractions) {
+          this.registerWorkspaceInteractionModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.workspaceGrids)) {
+        for (const model of stageTarget.workspaceGrids) {
+          this.registerWorkspaceGridModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+
+      // Phase 18B: Restore component assets from stage target
+      if (Array.isArray(stageTarget.componentAssets)) {
+        this.clearComponentAssets();
+        for (const asset of stageTarget.componentAssets) {
+          this.registerComponentAsset(JSON.parse(JSON.stringify(asset)));
+        }
+      }
+
+      // Phase 18C: Restore breadboard visuals from stage target
+      if (Array.isArray(stageTarget.breadboardVisuals)) {
+        this.clearBreadboardVisuals();
+        for (const visual of stageTarget.breadboardVisuals) {
+          this.registerBreadboardVisual(JSON.parse(JSON.stringify(visual)));
+        }
+      }
+
+      // Phase 18D: Restore wire routing & geometry metadata from stage target
+      if (Array.isArray(stageTarget.wireGeometries)) {
+        this.clearWireGeometries();
+        for (const model of stageTarget.wireGeometries) {
+          this.registerWireGeometry(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.wireRoutes)) {
+        this.clearWireRoutes();
+        for (const model of stageTarget.wireRoutes) {
+          this.registerWireRoute(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.wireRoutingAnchors)) {
+        this.clearWireAnchors();
+        for (const model of stageTarget.wireRoutingAnchors) {
+          this.registerWireAnchor(JSON.parse(JSON.stringify(model)));
+        }
+      }
+
+      // Phase 20A: Restore interactive placement metadata from stage target
+      if (Array.isArray(stageTarget.componentSelections)) {
+        this.clearComponentSelectionModels();
+        for (const model of stageTarget.componentSelections) {
+          this.registerComponentSelectionModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.selectionBounds)) {
+        this.clearSelectionBoundsModels();
+        for (const model of stageTarget.selectionBounds) {
+          this.registerSelectionBoundsModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.selectionStates)) {
+        this.clearSelectionStateModels();
+        for (const model of stageTarget.selectionStates) {
+          this.registerSelectionStateModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.pinOccupancies)) {
+        this.clearPinOccupancies();
+        for (const model of stageTarget.pinOccupancies) {
+          this.registerPinOccupancyModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.wirePlacements)) {
+        this.clearWirePlacements();
+        for (const model of stageTarget.wirePlacements) {
+          this.registerWirePlacementModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+
+      // Phase 20B: Restore interactive wiring metadata from stage target
+      if (Array.isArray(stageTarget.wiringSessions)) {
+        this.clearWiringSessionModels();
+        for (const model of stageTarget.wiringSessions) {
+          this.registerWiringSessionModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.wirePreviews)) {
+        this.clearWirePreviewModels();
+        for (const model of stageTarget.wirePreviews) {
+          this.registerWirePreviewModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.wireConnections)) {
+        this.clearWireConnectionModels();
+        for (const model of stageTarget.wireConnections) {
+          this.registerWireConnectionModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.pinConnections)) {
+        this.clearPinConnectionModels();
+        for (const model of stageTarget.pinConnections) {
+          this.registerPinConnectionModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+
+      // Phase 20C: Restore live electrical visualization models from stage target
+      if (Array.isArray(stageTarget.voltageVisualizations)) {
+        this.clearVoltageVisualizationModels();
+        for (const model of stageTarget.voltageVisualizations) {
+          this.registerVoltageVisualizationModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.currentVisualizations)) {
+        this.clearCurrentVisualizationModels();
+        for (const model of stageTarget.currentVisualizations) {
+          this.registerCurrentVisualizationModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.logicStateVisualizations)) {
+        this.clearLogicStateVisualizationModels();
+        for (const model of stageTarget.logicStateVisualizations) {
+          this.registerLogicStateVisualizationModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.activityVisualizations)) {
+        this.clearActivityVisualizationModels();
+        for (const model of stageTarget.activityVisualizations) {
+          this.registerActivityVisualizationModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.signalFlows)) {
+        this.clearSignalFlowModels();
+        for (const model of stageTarget.signalFlows) {
+          this.registerSignalFlowModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      // Phase 21A: Virtual ESP32 Execution Runtime restoration
+      if (Array.isArray(stageTarget.virtualESP32Models)) {
+        this.clearVirtualESP32Models();
+        for (const model of stageTarget.virtualESP32Models) {
+          this.registerVirtualESP32Model(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.virtualGPIOPins)) {
+        this.clearVirtualGPIOPinModels();
+        for (const model of stageTarget.virtualGPIOPins) {
+          this.registerVirtualGPIOPinModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.virtualPWMChannels)) {
+        this.clearVirtualPWMChannelModels();
+        for (const model of stageTarget.virtualPWMChannels) {
+          this.registerVirtualPWMChannelModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.virtualTimers)) {
+        this.clearVirtualTimerModels();
+        for (const model of stageTarget.virtualTimers) {
+          this.registerVirtualTimerModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.virtualInterrupts)) {
+        this.clearVirtualInterruptModels();
+        for (const model of stageTarget.virtualInterrupts) {
+          this.registerVirtualInterruptModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      // Phase 21B: Blockly Execution Bridge restoration
+      if (Array.isArray(stageTarget.blocklyExecutions)) {
+        this.clearBlocklyExecutionModels();
+        for (const model of stageTarget.blocklyExecutions) {
+          this.registerBlocklyExecutionModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.blocklyPrograms)) {
+        this.clearBlocklyProgramModels();
+        for (const model of stageTarget.blocklyPrograms) {
+          this.registerBlocklyProgramModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.blocklyContexts)) {
+        this.clearBlocklyContextModels();
+        for (const model of stageTarget.blocklyContexts) {
+          this.registerBlocklyContextModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      // Phase 22A: HC-SR04 Virtual Ultrasonic Sensor Simulation restoration
+      if (Array.isArray(stageTarget.hcsr04Sensors)) {
+        this.clearHCSR04Models();
+        for (const model of stageTarget.hcsr04Sensors) {
+          this.registerHCSR04Model(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.ultrasonicBeams)) {
+        this.clearUltrasonicBeamModels();
+        for (const model of stageTarget.ultrasonicBeams) {
+          this.registerUltrasonicBeamModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.echoPulses)) {
+        this.clearEchoPulseModels();
+        for (const model of stageTarget.echoPulses) {
+          this.registerEchoPulseModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.distanceTargets)) {
+        this.clearDistanceTargetModels();
+        for (const model of stageTarget.distanceTargets) {
+          this.registerDistanceTargetModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.ultrasonicEnvironments)) {
+        this.clearUltrasonicEnvironmentModels();
+        for (const model of stageTarget.ultrasonicEnvironments) {
+          this.registerUltrasonicEnvironmentModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      // Phase 22B: SG90 Servo Motor Virtual Simulation restoration
+      if (Array.isArray(stageTarget.servoMotors)) {
+        this.clearServoMotorModels();
+        for (const model of stageTarget.servoMotors) {
+          this.registerServoMotorModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.servoPositions)) {
+        this.clearServoPositionModels();
+        for (const model of stageTarget.servoPositions) {
+          this.registerServoPositionModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.servoMotions)) {
+        this.clearServoMotionModels();
+        for (const model of stageTarget.servoMotions) {
+          this.registerServoMotionModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.servoConstraints)) {
+        this.clearServoConstraintModels();
+        for (const model of stageTarget.servoConstraints) {
+          this.registerServoConstraintModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.servoAnimations)) {
+        this.clearServoAnimationModels();
+        for (const model of stageTarget.servoAnimations) {
+          this.registerServoAnimationModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      // Phase 22C: OLED & LCD Display Runtime Simulation
+      if (Array.isArray(stageTarget.lcdDisplays)) {
+        this.clearLCDDisplayModels();
+        for (const model of stageTarget.lcdDisplays) {
+          this.registerLCDDisplayModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.lcdCursors)) {
+        this.clearLCDCursorModels();
+        for (const model of stageTarget.lcdCursors) {
+          this.registerLCDCursorModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.lcdCharacters)) {
+        this.clearLCDCharacterModels();
+        for (const model of stageTarget.lcdCharacters) {
+          this.registerLCDCharacterModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.oledDisplays)) {
+        this.clearOLEDDisplayModels();
+        for (const model of stageTarget.oledDisplays) {
+          this.registerOLEDDisplayModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.oledBuffers)) {
+        this.clearOLEDBufferModels();
+        for (const model of stageTarget.oledBuffers) {
+          this.registerOLEDBufferModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.oledPixels)) {
+        this.clearOLEDPixelModels();
+        for (const model of stageTarget.oledPixels) {
+          this.registerOLEDPixelModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.displayAnimations)) {
+        this.clearDisplayAnimationModels();
+        for (const model of stageTarget.displayAnimations) {
+          this.registerDisplayAnimationModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      // Phase 23A: Virtual Serial Monitor Runtime Simulation
+      if (Array.isArray(stageTarget.serialPorts)) {
+        this.clearSerialPortModels();
+        for (const model of stageTarget.serialPorts) {
+          this.registerSerialPortModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.serialMessages)) {
+        this.clearSerialMessageModels();
+        for (const model of stageTarget.serialMessages) {
+          this.registerSerialMessageModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.serialBuffers)) {
+        this.clearSerialBufferModels();
+        for (const model of stageTarget.serialBuffers) {
+          this.registerSerialBufferModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.serialCommands)) {
+        this.clearSerialCommandModels();
+        for (const model of stageTarget.serialCommands) {
+          this.registerSerialCommandModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.serialSessions)) {
+        this.clearSerialSessionModels();
+        for (const model of stageTarget.serialSessions) {
+          this.registerSerialSessionModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      // Phase 23B: Virtual Logic Analyzer & Oscilloscope Foundation
+      if (Array.isArray(stageTarget.logicAnalyzerChannels)) {
+        this.clearLogicAnalyzerChannelModels();
+        for (const model of stageTarget.logicAnalyzerChannels) {
+          this.registerLogicAnalyzerChannelModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.logicCaptures)) {
+        this.clearLogicCaptureModels();
+        for (const model of stageTarget.logicCaptures) {
+          this.registerLogicCaptureModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.logicSamples)) {
+        this.clearLogicSampleModels();
+        for (const model of stageTarget.logicSamples) {
+          this.registerLogicSampleModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.oscilloscopeChannels)) {
+        this.clearOscilloscopeChannelModels();
+        for (const model of stageTarget.oscilloscopeChannels) {
+          this.registerOscilloscopeChannelModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.oscilloscopeCaptures)) {
+        this.clearOscilloscopeCaptureModels();
+        for (const model of stageTarget.oscilloscopeCaptures) {
+          this.registerOscilloscopeCaptureModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.waveformBuffers)) {
+        this.clearWaveformBufferModels();
+        for (const model of stageTarget.waveformBuffers) {
+          this.registerWaveformBufferModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      // Phase 24A: Virtual Robotics Physics Runtime Foundation
+      if (Array.isArray(stageTarget.robotPhysics)) {
+        this.clearRobotPhysicsModels();
+        for (const model of stageTarget.robotPhysics) {
+          this.registerRobotPhysicsModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.robotPoses)) {
+        this.clearRobotPoseModels();
+        for (const model of stageTarget.robotPoses) {
+          this.registerRobotPoseModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.wheelRuntimes)) {
+        this.clearWheelRuntimeModels();
+        for (const model of stageTarget.wheelRuntimes) {
+          this.registerWheelRuntimeModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.motionCommands)) {
+        this.clearMotionCommandModels();
+        for (const model of stageTarget.motionCommands) {
+          this.registerMotionCommandModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.collisions)) {
+        this.clearCollisionModels();
+        for (const model of stageTarget.collisions) {
+          this.registerCollisionModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.physicsWorlds)) {
+        this.clearPhysicsWorldModels();
+        for (const model of stageTarget.physicsWorlds) {
+          this.registerPhysicsWorldModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      // Phase 24B: Differential Drive Robot Simulator
+      if (Array.isArray(stageTarget.differentialDriveRobots)) {
+        this.clearDifferentialDriveRobotModels();
+        for (const model of stageTarget.differentialDriveRobots) {
+          this.registerDifferentialDriveRobotModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.wheelEncoders)) {
+        this.clearWheelEncoderModels();
+        for (const model of stageTarget.wheelEncoders) {
+          this.registerWheelEncoderModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.motorDrivers)) {
+        this.clearMotorDriverModels();
+        for (const model of stageTarget.motorDrivers) {
+          this.registerMotorDriverModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.robotCommandQueues)) {
+        this.clearRobotCommandQueueModels();
+        for (const model of stageTarget.robotCommandQueues) {
+          this.registerRobotCommandQueueModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.robotPaths)) {
+        this.clearRobotPathModels();
+        for (const model of stageTarget.robotPaths) {
+          this.registerRobotPathModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.robotTelemetry)) {
+        this.clearRobotTelemetryModels();
+        for (const model of stageTarget.robotTelemetry) {
+          this.registerRobotTelemetryModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      // Phase 25A: Line Following Sensor Runtime
+      if (Array.isArray(stageTarget.lineTracks)) {
+        this.clearLineTrackModels();
+        for (const model of stageTarget.lineTracks) {
+          this.registerLineTrackModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.lineSensors)) {
+        this.clearLineSensorModels();
+        for (const model of stageTarget.lineSensors) {
+          this.registerLineSensorModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.trackSegments)) {
+        this.clearTrackSegmentModels();
+        for (const model of stageTarget.trackSegments) {
+          this.registerTrackSegmentModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.trackIntersections)) {
+        this.clearTrackIntersectionModels();
+        for (const model of stageTarget.trackIntersections) {
+          this.registerTrackIntersectionModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.trackMarkers)) {
+        this.clearTrackMarkerModels();
+        for (const model of stageTarget.trackMarkers) {
+          this.registerTrackMarkerModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.sensorReadings)) {
+        this.clearSensorReadingModels();
+        for (const model of stageTarget.sensorReadings) {
+          this.registerSensorReadingModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      // Phase 25B: Obstacle Avoidance Runtime
+      if (Array.isArray(stageTarget.obstacleAvoidances)) {
+        this.clearObstacleAvoidanceModels();
+        for (const model of stageTarget.obstacleAvoidances) {
+          this.registerObstacleAvoidanceModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.avoidanceRules)) {
+        this.clearAvoidanceRuleModels();
+        for (const model of stageTarget.avoidanceRules) {
+          this.registerAvoidanceRuleModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.obstacleDetections)) {
+        this.clearObstacleDetectionModels();
+        for (const model of stageTarget.obstacleDetections) {
+          this.registerObstacleDetectionModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.navigationDecisions)) {
+        this.clearNavigationDecisionModels();
+        for (const model of stageTarget.navigationDecisions) {
+          this.registerNavigationDecisionModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.safeZones)) {
+        this.clearSafeZoneModels();
+        for (const model of stageTarget.safeZones) {
+          this.registerSafeZoneModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+      if (Array.isArray(stageTarget.collisionPredictions)) {
+        this.clearCollisionPredictionModels();
+        for (const model of stageTarget.collisionPredictions) {
+          this.registerCollisionPredictionModel(JSON.parse(JSON.stringify(model)));
+        }
+      }
+
+      // Phase 26A: Simulator UI Foundation deserialization
+      if (Array.isArray(stageTarget.undoHistories)) {
+        this.clearUndoHistoryModels();
+        for (const model of stageTarget.undoHistories) { this.registerUndoHistoryModel(JSON.parse(JSON.stringify(model))); }
+      }
+      if (Array.isArray(stageTarget.cameraGestures)) {
+        this.clearCameraGestureModels();
+        for (const model of stageTarget.cameraGestures) { this.registerCameraGestureModel(JSON.parse(JSON.stringify(model))); }
+      }
+      if (Array.isArray(stageTarget.connectionValidations)) {
+        this.clearConnectionValidationModels();
+        for (const model of stageTarget.connectionValidations) { this.registerConnectionValidationModel(JSON.parse(JSON.stringify(model))); }
+      }
+      if (Array.isArray(stageTarget.connectionWarnings)) {
+        this.clearConnectionWarningModels();
+        for (const model of stageTarget.connectionWarnings) { this.registerConnectionWarningModel(JSON.parse(JSON.stringify(model))); }
+      }
+      if (Array.isArray(stageTarget.paletteComponents)) {
+        this.clearPaletteComponentModels();
+        for (const model of stageTarget.paletteComponents) { this.registerPaletteComponentModel(JSON.parse(JSON.stringify(model))); }
+      }
+      if (Array.isArray(stageTarget.paletteCategories)) {
+        this.clearPaletteCategoryModels();
+        for (const model of stageTarget.paletteCategories) { this.registerPaletteCategoryModel(JSON.parse(JSON.stringify(model))); }
+      }
+      if (Array.isArray(stageTarget.paletteStates)) {
+        this.clearPaletteStateModels();
+        for (const model of stageTarget.paletteStates) { this.registerPaletteStateModel(JSON.parse(JSON.stringify(model))); }
+      }
+      if (Array.isArray(stageTarget.workspaceTools)) {
+        this.clearWorkspaceToolModels();
+        for (const model of stageTarget.workspaceTools) { this.registerWorkspaceToolModel(JSON.parse(JSON.stringify(model))); }
+      }
+      if (Array.isArray(stageTarget.pinInspectors)) {
+        this.clearPinInspectorModels();
+        for (const model of stageTarget.pinInspectors) { this.registerPinInspectorModel(JSON.parse(JSON.stringify(model))); }
       }
 
       // Phase 7W: Restore board definitions from stage target

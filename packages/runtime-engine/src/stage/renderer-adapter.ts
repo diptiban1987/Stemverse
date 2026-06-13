@@ -1,5 +1,11 @@
-import { StageSyncState, BubbleState, ActiveSoundTrigger, PenState, PenCommand, VariableWatcher, ListWatcher, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, RuntimeAssetState, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, RuntimeComponent, RuntimeConnection, WorkspaceComponentLayout, WireLayout, DevelopmentBoardDefinition, WorkspaceBoard, RenderMetadata, STEMVerseVisualState, STEMVerseVisualThemeState, ComponentVisualModel, WireVisualRegistryEntry, BoardVisualRegistryEntry, SignalVisualRegistryEntry, AnimationRegistryEntry, InteractionMetadata, BreadboardModel, BreadboardPositionModel, ComponentPlacementModel, BreadboardConnectionMetadata, RenderNodeModel, SceneGraphModel, ViewportModel, RenderPipelineModel, ComponentRenderModel, ComponentBoundsModel, ComponentLabelModel, ComponentPinRenderModel, WireRenderModel, WirePathModel, WireSegmentModel, WireAnchorModel, BoardRenderModel, BoardBoundsModel, BoardConnectorModel, BoardRegionModel, SignalEffectModel, SignalPropagationModel, SignalColorModel, SignalActivityModel, ThemeModel, ColorPaletteModel, ComponentStyleModel, WorkspaceStyleModel, AnimationPlaybackModel, TimelineModel, KeyframeModel, PlaybackGroupModel, RenderRuntimeModel, RenderPassModel, RenderLayerRuntimeModel, RenderQueueModel, FrameMetadataModel } from '../types';
-import { RenderExecutionModel, RenderInstructionModel, RenderScheduleModel } from '../types';
+import { StageSyncState, BubbleState, ActiveSoundTrigger, PenState, PenCommand, VariableWatcher, ListWatcher, KeyboardState, MouseState, RuntimeQuestion, RuntimeAnswerState, RuntimeAssetState, LocalTransformState, WorldTransformState, TransformHierarchyEntry, CameraState, ViewportState, VelocityState, AccelerationState, CollisionBounds, ConstraintState, RuntimeComponent, RuntimeConnection, WorkspaceComponentLayout, WireLayout, DevelopmentBoardDefinition, WorkspaceBoard, RenderMetadata, STEMVerseVisualState, STEMVerseVisualThemeState, ComponentVisualModel, WireVisualRegistryEntry, BoardVisualRegistryEntry, SignalVisualRegistryEntry, AnimationRegistryEntry, InteractionMetadata, BreadboardModel, BreadboardPositionModel, ComponentPlacementModel, BreadboardConnectionMetadata, RenderNodeModel, SceneGraphModel, ViewportModel, RenderPipelineModel, ComponentRenderModel, ComponentBoundsModel, ComponentLabelModel, ComponentPinRenderModel, WireRenderModel, WirePathModel, WireSegmentModel, WireAnchorModel, BoardRenderModel, BoardBoundsModel, BoardConnectorModel, BoardRegionModel, SignalEffectModel, SignalPropagationModel, SignalColorModel, SignalActivityModel, ThemeModel, ColorPaletteModel, ComponentStyleModel, WorkspaceStyleModel, AnimationPlaybackModel, TimelineModel, KeyframeModel, PlaybackGroupModel, RenderRuntimeModel, RenderPassModel, RenderLayerRuntimeModel, RenderQueueModel, FrameMetadataModel, WorkspaceRuntimeModel, WorkspaceCameraModel, WorkspaceSelectionModel, WorkspaceObjectModel, WorkspaceInteractionModel, WorkspaceGridModel } from '../types';
+import { RenderExecutionModel, RenderInstructionModel, RenderScheduleModel, ComponentAssetDefinition } from '../types';
+import { VisualNodeModel, SceneTreeModel, LayerCompositionModel, VisualCompositionModel } from '../types';
+import { SceneAssemblyModel, VisualAssemblyModel, BoardAssemblyModel, ComponentAssemblyModel, WireAssemblyModel, SignalAssemblyModel } from '../types';
+import { VisualObjectModel, BoardObjectModel, ComponentObjectModel, WireObjectModel, SignalObjectModel, ThemeObjectModel, AnimationObjectModel } from '../types';
+import { ElectricalNodeModel, ElectricalNetModel, ElectricalConnectionModel, BreadboardRailModel, BreadboardRowModel, SignalPacketModel, SignalPropagationRuntimeModel, PropagationPathModel, TimingModel, VirtualObjectModel, ObstacleModel, SensorRuntimeModel, DistanceMeasurementModel, SensorInteractionModel, EnvironmentStateModel } from '../types';
+import { VoltageVisualizationModel, CurrentVisualizationModel, LogicStateVisualizationModel, ActivityVisualizationModel, SignalFlowModel } from '../types';
+
 
 /**
  * Representation of individual target properties inside the renderer memory.
@@ -119,7 +125,70 @@ export interface IRenderTarget {
   renderExecutions?: RenderExecutionModel[];
   renderInstructions?: RenderInstructionModel[];
   renderSchedules?: RenderScheduleModel[];
+
+  // Phase 15A: Visible rendering foundation metadata
+  visualNodes?: VisualNodeModel[];
+  sceneTrees?: SceneTreeModel[];
+  layerCompositions?: LayerCompositionModel[];
+  visualCompositions?: VisualCompositionModel[];
+
+  // Phase 15B: Renderer scene assembly foundation metadata
+  sceneAssemblies?: SceneAssemblyModel[];
+  visualAssemblies?: VisualAssemblyModel[];
+  boardAssemblies?: BoardAssemblyModel[];
+  componentAssemblies?: ComponentAssemblyModel[];
+  wireAssemblies?: WireAssemblyModel[];
+  signalAssemblies?: SignalAssemblyModel[];
+
+  // Phase 16A: Visible object runtime foundation metadata
+  visualObjects?: VisualObjectModel[];
+  boardObjects?: BoardObjectModel[];
+  componentObjects?: ComponentObjectModel[];
+  wireObjects?: WireObjectModel[];
+  signalObjects?: SignalObjectModel[];
+  themeObjects?: ThemeObjectModel[];
+  animationObjects?: AnimationObjectModel[];
+
+  // Phase 17A: Electrical connectivity foundation metadata
+  electricalNodes?: ElectricalNodeModel[];
+  electricalNets?: ElectricalNetModel[];
+  electricalConnections?: ElectricalConnectionModel[];
+  breadboardRails?: BreadboardRailModel[];
+  breadboardRows?: BreadboardRowModel[];
+
+  // Phase 17B: Signal propagation runtime foundation metadata
+  signalPackets?: SignalPacketModel[];
+  signalPropagationRuntimes?: SignalPropagationRuntimeModel[];
+  propagationPaths?: PropagationPathModel[];
+  timingModels?: TimingModel[];
+
+  // Phase 17C: Interactive sensor runtime foundation metadata
+  virtualObjects?: VirtualObjectModel[];
+  obstacles?: ObstacleModel[];
+  sensorRuntimes?: SensorRuntimeModel[];
+  distanceMeasurements?: DistanceMeasurementModel[];
+  sensorInteractions?: SensorInteractionModel[];
+  environmentStates?: EnvironmentStateModel[];
+
+  // Phase 18A: Visible simulator workspace foundation synchronization
+  workspaceRuntimes?: WorkspaceRuntimeModel[];
+  workspaceCameras?: WorkspaceCameraModel[];
+  workspaceSelections?: WorkspaceSelectionModel[];
+  workspaceObjects?: WorkspaceObjectModel[];
+  workspaceInteractions?: WorkspaceInteractionModel[];
+  workspaceGrids?: WorkspaceGridModel[];
+
+  // Phase 18B: Component Asset Library synchronization
+  componentAssets?: ComponentAssetDefinition[];
+
+  // Phase 20C: Live electrical visualization
+  voltageVisualizations?: VoltageVisualizationModel[];
+  currentVisualizations?: CurrentVisualizationModel[];
+  logicStateVisualizations?: LogicStateVisualizationModel[];
+  activityVisualizations?: ActivityVisualizationModel[];
+  signalFlows?: SignalFlowModel[];
 }
+
 
 /**
  * Interface establishing the boundaries of stage synchronization for renderers.
@@ -328,6 +397,69 @@ export class InMemoryRendererAdapter implements IRendererAdapter {
         target.renderExecutions = snap.renderExecutions ? JSON.parse(JSON.stringify(snap.renderExecutions)) : undefined;
         target.renderInstructions = snap.renderInstructions ? JSON.parse(JSON.stringify(snap.renderInstructions)) : undefined;
         target.renderSchedules = snap.renderSchedules ? JSON.parse(JSON.stringify(snap.renderSchedules)) : undefined;
+
+        // Phase 15A: Visible rendering foundation metadata
+        target.visualNodes = snap.visualNodes ? JSON.parse(JSON.stringify(snap.visualNodes)) : undefined;
+        target.sceneTrees = snap.sceneTrees ? JSON.parse(JSON.stringify(snap.sceneTrees)) : undefined;
+        target.layerCompositions = snap.layerCompositions ? JSON.parse(JSON.stringify(snap.layerCompositions)) : undefined;
+        target.visualCompositions = snap.visualCompositions ? JSON.parse(JSON.stringify(snap.visualCompositions)) : undefined;
+
+        // Phase 15B: Renderer scene assembly foundation metadata
+        target.sceneAssemblies = snap.sceneAssemblies ? JSON.parse(JSON.stringify(snap.sceneAssemblies)) : undefined;
+        target.visualAssemblies = snap.visualAssemblies ? JSON.parse(JSON.stringify(snap.visualAssemblies)) : undefined;
+        target.boardAssemblies = snap.boardAssemblies ? JSON.parse(JSON.stringify(snap.boardAssemblies)) : undefined;
+        target.componentAssemblies = snap.componentAssemblies ? JSON.parse(JSON.stringify(snap.componentAssemblies)) : undefined;
+        target.wireAssemblies = snap.wireAssemblies ? JSON.parse(JSON.stringify(snap.wireAssemblies)) : undefined;
+        target.signalAssemblies = snap.signalAssemblies ? JSON.parse(JSON.stringify(snap.signalAssemblies)) : undefined;
+
+        // Phase 16A: Visible object runtime foundation metadata
+        target.visualObjects = snap.visualObjects ? JSON.parse(JSON.stringify(snap.visualObjects)) : undefined;
+        target.boardObjects = snap.boardObjects ? JSON.parse(JSON.stringify(snap.boardObjects)) : undefined;
+        target.componentObjects = snap.componentObjects ? JSON.parse(JSON.stringify(snap.componentObjects)) : undefined;
+        target.wireObjects = snap.wireObjects ? JSON.parse(JSON.stringify(snap.wireObjects)) : undefined;
+        target.signalObjects = snap.signalObjects ? JSON.parse(JSON.stringify(snap.signalObjects)) : undefined;
+        target.themeObjects = snap.themeObjects ? JSON.parse(JSON.stringify(snap.themeObjects)) : undefined;
+        target.animationObjects = snap.animationObjects ? JSON.parse(JSON.stringify(snap.animationObjects)) : undefined;
+
+        // Phase 17A: Electrical connectivity foundation metadata
+        target.electricalNodes = snap.electricalNodes ? JSON.parse(JSON.stringify(snap.electricalNodes)) : undefined;
+        target.electricalNets = snap.electricalNets ? JSON.parse(JSON.stringify(snap.electricalNets)) : undefined;
+        target.electricalConnections = snap.electricalConnections ? JSON.parse(JSON.stringify(snap.electricalConnections)) : undefined;
+        target.breadboardRails = snap.breadboardRails ? JSON.parse(JSON.stringify(snap.breadboardRails)) : undefined;
+        target.breadboardRows = snap.breadboardRows ? JSON.parse(JSON.stringify(snap.breadboardRows)) : undefined;
+
+        // Phase 17B: Signal propagation runtime foundation metadata
+        target.signalPackets = snap.signalPackets ? JSON.parse(JSON.stringify(snap.signalPackets)) : undefined;
+        target.signalPropagationRuntimes = snap.signalPropagationRuntimes ? JSON.parse(JSON.stringify(snap.signalPropagationRuntimes)) : undefined;
+        target.propagationPaths = snap.propagationPaths ? JSON.parse(JSON.stringify(snap.propagationPaths)) : undefined;
+        target.timingModels = snap.timingModels ? JSON.parse(JSON.stringify(snap.timingModels)) : undefined;
+
+        // Phase 17C: Interactive sensor runtime foundation metadata
+        target.virtualObjects = snap.virtualObjects ? JSON.parse(JSON.stringify(snap.virtualObjects)) : undefined;
+        target.obstacles = snap.obstacles ? JSON.parse(JSON.stringify(snap.obstacles)) : undefined;
+        target.sensorRuntimes = snap.sensorRuntimes ? JSON.parse(JSON.stringify(snap.sensorRuntimes)) : undefined;
+        target.distanceMeasurements = snap.distanceMeasurements ? JSON.parse(JSON.stringify(snap.distanceMeasurements)) : undefined;
+        target.sensorInteractions = snap.sensorInteractions ? JSON.parse(JSON.stringify(snap.sensorInteractions)) : undefined;
+        target.environmentStates = snap.environmentStates ? JSON.parse(JSON.stringify(snap.environmentStates)) : undefined;
+
+        // Phase 18A: Visible simulator workspace foundation synchronization
+        target.workspaceRuntimes = snap.workspaceRuntimes ? JSON.parse(JSON.stringify(snap.workspaceRuntimes)) : undefined;
+        target.workspaceCameras = snap.workspaceCameras ? JSON.parse(JSON.stringify(snap.workspaceCameras)) : undefined;
+        target.workspaceSelections = snap.workspaceSelections ? JSON.parse(JSON.stringify(snap.workspaceSelections)) : undefined;
+        target.workspaceObjects = snap.workspaceObjects ? JSON.parse(JSON.stringify(snap.workspaceObjects)) : undefined;
+        target.workspaceInteractions = snap.workspaceInteractions ? JSON.parse(JSON.stringify(snap.workspaceInteractions)) : undefined;
+        target.workspaceGrids = snap.workspaceGrids ? JSON.parse(JSON.stringify(snap.workspaceGrids)) : undefined;
+
+        // Phase 18B: Component Asset Library synchronization
+        target.componentAssets = snap.componentAssets ? JSON.parse(JSON.stringify(snap.componentAssets)) : undefined;
+
+        // Phase 20C: Live electrical visualization synchronization
+        target.voltageVisualizations = snap.voltageVisualizations ? JSON.parse(JSON.stringify(snap.voltageVisualizations)) : undefined;
+        target.currentVisualizations = snap.currentVisualizations ? JSON.parse(JSON.stringify(snap.currentVisualizations)) : undefined;
+        target.logicStateVisualizations = snap.logicStateVisualizations ? JSON.parse(JSON.stringify(snap.logicStateVisualizations)) : undefined;
+        target.activityVisualizations = snap.activityVisualizations ? JSON.parse(JSON.stringify(snap.activityVisualizations)) : undefined;
+        target.signalFlows = snap.signalFlows ? JSON.parse(JSON.stringify(snap.signalFlows)) : undefined;
+
       } else {
         target = {
           id: snap.targetId,
@@ -426,6 +558,69 @@ export class InMemoryRendererAdapter implements IRendererAdapter {
           renderExecutions: snap.renderExecutions ? JSON.parse(JSON.stringify(snap.renderExecutions)) : undefined,
           renderInstructions: snap.renderInstructions ? JSON.parse(JSON.stringify(snap.renderInstructions)) : undefined,
           renderSchedules: snap.renderSchedules ? JSON.parse(JSON.stringify(snap.renderSchedules)) : undefined,
+
+          // Phase 15A: Visible rendering foundation metadata
+          visualNodes: snap.visualNodes ? JSON.parse(JSON.stringify(snap.visualNodes)) : undefined,
+          sceneTrees: snap.sceneTrees ? JSON.parse(JSON.stringify(snap.sceneTrees)) : undefined,
+          layerCompositions: snap.layerCompositions ? JSON.parse(JSON.stringify(snap.layerCompositions)) : undefined,
+          visualCompositions: snap.visualCompositions ? JSON.parse(JSON.stringify(snap.visualCompositions)) : undefined,
+
+          // Phase 15B: Renderer scene assembly foundation metadata
+          sceneAssemblies: snap.sceneAssemblies ? JSON.parse(JSON.stringify(snap.sceneAssemblies)) : undefined,
+          visualAssemblies: snap.visualAssemblies ? JSON.parse(JSON.stringify(snap.visualAssemblies)) : undefined,
+          boardAssemblies: snap.boardAssemblies ? JSON.parse(JSON.stringify(snap.boardAssemblies)) : undefined,
+          componentAssemblies: snap.componentAssemblies ? JSON.parse(JSON.stringify(snap.componentAssemblies)) : undefined,
+          wireAssemblies: snap.wireAssemblies ? JSON.parse(JSON.stringify(snap.wireAssemblies)) : undefined,
+          signalAssemblies: snap.signalAssemblies ? JSON.parse(JSON.stringify(snap.signalAssemblies)) : undefined,
+
+          // Phase 16A: Visible object runtime foundation metadata
+          visualObjects: snap.visualObjects ? JSON.parse(JSON.stringify(snap.visualObjects)) : undefined,
+          boardObjects: snap.boardObjects ? JSON.parse(JSON.stringify(snap.boardObjects)) : undefined,
+          componentObjects: snap.componentObjects ? JSON.parse(JSON.stringify(snap.componentObjects)) : undefined,
+          wireObjects: snap.wireObjects ? JSON.parse(JSON.stringify(snap.wireObjects)) : undefined,
+          signalObjects: snap.signalObjects ? JSON.parse(JSON.stringify(snap.signalObjects)) : undefined,
+          themeObjects: snap.themeObjects ? JSON.parse(JSON.stringify(snap.themeObjects)) : undefined,
+          animationObjects: snap.animationObjects ? JSON.parse(JSON.stringify(snap.animationObjects)) : undefined,
+
+          // Phase 17A: Electrical connectivity foundation metadata
+          electricalNodes: snap.electricalNodes ? JSON.parse(JSON.stringify(snap.electricalNodes)) : undefined,
+          electricalNets: snap.electricalNets ? JSON.parse(JSON.stringify(snap.electricalNets)) : undefined,
+          electricalConnections: snap.electricalConnections ? JSON.parse(JSON.stringify(snap.electricalConnections)) : undefined,
+          breadboardRails: snap.breadboardRails ? JSON.parse(JSON.stringify(snap.breadboardRails)) : undefined,
+          breadboardRows: snap.breadboardRows ? JSON.parse(JSON.stringify(snap.breadboardRows)) : undefined,
+
+          // Phase 17B: Signal propagation runtime foundation metadata
+          signalPackets: snap.signalPackets ? JSON.parse(JSON.stringify(snap.signalPackets)) : undefined,
+          signalPropagationRuntimes: snap.signalPropagationRuntimes ? JSON.parse(JSON.stringify(snap.signalPropagationRuntimes)) : undefined,
+          propagationPaths: snap.propagationPaths ? JSON.parse(JSON.stringify(snap.propagationPaths)) : undefined,
+          timingModels: snap.timingModels ? JSON.parse(JSON.stringify(snap.timingModels)) : undefined,
+
+          // Phase 17C: Interactive sensor runtime foundation metadata
+          virtualObjects: snap.virtualObjects ? JSON.parse(JSON.stringify(snap.virtualObjects)) : undefined,
+          obstacles: snap.obstacles ? JSON.parse(JSON.stringify(snap.obstacles)) : undefined,
+          sensorRuntimes: snap.sensorRuntimes ? JSON.parse(JSON.stringify(snap.sensorRuntimes)) : undefined,
+          distanceMeasurements: snap.distanceMeasurements ? JSON.parse(JSON.stringify(snap.distanceMeasurements)) : undefined,
+          sensorInteractions: snap.sensorInteractions ? JSON.parse(JSON.stringify(snap.sensorInteractions)) : undefined,
+          environmentStates: snap.environmentStates ? JSON.parse(JSON.stringify(snap.environmentStates)) : undefined,
+
+          // Phase 18A: Visible simulator workspace foundation synchronization
+          workspaceRuntimes: snap.workspaceRuntimes ? JSON.parse(JSON.stringify(snap.workspaceRuntimes)) : undefined,
+          workspaceCameras: snap.workspaceCameras ? JSON.parse(JSON.stringify(snap.workspaceCameras)) : undefined,
+          workspaceSelections: snap.workspaceSelections ? JSON.parse(JSON.stringify(snap.workspaceSelections)) : undefined,
+          workspaceObjects: snap.workspaceObjects ? JSON.parse(JSON.stringify(snap.workspaceObjects)) : undefined,
+          workspaceInteractions: snap.workspaceInteractions ? JSON.parse(JSON.stringify(snap.workspaceInteractions)) : undefined,
+          workspaceGrids: snap.workspaceGrids ? JSON.parse(JSON.stringify(snap.workspaceGrids)) : undefined,
+
+          // Phase 18B: Component Asset Library synchronization
+          componentAssets: snap.componentAssets ? JSON.parse(JSON.stringify(snap.componentAssets)) : undefined,
+
+          // Phase 20C: Live electrical visualization synchronization
+          voltageVisualizations: snap.voltageVisualizations ? JSON.parse(JSON.stringify(snap.voltageVisualizations)) : undefined,
+          currentVisualizations: snap.currentVisualizations ? JSON.parse(JSON.stringify(snap.currentVisualizations)) : undefined,
+          logicStateVisualizations: snap.logicStateVisualizations ? JSON.parse(JSON.stringify(snap.logicStateVisualizations)) : undefined,
+          activityVisualizations: snap.activityVisualizations ? JSON.parse(JSON.stringify(snap.activityVisualizations)) : undefined,
+          signalFlows: snap.signalFlows ? JSON.parse(JSON.stringify(snap.signalFlows)) : undefined,
+
         };
         this.targets.set(snap.targetId, target);
       }

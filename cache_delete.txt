@@ -1,0 +1,1 @@
+if (Test-Path "apps\web\.next") { Remove-Item -Recurse -Force "apps\web\.next"; Write-Host "Deleted .next" }; if (Test-Path "apps\web\node_modules\.cache") { Remove-Item -Recurse -Force "apps\web\node_modules\.cache"; Write-Host "Deleted .cache" }; Write-Host "Cache cleared"

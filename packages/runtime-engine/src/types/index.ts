@@ -537,7 +537,207 @@ export interface StageSyncState {
   sceneTrees?: SceneTreeModel[];
   layerCompositions?: LayerCompositionModel[];
   visualCompositions?: VisualCompositionModel[];
+
+  // Phase 15B: Renderer scene assembly foundation synchronization
+  sceneAssemblies?: SceneAssemblyModel[];
+  visualAssemblies?: VisualAssemblyModel[];
+  boardAssemblies?: BoardAssemblyModel[];
+  componentAssemblies?: ComponentAssemblyModel[];
+  wireAssemblies?: WireAssemblyModel[];
+  signalAssemblies?: SignalAssemblyModel[];
+
+  // Phase 16A: Visible object runtime foundation synchronization
+  visualObjects?: VisualObjectModel[];
+  boardObjects?: BoardObjectModel[];
+  componentObjects?: ComponentObjectModel[];
+  wireObjects?: WireObjectModel[];
+  signalObjects?: SignalObjectModel[];
+  themeObjects?: ThemeObjectModel[];
+  animationObjects?: AnimationObjectModel[];
+
+  // Phase 17A: Electrical connectivity foundation synchronization
+  electricalNodes?: ElectricalNodeModel[];
+  electricalNets?: ElectricalNetModel[];
+  electricalConnections?: ElectricalConnectionModel[];
+  breadboardRails?: BreadboardRailModel[];
+  breadboardRows?: BreadboardRowModel[];
+
+  // Phase 17B: Signal propagation runtime foundation synchronization
+  signalPackets?: SignalPacketModel[];
+  signalPropagationRuntimes?: SignalPropagationRuntimeModel[];
+  propagationPaths?: PropagationPathModel[];
+  timingModels?: TimingModel[];
+
+  // Phase 17C: Interactive sensor runtime foundation synchronization
+  virtualObjects?: VirtualObjectModel[];
+  obstacles?: ObstacleModel[];
+  sensorRuntimes?: SensorRuntimeModel[];
+  distanceMeasurements?: DistanceMeasurementModel[];
+  sensorInteractions?: SensorInteractionModel[];
+  environmentStates?: EnvironmentStateModel[];
+
+  // Phase 18A: Visible simulator workspace foundation synchronization
+  workspaceRuntimes?: WorkspaceRuntimeModel[];
+  workspaceCameras?: WorkspaceCameraModel[];
+  workspaceSelections?: WorkspaceSelectionModel[];
+  workspaceObjects?: WorkspaceObjectModel[];
+  workspaceInteractions?: WorkspaceInteractionModel[];
+  workspaceGrids?: WorkspaceGridModel[];
+
+  // Phase 18B: Real component asset library foundation synchronization
+  componentAssets?: ComponentAssetDefinition[];
+
+  // Phase 18C: Breadboard visual rendering foundation synchronization
+  breadboardVisuals?: BreadboardVisualModel[];
+
+  // Phase 18D: Wire Rendering Engine Foundation synchronization
+  wireGeometries?: WireGeometryModel[];
+  wireRoutes?: WireRouteModel[];
+  wireRoutingAnchors?: WireAnchorModel[];
+  wireRoutingSnapshot?: WireRoutingSnapshot;
+
+  // Phase 20A: Interactive Component Placement & Wiring Foundation synchronization
+  componentSelections?: ComponentSelectionModel[];
+  selectionBounds?: SelectionBoundsModel[];
+  selectionStates?: SelectionStateModel[];
+  pinOccupancies?: PinOccupancyModel[];
+  wirePlacements?: WirePlacementModel[];
+  interactivePlacementSnapshot?: InteractivePlacementSnapshot;
+
+  // Phase 20B: Interactive Wiring System Foundation synchronization
+  wiringSessions?: WiringSessionModel[];
+  wirePreviews?: WirePreviewModel[];
+  wireConnections?: WireConnectionModel[];
+  pinConnections?: PinConnectionModel[];
+  interactiveWiringSnapshot?: InteractiveWiringSnapshot;
+
+  // Phase 20C: Live Electrical Visualization Foundation synchronization
+  voltageVisualizations?: VoltageVisualizationModel[];
+  currentVisualizations?: CurrentVisualizationModel[];
+  logicStateVisualizations?: LogicStateVisualizationModel[];
+  activityVisualizations?: ActivityVisualizationModel[];
+  signalFlows?: SignalFlowModel[];
+  liveElectricalVisualizationSnapshot?: LiveElectricalVisualizationSnapshot;
+
+  // Phase 21A: Virtual ESP32 Execution Runtime synchronization
+  virtualESP32Models?: VirtualESP32Model[];
+  virtualGPIOPins?: VirtualGPIOPinModel[];
+  virtualPWMChannels?: VirtualPWMChannelModel[];
+  virtualTimers?: VirtualTimerModel[];
+  virtualInterrupts?: VirtualInterruptModel[];
+  virtualExecutionSnapshot?: VirtualExecutionSnapshot;
+
+  // Phase 21B: Blockly → Virtual ESP32 Execution Bridge synchronization
+  blocklyExecutions?: BlocklyExecutionModel[];
+  blocklyPrograms?: BlocklyProgramModel[];
+  blocklyContexts?: BlocklyExecutionContextModel[];
+  blocklyExecutionSnapshot?: BlocklyExecutionSnapshot;
+
+  // Phase 22A: HC-SR04 Virtual Ultrasonic Sensor Simulation
+  hcsr04Sensors?: HCSR04Model[];
+  ultrasonicBeams?: UltrasonicBeamModel[];
+  echoPulses?: EchoPulseModel[];
+  distanceTargets?: DistanceTargetModel[];
+  ultrasonicEnvironments?: UltrasonicEnvironmentModel[];
+  ultrasonicSimulationSnapshot?: UltrasonicSimulationSnapshot;
+
+  // Phase 22B: SG90 Servo Motor Virtual Simulation
+  servoMotors?: ServoMotorModel[];
+  servoPositions?: ServoPositionModel[];
+  servoMotions?: ServoMotionModel[];
+  servoConstraints?: ServoConstraintModel[];
+  servoAnimations?: ServoAnimationModel[];
+  servoSimulationSnapshot?: ServoSimulationSnapshot;
+
+  // Phase 22C: OLED & LCD Display Runtime Simulation
+  lcdDisplays?: LCDDisplayModel[];
+  lcdCursors?: LCDCursorModel[];
+  lcdCharacters?: LCDCharacterModel[];
+  oledDisplays?: OLEDDisplayModel[];
+  oledBuffers?: OLEDBufferModel[];
+  oledPixels?: OLEDPixelModel[];
+  displayAnimations?: DisplayAnimationModel[];
+  displaySimulationSnapshot?: DisplaySimulationSnapshot;
+
+  // Phase 23A: Virtual Serial Monitor Runtime Simulation
+  serialPorts?: SerialPortModel[];
+  serialMessages?: SerialMessageModel[];
+  serialBuffers?: SerialBufferModel[];
+  serialCommands?: SerialCommandModel[];
+  serialSessions?: SerialSessionModel[];
+  serialMonitorSnapshot?: SerialMonitorSnapshot;
+
+  // Phase 23B: Virtual Logic Analyzer & Oscilloscope Foundation
+  logicAnalyzerChannels?: LogicAnalyzerChannelModel[];
+  logicCaptures?: LogicCaptureModel[];
+  logicSamples?: LogicSampleModel[];
+  oscilloscopeChannels?: OscilloscopeChannelModel[];
+  oscilloscopeCaptures?: OscilloscopeCaptureModel[];
+  waveformBuffers?: WaveformBufferModel[];
+  logicAnalyzerSnapshot?: LogicAnalyzerSnapshot;
+
+  // Phase 24A: Virtual Robotics Physics Runtime Foundation
+  robotPhysics?: RobotPhysicsModel[];
+  robotPoses?: RobotPoseModel[];
+  wheelRuntimes?: WheelRuntimeModel[];
+  motionCommands?: MotionCommandModel[];
+  collisions?: CollisionModel[];
+  physicsWorlds?: PhysicsWorldModel[];
+  physicsSnapshot?: PhysicsSnapshot;
+
+  // Phase 24B: Differential Drive Robot Simulator
+  differentialDriveRobots?: DifferentialDriveRobotModel[];
+  wheelEncoders?: WheelEncoderModel[];
+  motorDrivers?: MotorDriverModel[];
+  robotCommandQueues?: RobotCommandQueueModel[];
+  robotPaths?: RobotPathModel[];
+  robotTelemetry?: RobotTelemetryModel[];
+  differentialDriveSnapshot?: DifferentialDriveSnapshot;
+  // Phase 25A: Line Following Sensor Runtime
+  lineFollowingSnapshot?: LineFollowingSnapshot;
+  lineTracks?: LineTrackModel[];
+  lineSensors?: LineSensorModel[];
+  trackSegments?: TrackSegmentModel[];
+  trackIntersections?: TrackIntersectionModel[];
+  trackMarkers?: TrackMarkerModel[];
+  sensorReadings?: SensorReadingModel[];
+  // Phase 25B: Obstacle Avoidance Runtime
+  obstacleAvoidanceSnapshot?: ObstacleAvoidanceSnapshot;
+  obstacleAvoidances?: ObstacleAvoidanceModel[];
+  avoidanceRules?: AvoidanceRuleModel[];
+  obstacleDetections?: ObstacleDetectionModel[];
+  navigationDecisions?: NavigationDecisionModel[];
+  safeZones?: SafeZoneModel[];
+  collisionPredictions?: CollisionPredictionModel[];
+  // Phase 19D: High Fidelity 3D Component Rendering & Performance Foundation
+  highFidelityRendererSnapshot?: HighFidelityRendererSnapshot;
+  componentTextures?: ComponentTextureModel[];
+  textureAtlases?: TextureAtlasModel[];
+  textureCaches?: TextureCacheModel[];
+  textureMetadata?: TextureMetadataModel[];
+  renderPerformance?: RenderPerformanceModel[];
+  viewportCullings?: ViewportCullingModel[];
+  objectPools?: ObjectPoolModel[];
+  dirtyRects?: DirtyRectModel[];
+  spatialIndices?: SpatialIndexModel[];
+  renderBatches?: RenderBatchModel[];
+  cadGrids?: CadGridModel[];
+  debugOverlays?: DebugOverlayModel[];
+  startupScenes?: StartupSceneModel[];
+  pinRenderStates?: PinRenderStateModel[];
+  // Phase 26A: Simulator UI Foundation
+  simulatorUISnapshot?: SimulatorUISnapshot;
+  undoHistories?: UndoHistoryModel[];
+  cameraGestures?: CameraGestureModel[];
+  connectionValidations?: ConnectionValidationModel[];
+  paletteComponents?: PaletteComponentModel[];
+  paletteCategories?: PaletteCategoryModel[];
+  paletteStates?: PaletteStateModel[];
+  workspaceTools?: WorkspaceToolModel[];
+  pinInspectors?: PinInspectorModel[];
+  connectionWarnings?: ConnectionWarningModel[];
 }
+
 
 // ─── Phase 11B: Visual Interaction Engine ──────────────────
 
@@ -1061,6 +1261,26 @@ export interface SerializedTarget {
   stemverseVisualStates?: STEMVerseVisualState[];
   stemverseVisualTheme?: STEMVerseVisualThemeState;
 
+  // Phase 18A: Visible simulator workspace foundation serialization
+  workspaceRuntimes?: WorkspaceRuntimeModel[];
+  workspaceCameras?: WorkspaceCameraModel[];
+  workspaceSelections?: WorkspaceSelectionModel[];
+  workspaceObjects?: WorkspaceObjectModel[];
+  workspaceInteractions?: WorkspaceInteractionModel[];
+  workspaceGrids?: WorkspaceGridModel[];
+
+  // Phase 18B: Real component asset library foundation serialization
+  componentAssets?: ComponentAssetDefinition[];
+
+  // Phase 18C: Breadboard visual rendering foundation serialization
+  breadboardVisuals?: BreadboardVisualModel[];
+
+  // Phase 18D: Wire Rendering Engine Foundation serialization
+  wireGeometries?: WireGeometryModel[];
+  wireRoutes?: WireRouteModel[];
+  wireRoutingAnchors?: WireAnchorModel[];
+  wireRoutingSnapshot?: WireRoutingSnapshot;
+
   // Phase 8A.1: HAL state serialization
   halState?: RuntimeHALState[];
 
@@ -1181,7 +1401,175 @@ export interface SerializedTarget {
   sceneTrees?: SceneTreeModel[];
   layerCompositions?: LayerCompositionModel[];
   visualCompositions?: VisualCompositionModel[];
+
+  // Phase 15B: Renderer scene assembly foundation serialization
+  sceneAssemblies?: SceneAssemblyModel[];
+  visualAssemblies?: VisualAssemblyModel[];
+  boardAssemblies?: BoardAssemblyModel[];
+  componentAssemblies?: ComponentAssemblyModel[];
+  wireAssemblies?: WireAssemblyModel[];
+  signalAssemblies?: SignalAssemblyModel[];
+
+  // Phase 16A: Visible object runtime foundation serialization
+  visualObjects?: VisualObjectModel[];
+  boardObjects?: BoardObjectModel[];
+  componentObjects?: ComponentObjectModel[];
+  wireObjects?: WireObjectModel[];
+  signalObjects?: SignalObjectModel[];
+  themeObjects?: ThemeObjectModel[];
+  animationObjects?: AnimationObjectModel[];
+
+  // Phase 17A: Electrical connectivity foundation serialization
+  electricalNodes?: ElectricalNodeModel[];
+  electricalNets?: ElectricalNetModel[];
+  electricalConnections?: ElectricalConnectionModel[];
+  breadboardRails?: BreadboardRailModel[];
+  breadboardRows?: BreadboardRowModel[];
+
+  // Phase 17B: Serialize signal propagation runtime foundation
+  signalPackets?: SignalPacketModel[];
+  signalPropagationRuntimes?: SignalPropagationRuntimeModel[];
+  propagationPaths?: PropagationPathModel[];
+  timingModels?: TimingModel[];
+
+  // Phase 17C: Serialize interactive sensor runtime foundation
+  virtualObjects?: VirtualObjectModel[];
+  obstacles?: ObstacleModel[];
+  sensorRuntimes?: SensorRuntimeModel[];
+  distanceMeasurements?: DistanceMeasurementModel[];
+  sensorInteractions?: SensorInteractionModel[];
+  environmentStates?: EnvironmentStateModel[];
+
+  // Phase 20A: Interactive Component Placement & Wiring Foundation serialization
+  componentSelections?: ComponentSelectionModel[];
+  selectionBounds?: SelectionBoundsModel[];
+  selectionStates?: SelectionStateModel[];
+  pinOccupancies?: PinOccupancyModel[];
+  wirePlacements?: WirePlacementModel[];
+  interactivePlacementSnapshot?: InteractivePlacementSnapshot;
+
+  // Phase 20B: Interactive Wiring System Foundation serialization
+  wiringSessions?: WiringSessionModel[];
+  wirePreviews?: WirePreviewModel[];
+  wireConnections?: WireConnectionModel[];
+  pinConnections?: PinConnectionModel[];
+  interactiveWiringSnapshot?: InteractiveWiringSnapshot;
+
+  // Phase 20C: Live Electrical Visualization Foundation serialization
+  voltageVisualizations?: VoltageVisualizationModel[];
+  currentVisualizations?: CurrentVisualizationModel[];
+  logicStateVisualizations?: LogicStateVisualizationModel[];
+  activityVisualizations?: ActivityVisualizationModel[];
+  signalFlows?: SignalFlowModel[];
+  liveElectricalVisualizationSnapshot?: LiveElectricalVisualizationSnapshot;
+
+  // Phase 21A: Virtual ESP32 Execution Runtime serialization
+  virtualESP32Models?: VirtualESP32Model[];
+  virtualGPIOPins?: VirtualGPIOPinModel[];
+  virtualPWMChannels?: VirtualPWMChannelModel[];
+  virtualTimers?: VirtualTimerModel[];
+  virtualInterrupts?: VirtualInterruptModel[];
+
+  // Phase 21B: Blockly → Virtual ESP32 Execution Bridge serialization
+  blocklyExecutions?: BlocklyExecutionModel[];
+  blocklyPrograms?: BlocklyProgramModel[];
+  blocklyContexts?: BlocklyExecutionContextModel[];
+
+  // Phase 22A: HC-SR04 Virtual Ultrasonic Sensor Simulation
+  hcsr04Sensors?: HCSR04Model[];
+  ultrasonicBeams?: UltrasonicBeamModel[];
+  echoPulses?: EchoPulseModel[];
+  distanceTargets?: DistanceTargetModel[];
+  ultrasonicEnvironments?: UltrasonicEnvironmentModel[];
+
+  // Phase 22B: SG90 Servo Motor Virtual Simulation
+  servoMotors?: ServoMotorModel[];
+  servoPositions?: ServoPositionModel[];
+  servoMotions?: ServoMotionModel[];
+  servoConstraints?: ServoConstraintModel[];
+  servoAnimations?: ServoAnimationModel[];
+
+  // Phase 22C: OLED & LCD Display Runtime Simulation
+  lcdDisplays?: LCDDisplayModel[];
+  lcdCursors?: LCDCursorModel[];
+  lcdCharacters?: LCDCharacterModel[];
+  oledDisplays?: OLEDDisplayModel[];
+  oledBuffers?: OLEDBufferModel[];
+  oledPixels?: OLEDPixelModel[];
+  displayAnimations?: DisplayAnimationModel[];
+
+  // Phase 23A: Virtual Serial Monitor Runtime Simulation
+  serialPorts?: SerialPortModel[];
+  serialMessages?: SerialMessageModel[];
+  serialBuffers?: SerialBufferModel[];
+  serialCommands?: SerialCommandModel[];
+  serialSessions?: SerialSessionModel[];
+
+  // Phase 23B: Virtual Logic Analyzer & Oscilloscope Foundation
+  logicAnalyzerChannels?: LogicAnalyzerChannelModel[];
+  logicCaptures?: LogicCaptureModel[];
+  logicSamples?: LogicSampleModel[];
+  oscilloscopeChannels?: OscilloscopeChannelModel[];
+  oscilloscopeCaptures?: OscilloscopeCaptureModel[];
+  waveformBuffers?: WaveformBufferModel[];
+
+  // Phase 24A: Virtual Robotics Physics Runtime Foundation
+  robotPhysics?: RobotPhysicsModel[];
+  robotPoses?: RobotPoseModel[];
+  wheelRuntimes?: WheelRuntimeModel[];
+  motionCommands?: MotionCommandModel[];
+  collisions?: CollisionModel[];
+  physicsWorlds?: PhysicsWorldModel[];
+
+  // Phase 24B: Differential Drive Robot Simulator
+  differentialDriveRobots?: DifferentialDriveRobotModel[];
+  wheelEncoders?: WheelEncoderModel[];
+  motorDrivers?: MotorDriverModel[];
+  robotCommandQueues?: RobotCommandQueueModel[];
+  robotPaths?: RobotPathModel[];
+  robotTelemetry?: RobotTelemetryModel[];
+  // Phase 25A: Line Following Sensor Runtime
+  lineTracks?: LineTrackModel[];
+  lineSensors?: LineSensorModel[];
+  trackSegments?: TrackSegmentModel[];
+  trackIntersections?: TrackIntersectionModel[];
+  trackMarkers?: TrackMarkerModel[];
+  sensorReadings?: SensorReadingModel[];
+  // Phase 25B: Obstacle Avoidance Runtime
+  obstacleAvoidances?: ObstacleAvoidanceModel[];
+  avoidanceRules?: AvoidanceRuleModel[];
+  obstacleDetections?: ObstacleDetectionModel[];
+  navigationDecisions?: NavigationDecisionModel[];
+  safeZones?: SafeZoneModel[];
+  collisionPredictions?: CollisionPredictionModel[];
+  // Phase 19D: High Fidelity 3D Component Rendering & Performance Foundation
+  componentTextures?: ComponentTextureModel[];
+  textureAtlases?: TextureAtlasModel[];
+  textureCaches?: TextureCacheModel[];
+  textureMetadata?: TextureMetadataModel[];
+  renderPerformance?: RenderPerformanceModel[];
+  viewportCullings?: ViewportCullingModel[];
+  objectPools?: ObjectPoolModel[];
+  dirtyRects?: DirtyRectModel[];
+  spatialIndices?: SpatialIndexModel[];
+  renderBatches?: RenderBatchModel[];
+  cadGrids?: CadGridModel[];
+  debugOverlays?: DebugOverlayModel[];
+  startupScenes?: StartupSceneModel[];
+  pinRenderStates?: PinRenderStateModel[];
+  // Phase 26A: Simulator UI Foundation
+  simulatorUISnapshot?: SimulatorUISnapshot;
+  undoHistories?: UndoHistoryModel[];
+  cameraGestures?: CameraGestureModel[];
+  connectionValidations?: ConnectionValidationModel[];
+  paletteComponents?: PaletteComponentModel[];
+  paletteCategories?: PaletteCategoryModel[];
+  paletteStates?: PaletteStateModel[];
+  workspaceTools?: WorkspaceToolModel[];
+  pinInspectors?: PinInspectorModel[];
+  connectionWarnings?: ConnectionWarningModel[];
 }
+
 
 export interface SerializedAssetManifest {
   costumes: CostumeAsset[];
@@ -2362,6 +2750,11 @@ export interface WireAnchorModel {
   anchorPosition: { x: number; y: number };
   anchorOwner: string;
   futureConnectionHints: Record<string, unknown>;
+  // Phase 18D fields:
+  componentId?: string;
+  pinId?: string;
+  positionX?: number;
+  positionY?: number;
 }
 
 export interface WireRenderSnapshot {
@@ -2725,5 +3118,2238 @@ export interface VisibleRenderingSnapshot {
   sceneTrees: SceneTreeModel[];
   layerCompositions: LayerCompositionModel[];
   visualCompositions: VisualCompositionModel[];
+}
+
+
+// ─── Phase 15B: Renderer Scene Assembly Foundation ────────────────
+
+export interface SceneAssemblyModel {
+  assemblyId: string;
+  sceneTreeId: string;
+  assemblyState: string;
+  assemblyOrder: number;
+  assemblyMetadata: Record<string, unknown>;
+  futureRendererHints: Record<string, unknown>;
+}
+
+export interface VisualAssemblyModel {
+  visualAssemblyId: string;
+  assemblyId: string;
+  visualNodeIds: string[];
+  visualMetadata: Record<string, unknown>;
+  futureRendererHints: Record<string, unknown>;
+}
+
+export interface BoardAssemblyModel {
+  boardAssemblyId: string;
+  boardId: string;
+  componentIds: string[];
+  wireIds: string[];
+  signalIds: string[];
+  assemblyMetadata: Record<string, unknown>;
+}
+
+export interface ComponentAssemblyModel {
+  componentAssemblyId: string;
+  componentId: string;
+  visualNodeId: string;
+  themeId: string;
+  animationIds: string[];
+  assemblyMetadata: Record<string, unknown>;
+}
+
+export interface WireAssemblyModel {
+  wireAssemblyId: string;
+  wireId: string;
+  pathId: string;
+  signalIds: string[];
+  assemblyMetadata: Record<string, unknown>;
+}
+
+export interface SignalAssemblyModel {
+  signalAssemblyId: string;
+  signalId: string;
+  effectIds: string[];
+  animationIds: string[];
+  assemblyMetadata: Record<string, unknown>;
+}
+
+export interface AssemblySnapshot {
+  sceneAssemblies: SceneAssemblyModel[];
+  visualAssemblies: VisualAssemblyModel[];
+  boardAssemblies: BoardAssemblyModel[];
+  componentAssemblies: ComponentAssemblyModel[];
+  wireAssemblies: WireAssemblyModel[];
+  signalAssemblies: SignalAssemblyModel[];
+}
+
+
+// ─── Phase 16A: Visible Object Runtime Foundation ────────────────
+
+export interface VisualObjectModel {
+  objectId: string;
+  assemblyId: string;
+  objectType: string;
+  objectState: string;
+  objectOrder: number;
+  objectMetadata: Record<string, unknown>;
+  futureRendererHints: Record<string, unknown>;
+}
+
+export interface BoardObjectModel {
+  boardObjectId: string;
+  assemblyId: string;
+  boardId: string;
+  componentObjectIds: string[];
+  wireObjectIds: string[];
+  signalObjectIds: string[];
+  objectMetadata: Record<string, unknown>;
+}
+
+export interface ComponentObjectModel {
+  componentObjectId: string;
+  assemblyId: string;
+  componentId: string;
+  visualObjectId: string;
+  themeObjectId: string;
+  animationObjectIds: string[];
+  objectMetadata: Record<string, unknown>;
+}
+
+export interface WireObjectModel {
+  wireObjectId: string;
+  assemblyId: string;
+  wireId: string;
+  pathId: string;
+  signalObjectIds: string[];
+  objectMetadata: Record<string, unknown>;
+}
+
+export interface SignalObjectModel {
+  signalObjectId: string;
+  assemblyId: string;
+  signalId: string;
+  effectIds: string[];
+  animationObjectIds: string[];
+  objectMetadata: Record<string, unknown>;
+}
+
+export interface ThemeObjectModel {
+  themeObjectId: string;
+  assemblyId: string;
+  themeId: string;
+  colorPaletteIds: string[];
+  componentStyleIds: string[];
+  workspaceStyleIds: string[];
+  objectMetadata: Record<string, unknown>;
+}
+
+export interface AnimationObjectModel {
+  animationObjectId: string;
+  assemblyId: string;
+  animationId: string;
+  timelineIds: string[];
+  playbackGroupIds: string[];
+  objectMetadata: Record<string, unknown>;
+}
+
+export interface VisibleObjectSnapshot {
+  visualObjects: VisualObjectModel[];
+  boardObjects: BoardObjectModel[];
+  componentObjects: ComponentObjectModel[];
+  wireObjects: WireObjectModel[];
+  signalObjects: SignalObjectModel[];
+  themeObjects: ThemeObjectModel[];
+  animationObjects: AnimationObjectModel[];
+}
+
+// ─── Phase 17A: Electrical Connectivity Foundation ──────────────
+
+export interface ElectricalNodeModel {
+  nodeId: string;
+  nodeType: string;
+  componentId: string;
+  pinId: string;
+  voltage: number;
+  current: number;
+  logicState: string;
+  metadata: Record<string, unknown>;
+}
+
+export interface ElectricalNetModel {
+  netId: string;
+  nodeIds: string[];
+  netState: string;
+  metadata: Record<string, unknown>;
+}
+
+export interface ElectricalConnectionModel {
+  connectionId: string;
+  sourceNodeId: string;
+  targetNodeId: string;
+  connectionType: string;
+  connectionState: string;
+}
+
+export interface BreadboardRailModel {
+  railId: string;
+  railType: string;
+  nodeIds: string[];
+  metadata: Record<string, unknown>;
+}
+
+export interface BreadboardRowModel {
+  rowId: string;
+  rowIndex: number;
+  columnIds: string[];
+  nodeIds: string[];
+  metadata: Record<string, unknown>;
+}
+
+export interface ElectricalConnectivitySnapshot {
+  electricalNodes: ElectricalNodeModel[];
+  electricalNets: ElectricalNetModel[];
+  electricalConnections: ElectricalConnectionModel[];
+  breadboardRails: BreadboardRailModel[];
+  breadboardRows: BreadboardRowModel[];
+}
+
+// ─── Phase 17B: Signal Propagation Runtime Foundation ───
+
+export interface SignalPacketModel {
+  packetId: string;
+  sourceNodeId: string;
+  targetNodeId: string;
+  logicState: string;
+  voltage: number;
+  timestamp: number;
+  metadata: Record<string, any>;
+}
+
+export interface PropagationPathModel {
+  pathId: string;
+  nodeIds: string[];
+  pathLength: number;
+  propagationDelay: number;
+  metadata: Record<string, any>;
+}
+
+export interface TimingModel {
+  timingId: string;
+  clockTick: number;
+  delayNs: number;
+  updateRate: number;
+  metadata: Record<string, any>;
+}
+
+export interface SignalPropagationRuntimeModel {
+  runtimeId: string;
+  status: string; // 'RUNNING' | 'PAUSED' | 'STOPPED'
+  currentClockTick: number;
+  activePacketIds: string[];
+  metadata: Record<string, any>;
+}
+
+export interface SignalPropagationSnapshot {
+  signalPackets: SignalPacketModel[];
+  signalPropagationRuntimes: SignalPropagationRuntimeModel[];
+  propagationPaths: PropagationPathModel[];
+  timingModels: TimingModel[];
+}
+
+// ─── Phase 17C: Interactive Sensor Runtime Foundation ───
+
+export interface VirtualObjectModel {
+  objectId: string;
+  objectName: string;
+  objectType: string;
+  positionX: number;
+  positionY: number;
+  positionZ: number;
+  rotationX: number;
+  rotationY: number;
+  rotationZ: number;
+  metadata: Record<string, any>;
+}
+
+export interface ObstacleModel {
+  obstacleId: string;
+  positionX: number;
+  positionY: number;
+  positionZ: number;
+  width: number;
+  height: number;
+  depth: number;
+  metadata: Record<string, any>;
+}
+
+export interface SensorRuntimeModel {
+  runtimeId: string;
+  sensorType: string;
+  sensorState: string;
+  currentValue: number;
+  lastUpdated: number;
+  metadata: Record<string, any>;
+}
+
+export interface DistanceMeasurementModel {
+  measurementId: string;
+  sensorId: string;
+  objectId: string;
+  distanceCm: number;
+  timestamp: number;
+  metadata: Record<string, any>;
+}
+
+export interface SensorInteractionModel {
+  interactionId: string;
+  sensorId: string;
+  targetObjectId: string;
+  interactionType: string;
+  interactionState: string;
+  metadata: Record<string, any>;
+}
+
+export interface EnvironmentStateModel {
+  stateId: string;
+  activeObstacleIds: string[];
+  activeObjectIds: string[];
+  timestamp: number;
+  metadata: Record<string, any>;
+}
+
+export interface InteractiveSensorSnapshot {
+  virtualObjects: VirtualObjectModel[];
+  obstacles: ObstacleModel[];
+  sensorRuntimes: SensorRuntimeModel[];
+  distanceMeasurements: DistanceMeasurementModel[];
+  sensorInteractions: SensorInteractionModel[];
+  environmentStates: EnvironmentStateModel[];
+}
+
+// ─── Phase 18A: Visible Simulator Workspace Foundation ───
+
+export interface WorkspaceCameraModel {
+  cameraId: string;
+  zoom: number;
+  panX: number;
+  panY: number;
+  viewportWidth: number;
+  viewportHeight: number;
+  metadata: Record<string, any>;
+}
+
+export interface WorkspaceObjectModel {
+  objectId: string;
+  objectType: string;
+  positionX: number;
+  positionY: number;
+  rotation: number;
+  scale: number;
+  selected: boolean;
+  locked: boolean;
+  metadata: Record<string, any>;
+}
+
+export interface WorkspaceSelectionModel {
+  selectionId: string;
+  selectedObjectIds: string[];
+  selectionBounds: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+  metadata: Record<string, any>;
+}
+
+export interface WorkspaceGridModel {
+  gridId: string;
+  gridSize: number;
+  snapEnabled: boolean;
+  visible: boolean;
+  metadata: Record<string, any>;
+}
+
+export interface WorkspaceInteractionModel {
+  interactionId: string;
+  interactionType: string;
+  targetObjectId: string;
+  timestamp: number;
+  metadata: Record<string, any>;
+}
+
+export interface WorkspaceRuntimeModel {
+  workspaceId: string;
+  name: string;
+  activeCameraId: string;
+  activeSelectionId: string;
+  activeGridId: string;
+  activeInteractionId?: string;
+  metadata: Record<string, any>;
+}
+
+export interface WorkspaceRuntimeSnapshot {
+  workspaceRuntimes: WorkspaceRuntimeModel[];
+  workspaceCameras: WorkspaceCameraModel[];
+  workspaceSelections: WorkspaceSelectionModel[];
+  workspaceObjects: WorkspaceObjectModel[];
+  workspaceInteractions: WorkspaceInteractionModel[];
+  workspaceGrids: WorkspaceGridModel[];
+}
+
+// ─── Phase 18B: Real Component Asset Library Foundation ───
+
+export interface PinAssetDefinition {
+  name: string;
+  number: number;
+  pixelX: number;
+  pixelY: number;
+  anchorX: number;
+  anchorY: number;
+  signalType: string;
+}
+
+export interface WireAnchorPoint {
+  anchorId: string;
+  x: number;
+  y: number;
+  label?: string;
+}
+
+export interface BreadboardHoleDefinition {
+  holeId: string;
+  x: number;
+  y: number;
+  groupType: 'ROW' | 'COL' | 'POWER_RAIL' | 'GROUND_RAIL';
+  groupId: string;
+}
+
+export interface ComponentAssetDefinition {
+  assetId: string;
+  componentType: string;
+  displayName: string;
+  imageWidth: number;
+  imageHeight: number;
+  rotationCenter: { x: number; y: number };
+  selectionBounds: { x: number; y: number; width: number; height: number };
+  pinCoordinates: PinAssetDefinition[];
+  wireAnchorPoints: WireAnchorPoint[];
+  defaultScale: number;
+  holes?: BreadboardHoleDefinition[];
+  metadata: Record<string, any>;
+  // Phase 19D: Texture-based rendering support
+  textureSvgData?: string;
+  textureUrl?: string;
+  textureAnchorX?: number;
+  textureAnchorY?: number;
+  textureScale?: number;
+}
+
+// ─── Phase 18C: Breadboard Visual Rendering Foundation ───
+
+export interface BreadboardHoleVisual {
+  holeId: string;
+  positionX: number;
+  positionY: number;
+  diameter: number;
+  groupId: string;
+  connectedGroupId: string;
+  visualState: string;
+}
+
+export interface BreadboardRailVisual {
+  railId: string;
+  railType: string;
+  position: { x: number; y: number };
+  length: number;
+  visualState: string;
+}
+
+export interface BreadboardLabelVisual {
+  labelId: string;
+  text: string;
+  positionX: number;
+  positionY: number;
+  color: string;
+  fontSize: number;
+}
+
+export interface BreadboardVisualModel {
+  breadboardId: string;
+  assetId: string;
+  holes: BreadboardHoleVisual[];
+  rails: BreadboardRailVisual[];
+  labels: BreadboardLabelVisual[];
+  width: number;
+  height: number;
+}
+
+export interface BreadboardRenderSnapshot {
+  breadboards: BreadboardVisualModel[];
+}
+
+// ─── Phase 18D: Wire Rendering Engine Foundation ──────────
+
+export interface WireControlPointModel {
+  pointId: string;
+  positionX: number;
+  positionY: number;
+  metadata?: Record<string, unknown>;
+}
+
+export interface WireSegmentGeometryModel {
+  segmentId: string;
+  startX: number;
+  startY: number;
+  endX: number;
+  endY: number;
+  segmentType: 'LINE' | 'BEZIER' | 'ARC' | string;
+}
+
+export interface WireRenderPathModel {
+  pathId: string;
+  points: { x: number; y: number }[];
+  svgPathString?: string;
+}
+
+export interface WireGeometryModel {
+  wireId: string;
+  thickness: number;
+  color: string;
+  segments: WireSegmentGeometryModel[];
+  controlPoints: WireControlPointModel[];
+}
+
+export interface WireRouteModel {
+  routeId: string;
+  sourceAnchorId: string;
+  targetAnchorId: string;
+  pathPoints: { x: number; y: number }[];
+  routeLength: number;
+  metadata?: Record<string, unknown>;
+}
+
+export interface WireRoutingSnapshot {
+  wireAnchors: WireAnchorModel[];
+  wireRoutes: WireRouteModel[];
+  wireGeometries: WireGeometryModel[];
+}
+
+// ─── Phase 20A: Interactive Component Placement & Wiring Foundation ───
+
+export interface ComponentSelectionModel {
+  selectionId: string;
+  componentId: string;
+  isSelected: boolean;
+  isHovered: boolean;
+  futureSelectionHints: Record<string, unknown>;
+}
+
+export interface SelectionBoundsModel {
+  boundsId: string;
+  componentId?: string;
+  wireId?: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotation: number;
+  futureBoundsHints: Record<string, unknown>;
+}
+
+export interface SelectionStateModel {
+  stateId: string;
+  activeSelectionIds: string[];
+  isMultiSelectEnabled: boolean;
+  selectionBoxStart?: { x: number; y: number };
+  selectionBoxEnd?: { x: number; y: number };
+  futureStateHints: Record<string, unknown>;
+}
+
+export interface PinOccupancyModel {
+  occupancyId: string;
+  breadboardId: string;
+  holeId: string;
+  occupiedByComponentId: string;
+  occupiedByPinId: string;
+  isConflicting: boolean;
+  futureOccupancyHints: Record<string, unknown>;
+}
+
+export interface WirePlacementModel {
+  placementId: string;
+  startComponentId?: string;
+  startPinId?: string;
+  startPosition?: { x: number; y: number };
+  endComponentId?: string;
+  endPinId?: string;
+  endPosition?: { x: number; y: number };
+  isRoutingActive: boolean;
+  previewPoints: { x: number; y: number }[];
+  futurePlacementHints: Record<string, unknown>;
+}
+
+export interface InteractivePlacementSnapshot {
+  componentSelections: ComponentSelectionModel[];
+  selectionBounds: SelectionBoundsModel[];
+  selectionStates: SelectionStateModel[];
+  pinOccupancies: PinOccupancyModel[];
+  wirePlacements: WirePlacementModel[];
+}
+
+// ─── Phase 20B: Interactive Wiring System Foundation ───
+
+export interface WiringSessionModel {
+  sessionId: string;
+  startPinId: string;
+  currentColor: string;
+  currentPoints: { x: number; y: number }[];
+  isRoutingActive: boolean;
+  futureSessionHints: Record<string, unknown>;
+}
+
+export interface WirePreviewModel {
+  previewId: string;
+  points: { x: number; y: number }[];
+  color: string;
+  isValidTarget: boolean;
+  futurePreviewHints: Record<string, unknown>;
+}
+
+export interface WireConnectionModel {
+  connectionId: string;
+  startPinId: string;
+  endPinId: string;
+  color: string;
+  routePoints: { x: number; y: number }[];
+  futureConnectionHints: Record<string, unknown>;
+}
+
+export interface PinConnectionModel {
+  pinConnectionId: string;
+  pinId: string;
+  connectedWireIds: string[];
+  futurePinConnectionHints: Record<string, unknown>;
+}
+
+export interface InteractiveWiringSnapshot {
+  wiringSessions: WiringSessionModel[];
+  wirePreviews: WirePreviewModel[];
+  wireConnections: WireConnectionModel[];
+  pinConnections: PinConnectionModel[];
+}
+
+
+
+// ─── Phase 20C: Live Electrical Visualization Foundation ───
+
+export type LogicStateType = 'HIGH' | 'LOW' | 'PWM' | 'FLOATING';
+export type VisualizationStateType = 'ACTIVE' | 'INACTIVE' | 'TRANSITIONING';
+
+export interface VoltageVisualizationModel {
+  voltageVizId: string;
+  nodeId: string;
+  voltageV: number;
+  normalizedLevel: number; // 0.0–1.0
+  visualColor: number;     // hex color int
+  visualState: VisualizationStateType;
+  futureVoltageHints: Record<string, unknown>;
+}
+
+export interface CurrentVisualizationModel {
+  currentVizId: string;
+  connectionId: string;
+  currentMa: number;
+  normalizedFlow: number;  // 0.0–1.0 flow intensity
+  flowDirection: 'FORWARD' | 'REVERSE' | 'NONE';
+  visualState: VisualizationStateType;
+  futureCurrentHints: Record<string, unknown>;
+}
+
+export interface LogicStateVisualizationModel {
+  logicVizId: string;
+  nodeId: string;
+  logicState: LogicStateType;
+  dutyCycle: number;        // 0.0–1.0 for PWM
+  glowColor: number;        // hex color int derived from logic state
+  glowAlpha: number;        // 0.0–1.0
+  pulsePhase: number;       // 0.0–1.0 animation phase for PWM
+  futureLogicHints: Record<string, unknown>;
+}
+
+export interface ActivityVisualizationModel {
+  activityVizId: string;
+  componentId: string;
+  componentType: string;
+  isActive: boolean;
+  brightness: number;       // 0.0–1.0 (LED brightness or pulse strength)
+  triggerActive: boolean;   // HC-SR04 trigger pulse active
+  echoActive: boolean;      // HC-SR04 echo pulse active
+  measuredDistanceCm: number; // HC-SR04 measured distance
+  servoAngleDegrees?: number;   // SG90 servo current angle (0–180)
+  displayText?: string;         // OLED / LCD display text content
+  futureActivityHints: Record<string, unknown>;
+}
+
+export interface SignalFlowModel {
+  flowId: string;
+  wireConnectionId: string;
+  packetId: string;
+  flowProgress: number;     // 0.0–1.0 position of the signal dot along wire
+  flowColor: number;        // hex color of flowing dot
+  isActive: boolean;
+  futureFlowHints: Record<string, unknown>;
+}
+
+export interface LiveElectricalVisualizationSnapshot {
+  voltageVisualizations: VoltageVisualizationModel[];
+  currentVisualizations: CurrentVisualizationModel[];
+  logicStateVisualizations: LogicStateVisualizationModel[];
+  activityVisualizations: ActivityVisualizationModel[];
+  signalFlows: SignalFlowModel[];
+}
+
+// ─── Phase 21A: Virtual ESP32 Execution Runtime ───────────────────
+
+export type GPIOPinMode = 'INPUT' | 'OUTPUT' | 'INPUT_PULLUP' | 'INPUT_PULLDOWN' | 'UNSET';
+export type GPIOPinState = 'HIGH' | 'LOW' | 'FLOATING';
+export type InterruptEdge = 'RISING' | 'FALLING' | 'CHANGE' | 'NONE';
+export type TimerState = 'IDLE' | 'RUNNING' | 'PAUSED' | 'EXPIRED';
+export type ExecutionState = 'IDLE' | 'RUNNING' | 'PAUSED' | 'HALTED' | 'ERROR';
+
+export interface VirtualESP32Model {
+  esp32Id: string;
+  boardType: string;
+  executionState: ExecutionState;
+  clockTickCount: number;
+  virtualMillis: number;
+  virtualMicros: number;
+  clockSpeedHz: number;
+  totalGPIOPins: number;
+  maxPWMChannels: number;
+  maxTimers: number;
+  errorLog: string[];
+  futureESP32Hints: Record<string, unknown>;
+}
+
+export interface VirtualGPIOPinModel {
+  gpioPinId: string;
+  esp32Id: string;
+  pinNumber: number;
+  pinMode: GPIOPinMode;
+  pinState: GPIOPinState;
+  previousState: GPIOPinState;
+  isAnalog: boolean;
+  analogValue: number;
+  pwmChannelId: string;
+  interruptId: string;
+  lastChangeTick: number;
+  futureGPIOHints: Record<string, unknown>;
+}
+
+export interface VirtualPWMChannelModel {
+  pwmChannelId: string;
+  esp32Id: string;
+  channelNumber: number;
+  attachedPinNumber: number;
+  dutyCycle: number;
+  frequency: number;
+  resolution: number;
+  maxDutyValue: number;
+  isActive: boolean;
+  futurePWMHints: Record<string, unknown>;
+}
+
+export interface VirtualTimerModel {
+  timerId: string;
+  esp32Id: string;
+  timerState: TimerState;
+  intervalMs: number;
+  isRepeating: boolean;
+  elapsedMs: number;
+  triggerCount: number;
+  callbackId: string;
+  lastTriggerTick: number;
+  futureTimerHints: Record<string, unknown>;
+}
+
+export interface VirtualInterruptModel {
+  interruptId: string;
+  esp32Id: string;
+  pinNumber: number;
+  edge: InterruptEdge;
+  isEnabled: boolean;
+  triggerCount: number;
+  lastTriggerTick: number;
+  callbackId: string;
+  futureInterruptHints: Record<string, unknown>;
+}
+
+export interface VirtualExecutionSnapshot {
+  esp32Models: VirtualESP32Model[];
+  gpioPins: VirtualGPIOPinModel[];
+  pwmChannels: VirtualPWMChannelModel[];
+  timers: VirtualTimerModel[];
+  interrupts: VirtualInterruptModel[];
+}
+
+// ─── Phase 21B: Blockly → Virtual ESP32 Execution Bridge ──────
+
+/** Execution state of a Blockly program */
+export type BlocklyExecutionState =
+  | 'IDLE'
+  | 'RUNNING'
+  | 'PAUSED'
+  | 'DELAYED'
+  | 'COMPLETED'
+  | 'ERROR';
+
+/** Instruction opcode for the Blockly → ESP32 bridge */
+export type BlocklyInstructionOpcode =
+  | 'PIN_MODE'
+  | 'DIGITAL_WRITE'
+  | 'DIGITAL_READ'
+  | 'PWM_WRITE'
+  | 'DELAY'
+  | 'TIMER_START'
+  | 'TIMER_STOP'
+  | 'LOOP_START'
+  | 'LOOP_END'
+  | 'NOP';
+
+export interface BlocklyInstructionModel {
+  instructionId: string;
+  opcode: BlocklyInstructionOpcode;
+  args: Record<string, unknown>;
+  sourceBlockId: string;
+  lineNumber: number;
+  futureInstructionHints: Record<string, unknown>;
+}
+
+export interface BlocklyProgramModel {
+  programId: string;
+  esp32Id: string;
+  programName: string;
+  setupInstructions: BlocklyInstructionModel[];
+  loopInstructions: BlocklyInstructionModel[];
+  sourceXml: string;
+  createdAt: number;
+  futureBlocklyHints: Record<string, unknown>;
+}
+
+export interface BlocklyExecutionContextModel {
+  contextId: string;
+  programId: string;
+  esp32Id: string;
+  executionState: BlocklyExecutionState;
+  currentPhase: 'SETUP' | 'LOOP';
+  instructionPointer: number;
+  loopIteration: number;
+  delayRemainingMs: number;
+  lastInstructionResult: unknown;
+  errorMessage: string;
+  executionStartMs: number;
+  totalInstructionsExecuted: number;
+  futureContextHints: Record<string, unknown>;
+}
+
+export interface BlocklyExecutionModel {
+  executionId: string;
+  program: BlocklyProgramModel;
+  context: BlocklyExecutionContextModel;
+  isActive: boolean;
+  futureExecutionHints: Record<string, unknown>;
+}
+
+export interface BlocklyExecutionSnapshot {
+  executions: BlocklyExecutionModel[];
+  programs: BlocklyProgramModel[];
+  contexts: BlocklyExecutionContextModel[];
+}
+
+// ─── Phase 22A: HC-SR04 Virtual Ultrasonic Sensor Simulation ───
+
+/** State machine states for the HC-SR04 sensor lifecycle */
+export type HCSR04State =
+  | 'IDLE'
+  | 'TRIGGERING'
+  | 'EMITTING'
+  | 'WAITING_ECHO'
+  | 'ECHO_HIGH'
+  | 'COMPLETE'
+  | 'ERROR';
+
+/** Ultrasonic beam propagation state */
+export type BeamState =
+  | 'IDLE'
+  | 'EMITTING'
+  | 'REFLECTED'
+  | 'TIMED_OUT'
+  | 'ABSORBED';
+
+/** HC-SR04 ultrasonic distance sensor model */
+export interface HCSR04Model {
+  sensorId: string;
+  esp32Id: string;
+  trigPin: number;
+  echoPin: number;
+  positionX: number;
+  positionY: number;
+  rotationDeg: number;
+  sensorState: HCSR04State;
+  lastMeasuredDistanceCm: number;
+  lastEchoDurationUs: number;
+  maxRangeCm: number;
+  minRangeCm: number;
+  beamAngleDeg: number;
+  speedOfSoundCmPerUs: number;
+  triggerPulseUs: number;
+  measurementCount: number;
+  lastMeasurementTimestamp: number;
+  futureHCSR04Hints: Record<string, unknown>;
+}
+
+/** Ultrasonic beam emitted from an HC-SR04 sensor */
+export interface UltrasonicBeamModel {
+  beamId: string;
+  sensorId: string;
+  originX: number;
+  originY: number;
+  directionDeg: number;
+  beamAngleDeg: number;
+  maxRangeCm: number;
+  currentDistanceCm: number;
+  beamState: BeamState;
+  emitTimestamp: number;
+  reflectTimestamp: number;
+  targetObstacleId: string;
+  futureBeamHints: Record<string, unknown>;
+}
+
+/** Echo pulse generated by beam reflection */
+export interface EchoPulseModel {
+  pulseId: string;
+  sensorId: string;
+  beamId: string;
+  distanceCm: number;
+  durationUs: number;
+  echoStartTimestamp: number;
+  echoEndTimestamp: number;
+  isValid: boolean;
+  futureEchoHints: Record<string, unknown>;
+}
+
+/** Distance target / obstacle for beam intersection */
+export interface DistanceTargetModel {
+  targetId: string;
+  targetType: 'WALL' | 'BOX' | 'CYLINDER' | 'ROBOT' | 'CUSTOM';
+  positionX: number;
+  positionY: number;
+  width: number;
+  height: number;
+  reflectivity: number;
+  isActive: boolean;
+  futureTargetHints: Record<string, unknown>;
+}
+
+/** Environment model affecting ultrasonic simulation */
+export interface UltrasonicEnvironmentModel {
+  environmentId: string;
+  temperatureCelsius: number;
+  humidityPercent: number;
+  activeTargetIds: string[];
+  activeSensorIds: string[];
+  simulationTickMs: number;
+  futureEnvironmentHints: Record<string, unknown>;
+}
+
+/** Snapshot of all HC-SR04 simulation state */
+export interface UltrasonicSimulationSnapshot {
+  sensors: HCSR04Model[];
+  beams: UltrasonicBeamModel[];
+  echoPulses: EchoPulseModel[];
+  targets: DistanceTargetModel[];
+  environments: UltrasonicEnvironmentModel[];
+}
+
+// ─── Phase 22B: SG90 Servo Motor Virtual Simulation ────────
+
+/** Servo motor state machine */
+export type ServoState =
+  | 'DETACHED'
+  | 'IDLE'
+  | 'MOVING'
+  | 'HOLDING'
+  | 'STALLED'
+  | 'ERROR';
+
+/** Servo rotation direction */
+export type ServoDirection = 'CW' | 'CCW' | 'NONE';
+
+/** SG90 servo motor model — complete servo with pin config, position, physics */
+export interface ServoMotorModel {
+  servoId: string;
+  esp32Id: string;
+  signalPin: number;
+  pwmChannelId: string;
+  positionX: number;
+  positionY: number;
+  rotationOffsetDeg: number;
+  servoState: ServoState;
+  currentAngleDeg: number;
+  targetAngleDeg: number;
+  minAngleDeg: number;
+  maxAngleDeg: number;
+  minPulseWidthUs: number;
+  maxPulseWidthUs: number;
+  frequencyHz: number;
+  lastPWMDutyCycle: number;
+  isAttached: boolean;
+  measurementCount: number;
+  lastUpdateTimestamp: number;
+  futureServoHints: Record<string, unknown>;
+}
+
+/** Servo position snapshot with PWM correlation */
+export interface ServoPositionModel {
+  positionId: string;
+  servoId: string;
+  angleDeg: number;
+  pulseWidthUs: number;
+  pwmDutyCycle: number;
+  timestamp: number;
+  isValid: boolean;
+  futurePositionHints: Record<string, unknown>;
+}
+
+/** Servo motion dynamics for smooth movement */
+export interface ServoMotionModel {
+  motionId: string;
+  servoId: string;
+  startAngleDeg: number;
+  endAngleDeg: number;
+  currentAngleDeg: number;
+  speedDegPerSec: number;
+  direction: ServoDirection;
+  isComplete: boolean;
+  startTimestamp: number;
+  estimatedDurationMs: number;
+  elapsedMs: number;
+  futureMotionHints: Record<string, unknown>;
+}
+
+/** Servo physical constraints and limits */
+export interface ServoConstraintModel {
+  constraintId: string;
+  servoId: string;
+  minAngleDeg: number;
+  maxAngleDeg: number;
+  maxSpeedDegPerSec: number;
+  stallTorqueKgCm: number;
+  operatingVoltageV: number;
+  deadbandUs: number;
+  isActive: boolean;
+  futureConstraintHints: Record<string, unknown>;
+}
+
+/** Servo visual animation state */
+export interface ServoAnimationModel {
+  animationId: string;
+  servoId: string;
+  displayAngleDeg: number;
+  hornLengthPx: number;
+  hornWidthPx: number;
+  bodyWidthPx: number;
+  bodyHeightPx: number;
+  showTargetIndicator: boolean;
+  showAngleLabel: boolean;
+  animationSpeedMultiplier: number;
+  isAnimating: boolean;
+  futureAnimationHints: Record<string, unknown>;
+}
+
+/** Snapshot of all servo simulation state */
+export interface ServoSimulationSnapshot {
+  servos: ServoMotorModel[];
+  positions: ServoPositionModel[];
+  motions: ServoMotionModel[];
+  constraints: ServoConstraintModel[];
+  animations: ServoAnimationModel[];
+}
+
+// ─── Phase 22C: OLED & LCD Display Runtime Simulation ──────
+
+/** Display device type */
+export type DisplayDeviceType = 'LCD1602' | 'SSD1306';
+
+/** Display connection protocol */
+export type DisplayProtocol = 'I2C' | 'SPI' | 'PARALLEL';
+
+/** LCD1602 character display model */
+export interface LCDDisplayModel {
+  displayId: string;
+  esp32Id: string;
+  deviceType: 'LCD1602';
+  protocol: DisplayProtocol;
+  i2cAddress: number;
+  sdaPin: number;
+  sclPin: number;
+  rows: number;
+  cols: number;
+  isBacklightOn: boolean;
+  isInitialized: boolean;
+  positionX: number;
+  positionY: number;
+  futureLCDHints: Record<string, unknown>;
+}
+
+/** LCD cursor position model */
+export interface LCDCursorModel {
+  cursorId: string;
+  displayId: string;
+  row: number;
+  col: number;
+  isVisible: boolean;
+  isBlinking: boolean;
+  futureCursorHints: Record<string, unknown>;
+}
+
+/** LCD character buffer model — stores the full character grid */
+export interface LCDCharacterModel {
+  characterId: string;
+  displayId: string;
+  buffer: string[][];
+  dirtyFlags: boolean[][];
+  futureCharacterHints: Record<string, unknown>;
+}
+
+/** SSD1306 OLED display model */
+export interface OLEDDisplayModel {
+  displayId: string;
+  esp32Id: string;
+  deviceType: 'SSD1306';
+  protocol: DisplayProtocol;
+  i2cAddress: number;
+  sdaPin: number;
+  sclPin: number;
+  widthPx: number;
+  heightPx: number;
+  isInitialized: boolean;
+  isDisplayOn: boolean;
+  contrast: number;
+  positionX: number;
+  positionY: number;
+  futureOLEDHints: Record<string, unknown>;
+}
+
+/** OLED framebuffer model — flat array for pixel storage */
+export interface OLEDBufferModel {
+  bufferId: string;
+  displayId: string;
+  width: number;
+  height: number;
+  pixels: number[];
+  isDirty: boolean;
+  futureBufferHints: Record<string, unknown>;
+}
+
+/** OLED pixel operation model — for tracking draw operations */
+export interface OLEDPixelModel {
+  pixelId: string;
+  displayId: string;
+  x: number;
+  y: number;
+  color: number;
+  timestamp: number;
+  futurePixelHints: Record<string, unknown>;
+}
+
+/** Display animation state — shared by both LCD & OLED */
+export interface DisplayAnimationModel {
+  animationId: string;
+  displayId: string;
+  deviceType: DisplayDeviceType;
+  isAnimating: boolean;
+  refreshRateMs: number;
+  lastRenderTimestamp: number;
+  frameCount: number;
+  futureDisplayAnimHints: Record<string, unknown>;
+}
+
+/** Snapshot of all display simulation state */
+export interface DisplaySimulationSnapshot {
+  lcdDisplays: LCDDisplayModel[];
+  lcdCursors: LCDCursorModel[];
+  lcdCharacters: LCDCharacterModel[];
+  oledDisplays: OLEDDisplayModel[];
+  oledBuffers: OLEDBufferModel[];
+  oledPixels: OLEDPixelModel[];
+  displayAnimations: DisplayAnimationModel[];
+}
+
+// ─── Phase 23A: Virtual Serial Monitor Runtime Simulation ──────────────────
+
+/** Supported serial baud rates */
+export type SerialBaudRate = 300 | 1200 | 2400 | 4800 | 9600 | 14400 | 19200 | 28800 | 38400 | 57600 | 115200;
+
+/** Serial message type — output vs input */
+export type SerialMessageType = 'OUTPUT' | 'INPUT' | 'ERROR' | 'SYSTEM';
+
+/** Serial line ending mode */
+export type SerialLineEnding = 'NONE' | 'NL' | 'CR' | 'BOTH';
+
+/** Virtual serial port — represents one Serial connection on an ESP32 */
+export interface SerialPortModel {
+  portId: string;
+  esp32Id: string;
+  baudRate: SerialBaudRate;
+  isOpen: boolean;
+  lineEnding: SerialLineEnding;
+  maxBufferLines: number;
+  positionX: number;
+  positionY: number;
+  futureSerialPortHints: Record<string, unknown>;
+}
+
+/** One serial message — stores a single print/println/write output or read input */
+export interface SerialMessageModel {
+  messageId: string;
+  portId: string;
+  sessionId: string;
+  text: string;
+  messageType: SerialMessageType;
+  timestamp: number;
+  futureSerialMessageHints: Record<string, unknown>;
+}
+
+/** Serial input buffer — stores pending input characters for Serial.read()/available() */
+export interface SerialBufferModel {
+  bufferId: string;
+  portId: string;
+  inputBuffer: string;
+  maxSize: number;
+  futureSerialBufferHints: Record<string, unknown>;
+}
+
+/** Serial command — represents a Blockly block command to be executed */
+export interface SerialCommandModel {
+  commandId: string;
+  portId: string;
+  commandType: 'BEGIN' | 'PRINT' | 'PRINTLN' | 'WRITE' | 'READ' | 'AVAILABLE' | 'FLUSH' | 'CLEAR';
+  payload: string;
+  executedAt: number;
+  futureSerialCommandHints: Record<string, unknown>;
+}
+
+/** Serial session — groups messages within a single session/run */
+export interface SerialSessionModel {
+  sessionId: string;
+  portId: string;
+  startedAt: number;
+  endedAt: number;
+  isActive: boolean;
+  messageCount: number;
+  isPaused: boolean;
+  isAutoScroll: boolean;
+  filterText: string;
+  futureSerialSessionHints: Record<string, unknown>;
+}
+
+/** Snapshot of all serial monitor simulation state */
+export interface SerialMonitorSnapshot {
+  serialPorts: SerialPortModel[];
+  serialMessages: SerialMessageModel[];
+  serialBuffers: SerialBufferModel[];
+  serialCommands: SerialCommandModel[];
+  serialSessions: SerialSessionModel[];
+}
+
+// ─── Phase 23B: Virtual Logic Analyzer & Oscilloscope Foundation ──────────────────
+
+/** Logic level state */
+export type LogicLevel = 'HIGH' | 'LOW' | 'UNKNOWN' | 'Z';
+
+/** Trigger mode for logic analyzer captures */
+export type TriggerMode = 'RISING' | 'FALLING' | 'CHANGE' | 'HIGH' | 'LOW' | 'NONE';
+
+/** Capture state lifecycle */
+export type CaptureState = 'IDLE' | 'ARMED' | 'CAPTURING' | 'STOPPED' | 'COMPLETE';
+
+/** Logic analyzer channel — one monitored digital signal */
+export interface LogicAnalyzerChannelModel {
+  channelId: string;
+  esp32Id: string;
+  pinNumber: number;
+  channelLabel: string;
+  triggerMode: TriggerMode;
+  isEnabled: boolean;
+  colorHex: string;
+  positionY: number;
+  futureLogicChannelHints: Record<string, unknown>;
+}
+
+/** Logic capture — one capture session for the logic analyzer */
+export interface LogicCaptureModel {
+  captureId: string;
+  esp32Id: string;
+  state: CaptureState;
+  sampleRateHz: number;
+  maxSamples: number;
+  startTimestamp: number;
+  endTimestamp: number;
+  channelIds: string[];
+  zoomLevel: number;
+  horizontalScale: number;
+  triggerChannelId: string;
+  triggerMode: TriggerMode;
+  cursorAPosition: number;
+  cursorBPosition: number;
+  futureLogicCaptureHints: Record<string, unknown>;
+}
+
+/** Logic sample — one data point captured from a channel */
+export interface LogicSampleModel {
+  sampleId: string;
+  captureId: string;
+  channelId: string;
+  timestamp: number;
+  logicLevel: LogicLevel;
+  sampleIndex: number;
+  pulseWidthUs: number;
+  futureLogicSampleHints: Record<string, unknown>;
+}
+
+/** Oscilloscope channel — one analog/PWM signal channel */
+export interface OscilloscopeChannelModel {
+  channelId: string;
+  esp32Id: string;
+  pinNumber: number;
+  channelLabel: string;
+  isEnabled: boolean;
+  colorHex: string;
+  verticalScale: number;
+  offsetVoltage: number;
+  positionY: number;
+  futureOscChannelHints: Record<string, unknown>;
+}
+
+/** Oscilloscope capture — one waveform capture session */
+export interface OscilloscopeCaptureModel {
+  captureId: string;
+  esp32Id: string;
+  state: CaptureState;
+  sampleRateHz: number;
+  maxSamples: number;
+  startTimestamp: number;
+  endTimestamp: number;
+  channelIds: string[];
+  zoomLevel: number;
+  horizontalScale: number;
+  verticalScale: number;
+  triggerChannelId: string;
+  triggerLevel: number;
+  triggerMode: TriggerMode;
+  cursorAPosition: number;
+  cursorBPosition: number;
+  futureOscCaptureHints: Record<string, unknown>;
+}
+
+/** Waveform buffer — stores analog voltage samples for a channel */
+export interface WaveformBufferModel {
+  bufferId: string;
+  captureId: string;
+  channelId: string;
+  timestamps: number[];
+  voltages: number[];
+  sampleCount: number;
+  maxSize: number;
+  futureWaveformHints: Record<string, unknown>;
+}
+
+/** Snapshot of all logic analyzer & oscilloscope simulation state */
+export interface LogicAnalyzerSnapshot {
+  logicAnalyzerChannels: LogicAnalyzerChannelModel[];
+  logicCaptures: LogicCaptureModel[];
+  logicSamples: LogicSampleModel[];
+  oscilloscopeChannels: OscilloscopeChannelModel[];
+  oscilloscopeCaptures: OscilloscopeCaptureModel[];
+  waveformBuffers: WaveformBufferModel[];
+}
+
+// ─── Phase 24A: Virtual Robotics Physics Runtime Foundation ──────────────────
+
+/** Motion state for a robot */
+export type MotionState =
+  | 'IDLE'
+  | 'MOVING_FORWARD'
+  | 'MOVING_BACKWARD'
+  | 'TURNING_LEFT'
+  | 'TURNING_RIGHT'
+  | 'STOPPED';
+
+/** Collision state for AABB metadata */
+export type CollisionState =
+  | 'NONE'
+  | 'ENTERING'
+  | 'OVERLAPPING'
+  | 'EXITING';
+
+/** Physics world simulation state */
+export type PhysicsState =
+  | 'IDLE'
+  | 'RUNNING'
+  | 'PAUSED'
+  | 'STOPPED';
+
+/** Robot physical properties — mass, wheel geometry, bounding box */
+export interface RobotPhysicsModel {
+  robotId: string;
+  esp32Id: string;
+  mass: number;
+  wheelBaseCm: number;
+  wheelRadiusCm: number;
+  maxSpeedCmPerSec: number;
+  frictionCoeff: number;
+  boundingBoxWidth: number;
+  boundingBoxHeight: number;
+  futureRobotPhysicsHints: Record<string, unknown>;
+}
+
+/** Robot pose — position, heading, velocity at a point in time */
+export interface RobotPoseModel {
+  poseId: string;
+  robotId: string;
+  positionX: number;
+  positionY: number;
+  headingDeg: number;
+  velocityCmPerSec: number;
+  angularVelocityDegPerSec: number;
+  motionState: MotionState;
+  timestamp: number;
+  futureRobotPoseHints: Record<string, unknown>;
+}
+
+/** Wheel runtime state — per-wheel speed and rotation */
+export interface WheelRuntimeModel {
+  wheelId: string;
+  robotId: string;
+  side: 'LEFT' | 'RIGHT';
+  speedCmPerSec: number;
+  targetSpeedCmPerSec: number;
+  rotationDeg: number;
+  diameter: number;
+  futureWheelHints: Record<string, unknown>;
+}
+
+/** Motion command — queued movement instruction */
+export interface MotionCommandModel {
+  commandId: string;
+  robotId: string;
+  commandType: 'FORWARD' | 'BACKWARD' | 'TURN_LEFT' | 'TURN_RIGHT' | 'STOP';
+  speedCmPerSec: number;
+  durationMs: number;
+  angleDeg: number;
+  timestamp: number;
+  isComplete: boolean;
+  futureMotionCommandHints: Record<string, unknown>;
+}
+
+/** Collision metadata — AABB overlap between two objects */
+export interface CollisionModel {
+  collisionId: string;
+  objectAId: string;
+  objectAType: string;
+  objectBId: string;
+  objectBType: string;
+  collisionState: CollisionState;
+  overlapX: number;
+  overlapY: number;
+  timestamp: number;
+  futureCollisionHints: Record<string, unknown>;
+}
+
+/** Physics world configuration — bounds, tick rate, gravity */
+export interface PhysicsWorldModel {
+  worldId: string;
+  esp32Id: string;
+  state: PhysicsState;
+  tickRateHz: number;
+  deltaAccumulatorMs: number;
+  worldBoundsMinX: number;
+  worldBoundsMinY: number;
+  worldBoundsMaxX: number;
+  worldBoundsMaxY: number;
+  gravity: number;
+  timestamp: number;
+  futurePhysicsWorldHints: Record<string, unknown>;
+}
+
+/** Snapshot of all robotics physics simulation state */
+export interface PhysicsSnapshot {
+  robotPhysics: RobotPhysicsModel[];
+  robotPoses: RobotPoseModel[];
+  wheelRuntimes: WheelRuntimeModel[];
+  motionCommands: MotionCommandModel[];
+  collisions: CollisionModel[];
+  physicsWorlds: PhysicsWorldModel[];
+}
+
+// ─── Phase 24B: Differential Drive Robot Simulator ──────────────────
+
+/** Motor direction for H-bridge (L298N) driver */
+export type MotorDirection =
+  | 'FORWARD'
+  | 'BACKWARD'
+  | 'BRAKE'
+  | 'COAST';
+
+/** Robot drive state machine */
+export type RobotDriveState =
+  | 'IDLE'
+  | 'DRIVING'
+  | 'TURNING'
+  | 'QUEUED'
+  | 'COMPLETED'
+  | 'ERROR';
+
+/** Wheel encoder state */
+export type EncoderState =
+  | 'IDLE'
+  | 'COUNTING'
+  | 'OVERFLOW'
+  | 'RESET';
+
+/** Differential drive robot — core config linking ESP32 pins, motor driver, and encoders */
+export interface DifferentialDriveRobotModel {
+  driveId: string;
+  esp32Id: string;
+  motorDriverId: string;
+  leftEncoderId: string;
+  rightEncoderId: string;
+  wheelBaseCm: number;
+  wheelDiameterCm: number;
+  maxSpeedCmPerSec: number;
+  driveState: RobotDriveState;
+  enablePinA: number;
+  enablePinB: number;
+  in1Pin: number;
+  in2Pin: number;
+  in3Pin: number;
+  in4Pin: number;
+  leftEncoderPin: number;
+  rightEncoderPin: number;
+  timestamp: number;
+  futureDriveRobotHints: Record<string, unknown>;
+}
+
+/** Wheel encoder — tick counting for distance and RPM calculation */
+export interface WheelEncoderModel {
+  encoderId: string;
+  driveId: string;
+  side: 'LEFT' | 'RIGHT';
+  tickCount: number;
+  ticksPerRevolution: number;
+  distanceCm: number;
+  rpm: number;
+  lastTickTimestamp: number;
+  encoderState: EncoderState;
+  futureEncoderHints: Record<string, unknown>;
+}
+
+/** Motor driver — L298N H-bridge state (ENA/ENB PWM + IN1-IN4 logic) */
+export interface MotorDriverModel {
+  driverId: string;
+  driveId: string;
+  enableAPWM: number;
+  enableBPWM: number;
+  in1High: boolean;
+  in2High: boolean;
+  in3High: boolean;
+  in4High: boolean;
+  leftMotorDirection: MotorDirection;
+  rightMotorDirection: MotorDirection;
+  leftSpeedPercent: number;
+  rightSpeedPercent: number;
+  futureMotorDriverHints: Record<string, unknown>;
+}
+
+/** Robot command queue — ordered list of movement instructions */
+export interface RobotCommandQueueModel {
+  queueId: string;
+  driveId: string;
+  commands: {
+    commandType: string;
+    speedCmPerSec: number;
+    durationMs: number;
+    angleDeg: number;
+    isComplete: boolean;
+  }[];
+  currentIndex: number;
+  isExecuting: boolean;
+  futureCommandQueueHints: Record<string, unknown>;
+}
+
+/** Robot path — waypoint recording for odometry visualization */
+export interface RobotPathModel {
+  pathId: string;
+  driveId: string;
+  waypoints: {
+    x: number;
+    y: number;
+    headingDeg: number;
+    timestamp: number;
+  }[];
+  totalDistanceCm: number;
+  futurePathHints: Record<string, unknown>;
+}
+
+/** Robot telemetry — snapshot of current robot state for monitoring */
+export interface RobotTelemetryModel {
+  telemetryId: string;
+  driveId: string;
+  positionX: number;
+  positionY: number;
+  headingDeg: number;
+  velocityCmPerSec: number;
+  angularVelocityDegPerSec: number;
+  leftEncoderTicks: number;
+  rightEncoderTicks: number;
+  leftWheelRPM: number;
+  rightWheelRPM: number;
+  batteryVoltage: number;
+  timestamp: number;
+  futureTelemetryHints: Record<string, unknown>;
+}
+
+/** Snapshot of all differential drive simulation state */
+export interface DifferentialDriveSnapshot {
+  differentialDriveRobots: DifferentialDriveRobotModel[];
+  wheelEncoders: WheelEncoderModel[];
+  motorDrivers: MotorDriverModel[];
+  robotCommandQueues: RobotCommandQueueModel[];
+  robotPaths: RobotPathModel[];
+  robotTelemetry: RobotTelemetryModel[];
+}
+
+// ─── Phase 25A: Virtual Line Following Sensor Runtime ───────────────
+
+/** Track surface color */
+export type TrackColor = 'BLACK' | 'WHITE' | 'RED' | 'GREEN' | 'BLUE' | 'CUSTOM';
+
+/** IR sensor operational state */
+export type SensorState = 'IDLE' | 'CALIBRATING' | 'ACTIVE' | 'ERROR' | 'DISABLED';
+
+/** Track segment geometry type */
+export type TrackType = 'STRAIGHT' | 'CURVE' | 'LOOP' | 'JUNCTION' | 'INTERSECTION' | 'CHECKPOINT';
+
+/** Line track definition — the overall track structure */
+export interface LineTrackModel {
+  trackId: string;
+  trackName: string;
+  trackColor: TrackColor;
+  backgroundColor: TrackColor;
+  trackWidthCm: number;
+  totalLengthCm: number;
+  originX: number;
+  originY: number;
+  isClosedLoop: boolean;
+  timestamp: number;
+  futureLineTrackHints: Record<string, unknown>;
+}
+
+/** IR line sensor mounted on a robot */
+export interface LineSensorModel {
+  sensorId: string;
+  driveId: string;
+  sensorPosition: 'LEFT_SENSOR' | 'CENTER_SENSOR' | 'RIGHT_SENSOR' | 'CUSTOM';
+  sensorOffsetXCm: number;
+  sensorOffsetYCm: number;
+  sensorAngleDeg: number;
+  servoMountId: string;
+  sensorState: SensorState;
+  analogValue: number;
+  digitalValue: boolean;
+  threshold: number;
+  edgeConfidence: number;
+  lastReadTimestamp: number;
+  futureSensorHints: Record<string, unknown>;
+}
+
+/** A segment of a line track (straight, curve, etc.) */
+export interface TrackSegmentModel {
+  segmentId: string;
+  trackId: string;
+  segmentType: TrackType;
+  startX: number;
+  startY: number;
+  endX: number;
+  endY: number;
+  curveCenterX: number;
+  curveCenterY: number;
+  curveRadiusCm: number;
+  curveStartAngleDeg: number;
+  curveSweepAngleDeg: number;
+  lengthCm: number;
+  orderIndex: number;
+  futureSegmentHints: Record<string, unknown>;
+}
+
+/** An intersection where track segments meet */
+export interface TrackIntersectionModel {
+  intersectionId: string;
+  trackId: string;
+  positionX: number;
+  positionY: number;
+  connectedSegmentIds: string[];
+  intersectionAngleDeg: number;
+  futureIntersectionHints: Record<string, unknown>;
+}
+
+/** A marker on a track (checkpoint, start, finish, waypoint) */
+export interface TrackMarkerModel {
+  markerId: string;
+  trackId: string;
+  segmentId: string;
+  positionAlongSegment: number;
+  markerType: 'CHECKPOINT' | 'START' | 'FINISH' | 'WAYPOINT';
+  positionX: number;
+  positionY: number;
+  futureMarkerHints: Record<string, unknown>;
+}
+
+/** A sensor reading snapshot */
+export interface SensorReadingModel {
+  readingId: string;
+  sensorId: string;
+  driveId: string;
+  analogValue: number;
+  digitalValue: boolean;
+  detectedColor: 'BLACK' | 'WHITE' | 'EDGE' | 'UNKNOWN';
+  distanceFromCenterLineCm: number;
+  nearestSegmentId: string;
+  nearestIntersectionId: string;
+  timestamp: number;
+  futureSensorReadingHints: Record<string, unknown>;
+}
+
+/** Snapshot of all line following state */
+export interface LineFollowingSnapshot {
+  lineTracks: LineTrackModel[];
+  lineSensors: LineSensorModel[];
+  trackSegments: TrackSegmentModel[];
+  trackIntersections: TrackIntersectionModel[];
+  trackMarkers: TrackMarkerModel[];
+  sensorReadings: SensorReadingModel[];
+}
+
+// ─── Phase 25B: Virtual Obstacle Avoidance Runtime ──────────────────
+
+/** Obstacle avoidance system state machine */
+export type AvoidanceState = 'IDLE' | 'SCANNING' | 'AVOIDING' | 'RECOVERING' | 'STOPPED' | 'ERROR';
+
+/** Obstacle severity classification */
+export type ObstacleSeverity = 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+
+/** Navigation action commands */
+export type NavigationAction = 'FORWARD' | 'STOP' | 'REVERSE' | 'TURN_LEFT' | 'TURN_RIGHT' | 'SPIN_LEFT' | 'SPIN_RIGHT' | 'FOLLOW_PATH';
+
+/** Obstacle avoidance system — core config linking robot, sensors, and rules */
+export interface ObstacleAvoidanceModel {
+  avoidanceId: string;
+  driveId: string;
+  esp32Id: string;
+  avoidanceState: AvoidanceState;
+  frontSensorId: string;
+  leftSensorId: string;
+  rightSensorId: string;
+  rearSensorId: string;
+  activeRuleIds: string[];
+  currentAction: NavigationAction;
+  lastDecisionId: string;
+  isEnabled: boolean;
+  timestamp: number;
+  futureAvoidanceHints: Record<string, unknown>;
+}
+
+/** Avoidance rule — detection zone threshold configuration */
+export interface AvoidanceRuleModel {
+  ruleId: string;
+  avoidanceId: string;
+  ruleName: string;
+  detectionZone: 'FRONT' | 'LEFT' | 'RIGHT' | 'REAR';
+  thresholdCm: number;
+  criticalDistanceCm: number;
+  priority: number;
+  actionOnTrigger: NavigationAction;
+  isActive: boolean;
+  futureRuleHints: Record<string, unknown>;
+}
+
+/** Obstacle detection — detected obstacle with distance and bearing */
+export interface ObstacleDetectionModel {
+  detectionId: string;
+  avoidanceId: string;
+  sensorId: string;
+  distanceCm: number;
+  bearingDeg: number;
+  detectionZone: 'FRONT' | 'LEFT' | 'RIGHT' | 'REAR';
+  severity: ObstacleSeverity;
+  confidence: number;
+  timestamp: number;
+  futureDetectionHints: Record<string, unknown>;
+}
+
+/** Navigation decision — selected action with reason */
+export interface NavigationDecisionModel {
+  decisionId: string;
+  avoidanceId: string;
+  selectedAction: NavigationAction;
+  previousAction: NavigationAction;
+  decisionReason: string;
+  triggerDetectionId: string;
+  frontDistanceCm: number;
+  leftDistanceCm: number;
+  rightDistanceCm: number;
+  rearDistanceCm: number;
+  decisionTimestamp: number;
+  futureDecisionHints: Record<string, unknown>;
+}
+
+/** Safe zone — navigable area definition */
+export interface SafeZoneModel {
+  zoneId: string;
+  avoidanceId: string;
+  zoneName: string;
+  centerX: number;
+  centerY: number;
+  radiusCm: number;
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+  isSafe: boolean;
+  lastCheckedTimestamp: number;
+  futureZoneHints: Record<string, unknown>;
+}
+
+/** Collision prediction — time-to-collision and impact analysis */
+export interface CollisionPredictionModel {
+  predictionId: string;
+  avoidanceId: string;
+  detectionId: string;
+  timeToCollisionMs: number;
+  predictedImpactX: number;
+  predictedImpactY: number;
+  collisionProbability: number;
+  safeDistanceMarginCm: number;
+  robotVelocityCmPerSec: number;
+  robotHeadingDeg: number;
+  predictionTimestamp: number;
+  futurePredictionHints: Record<string, unknown>;
+}
+
+/** Snapshot of all obstacle avoidance state */
+export interface ObstacleAvoidanceSnapshot {
+  obstacleAvoidances: ObstacleAvoidanceModel[];
+  avoidanceRules: AvoidanceRuleModel[];
+  obstacleDetections: ObstacleDetectionModel[];
+  navigationDecisions: NavigationDecisionModel[];
+  safeZones: SafeZoneModel[];
+  collisionPredictions: CollisionPredictionModel[];
+}
+
+// ─── Phase 19D: High Fidelity 3D Component Rendering & Performance Foundation ───
+
+/** Supported texture formats */
+export type TextureFormat = 'PNG' | 'WEBP' | 'SVG' | 'DATA_URI';
+
+/** Texture loading state */
+export type TextureState = 'UNLOADED' | 'LOADING' | 'LOADED' | 'ERROR' | 'CACHED';
+
+/** Debug overlay display mode */
+export type DebugOverlayMode = 'OFF' | 'FPS' | 'RENDER_STATS' | 'FULL';
+
+/** Viewport culling mode */
+export type CullingMode = 'NONE' | 'VIEWPORT' | 'FRUSTUM';
+
+/** Workspace grid visual style */
+export type GridStyle = 'DOTS' | 'LINES' | 'CROSSHAIRS' | 'CAD';
+
+/** Component texture — links a component to its texture asset */
+export interface ComponentTextureModel {
+  textureId: string;
+  componentType: string;
+  assetId: string;
+  textureFormat: TextureFormat;
+  textureState: TextureState;
+  assetPath: string;
+  svgData: string;
+  naturalWidth: number;
+  naturalHeight: number;
+  anchorX: number;
+  anchorY: number;
+  scale: number;
+  rotation: number;
+  memoryBytes: number;
+  lastAccessTimestamp: number;
+  futureTextureHints: Record<string, unknown>;
+}
+
+/** Texture atlas — multiple component textures packed into one image */
+export interface TextureAtlasModel {
+  atlasId: string;
+  atlasName: string;
+  width: number;
+  height: number;
+  textureIds: string[];
+  regions: { textureId: string; x: number; y: number; width: number; height: number }[];
+  format: TextureFormat;
+  memoryBytes: number;
+  futureAtlasHints: Record<string, unknown>;
+}
+
+/** Texture cache entry — tracks loaded textures for reuse and eviction */
+export interface TextureCacheModel {
+  cacheId: string;
+  textureId: string;
+  isLoaded: boolean;
+  loadTimestamp: number;
+  lastAccessTimestamp: number;
+  accessCount: number;
+  memorySizeBytes: number;
+  evictionPriority: number;
+  futureCacheHints: Record<string, unknown>;
+}
+
+/** Texture metadata — additional properties for texture processing */
+export interface TextureMetadataModel {
+  metadataId: string;
+  textureId: string;
+  naturalWidth: number;
+  naturalHeight: number;
+  paddingTop: number;
+  paddingRight: number;
+  paddingBottom: number;
+  paddingLeft: number;
+  mipmapLevels: number;
+  resolution: number;
+  isTransparent: boolean;
+  futureMetadataHints: Record<string, unknown>;
+}
+
+/** Render performance metrics — FPS, frame time, draw calls */
+export interface RenderPerformanceModel {
+  perfId: string;
+  currentFps: number;
+  averageFps: number;
+  minFps: number;
+  maxFps: number;
+  frameTimeMs: number;
+  averageFrameTimeMs: number;
+  drawCallCount: number;
+  textureCount: number;
+  componentCount: number;
+  wireCount: number;
+  totalObjectCount: number;
+  gpuMemoryBytes: number;
+  lastUpdateTimestamp: number;
+  frameTimes: number[];
+  futurePerformanceHints: Record<string, unknown>;
+}
+
+/** Viewport culling state — tracks what is visible and what is culled */
+export interface ViewportCullingModel {
+  cullingId: string;
+  cullingMode: CullingMode;
+  viewportX: number;
+  viewportY: number;
+  viewportWidth: number;
+  viewportHeight: number;
+  zoom: number;
+  marginPx: number;
+  visibleObjectCount: number;
+  culledObjectCount: number;
+  totalObjectCount: number;
+  lastCullTimestamp: number;
+  futureCullingHints: Record<string, unknown>;
+}
+
+/** Object pool — reusable objects to reduce GC pressure */
+export interface ObjectPoolModel {
+  poolId: string;
+  objectType: string;
+  poolSize: number;
+  activeCount: number;
+  availableCount: number;
+  highWatermark: number;
+  totalAllocations: number;
+  totalReleases: number;
+  futurePoolHints: Record<string, unknown>;
+}
+
+/** Dirty rectangle — region of the viewport needing re-render */
+export interface DirtyRectModel {
+  dirtyRectId: string;
+  objectId: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  isDirty: boolean;
+  frameMarked: number;
+  futureDirtyHints: Record<string, unknown>;
+}
+
+/** Spatial index entry — grid-based spatial partitioning for fast queries */
+export interface SpatialIndexModel {
+  spatialId: string;
+  cellSize: number;
+  cellX: number;
+  cellY: number;
+  objectId: string;
+  objectX: number;
+  objectY: number;
+  objectWidth: number;
+  objectHeight: number;
+  futureSpatialHints: Record<string, unknown>;
+}
+
+/** Render batch — grouped draw calls sharing the same texture/state */
+export interface RenderBatchModel {
+  batchId: string;
+  textureId: string;
+  objectIds: string[];
+  objectCount: number;
+  drawCallIndex: number;
+  isOptimized: boolean;
+  futureBatchHints: Record<string, unknown>;
+}
+
+/** CAD-style workspace grid — adaptive minor/major grid with snap */
+export interface CadGridModel {
+  cadGridId: string;
+  gridStyle: GridStyle;
+  minorSpacing: number;
+  majorSpacing: number;
+  snapSize: number;
+  snapEnabled: boolean;
+  visible: boolean;
+  minorColor: number;
+  majorColor: number;
+  minorAlpha: number;
+  majorAlpha: number;
+  adaptiveZoom: boolean;
+  currentZoom: number;
+  viewportX: number;
+  viewportY: number;
+  viewportWidth: number;
+  viewportHeight: number;
+  futureGridHints: Record<string, unknown>;
+}
+
+/** Debug overlay — performance monitoring and render diagnostics */
+export interface DebugOverlayModel {
+  debugId: string;
+  mode: DebugOverlayMode;
+  isVisible: boolean;
+  positionX: number;
+  positionY: number;
+  currentFps: number;
+  drawCallCount: number;
+  textureCount: number;
+  componentCount: number;
+  wireCount: number;
+  culledCount: number;
+  memoryUsageBytes: number;
+  renderTimeMs: number;
+  lastUpdateTimestamp: number;
+  futureDebugHints: Record<string, unknown>;
+}
+
+/** Startup scene — default scene definition with pre-placed components */
+export interface StartupSceneModel {
+  sceneId: string;
+  sceneName: string;
+  componentPlacements: { assetId: string; x: number; y: number; rotation: number; scale: number }[];
+  wireConnections: { startPinId: string; endPinId: string; color: string }[];
+  cameraX: number;
+  cameraY: number;
+  cameraZoom: number;
+  gridVisible: boolean;
+  futureSceneHints: Record<string, unknown>;
+}
+
+/** Pin render state — individual pin visual state for hover, selection, highlighting */
+export interface PinRenderStateModel {
+  pinRenderId: string;
+  pinId: string;
+  componentId: string;
+  isHovered: boolean;
+  isSelected: boolean;
+  isHighlighted: boolean;
+  isCompatibleTarget: boolean;
+  isInvalidTarget: boolean;
+  netColor: number;
+  highlightColor: number;
+  hoverRadius: number;
+  tooltipText: string;
+  futurePinRenderHints: Record<string, unknown>;
+}
+
+/** Snapshot of all high-fidelity renderer state */
+export interface HighFidelityRendererSnapshot {
+  componentTextures: ComponentTextureModel[];
+  textureAtlases: TextureAtlasModel[];
+  textureCaches: TextureCacheModel[];
+  textureMetadata: TextureMetadataModel[];
+  renderPerformance: RenderPerformanceModel[];
+  viewportCullings: ViewportCullingModel[];
+  objectPools: ObjectPoolModel[];
+  dirtyRects: DirtyRectModel[];
+  spatialIndices: SpatialIndexModel[];
+  renderBatches: RenderBatchModel[];
+  cadGrids: CadGridModel[];
+  debugOverlays: DebugOverlayModel[];
+  startupScenes: StartupSceneModel[];
+  pinRenderStates: PinRenderStateModel[];
+}
+
+// ─── Phase 26A: Simulator UI Foundation ─────────────────────────────────────
+
+/** Workspace tool mode — determines cursor behavior and interaction */
+export type WorkspaceTool = 'select' | 'move' | 'rotate' | 'wire' | 'delete' | 'pan';
+
+/** Undo action classification for history tracking */
+export type UndoActionType = 'placement' | 'movement' | 'wiring' | 'deletion' | 'rotation' | 'property_change' | 'wire_deletion';
+
+/** Severity level for connection validation warnings */
+export type ConnectionWarningLevel = 'info' | 'warning' | 'error';
+
+/** Component palette category classification */
+export type PaletteCategory = 'boards' | 'sensors' | 'displays' | 'actuators' | 'power' | 'basic_components' | 'communication';
+
+/** Individual undo/redo action with before/after state snapshots */
+export interface UndoActionModel {
+  actionId: string;
+  type: UndoActionType;
+  timestamp: number;
+  description: string;
+  beforeState: Record<string, any>;
+  afterState: Record<string, any>;
+  metadata: Record<string, any>;
+}
+
+/** Undo/redo history stack with configurable capacity */
+export interface UndoHistoryModel {
+  historyId: string;
+  undoStack: UndoActionModel[];
+  redoStack: UndoActionModel[];
+  maxCapacity: number;
+  metadata: Record<string, any>;
+}
+
+/** Camera gesture state for pan/zoom control */
+export interface CameraGestureModel {
+  gestureId: string;
+  zoom: number;
+  panX: number;
+  panY: number;
+  minZoom: number;
+  maxZoom: number;
+  zoomStep: number;
+  panSpeed: number;
+  smoothingEnabled: boolean;
+  smoothingFactor: number;
+  metadata: Record<string, any>;
+}
+
+/** Individual connection validation warning */
+export interface ConnectionWarningModel {
+  warningId: string;
+  level: ConnectionWarningLevel;
+  type: string;
+  message: string;
+  affectedObjectIds: string[];
+  affectedPinIds: string[];
+  metadata: Record<string, any>;
+}
+
+/** Connection validation state with accumulated warnings */
+export interface ConnectionValidationModel {
+  validationId: string;
+  warnings: ConnectionWarningModel[];
+  lastValidatedAt: number;
+  autoValidateEnabled: boolean;
+  metadata: Record<string, any>;
+}
+
+/** Single component entry in the palette library */
+export interface PaletteComponentModel {
+  componentId: string;
+  assetId: string;
+  displayName: string;
+  category: PaletteCategory;
+  description: string;
+  isFavorite: boolean;
+  lastUsedAt: number;
+  usageCount: number;
+  metadata: Record<string, any>;
+}
+
+/** Palette category definition with display metadata */
+export interface PaletteCategoryModel {
+  categoryId: string;
+  displayName: string;
+  icon: string;
+  sortOrder: number;
+  metadata: Record<string, any>;
+}
+
+/** Palette UI state — search, filters, recent items */
+export interface PaletteStateModel {
+  stateId: string;
+  searchQuery: string;
+  activeCategory: string;
+  showFavoritesOnly: boolean;
+  recentComponentIds: string[];
+  maxRecentCount: number;
+  metadata: Record<string, any>;
+}
+
+/** Active workspace tool state */
+export interface WorkspaceToolModel {
+  toolId: string;
+  activeTool: WorkspaceTool;
+  previousTool: WorkspaceTool;
+  isToolLocked: boolean;
+  metadata: Record<string, any>;
+}
+
+/** Pin inspector tooltip data for hovered pin */
+export interface PinInspectorModel {
+  inspectorId: string;
+  hoveredPinId: string;
+  pinName: string;
+  gpioNumber: number;
+  voltage: number;
+  pwmSupport: boolean;
+  adcSupport: boolean;
+  connectionState: string;
+  connectedWireIds: string[];
+  metadata: Record<string, any>;
+}
+
+/** Snapshot of all simulator UI state */
+export interface SimulatorUISnapshot {
+  undoHistories: UndoHistoryModel[];
+  cameraGestures: CameraGestureModel[];
+  connectionValidations: ConnectionValidationModel[];
+  paletteComponents: PaletteComponentModel[];
+  paletteCategories: PaletteCategoryModel[];
+  paletteStates: PaletteStateModel[];
+  workspaceTools: WorkspaceToolModel[];
+  pinInspectors: PinInspectorModel[];
+  connectionWarnings: ConnectionWarningModel[];
 }
 
