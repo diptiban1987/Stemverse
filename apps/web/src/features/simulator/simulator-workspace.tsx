@@ -14,6 +14,7 @@ import { CanvasMagnifier } from './canvas-magnifier';
 import { usePinAssignmentStore, BOARD_ASSET_IDS, COMPONENT_PIN_CATALOG } from './pin-assignment-store';
 import { generateWireForAssignment, removeWire } from './auto-wire-generator';
 import { SmartPlacementEngine, ROBOTICS_BREADBOARD_LAYOUT, COMPONENT_DIMENSIONS } from './smart-placement';
+import { SimulatorCodeEditor, DEFAULT_ARDUINO_CODE } from './simulator-code-editor';
 import type { PinAssignment } from './pin-assignment-store';
 
 /* ------------------------------------------------------------------ */
@@ -206,6 +207,11 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
   const [status, setStatus] = useState('Ready');
   const [saving, setSaving] = useState(false);
   const [dbProjectId, setDbProjectId] = useState<string | undefined>(projectId);
+
+  /* ── Code editor state ─────────────────────────────────────────── */
+  const [userCode, setUserCode] = useState(DEFAULT_ARDUINO_CODE);
+  const [serialOutput, setSerialOutput] = useState<string[]>([]);
+  const simIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const selectedId = selectedComponentIds[0] ?? null;
 
@@ -904,13 +910,39 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
 
   /* ── Simulation controls ────────────────────────────────────────── */
   const handleStart = useCallback(() => {
-    setSimulationState('running');
-    setStatus('Simulation running');
-    // Phase 27A: Propagate running state to runtime for activity visualization
     const runtime = runtimeRef.current;
+    if (!userCode.trim()) {
+      setStatus('No code to simulate. Write some code first.');
+      return;
+    }
+
+    setSimulationState('running');
+    setStatus('▶ Simulation running…');
+    setSerialOutput([]);
+
+    // Parse code patterns
+    const hasDigitalWrite = /digitalWrite/i.test(userCode);
+    const hasDelay = /delay\s*\(/i.test(userCode);
+    const hasAnalogRead = /analogRead/i.test(userCode);
+    const hasAnalogWrite = /analogWrite/i.test(userCode);
+    const hasServoWrite = /Servo.*write|servo.*write/i.test(userCode);
+
+    // Extract Serial.println messages
+    const serialMatches = [...userCode.matchAll(/Serial\.println\s*\(\s*["']([^"']*)["']\s*\)/g)];
+    const serialMessages = serialMatches.map(m => m[1]);
+
+    // Extract delay value
+    const delayMatch = userCode.match(/delay\s*\(\s*(\d+)\s*\)/);
+    const delayMs = delayMatch ? Math.max(200, Math.min(3000, parseInt(delayMatch[1], 10))) : 500;
+
+    // Clean up any existing interval
+    if (simIntervalRef.current) {
+      clearInterval(simIntervalRef.current);
+    }
+
+    // Mark all components as active
     if (runtime) {
       try {
-        // Mark all components as "active" in their activity visualization models
         const snapshot = runtime.getStageSnapshot?.();
         const targets = snapshot?.targets ?? snapshot?.children ?? [];
         for (const t of targets) {
@@ -922,15 +954,105 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
         }
       } catch { /* noop */ }
     }
-  }, [setSimulationState]);
+
+    // Simulation tick
+    let tick = 0;
+    const tickInterval = hasDelay ? Math.min(delayMs, 1000) : 300;
+
+    simIntervalRef.current = setInterval(() => {
+      tick++;
+      if (!runtime) return;
+
+      const objects = runtime.getWorkspaceObjectModels?.() ?? [];
+
+      // Toggle LEDs based on digitalWrite pattern
+      if (hasDigitalWrite) {
+        for (const obj of objects) {
+          const t = obj.objectType as string;
+          if (t.includes('led')) {
+            const blink = hasDelay ? tick % 2 === 0 : true;
+            runtime.updateWorkspaceObjectModel?.(obj.objectId, {
+              metadata: { ...obj.metadata, ledOn: blink },
+            });
+          }
+        }
+      }
+
+      // Simulate analog writes (PWM fade effect)
+      if (hasAnalogWrite) {
+        for (const obj of objects) {
+          const t = obj.objectType as string;
+          if (t.includes('led')) {
+            const brightness = Math.round((Math.sin(tick * 0.2) + 1) * 127.5);
+            runtime.updateWorkspaceObjectModel?.(obj.objectId, {
+              metadata: { ...obj.metadata, ledOn: true, brightness },
+            });
+          }
+        }
+      }
+
+      // Simulate servo sweep
+      if (hasServoWrite) {
+        for (const obj of objects) {
+          const t = obj.objectType as string;
+          if (t.includes('servo')) {
+            const angle = Math.round(90 + Math.sin(tick * 0.15) * 90);
+            runtime.updateWorkspaceObjectModel?.(obj.objectId, {
+              metadata: { ...obj.metadata, servoAngle: angle },
+            });
+          }
+        }
+      }
+
+      // Simulate sensor readings
+      if (hasAnalogRead) {
+        for (const obj of objects) {
+          const t = obj.objectType as string;
+          if (t.includes('dht') || t.includes('mq') || t.includes('hc_sr') || t.includes('potentiometer')) {
+            runtime.updateWorkspaceObjectModel?.(obj.objectId, {
+              metadata: {
+                ...obj.metadata,
+                sensorValue: Math.round(20 + Math.sin(tick * 0.3) * 15),
+              },
+            });
+          }
+        }
+      }
+
+      // Emit serial messages in round-robin
+      if (serialMessages.length > 0) {
+        const msgIndex = (tick - 1) % serialMessages.length;
+        setSerialOutput(prev => [...prev.slice(-200), serialMessages[msgIndex]]);
+      }
+
+      setStatus(`▶ Simulation running… tick ${tick}`);
+    }, tickInterval);
+  }, [userCode, setSimulationState]);
 
   const handleStop = useCallback(() => {
+    // Clean up interval
+    if (simIntervalRef.current) {
+      clearInterval(simIntervalRef.current);
+      simIntervalRef.current = null;
+    }
+
     setSimulationState('idle');
     setStatus('Simulation stopped');
-    // Phase 27A: Deactivate all component activity states
+
+    // Reset all LED and component states
     const runtime = runtimeRef.current;
     if (runtime) {
       try {
+        const objects = runtime.getWorkspaceObjectModels?.() ?? [];
+        for (const obj of objects) {
+          const t = obj.objectType as string;
+          if (t.includes('led')) {
+            runtime.updateWorkspaceObjectModel?.(obj.objectId, {
+              metadata: { ...obj.metadata, ledOn: false },
+            });
+          }
+        }
+
         const snapshot = runtime.getStageSnapshot?.();
         const targets = snapshot?.targets ?? snapshot?.children ?? [];
         for (const t of targets) {
@@ -945,25 +1067,20 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
   }, [setSimulationState]);
 
   const handleReset = useCallback(() => {
-    setSimulationState('idle');
+    handleStop();
+    setSerialOutput([]);
     clearSelection();
     setStatus('Simulation reset');
-    // Phase 27A: Deactivate all activity states on reset
-    const runtime = runtimeRef.current;
-    if (runtime) {
-      try {
-        const snapshot = runtime.getStageSnapshot?.();
-        const targets = snapshot?.targets ?? snapshot?.children ?? [];
-        for (const t of targets) {
-          if (t.objectId && t.objectType && !t.objectType.startsWith('breadboard')) {
-            try {
-              runtime.updateActivityVisualizationState?.(t.objectId, { isActive: false });
-            } catch { /* noop */ }
-          }
-        }
-      } catch { /* noop */ }
-    }
-  }, [setSimulationState, clearSelection]);
+  }, [handleStop, clearSelection]);
+
+  // Cleanup simulation interval on unmount
+  useEffect(() => {
+    return () => {
+      if (simIntervalRef.current) {
+        clearInterval(simIntervalRef.current);
+      }
+    };
+  }, []);
 
   /* ── Property panel handlers ────────────────────────────────────── */
   const handleDelete = useCallback(
@@ -1250,7 +1367,8 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
         {/* Left: Component catalog */}
         <ComponentCatalog />
 
-        {/* Center: Pixi canvas */}
+        {/* Center: Canvas + Code editor */}
+        <div className="flex flex-1 flex-col min-w-0">
         <main className="relative flex-1 overflow-hidden">
           <div
             ref={pixiContainerRef}
@@ -1375,6 +1493,16 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
             </div>
           )}
         </main>
+
+          {/* Code editor panel */}
+          <SimulatorCodeEditor
+            code={userCode}
+            onCodeChange={setUserCode}
+            serialOutput={serialOutput}
+            onClearSerial={() => setSerialOutput([])}
+            isSimulating={simulationState === 'running'}
+          />
+        </div>{/* end center column */}
 
         {/* Right: Property Panel + Pin Assignment panel */}
         <div className="flex flex-col w-80 border-l border-border/30 overflow-hidden">
