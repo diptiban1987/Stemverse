@@ -85,9 +85,16 @@ function resolvePinWorldPosition(
   if (!pin) return null;
 
   const scale = renderScaleMap?.get(objectId) ?? obj.scale ?? 1;
+  const rot = obj.rotation ?? 0;
+  const localX = pin.pixelX * scale;
+  const localY = pin.pixelY * scale;
+
+  // Apply 2D rotation transform
+  const cosR = Math.cos(rot);
+  const sinR = Math.sin(rot);
   return {
-    x: obj.positionX + pin.pixelX * scale,
-    y: obj.positionY + pin.pixelY * scale,
+    x: obj.positionX + localX * cosR - localY * sinR,
+    y: obj.positionY + localX * sinR + localY * cosR,
   };
 }
 

@@ -1238,7 +1238,16 @@ export class PixiSceneRenderer {
         if (pin) {
           // Phase 28: Use renderScale (the actual visual scale) instead of obj.scale
           const scale = this.renderScaleMap.get(objectId) || obj.scale || 1;
-          return { x: obj.positionX + pin.pixelX * scale, y: obj.positionY + pin.pixelY * scale };
+          const rot = obj.rotation || 0;
+          const localX = pin.pixelX * scale;
+          const localY = pin.pixelY * scale;
+          // Apply 2D rotation transform
+          const cosR = Math.cos(rot);
+          const sinR = Math.sin(rot);
+          return {
+            x: obj.positionX + localX * cosR - localY * sinR,
+            y: obj.positionY + localX * sinR + localY * cosR,
+          };
         }
       }
     }
@@ -1251,7 +1260,17 @@ export class PixiSceneRenderer {
         if (bbVisual?.holes) {
           const hole = bbVisual.holes.find((h) => h.holeId === holeId);
           if (hole) {
-            return { x: obj.positionX + hole.positionX * (obj.scale || 1), y: obj.positionY + hole.positionY * (obj.scale || 1) };
+            const scale = obj.scale || 1;
+            const rot = obj.rotation || 0;
+            const localX = hole.positionX * scale;
+            const localY = hole.positionY * scale;
+            // Apply 2D rotation transform
+            const cosR = Math.cos(rot);
+            const sinR = Math.sin(rot);
+            return {
+              x: obj.positionX + localX * cosR - localY * sinR,
+              y: obj.positionY + localX * sinR + localY * cosR,
+            };
           }
         }
       }
@@ -1742,9 +1761,14 @@ export class PixiSceneRenderer {
       const asset = this.latestComponentAssets.find((a) => a.assetId === obj.objectType);
       if (!asset?.pinCoordinates) continue;
       const scale = this.renderScaleMap.get(obj.objectId) || obj.scale || 1;
+      const rot = obj.rotation || 0;
+      const cosR = Math.cos(rot);
+      const sinR = Math.sin(rot);
       for (const pin of asset.pinCoordinates) {
-        const px = obj.positionX + pin.pixelX * scale;
-        const py = obj.positionY + pin.pixelY * scale;
+        const localX = pin.pixelX * scale;
+        const localY = pin.pixelY * scale;
+        const px = obj.positionX + localX * cosR - localY * sinR;
+        const py = obj.positionY + localX * sinR + localY * cosR;
         const d = Math.sqrt((worldX - px) ** 2 + (worldY - py) ** 2);
         if (d < radius && (!best || d < best.dist)) {
           best = { x: px, y: py, pinId: `${obj.objectId}_pin_${pin.name}`, dist: d };
@@ -1758,9 +1782,14 @@ export class PixiSceneRenderer {
       const bbVisual = this.latestBreadboardVisuals.find((b) => b.assetId === obj.objectType);
       if (!bbVisual?.holes) continue;
       const scale = obj.scale || 1;
+      const rot = obj.rotation || 0;
+      const cosR = Math.cos(rot);
+      const sinR = Math.sin(rot);
       for (const hole of bbVisual.holes) {
-        const hx = obj.positionX + hole.positionX * scale;
-        const hy = obj.positionY + hole.positionY * scale;
+        const localX = hole.positionX * scale;
+        const localY = hole.positionY * scale;
+        const hx = obj.positionX + localX * cosR - localY * sinR;
+        const hy = obj.positionY + localX * sinR + localY * cosR;
         const d = Math.sqrt((worldX - hx) ** 2 + (worldY - hy) ** 2);
         if (d < radius && (!best || d < best.dist)) {
           best = { x: hx, y: hy, pinId: `${obj.objectId}_hole_${hole.holeId}`, dist: d };
