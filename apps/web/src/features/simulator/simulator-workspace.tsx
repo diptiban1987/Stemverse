@@ -465,11 +465,6 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
         /* ── Create smart placement engine ──────────────────────── */
         placementEngineRef.current = new SmartPlacementEngine(ROBOTICS_BREADBOARD_LAYOUT);
 
-        /* ── Auto-register default board type in pin assignment store ── */
-        // Don't register a fake objectId — the real objectId is set when the board drops.
-        // But pre-set the board type so the pin panel shows the default board info.
-        // The actual boardObjectId gets set in handleDrop when a board is dropped.
-
         /* ── Resize observer ────────────────────────────────────── */
         const ro = new ResizeObserver((entries) => {
           for (const entry of entries) {
@@ -500,6 +495,44 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
           } catch {
             setStatus('Failed to load project');
           }
+        }
+
+        /* ── Auto-register board in pin assignment store ─────────── */
+        // Scan workspace objects for an existing board, or auto-place a default ESP32
+        const existingObjects = runtime.getWorkspaceObjectModels?.() ?? [];
+        let boardFound = false;
+        for (const obj of existingObjects) {
+          if (BOARD_ASSET_IDS.has(obj.objectType)) {
+            usePinAssignmentStore.getState().setBoard(obj.objectId, obj.objectType);
+            boardFound = true;
+            break;
+          }
+        }
+
+        if (!boardFound) {
+          // Auto-place a default ESP32 board next to the breadboard
+          const defaultBoardId = `esp32_devkit_v1_${++objectCounterRef.current}`;
+          const boardDims = COMPONENT_DIMENSIONS['esp32_devkit_v1'];
+          const engine = placementEngineRef.current;
+          let boardPos = { x: 300, y: 30 };
+          if (engine && boardDims) {
+            boardPos = engine.placeByType(defaultBoardId, 'esp32_devkit_v1', boardDims.w, boardDims.h, boardDims.defaultScale);
+          }
+
+          try {
+            runtime.registerWorkspaceObjectModel({
+              objectId: defaultBoardId,
+              objectType: 'esp32_devkit_v1',
+              positionX: Math.round(boardPos.x),
+              positionY: Math.round(boardPos.y),
+              rotation: 0,
+              scale: boardDims?.defaultScale ?? 0.55,
+              selected: false,
+              locked: false,
+              metadata: {},
+            });
+            usePinAssignmentStore.getState().setBoard(defaultBoardId, 'esp32_devkit_v1');
+          } catch { /* noop */ }
         }
 
         setStatus('Simulator ready — drag components from the palette');
