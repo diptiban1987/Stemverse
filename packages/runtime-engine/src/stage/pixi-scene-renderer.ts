@@ -93,7 +93,7 @@ const CAMERA_LERP_SPEED = 0.18;
 const CAMERA_BOUNDS = 5000;
 
 /** Phase 31A.1: Wire destination highlight radius */
-const WIRE_SNAP_RADIUS = 25;
+const WIRE_SNAP_RADIUS = 30;  // Generous snap for rotated breadboards
 
 /** Phase 31A.1: Selection bounds padding */
 const SELECTION_BOUNDS_PAD = 8;
@@ -316,20 +316,20 @@ export class PixiSceneRenderer {
           this.wirePreviewGraphics.moveTo(previewPoints[i].x, previewPoints[i].y);
           this.wirePreviewGraphics.lineTo(previewPoints[i + 1].x, previewPoints[i + 1].y);
         }
-        this.wirePreviewGraphics.stroke({ width: 3, color: 0x60a5fa, alpha: 0.7, cap: 'round' });
+        this.wirePreviewGraphics.stroke({ width: 2, color: 0x60a5fa, alpha: 0.7, cap: 'round' });
         // Start dot
-        this.wirePreviewGraphics.circle(this.wirePreviewStart.x, this.wirePreviewStart.y, 5);
+        this.wirePreviewGraphics.circle(this.wirePreviewStart.x, this.wirePreviewStart.y, 3);
         this.wirePreviewGraphics.fill({ color: 0x3b82f6, alpha: 0.8 });
         // Cursor dot
-        this.wirePreviewGraphics.circle(localX, localY, 4);
+        this.wirePreviewGraphics.circle(localX, localY, 3);
         this.wirePreviewGraphics.fill({ color: 0x60a5fa, alpha: 0.6 });
 
         // Phase 31A.1: Find nearest pin/hole and highlight it
         const nearest = this.findNearestPin(localX, localY, WIRE_SNAP_RADIUS);
         if (nearest) {
-          this.nearestPinHighlight.circle(nearest.x, nearest.y, 10);
-          this.nearestPinHighlight.stroke({ width: 2.5, color: 0x06b6d4, alpha: 0.9 });
-          this.nearestPinHighlight.circle(nearest.x, nearest.y, 5);
+          this.nearestPinHighlight.circle(nearest.x, nearest.y, 8);
+          this.nearestPinHighlight.stroke({ width: 2, color: 0x06b6d4, alpha: 0.9 });
+          this.nearestPinHighlight.circle(nearest.x, nearest.y, 4);
           this.nearestPinHighlight.fill({ color: 0x06b6d4, alpha: 0.4 });
         }
       } else {
@@ -1079,7 +1079,7 @@ export class PixiSceneRenderer {
         hotspot.name = holePinId;
         renderer.container.addChild(hotspot);
 
-        hotspot.circle(hole.positionX, hole.positionY, 5);
+        hotspot.circle(hole.positionX, hole.positionY, 8);  // Larger hit area for easier clicking
         hotspot.fill(0x000000, 0.01);
         hotspot.eventMode = 'static';
         hotspot.cursor = 'crosshair';
@@ -1124,7 +1124,7 @@ export class PixiSceneRenderer {
         });
         hotspot.on('pointerout', () => {
           hotspot.clear();
-          hotspot.circle(hole.positionX, hole.positionY, 5);
+          hotspot.circle(hole.positionX, hole.positionY, 8);
           hotspot.fill(0x000000, 0.01);
           if (this.onPinHover) this.onPinHover(null);
         });

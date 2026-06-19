@@ -41,9 +41,9 @@ export class PixiWireRenderer {
         }
       }
       this.graphics.stroke({
-        width: isSelected ? 8 : 6,
+        width: isSelected ? 5 : 4,
         color: isSelected ? 0x60a5fa : 0x93c5fd,
-        alpha: 0.5,
+        alpha: 0.45,
         cap: 'round',
         join: 'round'
       });
@@ -62,7 +62,7 @@ export class PixiWireRenderer {
       }
     }
     this.graphics.stroke({
-      width: 5,
+      width: 2.5,
       color: colorHex,
       cap: 'round',
       join: 'round'
@@ -72,19 +72,19 @@ export class PixiWireRenderer {
     if (points.length >= 2) {
       for (let i = 0; i < points.length; i++) {
         const isEnd = i === 0 || i === points.length - 1;
-        this.graphics.circle(points[i].x, points[i].y, isEnd ? 5 : 3);
+        this.graphics.circle(points[i].x, points[i].y, isEnd ? 3 : 2);
         this.graphics.fill(isEnd ? colorHex : 0xd1d5db);
-        this.graphics.stroke({ width: 1.5, color: 0xffffff });
+        this.graphics.stroke({ width: 1, color: 0xffffff });
       }
     } else {
       for (const seg of geometry.segments) {
-        this.graphics.circle(seg.startX, seg.startY, 5);
+        this.graphics.circle(seg.startX, seg.startY, 3);
         this.graphics.fill(colorHex);
-        this.graphics.stroke({ width: 1.5, color: 0xffffff });
+        this.graphics.stroke({ width: 1, color: 0xffffff });
 
-        this.graphics.circle(seg.endX, seg.endY, 5);
+        this.graphics.circle(seg.endX, seg.endY, 3);
         this.graphics.fill(colorHex);
-        this.graphics.stroke({ width: 1.5, color: 0xffffff });
+        this.graphics.stroke({ width: 1, color: 0xffffff });
       }
     }
 
