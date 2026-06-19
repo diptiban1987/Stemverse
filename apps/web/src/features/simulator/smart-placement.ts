@@ -72,11 +72,11 @@ export class SmartPlacementEngine {
   private slots: PlacedSlot[] = [];
 
   /** Horizontal gap between components in the same row */
-  private readonly hGap = 30;
+  private readonly hGap = 80;
   /** Vertical gap between rows */
-  private readonly vGap = 25;
+  private readonly vGap = 60;
   /** Vertical gap between component zone and breadboard edge */
-  private readonly zoneGap = 40;
+  private readonly zoneGap = 80;
 
   constructor(layout: BreadboardLayout) {
     this.layout = layout;
@@ -166,8 +166,12 @@ export class SmartPlacementEngine {
     imageHeight: number,
     scale: number,
   ): { x: number; y: number } {
-    const scaledW = imageWidth * scale;
-    const scaledH = imageHeight * scale;
+    // The scene renderer applies SCENE_SCALE_RATIOS that scale components relative
+    // to the breadboard width (typically 3-5x larger than raw SVG dimensions).
+    // We apply a similar multiplier here so placement spacing matches rendered sizes.
+    const renderMultiplier = 3.0;
+    const scaledW = imageWidth * scale * renderMultiplier;
+    const scaledH = imageHeight * scale * renderMultiplier;
     const zone = this.classifyByType(assetType);
     const pos = this.placeInZone(zone, scaledW, scaledH);
 
@@ -362,18 +366,19 @@ export const COMPONENT_DIMENSIONS: Record<string, { w: number; h: number; defaul
   esp32_devkit_v1: { w: 320, h: 640, defaultScale: 0.55 },
   arduino_uno_r3:  { w: 460, h: 360, defaultScale: 0.55 },
   arduino_nano:    { w: 380, h: 120, defaultScale: 0.55 },
-  // Components
-  led_generic:       { w: 80,  h: 140, defaultScale: 0.9 },
-  resistor_generic:  { w: 220, h: 40,  defaultScale: 0.9 },
-  hc_sr04:           { w: 220, h: 160, defaultScale: 0.7 },
-  sg90_servo:        { w: 200, h: 200, defaultScale: 0.7 },
-  oled_ssd1306:      { w: 160, h: 180, defaultScale: 0.7 },
-  lcd_1602:          { w: 340, h: 190, defaultScale: 0.55 },
-  relay_module:      { w: 200, h: 160, defaultScale: 0.7 },
-  ir_sensor:         { w: 140, h: 160, defaultScale: 0.7 },
-  mq2_sensor:        { w: 160, h: 180, defaultScale: 0.7 },
-  dht11_sensor:      { w: 120, h: 160, defaultScale: 0.7 },
-  buzzer:            { w: 120, h: 100, defaultScale: 0.7 },
-  potentiometer:     { w: 120, h: 120, defaultScale: 0.7 },
-  push_button:       { w: 80,  h: 80,  defaultScale: 0.9 },
+  // Components (using correct asset IDs from component-asset-extensions)
+  led_generic:         { w: 80,  h: 140, defaultScale: 0.9 },
+  resistor_generic:    { w: 220, h: 40,  defaultScale: 0.9 },
+  hc_sr04:             { w: 220, h: 160, defaultScale: 0.7 },
+  sg90_servo:          { w: 200, h: 200, defaultScale: 0.7 },
+  oled_ssd1306:        { w: 160, h: 180, defaultScale: 0.7 },
+  lcd1602:             { w: 340, h: 190, defaultScale: 0.55 },
+  relay_module:        { w: 200, h: 160, defaultScale: 0.7 },
+  ir_sensor_module:    { w: 140, h: 160, defaultScale: 0.7 },
+  mq2_gas_sensor:      { w: 160, h: 180, defaultScale: 0.7 },
+  dht11_sensor:        { w: 120, h: 160, defaultScale: 0.7 },
+  buzzer_passive:      { w: 120, h: 100, defaultScale: 0.7 },
+  potentiometer_10k:   { w: 120, h: 120, defaultScale: 0.7 },
+  push_button_tactile: { w: 80,  h: 80,  defaultScale: 0.9 },
 };
+
