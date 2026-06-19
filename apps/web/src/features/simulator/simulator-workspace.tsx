@@ -15,6 +15,7 @@ import { usePinAssignmentStore, BOARD_ASSET_IDS, COMPONENT_PIN_CATALOG } from '.
 import { generateWireForAssignment, removeWire } from './auto-wire-generator';
 import { SmartPlacementEngine, ROBOTICS_BREADBOARD_LAYOUT, COMPONENT_DIMENSIONS } from './smart-placement';
 import { SimulatorCodeEditor, DEFAULT_ARDUINO_CODE } from './simulator-code-editor';
+import { useSensorValueStore } from './sensor-value-store';
 import type { PinAssignment } from './pin-assignment-store';
 
 /* ------------------------------------------------------------------ */
@@ -790,6 +791,9 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
         selectComponent(objectId);
         setStatus(`Added ${assetId}`);
 
+        // Initialize sensor default values for interactive sliders
+        useSensorValueStore.getState().initDefaults(objectId, assetId);
+
         /* ── Pin assignment integration ──────────────────────────── */
         if (BOARD_ASSET_IDS.has(assetId)) {
           // This is a board — register it with the real objectId
@@ -1081,16 +1085,36 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
         }
       }
 
-      // Simulate sensor readings
+      // Simulate sensor readings from interactive sliders
       if (hasAnalogRead) {
+        const sensorStore = useSensorValueStore.getState();
         for (const obj of objects) {
           const t = obj.objectType as string;
-          if (t.includes('dht') || t.includes('mq') || t.includes('hc_sr') || t.includes('potentiometer')) {
+          if (t.includes('dht') || t.includes('mq') || t.includes('hc_sr') || t.includes('potentiometer') || t.includes('ir_sensor')) {
+            // Read the value from the sensor store (set by user via sliders)
+            const sensorVal = sensorStore.values[obj.objectId];
+            const primaryValue = sensorVal
+              ? Object.values(sensorVal)[0] ?? 0
+              : Math.round(20 + Math.sin(tick * 0.3) * 15);
             runtime.updateWorkspaceObjectModel?.(obj.objectId, {
               metadata: {
                 ...obj.metadata,
-                sensorValue: Math.round(20 + Math.sin(tick * 0.3) * 15),
+                sensorValue: primaryValue,
+                ...sensorVal, // Spread all sensor values into metadata
               },
+            });
+          }
+        }
+      }
+
+      // Always update sensor metadata (even without analogRead) so Serial can read it
+      {
+        const sensorStore = useSensorValueStore.getState();
+        for (const obj of objects) {
+          const sensorVal = sensorStore.values[obj.objectId];
+          if (sensorVal) {
+            runtime.updateWorkspaceObjectModel?.(obj.objectId, {
+              metadata: { ...obj.metadata, ...sensorVal },
             });
           }
         }

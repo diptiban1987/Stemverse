@@ -15,8 +15,10 @@ import {
   Activity,
   Settings,
   Layers,
+  Gauge,
 } from 'lucide-react';
 import { useSimulatorStore } from './simulator-store';
+import { useSensorValueStore, SENSOR_PARAMETERS } from './sensor-value-store';
 
 /* ------------------------------------------------------------------ */
 /*  Props                                                              */
@@ -97,6 +99,74 @@ function NumberInput({
         aria-label={label}
       />
     </label>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Sensor sliders (Tinkercad-style interactive controls)               */
+/* ------------------------------------------------------------------ */
+
+function SensorSliders({ objectId, objectType }: { objectId: string; objectType: string }) {
+  const params = SENSOR_PARAMETERS[objectType];
+  const { getValue, setValue, initDefaults } = useSensorValueStore();
+
+  // Initialize defaults on mount
+  useState(() => { initDefaults(objectId, objectType); });
+
+  if (!params || params.length === 0) return null;
+
+  return (
+    <div className="space-y-3">
+      {params.map((param) => {
+        const value = getValue(objectId, param.key, param.defaultValue);
+        const pct = ((value - param.min) / (param.max - param.min)) * 100;
+
+        return (
+          <div key={param.key} className="space-y-1">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-medium text-muted">{param.label}</span>
+              <span
+                className="text-sm font-bold tabular-nums"
+                style={{ color: param.color }}
+              >
+                {param.step >= 1 ? Math.round(value) : value.toFixed(1)}
+                {param.unit && (
+                  <span className="text-[10px] font-normal text-muted ml-0.5">{param.unit}</span>
+                )}
+              </span>
+            </div>
+
+            {/* Slider track */}
+            <div className="relative">
+              <input
+                type="range"
+                min={param.min}
+                max={param.max}
+                step={param.step}
+                value={value}
+                onChange={(e) => setValue(objectId, param.key, Number(e.target.value))}
+                className="w-full h-2 rounded-full appearance-none cursor-pointer"
+                style={{
+                  background: `linear-gradient(to right, ${param.color} 0%, ${param.color} ${pct}%, var(--color-border, #334155) ${pct}%, var(--color-border, #334155) 100%)`,
+                  accentColor: param.color,
+                }}
+                aria-label={`${param.label} control`}
+              />
+            </div>
+
+            {/* Min/Max labels */}
+            <div className="flex justify-between text-[9px] text-muted/60">
+              <span>{param.min}{param.unit}</span>
+              <span>{param.max}{param.unit}</span>
+            </div>
+          </div>
+        );
+      })}
+
+      <p className="text-[9px] text-muted/50 italic mt-2">
+        💡 Drag sliders to control sensor values during simulation
+      </p>
+    </div>
   );
 }
 
@@ -395,6 +465,16 @@ export function PropertyPanel({
                 <p className="text-[10px] text-muted">No custom properties for this component</p>
               )}
           </Section>
+
+          {/* ── Sensor Controls (Tinkercad-style interactive sliders) ── */}
+          {objectData?.objectType && SENSOR_PARAMETERS[objectData.objectType] && (
+            <Section title="Sensor Controls" icon={Gauge} defaultOpen={true}>
+              <SensorSliders
+                objectId={selectedObjectId}
+                objectType={objectData.objectType}
+              />
+            </Section>
+          )}
 
           {/* Actions */}
           <div className="flex gap-2 px-4 py-3 mt-auto border-t border-border/30">
