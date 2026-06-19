@@ -224,6 +224,17 @@ export class PixiSceneRenderer {
   /** Workspace grid background layer */
   private gridBackground = new Graphics();
 
+  /** Get effective camera scale from app.stage (where the workspace sets zoom/pan) */
+  private get cameraScale(): number {
+    return this.app?.stage?.scale?.x || 1;
+  }
+  private get cameraX(): number {
+    return this.app?.stage?.x || 0;
+  }
+  private get cameraY(): number {
+    return this.app?.stage?.y || 0;
+  }
+
   constructor() {
     // Draw dot-grid background pattern (Tinkercad-style workspace grid)
     this.drawGridBackground();
@@ -292,16 +303,16 @@ export class PixiSceneRenderer {
       this.cancelWirePreview();
 
       // Phase 27B: Start selection rectangle on background drag
-      const localX = (event.global.x - this.viewport.x) / (this.viewport.scale.x || 1);
-      const localY = (event.global.y - this.viewport.y) / (this.viewport.scale.y || 1);
+      const localX = (event.global.x - this.cameraX) / this.cameraScale;
+      const localY = (event.global.y - this.cameraY) / this.cameraScale;
       this.selectionRect = { isActive: true, startX: localX, startY: localY, endX: localX, endY: localY };
     });
 
     // ── Global pointer move: wire preview + selection rectangle + drag ──
     this.viewport.on('globalpointermove', (event) => {
       const globalPos = event.global;
-      const localX = (globalPos.x - this.viewport.x) / (this.viewport.scale.x || 1);
-      const localY = (globalPos.y - this.viewport.y) / (this.viewport.scale.y || 1);
+      const localX = (globalPos.x - this.cameraX) / this.cameraScale;
+      const localY = (globalPos.y - this.cameraY) / this.cameraScale;
 
       // Phase 31A.1: Enhanced wire preview with orthogonal routing + nearest pin highlight
       if (this.wirePreviewStart) {
@@ -426,32 +437,9 @@ export class PixiSceneRenderer {
         }
       });
 
-      // Phase 31A.1: Scroll-wheel cursor-centered zoom
-      const canvas = this.app?.canvas;
-      if (canvas) {
-        canvas.addEventListener('wheel', (e: WheelEvent) => {
-          e.preventDefault();
-          const rect = canvas.getBoundingClientRect();
-          const mouseScreenX = e.clientX - rect.left;
-          const mouseScreenY = e.clientY - rect.top;
-
-          // World position under cursor before zoom
-          const worldX = (mouseScreenX - this.viewport.x) / this.viewport.scale.x;
-          const worldY = (mouseScreenY - this.viewport.y) / this.viewport.scale.y;
-
-          // Adjust zoom
-          const direction = e.deltaY < 0 ? 1 : -1;
-          const newZoom = Math.max(CAMERA_MIN_ZOOM, Math.min(CAMERA_MAX_ZOOM,
-            this.cameraTarget.zoom * (1 + direction * CAMERA_ZOOM_STEP)));
-
-          // Recompute pan so cursor stays at same world point
-          this.cameraTarget.zoom = newZoom;
-          this.cameraTarget.x = mouseScreenX - worldX * newZoom;
-          this.cameraTarget.y = mouseScreenY - worldY * newZoom;
-          this.clampCamera();
-          this.startCameraLerp();
-        }, { passive: false });
-      }
+      // Wheel zoom is handled by the workspace's React handler.
+      // Disabled here to prevent double-zoom.
+      // The workspace handler uses app.stage.scale/position for camera.
     }
 
     this.isInitialized = true;
@@ -735,8 +723,8 @@ export class PixiSceneRenderer {
       }
 
       // Convert screen delta to world-space delta (accounting for zoom)
-      const scaledDx = gdx / (this.viewport.scale.x || 1);
-      const scaledDy = gdy / (this.viewport.scale.y || 1);
+      const scaledDx = gdx / this.cameraScale;
+      const scaledDy = gdy / this.cameraScale;
 
       let newX = state.startObjectX + scaledDx;
       let newY = state.startObjectY + scaledDy;
@@ -1030,8 +1018,8 @@ export class PixiSceneRenderer {
         state.thresholdMet = true;
       }
 
-      const scaledDx = gdx / (this.viewport.scale.x || 1);
-      const scaledDy = gdy / (this.viewport.scale.y || 1);
+      const scaledDx = gdx / this.cameraScale;
+      const scaledDy = gdy / this.cameraScale;
 
       const newX = state.startObjectX + scaledDx;
       const newY = state.startObjectY + scaledDy;
@@ -1288,19 +1276,8 @@ export class PixiSceneRenderer {
     const stageTarget = snapshot.find((s) => s.targetId === 'stage');
     if (!stageTarget) return;
 
-    // Apply camera viewport transforms only if the internal camera system is NOT active.
-    // The internal wheel/space-pan camera takes priority to avoid fighting.
-    if (!this.cameraLerping && !this.isSpacePanning && !this.isMiddlePanning) {
-      const camera = stageTarget.camera || { x: 0, y: 0, zoom: 1 };
-      // Only apply if the camera values are non-default (avoid resetting to 0,0,1)
-      if (camera.zoom && camera.zoom !== 1) {
-        this.viewport.scale.set(camera.zoom);
-      }
-      if (camera.x || camera.y) {
-        this.viewport.x = camera.x || 0;
-        this.viewport.y = camera.y || 0;
-      }
-    }
+    // Camera is managed by the workspace via app.stage.scale/position.
+    // Viewport stays at identity transform (scale=1, position=0,0).
 
     const selections = stageTarget.workspaceSelections || [];
     const componentAssets: ComponentAssetDefinition[] = stageTarget.componentAssets || [];
@@ -1831,9 +1808,12 @@ export class PixiSceneRenderer {
 
   private applyCameraImmediate(): void {
     this.clampCamera();
-    this.viewport.x = this.cameraTarget.x;
-    this.viewport.y = this.cameraTarget.y;
-    this.viewport.scale.set(this.cameraTarget.zoom);
+    // Apply to app.stage (where the workspace camera lives)
+    if (this.app?.stage) {
+      this.app.stage.x = this.cameraTarget.x;
+      this.app.stage.y = this.cameraTarget.y;
+      this.app.stage.scale.set(this.cameraTarget.zoom);
+    }
   }
 
   private startCameraLerp(): void {
