@@ -46,6 +46,8 @@ export interface DroppedComponent {
 
 interface ComponentPinInfo {
   displayName: string;
+  /** Preferred operating voltage: '3V3' or '5V'. Used to auto-assign the correct board power pin. */
+  preferredVoltage?: '3V3' | '5V';
   pins: Array<{ name: string; signalType: string }>;
 }
 
@@ -53,6 +55,7 @@ export const COMPONENT_PIN_CATALOG: Record<string, ComponentPinInfo> = {
   // Sensors
   hc_sr04: {
     displayName: 'HC-SR04 Ultrasonic',
+    preferredVoltage: '5V',
     pins: [
       { name: 'VCC', signalType: 'POWER' },
       { name: 'TRIG', signalType: 'DIGITAL' },
@@ -62,6 +65,7 @@ export const COMPONENT_PIN_CATALOG: Record<string, ComponentPinInfo> = {
   },
   ir_sensor_module: {
     displayName: 'IR Sensor Module',
+    preferredVoltage: '5V',
     pins: [
       { name: 'VCC', signalType: 'POWER' },
       { name: 'GND', signalType: 'GND' },
@@ -70,6 +74,7 @@ export const COMPONENT_PIN_CATALOG: Record<string, ComponentPinInfo> = {
   },
   mq2_gas_sensor: {
     displayName: 'MQ-2 Gas Sensor',
+    preferredVoltage: '5V',
     pins: [
       { name: 'VCC', signalType: 'POWER' },
       { name: 'GND', signalType: 'GND' },
@@ -79,6 +84,7 @@ export const COMPONENT_PIN_CATALOG: Record<string, ComponentPinInfo> = {
   },
   dht11_sensor: {
     displayName: 'DHT11 Sensor',
+    preferredVoltage: '3V3',
     pins: [
       { name: 'VCC', signalType: 'POWER' },
       { name: 'DATA', signalType: 'DIGITAL' },
@@ -88,6 +94,7 @@ export const COMPONENT_PIN_CATALOG: Record<string, ComponentPinInfo> = {
   // Displays
   oled_ssd1306: {
     displayName: 'OLED SSD1306',
+    preferredVoltage: '3V3',
     pins: [
       { name: 'GND', signalType: 'GND' },
       { name: 'VCC', signalType: 'POWER' },
@@ -97,6 +104,7 @@ export const COMPONENT_PIN_CATALOG: Record<string, ComponentPinInfo> = {
   },
   lcd_1602: {
     displayName: 'LCD1602',
+    preferredVoltage: '5V',
     pins: [
       { name: 'VSS', signalType: 'GND' },
       { name: 'VDD', signalType: 'POWER' },
@@ -115,6 +123,7 @@ export const COMPONENT_PIN_CATALOG: Record<string, ComponentPinInfo> = {
   // Actuators
   sg90_servo: {
     displayName: 'SG90 Servo',
+    preferredVoltage: '5V',
     pins: [
       { name: 'PWM', signalType: 'PWM' },
       { name: 'VCC', signalType: 'POWER' },
@@ -123,6 +132,7 @@ export const COMPONENT_PIN_CATALOG: Record<string, ComponentPinInfo> = {
   },
   relay_module: {
     displayName: 'Relay Module',
+    preferredVoltage: '5V',
     pins: [
       { name: 'VCC', signalType: 'POWER' },
       { name: 'GND', signalType: 'GND' },
@@ -131,6 +141,7 @@ export const COMPONENT_PIN_CATALOG: Record<string, ComponentPinInfo> = {
   },
   buzzer_passive: {
     displayName: 'Buzzer',
+    preferredVoltage: '3V3',
     pins: [
       { name: '+', signalType: 'DIGITAL' },
       { name: '-', signalType: 'GND' },
@@ -139,6 +150,7 @@ export const COMPONENT_PIN_CATALOG: Record<string, ComponentPinInfo> = {
   // Basic
   led_generic: {
     displayName: '5mm LED',
+    preferredVoltage: '3V3',
     pins: [
       { name: 'ANODE', signalType: 'PASSIVE' },
       { name: 'CATHODE', signalType: 'PASSIVE' },
@@ -153,6 +165,7 @@ export const COMPONENT_PIN_CATALOG: Record<string, ComponentPinInfo> = {
   },
   potentiometer_10k: {
     displayName: 'Potentiometer',
+    preferredVoltage: '3V3',
     pins: [
       { name: '1', signalType: 'POWER' },
       { name: 'WIPER', signalType: 'ANALOG' },
@@ -161,6 +174,7 @@ export const COMPONENT_PIN_CATALOG: Record<string, ComponentPinInfo> = {
   },
   push_button_tactile: {
     displayName: 'Push Button',
+    preferredVoltage: '3V3',
     pins: [
       { name: '1A', signalType: 'DIGITAL' },
       { name: '1B', signalType: 'DIGITAL' },
@@ -412,17 +426,31 @@ export const usePinAssignmentStore = create<PinAssignmentState>((set, get) => ({
     const boardInfo = s.boardType ? BOARD_PIN_MAP[s.boardType] : null;
     if (!comp || !boardInfo || !s.boardObjectId) return;
 
-    // Power and GND pins are SHARED — multiple components can connect to
-    // the same VCC/GND pin, just like a real breadboard power bus.
-    // We round-robin through available pins for visual variety in wire routing.
-    const existingPowerCount = s.assignments.filter((a) => a.componentPinSignalType === 'POWER').length;
-    const existingGndCount = s.assignments.filter((a) => a.componentPinSignalType === 'GND').length;
+    // Look up voltage preference from the catalog
+    const catalogEntry = COMPONENT_PIN_CATALOG[comp.objectType];
+    const voltage = catalogEntry?.preferredVoltage ?? '3V3';
+
+    // Map voltage preference to board power pin name
+    // ESP32: '3V3' → '3V3', '5V' → 'VIN'
+    // Arduino: '3V3' → '3.3V', '5V' → '5V'
+    const powerPinMap: Record<string, Record<string, string>> = {
+      esp32_devkit_v1: { '3V3': '3V3', '5V': 'VIN' },
+      arduino_uno_r3:  { '3V3': '3.3V', '5V': '5V' },
+      arduino_nano:    { '3V3': '3.3V', '5V': '5V' },
+    };
+    const boardPowerMap = powerPinMap[s.boardType ?? ''] ?? { '3V3': '3V3', '5V': 'VIN' };
+    const targetPowerPinName = boardPowerMap[voltage];
+
+    // GND pins are shared — round-robin for visual variety
+    const existingGndCount = s.assignments.filter(
+      (a) => a.componentPinSignalType === 'GND',
+    ).length;
 
     for (const pin of comp.pins) {
       const st = pin.signalType.toUpperCase();
       if (st === 'POWER') {
-        // Round-robin through power pins for visual variety
-        const powerPin = boardInfo.power[existingPowerCount % boardInfo.power.length];
+        // Connect VCC to the correct voltage pin based on component's requirement
+        const powerPin = boardInfo.power.find((p) => p.name === targetPowerPinName);
         if (powerPin) {
           get().assignPin(componentObjectId, pin.name, powerPin.name);
         }
