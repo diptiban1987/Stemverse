@@ -4,13 +4,12 @@
  * Automatically places dropped components in organized positions
  * relative to the breadboard on the simulator canvas.
  *
- * Strategy (Vertical Breadboard Layout):
+ * Strategy:
  * - Breadboard is placed VERTICALLY (rotated 90°) on the left side
- * - Board (ESP32/Arduino) is placed ABOVE the breadboard
- * - All other components (sensors, actuators, LEDs, etc.) go to the
- *   RIGHT of the breadboard in a wrapping column layout
- * - Each column wraps neatly when it fills up
- * - Generous spacing keeps wires visible
+ * - Board (ESP32/Arduino) is placed to the LEFT of the breadboard
+ * - Components are arranged in a GRID to the RIGHT of the breadboard
+ *   with generous spacing to prevent overlapping
+ * - Grid wraps into multiple rows when a row fills up
  */
 
 /* ------------------------------------------------------------------ */
@@ -34,49 +33,86 @@ interface PlacedSlot {
   objectId: string;
   x: number;
   y: number;
-  scaledWidth: number;
-  scaledHeight: number;
+  slotW: number;
+  slotH: number;
   zone: PlacementZone;
 }
 
-type PlacementZone = 'above' | 'below' | 'left' | 'right';
+type PlacementZone = 'board' | 'component';
+
+/* ------------------------------------------------------------------ */
+/*  Rendered size calculator                                           */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The scene renderer scales components relative to the breadboard width
+ * using these ratios: renderedWidth = refBBWidth * ratio.
+ * This matches what `fitCameraToContent` and the scene renderer do.
+ */
+const RENDER_RATIOS: Record<string, number> = {
+  esp32_devkit_v1: 0.17, arduino_uno_r3: 0.41, arduino_nano: 0.11,
+  hc_sr04: 0.27, ir_sensor_module: 0.12, mq2_gas_sensor: 0.20, dht11_sensor: 0.10,
+  led_generic: 0.22, resistor_generic: 0.18,
+  push_button_tactile: 0.15, potentiometer_10k: 0.15, buzzer_passive: 0.15,
+  sg90_servo: 0.14, relay_module: 0.17,
+  oled_ssd1306: 0.17, lcd1602: 0.48,
+};
+
+/**
+ * Calculate the actual rendered size of a component on the canvas.
+ * Uses the same formula as the scene renderer:
+ *   renderScale = (refBBWidth * ratio) / assetImageWidth
+ *   renderedW = assetImageWidth * renderScale = refBBWidth * ratio
+ *   renderedH = assetImageHeight * renderScale
+ */
+function getRenderedSize(
+  assetType: string,
+  imageWidth: number,
+  imageHeight: number,
+  refBBWidth: number,
+): { w: number; h: number } {
+  const ratio = RENDER_RATIOS[assetType];
+  if (ratio && refBBWidth > 0) {
+    const renderScale = (refBBWidth * ratio) / imageWidth;
+    return {
+      w: imageWidth * renderScale,
+      h: imageHeight * renderScale,
+    };
+  }
+  // Fallback: use raw dimensions at a reasonable scale
+  return { w: imageWidth * 0.8, h: imageHeight * 0.8 };
+}
 
 /* ------------------------------------------------------------------ */
 /*  Component classification                                           */
 /* ------------------------------------------------------------------ */
 
-/** Components that should be placed ABOVE the breadboard (boards/MCU) */
-const ABOVE_COMPONENTS = new Set([
+const BOARD_COMPONENTS = new Set([
   'esp32_devkit_v1',
   'arduino_uno_r3',
   'arduino_nano',
 ]);
 
-/**
- * All other components (sensors, actuators, LEDs, servos, etc.)
- * go to the RIGHT of the vertical breadboard in wrapping columns.
- */
-
 /* ------------------------------------------------------------------ */
 /*  Engine                                                             */
 /* ------------------------------------------------------------------ */
 
-/**
- * Manages automatic component placement on the simulator canvas.
- *
- * Components are distributed across zones around the breadboard for
- * clean, Tinkercad-style arrangement.
- */
 export class SmartPlacementEngine {
   private layout: BreadboardLayout;
   private slots: PlacedSlot[] = [];
 
-  /** Horizontal gap between components in the same row */
-  private readonly hGap = 80;
-  /** Vertical gap between rows */
-  private readonly vGap = 60;
-  /** Vertical gap between component zone and breadboard edge */
-  private readonly zoneGap = 80;
+  /** Gap between grid cells */
+  private readonly cellGap = 30;
+  /** Gap between zone and breadboard edge */
+  private readonly zoneGap = 50;
+
+  /** Reference breadboard width for render-scale calculations */
+  private get refBBWidth(): number {
+    // The breadboard_830 visual width is 940. When rotated 90°,
+    // the "width" axis is actually the local height * scale.
+    // For placement, we use the standard refBBWidth = 940 * bbScale
+    return 940 * this.layout.breadboardScale;
+  }
 
   constructor(layout: BreadboardLayout) {
     this.layout = layout;
@@ -84,238 +120,132 @@ export class SmartPlacementEngine {
 
   /* ── Computed edges ──────────────────────────────────────────────── */
 
-  private get bbLeft(): number {
-    return this.layout.breadboardX;
-  }
-  private get bbRight(): number {
-    return (
-      this.layout.breadboardX +
-      this.layout.breadboardLocalWidth * this.layout.breadboardScale
-    );
-  }
-  private get bbTop(): number {
-    return this.layout.breadboardY;
-  }
-  private get bbBottom(): number {
-    return (
-      this.layout.breadboardY +
-      this.layout.breadboardLocalHeight * this.layout.breadboardScale
-    );
-  }
-  private get bbWidth(): number {
+  /** Rendered breadboard edges (after rotation + scale) */
+  private get bbLeft(): number { return this.layout.breadboardX; }
+  private get bbTop(): number { return this.layout.breadboardY; }
+  private get bbRenderedWidth(): number {
     return this.layout.breadboardLocalWidth * this.layout.breadboardScale;
   }
-
-  /* ── Zone classification ────────────────────────────────────────── */
-
-  private classify(objectId: string): PlacementZone {
-    // Extract the asset type from the objectId  (e.g. "led_generic_3" → "led_generic")
-    const assetType = objectId.replace(/_\d+$/, '');
-    if (ABOVE_COMPONENTS.has(assetType)) return 'above';
-    return 'right';  // All non-board components go to the right of vertical breadboard
+  private get bbRenderedHeight(): number {
+    return this.layout.breadboardLocalHeight * this.layout.breadboardScale;
   }
-
-  private classifyByType(assetType: string): PlacementZone {
-    if (ABOVE_COMPONENTS.has(assetType)) return 'above';
-    return 'right';
-  }
-
-  /* ── Slot helpers ───────────────────────────────────────────────── */
-
-  private slotsInZone(zone: PlacementZone): PlacedSlot[] {
-    return this.slots.filter((s) => s.zone === zone);
-  }
+  private get bbRight(): number { return this.bbLeft + this.bbRenderedWidth; }
+  private get bbBottom(): number { return this.bbTop + this.bbRenderedHeight; }
 
   /* ── Placement logic ────────────────────────────────────────────── */
 
   /**
-   * Calculate a placement position for a new component.
-   * The objectId is used to classify the component into a zone.
-   * @returns world-space (x, y) coordinates for the component
-   */
-  place(
-    objectId: string,
-    imageWidth: number,
-    imageHeight: number,
-    scale: number,
-  ): { x: number; y: number } {
-    const scaledW = imageWidth * scale;
-    const scaledH = imageHeight * scale;
-    const zone = this.classify(objectId);
-    const pos = this.placeInZone(zone, scaledW, scaledH);
-
-    this.slots.push({
-      objectId,
-      x: pos.x,
-      y: pos.y,
-      scaledWidth: scaledW,
-      scaledHeight: scaledH,
-      zone,
-    });
-
-    return pos;
-  }
-
-  /**
-   * Place using explicit asset type instead of parsing from objectId.
+   * Place using explicit asset type.
+   * Board components go LEFT of breadboard, others go RIGHT in a grid.
    */
   placeByType(
     objectId: string,
     assetType: string,
     imageWidth: number,
     imageHeight: number,
-    scale: number,
+    _scale: number,
   ): { x: number; y: number } {
-    // The scene renderer applies SCENE_SCALE_RATIOS that scale components relative
-    // to the breadboard width (typically 3-5x larger than raw SVG dimensions).
-    // We apply a similar multiplier here so placement spacing matches rendered sizes.
-    const renderMultiplier = 3.0;
-    const scaledW = imageWidth * scale * renderMultiplier;
-    const scaledH = imageHeight * scale * renderMultiplier;
-    const zone = this.classifyByType(assetType);
-    const pos = this.placeInZone(zone, scaledW, scaledH);
+    const rendered = getRenderedSize(assetType, imageWidth, imageHeight, this.refBBWidth);
+    const zone: PlacementZone = BOARD_COMPONENTS.has(assetType) ? 'board' : 'component';
+    const pos = zone === 'board'
+      ? this.placeBoard(rendered.w, rendered.h)
+      : this.placeComponent(rendered.w, rendered.h);
 
     this.slots.push({
       objectId,
       x: pos.x,
       y: pos.y,
-      scaledWidth: scaledW,
-      scaledHeight: scaledH,
+      slotW: rendered.w,
+      slotH: rendered.h,
       zone,
     });
 
     return pos;
   }
 
-  private placeInZone(
-    zone: PlacementZone,
-    scaledW: number,
-    scaledH: number,
-  ): { x: number; y: number } {
-    switch (zone) {
-      case 'left':
-        return this.placeLeft(scaledW, scaledH);
-      case 'above':
-        return this.placeAbove(scaledW, scaledH);
-      case 'below':
-        return this.placeBelow(scaledW, scaledH);
-      case 'right':
-        return this.placeRight(scaledW, scaledH);
-    }
-  }
-
   /**
-   * Place component to the LEFT of the breadboard.
-   * Stacks vertically, aligned to the breadboard top.
+   * Place a board (ESP32/Arduino) to the LEFT of the breadboard.
+   * Boards stack vertically.
    */
-  private placeLeft(scaledW: number, scaledH: number): { x: number; y: number } {
-    const existing = this.slotsInZone('left');
-    const x = this.bbLeft - scaledW - this.zoneGap;
+  private placeBoard(w: number, h: number): { x: number; y: number } {
+    const existing = this.slots.filter(s => s.zone === 'board');
 
+    // Position to the left of the breadboard, vertically aligned to top
+    const x = this.bbLeft - w - this.zoneGap;
     let y = this.bbTop;
+
     if (existing.length > 0) {
-      const lastSlot = existing[existing.length - 1];
-      y = lastSlot.y + lastSlot.scaledHeight + this.vGap;
+      const last = existing[existing.length - 1];
+      y = last.y + last.slotH + this.cellGap;
     }
 
     return { x: Math.round(x), y: Math.round(y) };
   }
 
   /**
-   * Place components to the RIGHT of the vertical breadboard.
-   * Components fill top-to-bottom in columns, wrapping rightward
-   * when a column exceeds the breadboard height.
+   * Place a component to the RIGHT of the breadboard in a grid layout.
+   * Components fill left-to-right in rows, wrapping downward.
+   * Each row starts at bbRight + zoneGap.
    */
-  private placeRight(scaledW: number, scaledH: number): { x: number; y: number } {
-    const existing = this.slotsInZone('right');
+  private placeComponent(w: number, h: number): { x: number; y: number } {
+    const existing = this.slots.filter(s => s.zone === 'component');
+    const startX = this.bbRight + this.zoneGap;
+    const maxRowWidth = 600; // Max width for a row before wrapping
 
     if (existing.length === 0) {
-      // First component: top-right of breadboard
-      const x = this.bbRight + this.zoneGap;
-      const y = this.bbTop;
-      return { x: Math.round(x), y: Math.round(y) };
+      return { x: Math.round(startX), y: Math.round(this.bbTop) };
     }
 
-    // Try to continue the current column (going downward)
-    const lastSlot = existing[existing.length - 1];
-    let x = lastSlot.x;
-    let y = lastSlot.y + lastSlot.scaledHeight + this.vGap;
+    // Find the current row (components with similar Y)
+    const last = existing[existing.length - 1];
+    const nextX = last.x + last.slotW + this.cellGap;
 
-    // Wrap to next column rightward if we exceed breadboard bottom
-    if (y + scaledH > this.bbBottom + 50) {
-      // Find the widest component in the current column
-      const colX = lastSlot.x;
-      const colSlots = existing.filter((s) => Math.abs(s.x - colX) < 5);
-      const maxW = Math.max(...colSlots.map((s) => s.scaledWidth));
-      x = colX + maxW + this.hGap;
-      y = this.bbTop;
+    // Check if we need to wrap to the next row
+    if (nextX + w > startX + maxRowWidth) {
+      // Find all rows and get the bottom of the lowest row
+      const rows = this.getRows(existing);
+      const lastRow = rows[rows.length - 1];
+      const rowBottom = Math.max(...lastRow.map(s => s.y + s.slotH));
+      return {
+        x: Math.round(startX),
+        y: Math.round(rowBottom + this.cellGap),
+      };
     }
 
-    return { x: Math.round(x), y: Math.round(y) };
+    // Continue current row
+    return { x: Math.round(nextX), y: Math.round(last.y) };
   }
 
-  /**
-   * Place components ABOVE the breadboard in a wrapping row.
-   * Rows fill left-to-right, then wrap upward.
-   */
-  private placeAbove(scaledW: number, _scaledH: number): { x: number; y: number } {
-    const existing = this.slotsInZone('above');
+  /** Group placed slots into rows (by Y proximity) */
+  private getRows(slots: PlacedSlot[]): PlacedSlot[][] {
+    if (slots.length === 0) return [];
+    const rows: PlacedSlot[][] = [];
+    let currentRow: PlacedSlot[] = [slots[0]];
+    let rowY = slots[0].y;
 
-    if (existing.length === 0) {
-      // First component: top-left of breadboard area, above it
-      const x = this.bbLeft + 10;
-      const y = this.bbTop - this.zoneGap - _scaledH;
-      return { x: Math.round(x), y: Math.round(y) };
+    for (let i = 1; i < slots.length; i++) {
+      const s = slots[i];
+      if (Math.abs(s.y - rowY) < 20) {
+        currentRow.push(s);
+      } else {
+        rows.push(currentRow);
+        currentRow = [s];
+        rowY = s.y;
+      }
     }
-
-    // Try to continue the current row
-    const lastSlot = existing[existing.length - 1];
-    let x = lastSlot.x + lastSlot.scaledWidth + this.hGap;
-    let y = lastSlot.y;
-
-    // Wrap to next row above if we exceed breadboard right edge
-    if (x + scaledW > this.bbRight) {
-      // Find the topmost Y in the current row
-      const rowY = lastSlot.y;
-      const rowSlots = existing.filter((s) => Math.abs(s.y - rowY) < 5);
-      const maxH = Math.max(...rowSlots.map((s) => s.scaledHeight));
-      x = this.bbLeft + 10;
-      y = rowY - maxH - this.vGap;
-    }
-
-    return { x: Math.round(x), y: Math.round(y) };
+    rows.push(currentRow);
+    return rows;
   }
 
-  /**
-   * Place components BELOW the breadboard in a wrapping row.
-   * Rows fill left-to-right, then wrap downward.
-   */
-  private placeBelow(scaledW: number, scaledH: number): { x: number; y: number } {
-    const existing = this.slotsInZone('below');
-
-    if (existing.length === 0) {
-      // First component: below the breadboard, left-aligned
-      const x = this.bbLeft + 10;
-      const y = this.bbBottom + this.zoneGap;
-      return { x: Math.round(x), y: Math.round(y) };
-    }
-
-    // Try to continue the current row
-    const lastSlot = existing[existing.length - 1];
-    let x = lastSlot.x + lastSlot.scaledWidth + this.hGap;
-    let y = lastSlot.y;
-
-    // Wrap to next row below if we exceed breadboard right edge
-    if (x + scaledW > this.bbRight) {
-      // Find the tallest component in the current row
-      const rowY = lastSlot.y;
-      const rowSlots = existing.filter((s) => Math.abs(s.y - rowY) < 5);
-      const maxH = Math.max(...rowSlots.map((s) => s.scaledHeight));
-      x = this.bbLeft + 10;
-      y = rowY + maxH + this.vGap;
-    }
-
-    return { x: Math.round(x), y: Math.round(y) };
+  /** Place using objectId (legacy) */
+  place(
+    objectId: string,
+    imageWidth: number,
+    imageHeight: number,
+    scale: number,
+  ): { x: number; y: number } {
+    const assetType = objectId.replace(/_\d+$/, '');
+    return this.placeByType(objectId, assetType, imageWidth, imageHeight, scale);
   }
 
   /** Remove a component's slot so the space can be reused */
@@ -334,23 +264,19 @@ export class SmartPlacementEngine {
 /* ------------------------------------------------------------------ */
 
 /**
- * Default breadboard layout for the Robotics workspace simulator tab.
- * Matches: breadboard_830 at (60, 30), rotated 90°, scale 0.55
+ * Default breadboard layout for the simulator.
+ * Breadboard_830 at (60, 30), rotated 90°, scale 0.55
  *
- * The breadboard is placed VERTICALLY (column-wise) on the left side.
  * When rotated 90°, the rendered dimensions swap:
- *   Local: 900w × 350h → Rendered: 192w × 495h (× 0.55 scale)
- * Board (ESP32/Arduino) is placed to the RIGHT of the breadboard.
- * Components spread further RIGHT in wrapping columns.
+ *   Local: 940w × 340h → Rendered: 187w × 517h (× 0.55 scale)
  */
 export const ROBOTICS_BREADBOARD_LAYOUT: BreadboardLayout = {
   breadboardX: 60,
   breadboardY: 30,
   breadboardScale: 0.55,
-  // Note: these are the RENDERED dimensions (after 90° rotation, × scale)
-  // Local 900×350 rotated → 350×900
-  breadboardLocalWidth: 350,    // Rendered width (was height before rotation)
-  breadboardLocalHeight: 900,   // Rendered height (was width before rotation)
+  // After 90° rotation: local height becomes rendered width and vice versa
+  breadboardLocalWidth: 340,    // Was height, now rendered as width
+  breadboardLocalHeight: 940,   // Was width, now rendered as height
 };
 
 /* ------------------------------------------------------------------ */
@@ -359,7 +285,7 @@ export const ROBOTICS_BREADBOARD_LAYOUT: BreadboardLayout = {
 
 /**
  * Lightweight catalog of component image dimensions for placement.
- * Only includes the fields the placement engine needs.
+ * These match the imageWidth/imageHeight from component-asset-definitions.
  */
 export const COMPONENT_DIMENSIONS: Record<string, { w: number; h: number; defaultScale: number }> = {
   // Boards
@@ -381,4 +307,3 @@ export const COMPONENT_DIMENSIONS: Record<string, { w: number; h: number; defaul
   potentiometer_10k:   { w: 120, h: 120, defaultScale: 0.7 },
   push_button_tactile: { w: 80,  h: 80,  defaultScale: 0.9 },
 };
-
