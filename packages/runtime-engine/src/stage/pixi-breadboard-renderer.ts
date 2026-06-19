@@ -25,10 +25,18 @@ export class PixiBreadboardRenderer {
       height = 170;
     }
 
+    // Draw drop shadow behind body
+    this.graphics.roundRect(4, 4, width, height, 16);
+    this.graphics.fill({ color: 0x000000, alpha: 0.12 });
+
     // Draw body background (rounded cream box)
     this.graphics.roundRect(0, 0, width, height, 16);
     this.graphics.fill(0xfbfaf6); // MB-102 cream color
     this.graphics.stroke({ width: 3, color: 0xe5e1d3 }); // Bevel effect
+
+    // Inner border for 3D depth
+    this.graphics.roundRect(4, 4, width - 8, height - 8, 14);
+    this.graphics.stroke({ width: 1, color: 0xf5f0e0 });
 
     if (!isMini) {
       // Draw center ravine
@@ -39,20 +47,20 @@ export class PixiBreadboardRenderer {
       // Top rails
       this.graphics.moveTo(60, 42);
       this.graphics.lineTo(width - 60, 42);
-      this.graphics.stroke({ width: 2, color: 0xef4444 }); // Positive line (+)
+      this.graphics.stroke({ width: 3, color: 0xef4444 }); // Positive line (+)
       
       this.graphics.moveTo(60, 78);
       this.graphics.lineTo(width - 60, 78);
-      this.graphics.stroke({ width: 2, color: 0x3b82f6 }); // Negative line (-)
+      this.graphics.stroke({ width: 3, color: 0x3b82f6 }); // Negative line (-)
 
       // Bottom rails
       this.graphics.moveTo(60, 262);
       this.graphics.lineTo(width - 60, 262);
-      this.graphics.stroke({ width: 2, color: 0xef4444 }); // Positive line (+)
+      this.graphics.stroke({ width: 3, color: 0xef4444 }); // Positive line (+)
       
       this.graphics.moveTo(60, 298);
       this.graphics.lineTo(width - 60, 298);
-      this.graphics.stroke({ width: 2, color: 0x3b82f6 }); // Negative line (-)
+      this.graphics.stroke({ width: 3, color: 0x3b82f6 }); // Negative line (-)
     } else {
       // Mini: center ravine between top holes (Y≈78) and bottom holes (Y≈95)
       this.graphics.rect(30, 82, width - 60, 10);
@@ -62,9 +70,9 @@ export class PixiBreadboardRenderer {
     // Draw holes
     if (model.holes) {
       for (const hole of model.holes) {
-        this.graphics.roundRect(hole.positionX - 4, hole.positionY - 4, 8, 8, 1.5);
+        this.graphics.circle(hole.positionX, hole.positionY, 3.5);
         this.graphics.fill(0x374151); // Dark metal contact inside
-        this.graphics.stroke({ width: 1.5, color: 0xd1d5db }); // Silver contact ring
+        this.graphics.stroke({ width: 1, color: 0x9ca3af }); // Silver contact ring
       }
     }
 
@@ -135,6 +143,7 @@ export class PixiBreadboardRenderer {
       // Draw row number labels (every column)
       const maxCols = is830 ? 63 : 30;
       for (let r = 1; r <= maxCols; r++) {
+        if (r !== 1 && r % 5 !== 0) continue;
         const txt = new Text({
           text: r.toString(),
           style: { fontFamily: 'sans-serif', fontSize: 10, fill: 0x6b7280 }
@@ -144,12 +153,16 @@ export class PixiBreadboardRenderer {
         this.container.addChild(txt);
       }
 
-      // Plus and minus markings
+      // Plus and minus markings (left and right sides)
       const powerLabels = [
         { text: '+', x: 40, y: 36, color: 0xef4444 },
         { text: '-', x: 40, y: 72, color: 0x3b82f6 },
         { text: '+', x: 40, y: 256, color: 0xef4444 },
         { text: '-', x: 40, y: 292, color: 0x3b82f6 },
+        { text: '+', x: width - 20, y: 36, color: 0xef4444 },
+        { text: '-', x: width - 20, y: 72, color: 0x3b82f6 },
+        { text: '+', x: width - 20, y: 256, color: 0xef4444 },
+        { text: '-', x: width - 20, y: 292, color: 0x3b82f6 },
       ];
       for (const label of powerLabels) {
         const txt = new Text({
@@ -168,7 +181,7 @@ export class PixiBreadboardRenderer {
           style: { fontFamily: 'monospace', fontSize: 9, fill: 0x6b7280 }
         });
         txt.x = 15;
-        txt.y = 20 + c * colSpacing - 4;
+        txt.y = 30 + c * colSpacing - 4;
         this.container.addChild(txt);
       }
       for (let c = 0; c < 5; c++) {
@@ -177,7 +190,7 @@ export class PixiBreadboardRenderer {
           style: { fontFamily: 'monospace', fontSize: 9, fill: 0x6b7280 }
         });
         txt.x = 15;
-        txt.y = 100 + c * colSpacing - 4;
+        txt.y = 95 + c * colSpacing - 4;
         this.container.addChild(txt);
       }
 
@@ -188,7 +201,7 @@ export class PixiBreadboardRenderer {
           style: { fontFamily: 'monospace', fontSize: 9, fill: 0x6b7280 }
         });
         txt.x = width - 18;
-        txt.y = 20 + c * colSpacing - 4;
+        txt.y = 30 + c * colSpacing - 4;
         this.container.addChild(txt);
       }
       // Right-side row letters F-J (mini)
@@ -198,7 +211,7 @@ export class PixiBreadboardRenderer {
           style: { fontFamily: 'monospace', fontSize: 9, fill: 0x6b7280 }
         });
         txt.x = width - 18;
-        txt.y = 100 + c * colSpacing - 4;
+        txt.y = 95 + c * colSpacing - 4;
         this.container.addChild(txt);
       }
 
@@ -208,8 +221,8 @@ export class PixiBreadboardRenderer {
           text: r.toString(),
           style: { fontFamily: 'sans-serif', fontSize: 9, fill: 0x6b7280 }
         });
-        txt.x = 30 + (r - 1) * rowSpacing - 3;
-        txt.y = 70;
+        txt.x = 45 + (r - 1) * 15 - 3;
+        txt.y = 82;
         this.container.addChild(txt);
       }
     }

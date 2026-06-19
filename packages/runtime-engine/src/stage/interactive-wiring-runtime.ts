@@ -20,7 +20,7 @@ export const VALID_WIRE_COLORS = [
   'blue',
   'yellow',
   'green',
-  'white',
+  'cyan',
   'orange',
   'purple',
 ];

@@ -68,16 +68,16 @@ interface SelectionRectState {
 }
 
 /** Phase 27A: Wire color palette for cycling on new wire creation */
-const WIRE_COLORS = ['red', 'blue', 'green', 'yellow', 'orange', 'purple', 'black', 'white', 'brown'];
+const WIRE_COLORS = ['red', 'blue', 'green', 'yellow', 'orange', 'purple', 'black', 'cyan', 'brown'];
 
 /** Phase 27B: Drag threshold in screen pixels - prevents accidental move on click */
 const DRAG_THRESHOLD = 5;
 
 /** Phase 31A: Lerp factor for smooth drag (0..1, higher = faster tracking) */
-const DRAG_LERP_FACTOR = 0.35;
+const DRAG_LERP_FACTOR = 0.55;
 
 /** Phase 31A: Momentum deceleration per frame (multiplier, 0..1) */
-const MOMENTUM_FRICTION = 0.92;
+const MOMENTUM_FRICTION = 0.86;
 
 /** Phase 31A: Minimum velocity magnitude to keep momentum active */
 const MOMENTUM_MIN_VELOCITY = 0.3;
@@ -86,9 +86,9 @@ const MOMENTUM_MIN_VELOCITY = 0.3;
 const SNAP_THROTTLE_FRAMES = 2;
 
 /** Phase 31A.1: Camera zoom limits */
-const CAMERA_MIN_ZOOM = 0.15;
-const CAMERA_MAX_ZOOM = 4.0;
-const CAMERA_ZOOM_STEP = 0.08;
+const CAMERA_MIN_ZOOM = 0.3;
+const CAMERA_MAX_ZOOM = 2.5;
+const CAMERA_ZOOM_STEP = 0.12;
 const CAMERA_LERP_SPEED = 0.18;
 const CAMERA_BOUNDS = 5000;
 
@@ -240,15 +240,15 @@ export class PixiSceneRenderer {
 
   /** Draw a subtle dot-grid pattern for a professional workspace feel */
   private drawGridBackground(): void {
-    const gridSize = 20;
-    const gridW = 3000;
-    const gridH = 2000;
-    const startX = -500;
-    const startY = -300;
+    const gridSize = 25;
+    const gridW = 8000;
+    const gridH = 6000;
+    const startX = -3000;
+    const startY = -2000;
 
     // Tinkercad-style: solid light-gray workspace surface
     this.gridBackground.rect(startX, startY, gridW, gridH);
-    this.gridBackground.fill({ color: 0xC8C8C8 });
+    this.gridBackground.fill({ color: 0xE8E8E8 });
 
     // Subtle grid lines (lighter than background)
     for (let x = startX; x <= startX + gridW; x += gridSize) {
@@ -259,7 +259,7 @@ export class PixiSceneRenderer {
       this.gridBackground.moveTo(startX, y);
       this.gridBackground.lineTo(startX + gridW, y);
     }
-    this.gridBackground.stroke({ width: 0.5, color: 0xB8B8B8, alpha: 0.5 });
+    this.gridBackground.stroke({ width: 0.5, color: 0xD0D0D0, alpha: 0.7 });
   }
 
   public initialize(options?: { app?: Application; rootContainer?: Container; runtime?: any }): void {
@@ -493,7 +493,7 @@ export class PixiSceneRenderer {
     if (w < 3 && h < 3) return; // too small to show
 
     this.selectionRectGraphics.rect(x, y, w, h);
-    this.selectionRectGraphics.fill({ color: 0x3b82f6, alpha: 0.08 });
+    this.selectionRectGraphics.fill({ color: 0x3b82f6, alpha: 0.15 });
     this.selectionRectGraphics.stroke({ width: 1.5, color: 0x3b82f6, alpha: 0.5 });
   }
 
@@ -1288,11 +1288,19 @@ export class PixiSceneRenderer {
     const stageTarget = snapshot.find((s) => s.targetId === 'stage');
     if (!stageTarget) return;
 
-    // Apply camera viewport transforms: scale (zoom) and translation (pan)
-    const camera = stageTarget.camera || { x: 0, y: 0, zoom: 1 };
-    this.viewport.scale.set(camera.zoom || 1);
-    this.viewport.x = camera.x || 0;
-    this.viewport.y = camera.y || 0;
+    // Apply camera viewport transforms only if the internal camera system is NOT active.
+    // The internal wheel/space-pan camera takes priority to avoid fighting.
+    if (!this.cameraLerping && !this.isSpacePanning && !this.isMiddlePanning) {
+      const camera = stageTarget.camera || { x: 0, y: 0, zoom: 1 };
+      // Only apply if the camera values are non-default (avoid resetting to 0,0,1)
+      if (camera.zoom && camera.zoom !== 1) {
+        this.viewport.scale.set(camera.zoom);
+      }
+      if (camera.x || camera.y) {
+        this.viewport.x = camera.x || 0;
+        this.viewport.y = camera.y || 0;
+      }
+    }
 
     const selections = stageTarget.workspaceSelections || [];
     const componentAssets: ComponentAssetDefinition[] = stageTarget.componentAssets || [];

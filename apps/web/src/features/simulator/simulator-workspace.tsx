@@ -379,7 +379,7 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
         await app.init({
           width: rect.width || 800,
           height: rect.height || 600,
-          backgroundColor: 0x0f172a,
+          backgroundColor: 0xE8E8E8,
           antialias: true,
           resolution: window.devicePixelRatio || 1,
           // Top-level option in Pixi.js v8 — required for canvas magnifier
@@ -497,7 +497,8 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
         setStatus('Simulator ready — drag components from the palette');
 
         /* ── Auto-fit camera to show all components ────────────── */
-        // Small delay to let the first render frame establish sizes
+        // The scene renderer's own camera system handles zoom/pan.
+        // We just set the initial cameraTarget on the viewport for fitting.
         setTimeout(() => {
           if (destroyed) return;
           const fitRect = container.getBoundingClientRect();
@@ -509,11 +510,13 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
             50,
           );
           cameraRef.current = cam;
-          if (adapter?.app?.stage) {
-            adapter.app.stage.scale.set(cam.zoom);
-            adapter.app.stage.position.set(cam.x, cam.y);
+          // Set the scene renderer's viewport camera directly (no stage manipulation)
+          const viewport = adapter?.app?.stage?.children?.[0];
+          if (viewport) {
+            viewport.scale.set(cam.zoom);
+            viewport.position.set(cam.x, cam.y);
           }
-        }, 200);
+        }, 300);
 
         // Store cleanup reference on the container element
         (container as any).__resizeObserver = ro; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -546,39 +549,21 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
   }, [accessToken, projectId]);
 
   /* ── Camera controls ────────────────────────────────────────────── */
+  // Wheel zoom is handled entirely by the scene renderer's native wheel listener.
+  // Removed duplicate React wheel handler that was causing double-zoom.
   const handleWheel = useCallback((e: React.WheelEvent) => {
+    // Let the native handler in the scene renderer handle zoom.
+    // Just prevent default to avoid page scroll.
     e.preventDefault();
-    const delta = e.deltaY > 0 ? 0.9 : 1.1;
-    const cam = cameraRef.current;
-    const oldZoom = cam.zoom;
-    cam.zoom = Math.max(0.1, Math.min(5, cam.zoom * delta));
-
-    // Phase 27B: Cursor-anchored zoom — zoom centers on mouse position
-    const container = pixiContainerRef.current;
-    if (container) {
-      const rect = container.getBoundingClientRect();
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
-      // Adjust pan so the point under cursor stays fixed
-      cam.x = mouseX - (mouseX - cam.x) * (cam.zoom / oldZoom);
-      cam.y = mouseY - (mouseY - cam.y) * (cam.zoom / oldZoom);
-    }
-
-    const adapter = adapterRef.current;
-    if (adapter?.app?.stage) {
-      adapter.app.stage.scale.set(cam.zoom);
-      adapter.app.stage.position.set(cam.x, cam.y);
-    }
   }, []);
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
-      // Middle button, Pan tool, spacebar held, or left-click on canvas background
+      // Middle button, Pan tool, or spacebar held — NOT left-click select
       if (
         e.button === 1 ||
         (e.button === 0 && activeTool === 'pan') ||
-        (e.button === 0 && spacebarRef.current) ||
-        (e.button === 0 && activeTool === 'select')
+        (e.button === 0 && spacebarRef.current)
       ) {
         panningRef.current = true;
         lastMouseRef.current = { x: e.clientX, y: e.clientY };
@@ -593,12 +578,12 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
     const dx = e.clientX - lastMouseRef.current.x;
     const dy = e.clientY - lastMouseRef.current.y;
     lastMouseRef.current = { x: e.clientX, y: e.clientY };
-    const cam = cameraRef.current;
-    cam.x += dx;
-    cam.y += dy;
+    // Pan the scene renderer's viewport directly, not the stage
     const adapter = adapterRef.current;
-    if (adapter?.app?.stage) {
-      adapter.app.stage.position.set(cam.x, cam.y);
+    const viewport = adapter?.app?.stage?.children?.[0];
+    if (viewport) {
+      viewport.x += dx;
+      viewport.y += dy;
     }
   }, []);
 
@@ -608,20 +593,20 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
 
   /* ── Zoom controls for toolbar ──────────────────────────────────── */
   const handleZoomIn = useCallback(() => {
-    const cam = cameraRef.current;
-    cam.zoom = Math.min(5, cam.zoom * 1.2);
     const adapter = adapterRef.current;
-    if (adapter?.app?.stage) {
-      adapter.app.stage.scale.set(cam.zoom);
+    const viewport = adapter?.app?.stage?.children?.[0];
+    if (viewport) {
+      const newZoom = Math.min(2.5, (viewport.scale?.x || 1) * 1.2);
+      viewport.scale.set(newZoom);
     }
   }, []);
 
   const handleZoomOut = useCallback(() => {
-    const cam = cameraRef.current;
-    cam.zoom = Math.max(0.1, cam.zoom / 1.2);
     const adapter = adapterRef.current;
-    if (adapter?.app?.stage) {
-      adapter.app.stage.scale.set(cam.zoom);
+    const viewport = adapter?.app?.stage?.children?.[0];
+    if (viewport) {
+      const newZoom = Math.max(0.3, (viewport.scale?.x || 1) / 1.2);
+      viewport.scale.set(newZoom);
     }
   }, []);
 
@@ -629,13 +614,8 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
     const runtime = runtimeRef.current;
     const adapter = adapterRef.current;
     const container = pixiContainerRef.current;
-    if (!adapter?.app?.stage || !container) {
-      // Fallback: reset to default
-      cameraRef.current = { x: 0, y: 0, zoom: 1 };
-      if (adapter?.app?.stage) {
-        adapter.app.stage.scale.set(1);
-        adapter.app.stage.position.set(0, 0);
-      }
+    const viewport = adapter?.app?.stage?.children?.[0];
+    if (!viewport || !container) {
       return;
     }
 
@@ -648,8 +628,8 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
       50,
     );
     cameraRef.current = cam;
-    adapter.app.stage.scale.set(cam.zoom);
-    adapter.app.stage.position.set(cam.x, cam.y);
+    viewport.scale.set(cam.zoom);
+    viewport.position.set(cam.x, cam.y);
   }, []);
 
   /* ── Drag & drop from palette ───────────────────────────────────── */

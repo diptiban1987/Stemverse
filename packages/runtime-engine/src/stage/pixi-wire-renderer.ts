@@ -73,24 +73,24 @@ export class PixiWireRenderer {
       for (let i = 0; i < points.length; i++) {
         const isEnd = i === 0 || i === points.length - 1;
         this.graphics.circle(points[i].x, points[i].y, isEnd ? 3 : 2);
-        this.graphics.fill(isEnd ? colorHex : 0xd1d5db);
-        this.graphics.stroke({ width: 1, color: 0xffffff });
+        this.graphics.fill(colorHex);
+        this.graphics.stroke({ width: 0.5, color: colorHex });
       }
     } else {
       for (const seg of geometry.segments) {
         this.graphics.circle(seg.startX, seg.startY, 3);
         this.graphics.fill(colorHex);
-        this.graphics.stroke({ width: 1, color: 0xffffff });
+        this.graphics.stroke({ width: 0.5, color: colorHex });
 
         this.graphics.circle(seg.endX, seg.endY, 3);
         this.graphics.fill(colorHex);
-        this.graphics.stroke({ width: 1, color: 0xffffff });
+        this.graphics.stroke({ width: 0.5, color: colorHex });
       }
     }
 
     // Phase 20C: Current-flow tint overlay
     if (currentViz && currentViz.visualState === 'ACTIVE' && currentViz.normalizedFlow > 0.01) {
-      const tintAlpha = Math.min(0.55, currentViz.normalizedFlow * 0.6);
+      const tintAlpha = Math.min(0.75, currentViz.normalizedFlow * 0.6);
       // Draw a thinner line on top of the wire in the direction color
       const flowColor = currentViz.flowDirection === 'REVERSE' ? 0xf59e0b : 0x22c55e;
       if (points.length >= 2) {
@@ -104,7 +104,7 @@ export class PixiWireRenderer {
           this.graphics.lineTo(seg.endX, seg.endY);
         }
       }
-      this.graphics.stroke({ width: 2.5, color: flowColor, alpha: tintAlpha, cap: 'round', join: 'round' });
+      this.graphics.stroke({ width: 3.5, color: flowColor, alpha: tintAlpha, cap: 'round', join: 'round' });
     }
 
     // Phase 20C: Signal-flow packet dot
@@ -147,8 +147,9 @@ export class PixiWireRenderer {
       blue: 0x3b82f6,
       green: 0x10b981,
       yellow: 0xf59e0b,
-      black: 0x1f2937,
-      white: 0xf9fafb,
+      black: 0x111111,
+      white: 0xd4d4d8,
+      cyan: 0x06b6d4,
       orange: 0xf97316,
       purple: 0x8b5cf6,
       brown: 0x78350f,
@@ -183,7 +184,7 @@ export class PixiWireRenderer {
     this.hitAreaGraphics.clear();
 
     // Draw thick invisible stroke along the wire path for easy clicking
-    const hitWidth = 12; // 12px wide click target
+    const hitWidth = 18; // 18px wide click target
     if (points.length >= 2) {
       this.hitAreaGraphics.moveTo(points[0].x, points[0].y);
       for (let i = 1; i < points.length; i++) {

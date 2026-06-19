@@ -764,11 +764,11 @@ export class PixiComponentRenderer {
 
     // Render selection/hover outline (on graphics layer in fallback mode)
     if (isSelected) {
-      this.graphics.rect(-4, -4, w + 8, h + 8);
-      this.graphics.stroke({ width: 3, color: 0x3b82f6 }); // Highlight blue
+      this.graphics.roundRect(-4, -4, w + 8, h + 8, 6);
+      this.graphics.stroke({ width: 2, color: 0x3b82f6 }); // Highlight blue
     } else if (isHovered) {
-      this.graphics.rect(-2, -2, w + 4, h + 4);
-      this.graphics.stroke({ width: 2, color: 0x60a5fa }); // Hover blue
+      this.graphics.roundRect(-2, -2, w + 4, h + 4, 4);
+      this.graphics.stroke({ width: 1.5, color: 0x60a5fa, alpha: 0.7 }); // Hover blue
     }
     } // End of if (!useTexture) — Graphics fallback block
 
@@ -835,14 +835,14 @@ export class PixiComponentRenderer {
           : def.displayName;
         this.labelText = new Text({
           text: label,
-          style: { fontFamily: 'Inter, sans-serif', fontSize: 10, fill: 0xe2e8f0, fontWeight: '600', dropShadow: { color: 0xffffff, blur: 2, distance: 0, alpha: 0.5 } }
+          style: { fontFamily: 'Inter, sans-serif', fontSize: 12, fill: 0x1e293b, fontWeight: '600' }
         });
         this.container.addChild(this.labelText);
       }
       // Position label above the component for clarity
       this.labelText.x = w / 2;
-      this.labelText.y = -12;
-      this.labelText.anchor = { x: 0.5, y: 1 };
+      this.labelText.y = -16;
+      this.labelText.anchor.set(0.5, 1);
     }
 
     // Set position, rotation, scale
@@ -901,31 +901,31 @@ export class PixiComponentRenderer {
         text: pin.name,
         style: {
           fontFamily: 'monospace',
-          fontSize: 16,
-          fill: color,
+          fontSize: 9,
+          fill: 0xffffff,
           fontWeight: 'bold',
-          letterSpacing: 0.5,
+          letterSpacing: 0.3,
         },
       });
 
       if (isLeftPin) {
         // Left-side pin: label to the left of the pin
         txt.anchor = { x: 1, y: 0.5 };
-        txt.x = pin.pixelX - 12;
+        txt.x = pin.pixelX - 10;
         // Background behind text
-        const bgW = txt.text.length * 10 + 10;
-        labelBg.roundRect(pin.pixelX - 14 - bgW, pin.pixelY - 10, bgW, 22, 4);
+        const bgW = txt.text.length * 6 + 8;
+        labelBg.roundRect(pin.pixelX - 12 - bgW, pin.pixelY - 8, bgW, 16, 3);
       } else {
         // Right-side pin: label to the right of the pin
         txt.anchor = { x: 0, y: 0.5 };
-        txt.x = pin.pixelX + 12;
+        txt.x = pin.pixelX + 10;
         // Background behind text
-        const bgW = txt.text.length * 10 + 10;
-        labelBg.roundRect(pin.pixelX + 12, pin.pixelY - 10, bgW, 22, 4);
+        const bgW = txt.text.length * 6 + 8;
+        labelBg.roundRect(pin.pixelX + 10, pin.pixelY - 8, bgW, 16, 3);
       }
       txt.y = pin.pixelY;
-      labelBg.fill({ color: 0xffffff, alpha: 0.85 });
-      labelBg.stroke({ width: 0.5, color: 0x999999, alpha: 0.4 });
+      labelBg.fill({ color: 0x1e293b, alpha: 0.8 });
+      labelBg.stroke({ width: 0.5, color: 0x475569, alpha: 0.5 });
 
       this.pinLabelContainer.addChild(labelBg);
       this.pinLabelContainer.addChild(txt);
