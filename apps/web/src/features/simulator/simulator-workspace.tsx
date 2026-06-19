@@ -465,8 +465,10 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
         /* ── Create smart placement engine ──────────────────────── */
         placementEngineRef.current = new SmartPlacementEngine(ROBOTICS_BREADBOARD_LAYOUT);
 
-        /* ── Auto-register board in pin assignment store ─────────── */
-        usePinAssignmentStore.getState().setBoard('board_1', 'esp32_devkit_v1');
+        /* ── Auto-register default board type in pin assignment store ── */
+        // Don't register a fake objectId — the real objectId is set when the board drops.
+        // But pre-set the board type so the pin panel shows the default board info.
+        // The actual boardObjectId gets set in handleDrop when a board is dropped.
 
         /* ── Resize observer ────────────────────────────────────── */
         const ro = new ResizeObserver((entries) => {
@@ -757,9 +759,40 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
 
         /* ── Pin assignment integration ──────────────────────────── */
         if (BOARD_ASSET_IDS.has(assetId)) {
-          // This is a board — register it
+          // This is a board — register it with the real objectId
           pinSetBoard(objectId, assetId);
           setStatus(`Board detected: ${assetId}`);
+
+          // Auto-wire all existing components that don't have wires yet
+          setTimeout(() => {
+            const rt = runtimeRef.current;
+            if (!rt) return;
+            const store = usePinAssignmentStore.getState();
+            // Auto-assign power pins for all existing components
+            for (const comp of store.droppedComponents) {
+              store.autoAssignPowerPins(comp.objectId);
+            }
+            // Generate wires for all assignments
+            const allAssignments = usePinAssignmentStore.getState().assignments;
+            for (const assignment of allAssignments) {
+              if (!assignment.wireId) {
+                const wireId = generateWireForAssignment(
+                  assignment,
+                  rt,
+                  componentAssetsRef.current,
+                  adapterRef.current?.sceneRenderer?.renderScaleMap,
+                );
+                if (wireId) {
+                  usePinAssignmentStore.getState().setWireId(
+                    assignment.componentObjectId,
+                    assignment.componentPinName,
+                    wireId,
+                  );
+                }
+              }
+            }
+            setStatus(`Board registered — auto-wiring all components`);
+          }, 200);
         } else if (COMPONENT_PIN_CATALOG[assetId]) {
           // This is a sensor/actuator/component — register & auto-assign power
           const catalog = COMPONENT_PIN_CATALOG[assetId];
@@ -769,41 +802,50 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
             displayName: catalog.displayName,
             pins: catalog.pins,
           });
-          // Auto-assign VCC/GND pins
-          pinAutoAssignPower(objectId);
-          // Open the pin assignment panel
-          pinSetPropertyPanelOpen(true);
 
-          // ── Auto-wire VCC/GND after placement ───────────────────
-          // Small delay to ensure the runtime has the object registered
-          setTimeout(() => {
-            const rt = runtimeRef.current;
-            if (!rt) return;
-            const store = usePinAssignmentStore.getState();
-            const autoAssignments = store.assignments.filter(
-              (a) => a.componentObjectId === objectId && a.isAutoAssigned,
-            );
-            for (const assignment of autoAssignments) {
-              const wireId = generateWireForAssignment(
-                assignment,
-                rt,
-                componentAssetsRef.current,
-                adapterRef.current?.sceneRenderer?.renderScaleMap,
+          // Check if a board is registered — only auto-wire if board exists
+          const storeState = usePinAssignmentStore.getState();
+          if (storeState.boardObjectId) {
+            // Auto-assign VCC/GND pins
+            pinAutoAssignPower(objectId);
+            // Open the pin assignment panel
+            pinSetPropertyPanelOpen(true);
+
+            // ── Auto-wire VCC/GND after placement ───────────────────
+            // Small delay to ensure the runtime has the object registered
+            setTimeout(() => {
+              const rt = runtimeRef.current;
+              if (!rt) return;
+              const store = usePinAssignmentStore.getState();
+              const autoAssignments = store.assignments.filter(
+                (a) => a.componentObjectId === objectId && a.isAutoAssigned,
               );
-              if (wireId) {
-                usePinAssignmentStore.getState().setWireId(
-                  assignment.componentObjectId,
-                  assignment.componentPinName,
-                  wireId,
+              for (const assignment of autoAssignments) {
+                const wireId = generateWireForAssignment(
+                  assignment,
+                  rt,
+                  componentAssetsRef.current,
+                  adapterRef.current?.sceneRenderer?.renderScaleMap,
                 );
+                if (wireId) {
+                  usePinAssignmentStore.getState().setWireId(
+                    assignment.componentObjectId,
+                    assignment.componentPinName,
+                    wireId,
+                  );
+                }
               }
-            }
-            if (autoAssignments.length > 0) {
-              setStatus(`${catalog.displayName} placed — VCC/GND auto-wired. Assign GPIO pins →`);
-            }
-          }, 150);
+              if (autoAssignments.length > 0) {
+                setStatus(`${catalog.displayName} placed — VCC/GND auto-wired. Assign GPIO pins →`);
+              }
+            }, 200);
 
-          setStatus(`${catalog.displayName} auto-placed — wiring power pins…`);
+            setStatus(`${catalog.displayName} auto-placed — wiring power pins…`);
+          } else {
+            // No board registered yet — just add the component, wires will be created when board drops
+            pinSetPropertyPanelOpen(true);
+            setStatus(`${catalog.displayName} added — drop a board to auto-wire`);
+          }
         }
 
         // Auto-fit camera after each drop so everything is clearly visible
