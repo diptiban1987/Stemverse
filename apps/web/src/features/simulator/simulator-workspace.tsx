@@ -58,9 +58,9 @@ interface CameraState {
 
 const SCENE_SCALE_RATIOS: Record<string, number> = {
   arduino_uno_r3: 0.41, esp32_devkit_v1: 0.17, arduino_nano: 0.11,
-  hc_sr04: 0.27, ir_sensor: 0.12, mq2_sensor: 0.20, dht11_sensor: 0.10,
+  hc_sr04: 0.27, ir_sensor_module: 0.12, mq2_gas_sensor: 0.20, dht11_sensor: 0.10,
   led_5mm: 0.22, led_generic: 0.22, resistor: 0.18, resistor_generic: 0.18,
-  push_button: 0.15, potentiometer: 0.15, buzzer: 0.15,
+  push_button_tactile: 0.15, potentiometer_10k: 0.15, buzzer_passive: 0.15,
   sg90_servo: 0.14, relay_module: 0.17,
   oled_ssd1306: 0.17, lcd_1602: 0.48, raspberry_pi_pico: 0.13,
 };

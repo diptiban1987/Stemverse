@@ -60,7 +60,7 @@ export const COMPONENT_PIN_CATALOG: Record<string, ComponentPinInfo> = {
       { name: 'GND', signalType: 'GND' },
     ],
   },
-  ir_sensor: {
+  ir_sensor_module: {
     displayName: 'IR Sensor Module',
     pins: [
       { name: 'VCC', signalType: 'POWER' },
@@ -68,7 +68,7 @@ export const COMPONENT_PIN_CATALOG: Record<string, ComponentPinInfo> = {
       { name: 'OUT', signalType: 'DIGITAL' },
     ],
   },
-  mq2_sensor: {
+  mq2_gas_sensor: {
     displayName: 'MQ-2 Gas Sensor',
     pins: [
       { name: 'VCC', signalType: 'POWER' },
@@ -129,7 +129,7 @@ export const COMPONENT_PIN_CATALOG: Record<string, ComponentPinInfo> = {
       { name: 'IN', signalType: 'DIGITAL' },
     ],
   },
-  buzzer: {
+  buzzer_passive: {
     displayName: 'Buzzer',
     pins: [
       { name: '+', signalType: 'DIGITAL' },
@@ -151,7 +151,7 @@ export const COMPONENT_PIN_CATALOG: Record<string, ComponentPinInfo> = {
       { name: 'PIN2', signalType: 'PASSIVE' },
     ],
   },
-  potentiometer: {
+  potentiometer_10k: {
     displayName: 'Potentiometer',
     pins: [
       { name: '1', signalType: 'POWER' },
@@ -159,7 +159,7 @@ export const COMPONENT_PIN_CATALOG: Record<string, ComponentPinInfo> = {
       { name: '3', signalType: 'GND' },
     ],
   },
-  push_button: {
+  push_button_tactile: {
     displayName: 'Push Button',
     pins: [
       { name: '1A', signalType: 'DIGITAL' },

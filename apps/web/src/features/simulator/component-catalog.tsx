@@ -38,17 +38,17 @@ const COMPONENT_DESCRIPTIONS: Record<string, string> = {
   breadboard_mini: '170-point mini breadboard',
   hc_sr04: 'Ultrasonic distance 2–400 cm',
   dht11_sensor: 'Temperature & humidity',
-  mq2_sensor: 'Smoke & gas detection',
-  ir_sensor: 'Infrared obstacle detector',
+  mq2_gas_sensor: 'Smoke & gas detection',
+  ir_sensor_module: 'Infrared obstacle detector',
   oled_ssd1306: '0.96″ 128×64 OLED I²C',
   lcd1602: '16×2 character LCD display',
   sg90_servo: '180° micro servo motor',
   relay_module: '5V single-channel relay',
-  buzzer: 'Piezoelectric buzzer module',
+  buzzer_passive: 'Piezoelectric buzzer module',
   led_generic: '5mm LED — any color',
   resistor_generic: 'Through-hole resistor',
-  push_button: 'Momentary tactile switch',
-  potentiometer: '10kΩ rotary potentiometer',
+  push_button_tactile: 'Momentary tactile switch',
+  potentiometer_10k: '10kΩ rotary potentiometer',
 };
 
 /* ------------------------------------------------------------------ */
@@ -61,17 +61,17 @@ const ASSET_TO_SVG_KEY: Record<string, string> = {
   arduino_nano: 'ARDUINO_NANO',
   hc_sr04: 'ULTRASONIC',
   dht11_sensor: 'DHT11',
-  mq2_sensor: 'MQ2',
-  ir_sensor: 'IR',
+  mq2_gas_sensor: 'MQ2_SENSOR',
+  ir_sensor_module: 'IR_SENSOR',
   oled_ssd1306: 'OLED',
   lcd1602: 'LCD',
   sg90_servo: 'SERVO',
   relay_module: 'RELAY',
-  buzzer: 'BUZZER',
+  buzzer_passive: 'BUZZER',
   led_generic: 'LED',
   resistor_generic: 'RESISTOR',
-  push_button: 'BUTTON',
-  potentiometer: 'POTENTIOMETER',
+  push_button_tactile: 'PUSH_BUTTON',
+  potentiometer_10k: 'POTENTIOMETER',
 };
 
 const BREADBOARD_IDS = new Set(['breadboard_830', 'breadboard_400', 'breadboard_mini']);
@@ -152,8 +152,8 @@ const CATEGORIES: CategoryDef[] = [
     components: [
       { assetId: 'hc_sr04', displayName: 'HC-SR04', description: COMPONENT_DESCRIPTIONS.hc_sr04 },
       { assetId: 'dht11_sensor', displayName: 'DHT11 Sensor', description: COMPONENT_DESCRIPTIONS.dht11_sensor },
-      { assetId: 'mq2_sensor', displayName: 'MQ-2 Gas Sensor', description: COMPONENT_DESCRIPTIONS.mq2_sensor },
-      { assetId: 'ir_sensor', displayName: 'IR Sensor', description: COMPONENT_DESCRIPTIONS.ir_sensor },
+      { assetId: 'mq2_gas_sensor', displayName: 'MQ-2 Gas Sensor', description: COMPONENT_DESCRIPTIONS.mq2_gas_sensor },
+      { assetId: 'ir_sensor_module', displayName: 'IR Sensor', description: COMPONENT_DESCRIPTIONS.ir_sensor_module },
     ],
   },
   {
@@ -180,7 +180,7 @@ const CATEGORIES: CategoryDef[] = [
     components: [
       { assetId: 'sg90_servo', displayName: 'SG90 Servo', description: COMPONENT_DESCRIPTIONS.sg90_servo },
       { assetId: 'relay_module', displayName: 'Relay Module', description: COMPONENT_DESCRIPTIONS.relay_module },
-      { assetId: 'buzzer', displayName: 'Buzzer', description: COMPONENT_DESCRIPTIONS.buzzer },
+      { assetId: 'buzzer_passive', displayName: 'Buzzer', description: COMPONENT_DESCRIPTIONS.buzzer_passive },
     ],
   },
   {
@@ -205,8 +205,8 @@ const CATEGORIES: CategoryDef[] = [
     bgColor: 'bg-cyan-500/10',
     borderColor: 'border-cyan-500/30',
     components: [
-      { assetId: 'push_button', displayName: 'Push Button', description: COMPONENT_DESCRIPTIONS.push_button },
-      { assetId: 'potentiometer', displayName: 'Potentiometer', description: COMPONENT_DESCRIPTIONS.potentiometer },
+      { assetId: 'push_button_tactile', displayName: 'Push Button', description: COMPONENT_DESCRIPTIONS.push_button_tactile },
+      { assetId: 'potentiometer_10k', displayName: 'Potentiometer', description: COMPONENT_DESCRIPTIONS.potentiometer_10k },
     ],
   },
 ];

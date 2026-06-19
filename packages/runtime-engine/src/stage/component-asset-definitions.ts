@@ -1,5 +1,6 @@
 import { ComponentAssetDefinition, PinAssetDefinition, WireAnchorPoint, BreadboardHoleDefinition } from '../types';
 import { getComponentSvg, getBreadboardSvg } from './component-svg-assets';
+import { EXTENDED_COMPONENT_ASSETS } from './component-asset-extensions';
 
 // Helper to programmatically generate the 830 breadboard holes
 function generateBreadboard830Holes(): BreadboardHoleDefinition[] {
@@ -747,4 +748,6 @@ export const DEFAULT_COMPONENTS_ASSETS: ComponentAssetDefinition[] = [
   BREADBOARD_830_ASSET,
   BREADBOARD_400_ASSET,
   BREADBOARD_MINI_ASSET,
+  // Extended components (from component-asset-extensions)
+  ...EXTENDED_COMPONENT_ASSETS,
 ];
