@@ -22,6 +22,7 @@ export const CATEGORY_COLORS = {
   robotics: '#E91E63',
   filesystem: '#795548',
   rtos: '#455A64',
+  voice: '#E040FB',
 } as const;
 
 export const BLOCKLY_TOOLBOX_CATEGORIES = [

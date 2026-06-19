@@ -54,3 +54,41 @@
     @apply bg-background text-foreground font-sans antialiased;
   }
 }
+
+/* ── Robotics Studio: hide persistent scrollbar inside Blockly ── */
+.robotics-blockly-wrap,
+.robotics-blockly-wrap > div,
+.robotics-blockly-wrap .injectionDiv {
+  overflow: hidden !important;
+  scrollbar-width: none !important;           /* Firefox */
+  -ms-overflow-style: none !important;        /* IE/Edge legacy */
+}
+.robotics-blockly-wrap::-webkit-scrollbar,
+.robotics-blockly-wrap > div::-webkit-scrollbar,
+.robotics-blockly-wrap .injectionDiv::-webkit-scrollbar {
+  display: none !important;                   /* Chrome/Safari/Edge */
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Ensure the Blockly SVG workspace fills its container exactly */
+.robotics-blockly-wrap .blocklySvg {
+  position: absolute !important;
+  top: 0; left: 0; right: 0; bottom: 0;
+}
+
+/* ── Fix bottom gap on code panel and serial monitor ── */
+.robotics-code-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Robotics Studio: fill parent exactly, no scroll ── */
+.robotics-studio-root {
+  height: 100%;
+  max-height: 100%;
+}

@@ -111,6 +111,115 @@ export * from './component-asset-extensions';
 export * from './component-scale-runtime';
 export * from './snap-preview-runtime';
 export * from './selection-runtime';
+export * from './circuit-graph-runtime';
+export * from './blockly-circuit-generator';
+export * from './gpio-ownership-runtime';
+export * from './circuit-sync-runtime';
+export * from './circuit-diagnostics-runtime';
 
+// Phase 29B: Auto-Wiring Assistant & Guided Circuit Builder
+export * from './auto-wiring-runtime';
+export * from './component-knowledge-runtime';
+export * from './circuit-wizard-runtime';
 
+// Phase 30A: Project Library, Save/Load & Versioning
+export * from './project-library-runtime';
+export * from './project-version-runtime';
+export * from './auto-save-runtime';
+export * from './project-thumbnail-runtime';
 
+// Phase 30B: Classroom, Sharing, Assignments & Collaboration
+export * from './classroom-runtime';
+export * from './project-sharing-runtime';
+export * from './assignment-runtime';
+export * from './collaboration-runtime';
+
+// Phase 31A: Professional Simulator UX
+// Note: calculateSelectionBounds is re-exported as calculateUXSelectionBounds
+// to avoid collision with workspace-runtime's calculateSelectionBounds
+export {
+  calculateSelectionBounds as calculateUXSelectionBounds,
+} from './simulator-ux-runtime';
+
+// Re-export everything else from simulator-ux-runtime except the colliding name
+export {
+  // Factory functions
+  createDefaultHoverFeedbackModel,
+  createDefaultHoverStateModel,
+  createDefaultContextMenuItemModel,
+  createDefaultContextMenuStateModel,
+  createDefaultSelectionHandleModel,
+  createDefaultProfessionalSelectionModel,
+  createDefaultWireCreationStateModel,
+  createDefaultWireValidationOverlayModel,
+  createDefaultCameraAnimationModel,
+  createDefaultMinimapModel,
+  createDefaultPaletteDragModel,
+  createDefaultPaletteFilterModel,
+  createDefaultPerformanceMetricsModel,
+  createDefaultWorkspaceThemeConfigModel,
+  // Constants
+  VALID_HOVER_TARGET_TYPES,
+  VALID_CURSOR_STYLES,
+  VALID_CONTEXT_MENU_ACTIONS,
+  VALID_SELECTION_MODES,
+  VALID_HANDLE_TYPES,
+  VALID_WIRE_CREATION_PHASES,
+  VALID_WIRE_VALIDATION_STATUSES,
+  VALID_CAMERA_EASINGS,
+  VALID_NAVIGATION_MODES,
+  // Domain logic
+  mapHoverTargetToCursor,
+  calculateBoxSelectionIntersection,
+  calculateSnapTarget,
+  getValidationOverlayColor,
+  interpolateCameraAnimation,
+  applyEasing,
+  calculateFitToProjectBounds,
+  filterPaletteComponents,
+  // Validators
+  validateHoverFeedbackModel,
+  validateHoverStateModel,
+  validateContextMenuItemModel,
+  validateContextMenuStateModel,
+  validateSelectionHandleModel,
+  validateProfessionalSelectionModel,
+  validateWireCreationStateModel,
+  validateWireValidationOverlayModel,
+  validateCameraAnimationModel,
+  validateMinimapModel,
+  validatePaletteDragModel,
+  validatePaletteFilterModel,
+  validatePerformanceMetricsModel,
+  validateWorkspaceThemeConfigModel,
+  // Duplicate validators
+  validateDuplicateHoverFeedbackIds,
+  validateDuplicateHoverStateIds,
+  validateDuplicateContextMenuItemIds,
+  validateDuplicateContextMenuStateIds,
+  validateDuplicateSelectionHandleIds,
+  validateDuplicateProfessionalSelectionIds,
+  validateDuplicateWireCreationStateIds,
+  validateDuplicateWireValidationOverlayIds,
+  validateDuplicateCameraAnimationIds,
+  validateDuplicateMinimapIds,
+  validateDuplicatePaletteDragIds,
+  validateDuplicatePaletteFilterIds,
+  validateDuplicatePerformanceMetricsIds,
+  validateDuplicateWorkspaceThemeConfigIds,
+  // Domain functions
+  updateHoverFeedback,
+  clearHoverFeedback,
+  buildContextMenuItems,
+  showContextMenu,
+  hideContextMenu,
+  startWireCreation,
+  updateWirePreview,
+  completeWire,
+  cancelWire,
+  tickCameraAnimation,
+  applyCameraEasing,
+  updateSimulatorPerformanceMetrics,
+  // Synchronizer
+  SimulatorUXSynchronizer,
+} from './simulator-ux-runtime';

@@ -10,6 +10,7 @@ import {
   EXPANSION_ARDUINO_HELPERS,
 } from './expansion-generators';
 import { HARDWARE_EXPANSION_BLOCK_TYPES } from '../blocks/hardware';
+import { registerVoiceBlockGenerators } from './voice-generators';
 
 const ATOMIC = 0;
 
@@ -18,10 +19,25 @@ export const arduinoGenerator = new CodeGenerator('Arduino');
 registerIotBlockGenerators(arduinoGenerator, 'arduino');
 registerExpansionBlockGenerators(arduinoGenerator, 'arduino');
 registerCoreBlockGenerators(arduinoGenerator, 'arduino');
+registerVoiceBlockGenerators(arduinoGenerator, 'arduino');
 
 arduinoGenerator.addReservedWords(
   'setup,loop,if,else,for,switch,case,break,continue,return,void,boolean,byte,int,long,float,double,char,string,array,true,false,HIGH,LOW,INPUT,OUTPUT,DHT,DHT11,DHT22,Servo,Stepper',
 );
+
+/**
+ * scrub_ is called by blockToCode() after generating code for a block.
+ * It chains the current block's code with the next block in the stack.
+ * Without this override, the default CodeGenerator.scrub_() does NOT
+ * follow next-block connections, so only the first block generates code.
+ */
+arduinoGenerator.scrub_ = function (block: Block, code: string, opt_thisOnly?: boolean): string {
+  const nextBlock = block.nextConnection && block.nextConnection.targetBlock();
+  if (nextBlock && !opt_thisOnly) {
+    return code + arduinoGenerator.blockToCode(nextBlock);
+  }
+  return code;
+};
 
 const globals = new Set<string>();
 const helpers = new Set<string>();
@@ -105,7 +121,7 @@ function sensorReadExpression(block: Block): string {
       return `stemverse_ds18b20_${pin}()`;
     case 'bmp280':
     case 'bme280':
-      globals.add(`// ${def?.name ?? sensor} on I2C — init in setup`);
+      globals.add(`// ${def?.name ?? sensor} on I2C - init in setup`);
       setupExtras.add(`Wire.begin();`);
       if (property === 'humidity') return `/* bme280 humidity */ 50.0`;
       if (property === 'pressure') return `/* ${sensor} pressure hPa */ 1013.25`;
@@ -113,6 +129,261 @@ function sensorReadExpression(block: Block): string {
     case 'mpu6050':
       if (property.startsWith('accel')) return `/* MPU6050 ${property} */ 0.0`;
       return `/* MPU6050 ${property} */ 0.0`;
+
+    // --- SHT3x (SHT30/31/35) I2C temperature + humidity ---
+    case 'sht3x':
+      globals.add('Adafruit_SHT31 sht31;');
+      setupExtras.add('Wire.begin();');
+      setupExtras.add('sht31.begin(0x44);');
+      if (property === 'humidity') return 'sht31.readHumidity()';
+      return 'sht31.readTemperature()';
+
+    // --- AHT20 / AHT21 I2C temperature + humidity ---
+    case 'aht20':
+      globals.add('Adafruit_AHTX0 aht;');
+      setupExtras.add('Wire.begin();');
+      setupExtras.add('aht.begin();');
+      helpers.add(`float stemverse_aht20_read(const char* prop) {
+  sensors_event_t h, t;
+  aht.getEvent(&h, &t);
+  if (strcmp(prop, "humidity") == 0) return h.relative_humidity;
+  return t.temperature;
+}`);
+      return `stemverse_aht20_read("${property}")`;
+
+    // --- BME680 I2C temp + humidity + pressure + gas ---
+    case 'bme680':
+      globals.add('Adafruit_BME680 bme680;');
+      setupExtras.add('Wire.begin();');
+      setupExtras.add('bme680.begin();');
+      if (property === 'humidity') return 'bme680.readHumidity()';
+      if (property === 'pressure') return '(bme680.readPressure() / 100.0)';
+      if (property === 'gas_resistance') return 'bme680.readGas()';
+      return 'bme680.readTemperature()';
+
+    // --- MAX30102 pulse oximeter ---
+    case 'max30102':
+      globals.add('// MAX30102 - requires complex ISR; using stub');
+      setupExtras.add('Wire.begin();');
+      helpers.add(`float stemverse_max30102_read(const char* prop) {
+  // TODO: integrate SparkFun/Maxim MAX30102 library with IR sampling
+  return 0.0;
+}`);
+      return `stemverse_max30102_read("${property}")`;
+
+    // --- MAX6675 thermocouple ---
+    case 'max6675': {
+      const cs = block.getField('PIN_CS') ? block.getFieldValue('PIN_CS') : pin;
+      const sck = block.getField('PIN_SCK') ? block.getFieldValue('PIN_SCK') : Number(pin) + 1;
+      const so = block.getField('PIN_SO') ? block.getFieldValue('PIN_SO') : Number(pin) + 2;
+      globals.add(`MAX6675 thermocouple(${sck}, ${cs}, ${so});`);
+      return 'thermocouple.readCelsius()';
+    }
+
+    // --- INA219 I2C current / voltage / power ---
+    case 'ina219':
+      globals.add('Adafruit_INA219 ina219;');
+      setupExtras.add('Wire.begin();');
+      setupExtras.add('ina219.begin();');
+      if (property === 'current') return 'ina219.getCurrent_mA()';
+      if (property === 'power') return 'ina219.getPower_mW()';
+      return 'ina219.getBusVoltage_V()';
+
+    // --- HX711 load cell amplifier ---
+    case 'hx711': {
+      const dout = block.getField('PIN_DOUT') ? block.getFieldValue('PIN_DOUT') : pin;
+      const clk = block.getField('PIN_CLK') ? block.getFieldValue('PIN_CLK') : Number(pin) + 1;
+      globals.add('HX711 scale;');
+      setupExtras.add(`scale.begin(${dout}, ${clk});`);
+      return 'scale.get_units(10)';
+    }
+
+    // --- MLX90614 IR temperature ---
+    case 'mlx90614':
+      globals.add('Adafruit_MLX90614 mlx;');
+      setupExtras.add('Wire.begin();');
+      setupExtras.add('mlx.begin();');
+      if (property === 'object_temp') return 'mlx.readObjectTempC()';
+      return 'mlx.readAmbientTempC()';
+
+    // --- TCS34725 color sensor ---
+    case 'tcs34725':
+      globals.add('Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_4X);');
+      setupExtras.add('Wire.begin();');
+      setupExtras.add('tcs.begin();');
+      helpers.add(`float stemverse_tcs34725_read(const char* prop) {
+  uint16_t r, g, b, c;
+  tcs.getRawData(&r, &g, &b, &c);
+  if (strcmp(prop, "red") == 0) return (float)r;
+  if (strcmp(prop, "green") == 0) return (float)g;
+  if (strcmp(prop, "blue") == 0) return (float)b;
+  return (float)c;
+}`);
+      return `stemverse_tcs34725_read("${property}")`;
+
+    // --- VEML6070 UV sensor ---
+    case 'veml6070':
+      globals.add('Adafruit_VEML6070 uv;');
+      setupExtras.add('Wire.begin();');
+      setupExtras.add('uv.begin(VEML6070_1_T);');
+      return 'uv.readUV()';
+
+    // --- VL53L0X laser distance ---
+    case 'vl53l0x':
+      globals.add('Adafruit_VL53L0X lox;');
+      setupExtras.add('Wire.begin();');
+      setupExtras.add('lox.begin();');
+      helpers.add(`float stemverse_vl53l0x_read() {
+  VL53L0X_RangingMeasurementData_t measure;
+  lox.rangingTest(&measure, false);
+  if (measure.RangeStatus != 4) return (float)measure.RangeMilliMeter;
+  return -1.0;
+}`);
+      return 'stemverse_vl53l0x_read()';
+
+    // --- ADXL345 accelerometer ---
+    case 'adxl345':
+      globals.add('Adafruit_ADXL345_Unified adxl = Adafruit_ADXL345_Unified();');
+      setupExtras.add('Wire.begin();');
+      setupExtras.add('adxl.begin();');
+      helpers.add(`float stemverse_adxl345_read(const char* prop) {
+  sensors_event_t event;
+  adxl.getEvent(&event);
+  if (strcmp(prop, "accel_x") == 0) return event.acceleration.x;
+  if (strcmp(prop, "accel_y") == 0) return event.acceleration.y;
+  return event.acceleration.z;
+}`);
+      return `stemverse_adxl345_read("${property}")`;
+
+    // --- HMC5883L magnetometer / compass ---
+    case 'hmc5883l':
+      globals.add('Adafruit_HMC5883_Unified mag = Adafruit_HMC5883_Unified(12345);');
+      setupExtras.add('Wire.begin();');
+      setupExtras.add('mag.begin();');
+      helpers.add(`float stemverse_hmc5883l_read(const char* prop) {
+  sensors_event_t event;
+  mag.getEvent(&event);
+  if (strcmp(prop, "mag_x") == 0) return event.magnetic.x;
+  if (strcmp(prop, "mag_y") == 0) return event.magnetic.y;
+  if (strcmp(prop, "mag_z") == 0) return event.magnetic.z;
+  float heading = atan2(event.magnetic.y, event.magnetic.x) * 180.0 / M_PI;
+  if (heading < 0) heading += 360.0;
+  return heading;
+}`);
+      return `stemverse_hmc5883l_read("${property}")`;
+
+    // --- BH1750 light sensor ---
+    case 'bh1750':
+      globals.add('BH1750 lightMeter;');
+      setupExtras.add('Wire.begin();');
+      setupExtras.add('lightMeter.begin();');
+      return 'lightMeter.readLightLevel()';
+
+    // --- Analog pass-through sensors ---
+    case 'soil_moisture':
+    case 'rain_sensor':
+    case 'sound':
+    case 'flex':
+    case 'fsr':
+    case 'voltage_divider':
+      return `analogRead(${pin})`;
+
+    // --- Current sensor (ACS712) — analog with scaling ---
+    case 'current_sensor':
+      helpers.add(`float stemverse_acs712_current(int pin) {
+  int raw = analogRead(pin);
+  float voltage = (raw / 1023.0) * 5.0;
+  return (voltage - 2.5) / 0.185;
+}`);
+      return `stemverse_acs712_current(${pin})`;
+
+    // --- Digital pass-through sensors ---
+    case 'hall':
+    case 'tilt':
+    case 'touch':
+    case 'flame':
+      setupExtras.add(`pinMode(${pin}, INPUT);`);
+      return `digitalRead(${pin})`;
+
+    // --- IR receiver ---
+    case 'ir_receiver':
+      globals.add('// IR Receiver - using IRremote library');
+      setupExtras.add(`IrReceiver.begin(${pin}, ENABLE_LED_FEEDBACK);`);
+      helpers.add(`unsigned long stemverse_ir_read() {
+  if (IrReceiver.decode()) {
+    unsigned long code = IrReceiver.decodedIRData.decodedRawData;
+    IrReceiver.resume();
+    return code;
+  }
+  return 0;
+}`);
+      return 'stemverse_ir_read()';
+
+    // --- GPS NEO-6M ---
+    case 'gps_neo6m': {
+      const rxPin = block.getField('PIN_RX') ? block.getFieldValue('PIN_RX') : pin;
+      const txPin = block.getField('PIN_TX') ? block.getFieldValue('PIN_TX') : Number(pin) + 1;
+      globals.add(`TinyGPSPlus gps;`);
+      globals.add(`SoftwareSerial gpsSerial(${rxPin}, ${txPin});`);
+      setupExtras.add('gpsSerial.begin(9600);');
+      helpers.add(`float stemverse_gps_read(const char* prop) {
+  while (gpsSerial.available() > 0) gps.encode(gpsSerial.read());
+  if (strcmp(prop, "latitude") == 0) return gps.location.lat();
+  if (strcmp(prop, "longitude") == 0) return gps.location.lng();
+  if (strcmp(prop, "altitude") == 0) return gps.altitude.meters();
+  if (strcmp(prop, "speed") == 0) return gps.speed.kmph();
+  return 0.0;
+}`);
+      return `stemverse_gps_read("${property}")`;
+    }
+
+    // --- Rotary encoder ---
+    case 'encoder': {
+      const pinA = block.getField('PIN_A') ? block.getFieldValue('PIN_A') : pin;
+      const pinB = block.getField('PIN_B') ? block.getFieldValue('PIN_B') : Number(pin) + 1;
+      globals.add(`volatile long stemverse_encoder_pos = 0;`);
+      globals.add(`int stemverse_encoder_pinA = ${pinA};`);
+      globals.add(`int stemverse_encoder_pinB = ${pinB};`);
+      helpers.add(`void stemverse_encoder_isr() {
+  if (digitalRead(stemverse_encoder_pinB) == HIGH) stemverse_encoder_pos++;
+  else stemverse_encoder_pos--;
+}`);
+      setupExtras.add(`pinMode(${pinA}, INPUT_PULLUP);`);
+      setupExtras.add(`pinMode(${pinB}, INPUT_PULLUP);`);
+      setupExtras.add(`attachInterrupt(digitalPinToInterrupt(${pinA}), stemverse_encoder_isr, RISING);`);
+      if (property === 'direction')
+        return `(digitalRead(${pinB}) == HIGH ? 1 : -1)`;
+      return 'stemverse_encoder_pos';
+    }
+
+    // --- Analog joystick ---
+    case 'joystick': {
+      const pinX = block.getField('PIN_X') ? block.getFieldValue('PIN_X') : pin;
+      const pinY = block.getField('PIN_Y') ? block.getFieldValue('PIN_Y') : Number(pin) + 1;
+      const pinBtn = block.getField('PIN_BTN') ? block.getFieldValue('PIN_BTN') : Number(pin) + 2;
+      if (property === 'y_axis') return `analogRead(${pinY})`;
+      if (property === 'button') {
+        setupExtras.add(`pinMode(${pinBtn}, INPUT_PULLUP);`);
+        return `digitalRead(${pinBtn})`;
+      }
+      return `analogRead(${pinX})`;
+    }
+
+    // --- Water flow sensor (interrupt-based) ---
+    case 'water_flow':
+      globals.add('volatile unsigned long stemverse_flow_pulses = 0;');
+      helpers.add(`void stemverse_flow_isr() {
+  stemverse_flow_pulses++;
+}
+float stemverse_flow_rate() {
+  float rate = stemverse_flow_pulses / 7.5;
+  stemverse_flow_pulses = 0;
+  return rate;
+}`);
+      setupExtras.add(`pinMode(${pin}, INPUT_PULLUP);`);
+      setupExtras.add(`attachInterrupt(digitalPinToInterrupt(${pin}), stemverse_flow_isr, RISING);`);
+      return 'stemverse_flow_rate()';
+
     default:
       return `0 /* unknown sensor ${sensor} */`;
   }
@@ -300,7 +571,7 @@ export function generateArduinoFromWorkspace(
 
   for (const block of allBlocks) {
     if (['stemverse_constant', 'stemverse_function_def', 'stemverse_sensor_read'].includes(block.type)) {
-      arduinoGenerator.blockToCode(block);
+      arduinoGenerator.blockToCode(block, true); // thisOnly — just trigger side-effects (globals, helpers)
     }
   }
 
@@ -326,32 +597,31 @@ export function generateArduinoFromWorkspace(
   const setupInit = [...setupExtras].map((l) => indent(l)).join('\n');
 
   const header = [
-    `// STEMVerse Robotics — ${boardName}`,
-    '// Production-ready Arduino C++ — auto-generated',
+    `// STEMVerse Robotics - ${boardName}`,
+    '// Production-ready Arduino C++ - auto-generated',
     `// Blocks: ${allBlocks.length} | Libraries: ${libraries.length}`,
   ].join('\n');
 
-  const code = [
-    header,
-    '',
-    includeBlock,
-    '',
-    constantLines,
-    globalLines,
-    variableLines,
-    helperLines,
-    functionLines,
-    'void setup() {',
-    setupInit,
-    indent(setupCode || '// no setup blocks'),
-    '}',
-    '',
-    'void loop() {',
-    indent(loopCode || '// no loop blocks'),
-    '}',
-  ]
-    .filter((section) => section !== '')
-    .join('\n');
+  const sections: string[] = [header, ''];
+
+  if (includeBlock) sections.push(includeBlock, '');
+  if (constantLines) sections.push(constantLines);
+  if (globalLines) sections.push(globalLines);
+  if (variableLines) sections.push(variableLines);
+  if (helperLines) sections.push('', helperLines);
+  if (functionLines) sections.push('', functionLines);
+
+  sections.push('');
+  sections.push('void setup() {');
+  if (setupInit) sections.push(setupInit);
+  sections.push(indent(setupCode || '// no setup blocks'));
+  sections.push('}');
+  sections.push('');
+  sections.push('void loop() {');
+  sections.push(indent(loopCode || '// no loop blocks'));
+  sections.push('}');
+
+  const code = sections.join('\n');
 
   return {
     code,

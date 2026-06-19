@@ -4,10 +4,20 @@ import { collectEspIdfIncludes } from '../libraries/dependencies';
 import { registerIotBlockGenerators, ESP_IDF_IOT_HELPERS } from './iot-generators';
 import { registerCoreBlockGenerators } from './core-generators';
 import { registerExpansionBlockGenerators } from './expansion-generators';
+import { registerVoiceBlockGenerators } from './voice-generators';
 
 const ATOMIC = 0;
 
 export const espIdfGenerator = new CodeGenerator('ESP-IDF');
+
+/** Chain blocks: without this, only the first block in a stack generates code. */
+espIdfGenerator.scrub_ = function (block: Block, code: string, opt_thisOnly?: boolean): string {
+  const nextBlock = block.nextConnection && block.nextConnection.targetBlock();
+  if (nextBlock && !opt_thisOnly) {
+    return code + espIdfGenerator.blockToCode(nextBlock);
+  }
+  return code;
+};
 
 const globals = new Set<string>();
 const helpers = new Set<string>();
@@ -140,6 +150,7 @@ espIdfGenerator.forBlock['stemverse_dc_motor'] = (b: Block) =>
 registerIotBlockGenerators(espIdfGenerator, 'espidf');
 registerExpansionBlockGenerators(espIdfGenerator, 'espidf');
 registerCoreBlockGenerators(espIdfGenerator, 'espidf');
+registerVoiceBlockGenerators(espIdfGenerator, 'espidf');
 
 export type GeneratedEspIdfCode = {
   code: string;
@@ -193,7 +204,7 @@ export function generateEspIdfFromWorkspace(
     .join('\n\n');
 
   const appMain = [
-    `// STEMVerse ESP-IDF — ${boardName} (${boardSlug})`,
+    `// STEMVerse ESP-IDF - ${boardName} (${boardSlug})`,
     includeBlock,
     '',
     constantLines,

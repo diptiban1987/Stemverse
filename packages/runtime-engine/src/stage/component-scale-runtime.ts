@@ -468,3 +468,150 @@ export class ScaleSynchronizer {
     }
   }
 }
+
+// ─── REAL-WORLD DIMENSION CONSTANTS ─────────────────────────────────────────────
+
+export const REFERENCE_BREADBOARD_MM = {
+  type: 'MB102' as const,
+  widthMm: 165,
+  heightMm: 55,
+};
+
+export const COMPONENT_REAL_DIMENSIONS_MM: Record<string, {
+  widthMm: number;
+  heightMm: number;
+  depthMm: number;
+  pinSpacingMm: number;
+  pinCount: number;
+}> = {
+  'arduino_uno_r3':   { widthMm: 69,  heightMm: 53,   depthMm: 15,   pinSpacingMm: 2.54, pinCount: 30 },
+  'esp32_devkit_v1':  { widthMm: 51,  heightMm: 28,   depthMm: 10,   pinSpacingMm: 2.54, pinCount: 38 },
+  'arduino_nano':     { widthMm: 45,  heightMm: 18,   depthMm: 8,    pinSpacingMm: 2.54, pinCount: 30 },
+  'hc_sr04':          { widthMm: 45,  heightMm: 20,   depthMm: 15,   pinSpacingMm: 2.54, pinCount: 4 },
+  'sg90_servo':       { widthMm: 36,  heightMm: 12,   depthMm: 23,   pinSpacingMm: 0,    pinCount: 3 },
+  'oled_ssd1306':     { widthMm: 27,  heightMm: 19,   depthMm: 4,    pinSpacingMm: 2.54, pinCount: 4 },
+  'lcd_1602':         { widthMm: 80,  heightMm: 36,   depthMm: 12,   pinSpacingMm: 2.54, pinCount: 16 },
+  'relay_module':     { widthMm: 40,  heightMm: 28,   depthMm: 18,   pinSpacingMm: 2.54, pinCount: 6 },
+  'led_5mm':          { widthMm: 8,   heightMm: 5,    depthMm: 5,    pinSpacingMm: 2.54, pinCount: 2 },
+  'led_generic':      { widthMm: 8,   heightMm: 5,    depthMm: 5,    pinSpacingMm: 2.54, pinCount: 2 },
+  'resistor':         { widthMm: 10,  heightMm: 3.5,  depthMm: 3.5,  pinSpacingMm: 2.54, pinCount: 2 },
+  'resistor_generic': { widthMm: 10,  heightMm: 3.5,  depthMm: 3.5,  pinSpacingMm: 2.54, pinCount: 2 },
+  'push_button':      { widthMm: 6,   heightMm: 6,    depthMm: 4,    pinSpacingMm: 2.54, pinCount: 4 },
+  'potentiometer':    { widthMm: 15,  heightMm: 12,   depthMm: 10,   pinSpacingMm: 5.08, pinCount: 3 },
+  'buzzer':           { widthMm: 12,  heightMm: 9.5,  depthMm: 9.5,  pinSpacingMm: 2.54, pinCount: 2 },
+  'mq2_sensor':       { widthMm: 33,  heightMm: 20,   depthMm: 16,   pinSpacingMm: 2.54, pinCount: 4 },
+  'dht11_sensor':     { widthMm: 25,  heightMm: 15,   depthMm: 8,    pinSpacingMm: 2.54, pinCount: 3 },
+  'ir_sensor':        { widthMm: 32,  heightMm: 14,   depthMm: 10,   pinSpacingMm: 2.54, pinCount: 3 },
+};
+
+export const CALIBRATED_COMPONENT_SCALE_RATIOS: Record<string, number> = Object.fromEntries(
+  Object.entries(COMPONENT_REAL_DIMENSIONS_MM).map(([key, dims]) => [
+    key,
+    dims.widthMm / REFERENCE_BREADBOARD_MM.widthMm,
+  ]),
+);
+
+// ─── CALIBRATION FUNCTIONS ──────────────────────────────────────────────────────
+
+export function calculateScaleFromDimensions(
+  widthMm: number,
+  referenceWidthMm: number,
+): number {
+  if (
+    !Number.isFinite(widthMm) ||
+    !Number.isFinite(referenceWidthMm) ||
+    widthMm <= 0 ||
+    referenceWidthMm <= 0
+  ) {
+    console.warn(
+      '[calculateScaleFromDimensions] invalid input: widthMm=' +
+        widthMm +
+        ', referenceWidthMm=' +
+        referenceWidthMm +
+        '. Returning clamped default.',
+    );
+    return 0.01;
+  }
+
+  const raw = widthMm / referenceWidthMm;
+  return Math.min(2.0, Math.max(0.01, raw));
+}
+
+export function validateScaleAgainstBreadboard(
+  componentType: string,
+  currentScale: number,
+  warnPrefix = '[validateScaleAgainstBreadboard]',
+): ValidationWarning[] {
+  const warnings: ValidationWarning[] = [];
+
+  const dims = COMPONENT_REAL_DIMENSIONS_MM[componentType];
+  if (!dims) {
+    return warnings;
+  }
+
+  const calibrated = CALIBRATED_COMPONENT_SCALE_RATIOS[componentType];
+  if (calibrated === undefined) {
+    return warnings;
+  }
+
+  const deviation = Math.abs(currentScale - calibrated) / calibrated;
+  if (deviation > 0.25) {
+    const msg =
+      `${warnPrefix} component "${componentType}" scale ${currentScale.toFixed(4)} ` +
+      `deviates ${(deviation * 100).toFixed(1)}% from calibrated ${calibrated.toFixed(4)} ` +
+      `(real width: ${dims.widthMm}mm vs breadboard ${REFERENCE_BREADBOARD_MM.widthMm}mm)`;
+    console.warn(msg);
+    warnings.push({ code: `componentScale.${componentType}`, message: msg });
+  }
+
+  return warnings;
+}
+
+export function getScaleCalibrationReport(): {
+  componentType: string;
+  currentScale: number;
+  calibratedScale: number;
+  deviation: number;
+  realWidthMm: number;
+  status: 'CALIBRATED' | 'NEEDS_ADJUSTMENT' | 'MISSING_DATA';
+}[] {
+  const report: {
+    componentType: string;
+    currentScale: number;
+    calibratedScale: number;
+    deviation: number;
+    realWidthMm: number;
+    status: 'CALIBRATED' | 'NEEDS_ADJUSTMENT' | 'MISSING_DATA';
+  }[] = [];
+
+  for (const [componentType, currentScale] of Object.entries(DEFAULT_COMPONENT_SCALE_RATIOS)) {
+    const dims = COMPONENT_REAL_DIMENSIONS_MM[componentType];
+    if (!dims) {
+      report.push({
+        componentType,
+        currentScale,
+        calibratedScale: 0,
+        deviation: 0,
+        realWidthMm: 0,
+        status: 'MISSING_DATA',
+      });
+      continue;
+    }
+
+    const calibratedScale = CALIBRATED_COMPONENT_SCALE_RATIOS[componentType] ?? 0;
+    const deviation = calibratedScale > 0
+      ? Math.abs(currentScale - calibratedScale) / calibratedScale
+      : 0;
+
+    report.push({
+      componentType,
+      currentScale,
+      calibratedScale,
+      deviation,
+      realWidthMm: dims.widthMm,
+      status: deviation > 0.25 ? 'NEEDS_ADJUSTMENT' : 'CALIBRATED',
+    });
+  }
+
+  return report;
+}

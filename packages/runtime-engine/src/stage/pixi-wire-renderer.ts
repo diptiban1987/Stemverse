@@ -62,29 +62,29 @@ export class PixiWireRenderer {
       }
     }
     this.graphics.stroke({
-      width: 4,
+      width: 5,
       color: colorHex,
       cap: 'round',
       join: 'round'
     });
 
-    // Draw circular anchor dots at endpoints and joints
+    // Draw circular anchor dots at endpoints and joints (color-matched to wire)
     if (points.length >= 2) {
       for (let i = 0; i < points.length; i++) {
         const isEnd = i === 0 || i === points.length - 1;
-        this.graphics.circle(points[i].x, points[i].y, isEnd ? 4 : 3);
-        this.graphics.fill(isEnd ? 0xffffff : 0xd1d5db);
-        this.graphics.stroke({ width: 1.5, color: 0x4b5563 });
+        this.graphics.circle(points[i].x, points[i].y, isEnd ? 5 : 3);
+        this.graphics.fill(isEnd ? colorHex : 0xd1d5db);
+        this.graphics.stroke({ width: 1.5, color: 0xffffff });
       }
     } else {
       for (const seg of geometry.segments) {
-        this.graphics.circle(seg.startX, seg.startY, 4);
-        this.graphics.fill(0xffffff);
-        this.graphics.stroke({ width: 1.5, color: 0x4b5563 });
+        this.graphics.circle(seg.startX, seg.startY, 5);
+        this.graphics.fill(colorHex);
+        this.graphics.stroke({ width: 1.5, color: 0xffffff });
 
-        this.graphics.circle(seg.endX, seg.endY, 4);
-        this.graphics.fill(0xffffff);
-        this.graphics.stroke({ width: 1.5, color: 0x4b5563 });
+        this.graphics.circle(seg.endX, seg.endY, 5);
+        this.graphics.fill(colorHex);
+        this.graphics.stroke({ width: 1.5, color: 0xffffff });
       }
     }
 
@@ -134,6 +134,14 @@ export class PixiWireRenderer {
   }
 
   private getWireColor(colorStr: string): number {
+    // Support hex color strings (e.g. '#EF4444', '#3b82f6')
+    if (colorStr.startsWith('#')) {
+      const hex = colorStr.slice(1);
+      const parsed = parseInt(hex, 16);
+      if (!isNaN(parsed)) return parsed;
+    }
+
+    // Fallback: named color lookup
     const map: Record<string, number> = {
       red: 0xef4444,
       blue: 0x3b82f6,
@@ -146,5 +154,73 @@ export class PixiWireRenderer {
       brown: 0x78350f,
     };
     return map[colorStr.toLowerCase()] || 0xef4444;
+  }
+
+  // ── Phase 27C: Wire interactivity ──────────────────────────────────────────
+
+  private hitAreaGraphics: Graphics | null = null;
+
+  /**
+   * Make this wire clickable by adding a thick invisible hit area along the path.
+   * @param points Path points of the wire
+   * @param segments Fallback segments if no route points
+   * @param onClick Callback when wire is clicked
+   */
+  public setInteractive(
+    points: Array<{ x: number; y: number }>,
+    segments: Array<{ startX: number; startY: number; endX: number; endY: number }>,
+    onClick?: () => void,
+    onRightClick?: (x: number, y: number) => void,
+  ): void {
+    if (!this.hitAreaGraphics) {
+      this.hitAreaGraphics = new Graphics();
+      this.hitAreaGraphics.alpha = 0; // Invisible
+      this.hitAreaGraphics.eventMode = 'static';
+      this.hitAreaGraphics.cursor = 'pointer';
+      this.container.addChild(this.hitAreaGraphics);
+    }
+
+    this.hitAreaGraphics.clear();
+
+    // Draw thick invisible stroke along the wire path for easy clicking
+    const hitWidth = 12; // 12px wide click target
+    if (points.length >= 2) {
+      this.hitAreaGraphics.moveTo(points[0].x, points[0].y);
+      for (let i = 1; i < points.length; i++) {
+        this.hitAreaGraphics.lineTo(points[i].x, points[i].y);
+      }
+    } else {
+      for (const seg of segments) {
+        this.hitAreaGraphics.moveTo(seg.startX, seg.startY);
+        this.hitAreaGraphics.lineTo(seg.endX, seg.endY);
+      }
+    }
+    this.hitAreaGraphics.stroke({ width: hitWidth, color: 0xffffff, alpha: 0.01 });
+
+    this.hitAreaGraphics.removeAllListeners();
+
+    if (onClick) {
+      this.hitAreaGraphics.on('pointerdown', (e) => {
+        e.stopPropagation();
+        onClick();
+      });
+    }
+
+    if (onRightClick) {
+      this.hitAreaGraphics.on('rightclick', (e) => {
+        e.stopPropagation();
+        onRightClick(e.global.x, e.global.y);
+      });
+    }
+  }
+
+  /** Clean up GPU resources */
+  public destroy(): void {
+    if (this.hitAreaGraphics) {
+      this.hitAreaGraphics.destroy();
+      this.hitAreaGraphics = null;
+    }
+    this.graphics.destroy();
+    this.container.destroy({ children: true });
   }
 }

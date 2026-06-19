@@ -27,6 +27,7 @@ import { registerActuatorBlocks } from './actuators';
 import { registerIoTBlocks } from './iot';
 import { registerHardwareExpansionBlocks, HARDWARE_EXPANSION_BLOCK_TYPES } from './hardware';
 import { registerCoreProgrammingBlocks, CORE_PROGRAMMING_BLOCK_TYPES } from './core-blocks';
+import { registerVoiceAssistanceBlocks, VOICE_ASSISTANCE_BLOCK_TYPES } from './voice';
 
 function registerBlock(type: string, init: (this: Blockly.Block) => void) {
   Blockly.Blocks[type] = { init };
@@ -38,6 +39,7 @@ export function registerRoboticsBlocks(): void {
   registerIoTBlocks();
   registerHardwareExpansionBlocks();
   registerCoreProgrammingBlocks();
+  registerVoiceAssistanceBlocks();
   registerBlock('stemverse_program', function (this: Blockly.Block) {
     this.appendDummyInput().appendField('Start Program');
     this.appendStatementInput('SETUP').setCheck(null).appendField('Setup');
@@ -380,6 +382,18 @@ export function createToolboxDefinition(searchQuery?: string): Blockly.utils.too
       'stemverse_rtos_create_task', 'stemverse_rtos_delete_task',
       'stemverse_rtos_suspend_task', 'stemverse_rtos_resume_task',
       'stemverse_rtos_queue_send', 'stemverse_rtos_queue_receive', 'stemverse_rtos_semaphore',
+    ]),
+    category('🎙️ Voice & Audio', CATEGORY_COLORS.voice, [
+      'stemverse_mic_read', 'stemverse_mic_is_loud',
+      'stemverse_i2s_init', 'stemverse_i2s_read', 'stemverse_i2s_write',
+      'stemverse_voice_recog_init', 'stemverse_voice_recog_get_command',
+      'stemverse_voice_recog_add_command', 'stemverse_voice_on_command',
+      'stemverse_wake_word_init', 'stemverse_wake_word_detected',
+      'stemverse_tts_speak', 'stemverse_tts_set_voice',
+      'stemverse_dfplayer_init', 'stemverse_dfplayer_play',
+      'stemverse_dfplayer_volume', 'stemverse_dfplayer_stop', 'stemverse_dfplayer_pause',
+      'stemverse_speaker_tone', 'stemverse_speaker_stop',
+      'stemverse_amp_init',
     ]),
   ].filter((item): item is NonNullable<typeof item> => item !== null);
 

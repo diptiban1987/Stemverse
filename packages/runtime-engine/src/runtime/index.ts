@@ -582,6 +582,31 @@ import {
   validatePinInspectorModel,
 } from '../stage/simulator-ui-runtime';
 
+import { CircuitGraphSynchronizer } from '../stage/circuit-graph-runtime';
+import { GpioOwnershipSynchronizer } from '../stage/gpio-ownership-runtime';
+import { CircuitSyncSynchronizer } from '../stage/circuit-sync-runtime';
+import { CircuitDiagnosticsSynchronizer } from '../stage/circuit-diagnostics-runtime';
+
+// Phase 29B: Auto-Wiring Assistant & Guided Circuit Builder
+import { AutoWiringSynchronizer } from '../stage/auto-wiring-runtime';
+import { ComponentKnowledgeSynchronizer } from '../stage/component-knowledge-runtime';
+import { CircuitWizardSynchronizer } from '../stage/circuit-wizard-runtime';
+
+// Phase 30A: Project Library, Save/Load & Versioning
+import { ProjectLibrarySynchronizer } from '../stage/project-library-runtime';
+import { ProjectVersionSynchronizer } from '../stage/project-version-runtime';
+import { AutoSaveSynchronizer } from '../stage/auto-save-runtime';
+import { ProjectThumbnailSynchronizer } from '../stage/project-thumbnail-runtime';
+
+// Phase 30B: Classroom, Sharing, Assignments & Collaboration
+import { ClassroomSynchronizer } from '../stage/classroom-runtime';
+import { ProjectSharingSynchronizer } from '../stage/project-sharing-runtime';
+import { AssignmentSynchronizer } from '../stage/assignment-runtime';
+import { CollaborationSynchronizer } from '../stage/collaboration-runtime';
+
+// Phase 31A: Professional Simulator UX
+import { SimulatorUXSynchronizer } from '../stage/simulator-ux-runtime';
+
 
 /**
  * Concrete runtime implementation with minimal AST execution.
@@ -1286,6 +1311,34 @@ export class BaseRuntime implements IRuntime {
   private workspaceToolOrder: string[] = [];
   private pinInspectorRegistry = new Map<string, PinInspectorModel>();
   private pinInspectorOrder: string[] = [];
+
+  // Phase 28B: Live Circuit ↔ Blockly Synchronization
+  public readonly circuitGraphSynchronizer = new CircuitGraphSynchronizer();
+  public readonly gpioOwnershipSynchronizer = new GpioOwnershipSynchronizer();
+  public readonly circuitSyncSynchronizer = new CircuitSyncSynchronizer();
+
+  // Phase 29A: Circuit Diagnostics & Learning Assistant
+  public readonly circuitDiagnosticsSynchronizer = new CircuitDiagnosticsSynchronizer();
+
+  // Phase 29B: Auto-Wiring Assistant & Guided Circuit Builder
+  public readonly autoWiringSynchronizer = new AutoWiringSynchronizer();
+  public readonly componentKnowledgeSynchronizer = new ComponentKnowledgeSynchronizer();
+  public readonly circuitWizardSynchronizer = new CircuitWizardSynchronizer();
+
+  // Phase 30A: Project Library, Save/Load & Versioning
+  public readonly projectLibrarySynchronizer = new ProjectLibrarySynchronizer();
+  public readonly projectVersionSynchronizer = new ProjectVersionSynchronizer();
+  public readonly autoSaveSynchronizer = new AutoSaveSynchronizer();
+  public readonly projectThumbnailSynchronizer = new ProjectThumbnailSynchronizer();
+
+  // Phase 30B: Classroom, Sharing, Assignments & Collaboration
+  public readonly classroomSynchronizer = new ClassroomSynchronizer();
+  public readonly projectSharingSynchronizer = new ProjectSharingSynchronizer();
+  public readonly assignmentSynchronizer = new AssignmentSynchronizer();
+  public readonly collaborationSynchronizer = new CollaborationSynchronizer();
+
+  // Phase 31A: Professional Simulator UX
+  public readonly simulatorUXSynchronizer = new SimulatorUXSynchronizer();
 
   // Phase 8A.1 HAL state registry (passive contracts/state only)
   private halStateRegistry = new Map<string, RuntimeHALState>();
@@ -14999,6 +15052,28 @@ export class BaseRuntime implements IRuntime {
     this.clearPaletteStateModels();
     this.clearWorkspaceToolModels();
     this.clearPinInspectorModels();
+    // Phase 28B: Live Circuit ↔ Blockly Synchronization
+    this.circuitGraphSynchronizer.clearAll();
+    this.gpioOwnershipSynchronizer.clearAll();
+    this.circuitSyncSynchronizer.clearAll();
+    // Phase 29A: Circuit Diagnostics & Learning Assistant
+    this.circuitDiagnosticsSynchronizer.clearAll();
+    // Phase 29B: Auto-Wiring Assistant & Guided Circuit Builder
+    this.autoWiringSynchronizer.clearAll();
+    this.componentKnowledgeSynchronizer.clearAll();
+    this.circuitWizardSynchronizer.clearAll();
+    // Phase 30A: Project Library, Save/Load & Versioning
+    this.projectLibrarySynchronizer.clearAll();
+    this.projectVersionSynchronizer.clearAll();
+    this.autoSaveSynchronizer.clearAll();
+    this.projectThumbnailSynchronizer.clearAll();
+    // Phase 30B: Classroom, Sharing, Assignments & Collaboration
+    this.classroomSynchronizer.clearAll();
+    this.projectSharingSynchronizer.clearAll();
+    this.assignmentSynchronizer.clearAll();
+    this.collaborationSynchronizer.clearAll();
+    // Phase 31A: Professional Simulator UX
+    this.simulatorUXSynchronizer.clearAll();
   }
 
 
@@ -19151,6 +19226,28 @@ export class BaseRuntime implements IRuntime {
     this.clearTouchExecutionStates();
     this.clearESP32PeripheralCommandExecutionResults();
     this.clearProtocolCommandExecutionResults();
+    // Phase 28B: Live Circuit ↔ Blockly Synchronization
+    this.circuitGraphSynchronizer.clearAll();
+    this.gpioOwnershipSynchronizer.clearAll();
+    this.circuitSyncSynchronizer.clearAll();
+    // Phase 29A: Circuit Diagnostics & Learning Assistant
+    this.circuitDiagnosticsSynchronizer.clearAll();
+    // Phase 29B: Auto-Wiring Assistant & Guided Circuit Builder
+    this.autoWiringSynchronizer.clearAll();
+    this.componentKnowledgeSynchronizer.clearAll();
+    this.circuitWizardSynchronizer.clearAll();
+    // Phase 30A: Project Library, Save/Load & Versioning
+    this.projectLibrarySynchronizer.clearAll();
+    this.projectVersionSynchronizer.clearAll();
+    this.autoSaveSynchronizer.clearAll();
+    this.projectThumbnailSynchronizer.clearAll();
+    // Phase 30B: Classroom, Sharing, Assignments & Collaboration
+    this.classroomSynchronizer.clearAll();
+    this.projectSharingSynchronizer.clearAll();
+    this.assignmentSynchronizer.clearAll();
+    this.collaborationSynchronizer.clearAll();
+    // Phase 31A: Professional Simulator UX
+    this.simulatorUXSynchronizer.clearAll();
   }
 
   /**
@@ -20515,6 +20612,77 @@ export class BaseRuntime implements IRuntime {
       }
       if (this.workspaceBoardRegistry.size > 0) {
         stageSnap.workspaceBoards = this.getWorkspaceBoards();
+      }
+      // Phase 28B: Attach circuit graph, GPIO ownership, and circuit sync snapshot
+      const circuitGraphSnap = this.circuitGraphSynchronizer.getSnapshot();
+      if (circuitGraphSnap.nodes.length > 0 || circuitGraphSnap.edges.length > 0 || circuitGraphSnap.nets.length > 0 || circuitGraphSnap.graphs.length > 0 || circuitGraphSnap.mappings.length > 0) {
+        stageSnap.circuitGraphSnapshot = circuitGraphSnap;
+      }
+      const gpioOwnershipSnap = this.gpioOwnershipSynchronizer.getSnapshot();
+      if (gpioOwnershipSnap.ownerships.length > 0 || gpioOwnershipSnap.conflicts.length > 0) {
+        stageSnap.gpioOwnershipSnapshot = gpioOwnershipSnap;
+      }
+      const circuitSyncSnap = this.circuitSyncSynchronizer.getSnapshot();
+      if (circuitSyncSnap.syncModels.length > 0) {
+        stageSnap.circuitSyncSnapshot = circuitSyncSnap;
+      }
+      // Phase 29A: Circuit Diagnostics & Learning Assistant
+      const diagnosticSnap = this.circuitDiagnosticsSynchronizer.getSnapshot();
+      if (diagnosticSnap.issues.length > 0 || diagnosticSnap.recommendations.length > 0 || diagnosticSnap.learningHints.length > 0 || diagnosticSnap.blocklyDiagnostics.length > 0) {
+        stageSnap.circuitDiagnosticSnapshot = diagnosticSnap;
+      }
+      // Phase 29B: Auto-Wiring Assistant & Guided Circuit Builder
+      const autoWireSnap = this.autoWiringSynchronizer.getSnapshot();
+      if (autoWireSnap.suggestions.length > 0 || autoWireSnap.rules.length > 0 || autoWireSnap.plans.length > 0) {
+        stageSnap.autoWireSnapshot = autoWireSnap;
+      }
+      const knowledgeSnap = this.componentKnowledgeSynchronizer.getSnapshot();
+      if (knowledgeSnap.entries.length > 0) {
+        stageSnap.componentKnowledgeSnapshot = knowledgeSnap;
+      }
+      const wizardSnap = this.circuitWizardSynchronizer.getSnapshot();
+      if (wizardSnap.templates.length > 0 || wizardSnap.guidedBuilds.length > 0 || wizardSnap.steps.length > 0 || wizardSnap.learningProgress.length > 0) {
+        stageSnap.circuitWizardSnapshot = wizardSnap;
+      }
+      // Phase 30A: Project Library, Save/Load & Versioning
+      const librarySnap = this.projectLibrarySynchronizer.getSnapshot();
+      const versionSnap = this.projectVersionSynchronizer.getSnapshot();
+      const autoSaveSnap = this.autoSaveSynchronizer.getSnapshot();
+      const thumbSnap = this.projectThumbnailSynchronizer.getSnapshot();
+      const hasProjectData = librarySnap.projects.length > 0
+        || versionSnap.versions.length > 0
+        || autoSaveSnap.entries.length > 0
+        || thumbSnap.thumbnails.thumbnails.length > 0;
+      if (hasProjectData) {
+        stageSnap.projectManagementSnapshot = {
+          library: librarySnap,
+          versioning: versionSnap,
+          autoSave: autoSaveSnap,
+          thumbnails: thumbSnap.thumbnails,
+          statistics: thumbSnap.statistics,
+        };
+      }
+      // Phase 30B: Classroom, Sharing, Assignments & Collaboration
+      const classroomSnap = this.classroomSynchronizer.getSnapshot();
+      if (classroomSnap.classrooms.length > 0 || classroomSnap.members.length > 0) {
+        stageSnap.classroomSnapshot = classroomSnap;
+      }
+      const sharingSnap = this.projectSharingSynchronizer.getSnapshot();
+      if (sharingSnap.shares.length > 0 || sharingSnap.links.length > 0) {
+        stageSnap.projectSharingSnapshot = sharingSnap;
+      }
+      const assignmentSnap = this.assignmentSynchronizer.getSnapshot();
+      if (assignmentSnap.assignments.length > 0 || assignmentSnap.submissions.length > 0) {
+        stageSnap.assignmentSnapshot = assignmentSnap;
+      }
+      const collabSnap = this.collaborationSynchronizer.getSnapshot();
+      if (collabSnap.sessions.length > 0 || collabSnap.comments.length > 0 || collabSnap.forks.length > 0) {
+        stageSnap.collaborationSnapshot = collabSnap;
+      }
+      // Phase 31A: Professional Simulator UX
+      const uxSnap = this.simulatorUXSynchronizer.getSnapshot();
+      if (uxSnap.hoverFeedbacks.length > 0 || uxSnap.professionalSelections.length > 0 || uxSnap.wireCreationStates.length > 0 || uxSnap.performanceMetrics.length > 0) {
+        stageSnap.simulatorUXSnapshot = uxSnap;
       }
     }
 

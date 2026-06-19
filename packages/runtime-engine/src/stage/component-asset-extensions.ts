@@ -1,4 +1,5 @@
 import { ComponentAssetDefinition } from '../types';
+import { getComponentSvg } from './component-svg-assets';
 
 // ─── IR OBSTACLE SENSOR ASSET ───
 
@@ -25,6 +26,7 @@ export const IR_SENSOR_ASSET: ComponentAssetDefinition = {
     { anchorId: 'pin_GND', x: 25, y: 28 },
     { anchorId: 'pin_OUT', x: 40, y: 28 },
   ],
+  textureSvgData: getComponentSvg('IR_SENSOR'),
 };
 
 // ─── MQ-2 GAS SENSOR ASSET ───
@@ -54,6 +56,7 @@ export const MQ2_SENSOR_ASSET: ComponentAssetDefinition = {
     { anchorId: 'pin_AOUT', x: 25, y: 38 },
     { anchorId: 'pin_DOUT', x: 35, y: 38 },
   ],
+  textureSvgData: getComponentSvg('MQ2_SENSOR'),
 };
 
 // ─── DHT11 TEMPERATURE & HUMIDITY SENSOR ASSET ───
@@ -82,6 +85,7 @@ export const DHT11_SENSOR_ASSET: ComponentAssetDefinition = {
     { anchorId: 'pin_DATA', x: 15, y: 38 },
     { anchorId: 'pin_GND', x: 25, y: 38 },
   ],
+  textureSvgData: getComponentSvg('DHT11'),
 };
 
 // ─── PASSIVE BUZZER ASSET ───
@@ -107,6 +111,7 @@ export const BUZZER_ASSET: ComponentAssetDefinition = {
     { anchorId: 'pin_PLUS', x: 8, y: 22 },
     { anchorId: 'pin_MINUS', x: 16, y: 22 },
   ],
+  textureSvgData: getComponentSvg('BUZZER'),
 };
 
 // ─── 10K POTENTIOMETER ASSET ───
@@ -134,6 +139,7 @@ export const POTENTIOMETER_ASSET: ComponentAssetDefinition = {
     { anchorId: 'pin_WIPER', x: 15, y: 28 },
     { anchorId: 'pin_3', x: 25, y: 28 },
   ],
+  textureSvgData: getComponentSvg('POTENTIOMETER'),
 };
 
 // ─── TACTILE PUSH BUTTON ASSET ───
@@ -163,6 +169,7 @@ export const PUSH_BUTTON_ASSET: ComponentAssetDefinition = {
     { anchorId: 'pin_2A', x: 3, y: 17 },
     { anchorId: 'pin_2B', x: 17, y: 17 },
   ],
+  textureSvgData: getComponentSvg('PUSH_BUTTON'),
 };
 
 // ─── EXTENDED COMPONENT ASSETS COLLECTION ───

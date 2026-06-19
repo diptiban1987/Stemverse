@@ -39,6 +39,23 @@ interface DragState {
   objectId: string;
   /** When dragging a breadboard, we move attached components too */
   attachedOffsets: Array<{ objectId: string; dx: number; dy: number }>;
+  /** Phase 31A: Smooth drag — current visual position (lerp target is the computed position) */
+  visualX: number;
+  visualY: number;
+  /** Phase 31A: Target position from pointer calculation (lerp lerps toward this) */
+  targetX: number;
+  targetY: number;
+  /** Phase 31A: Velocity tracking for momentum on release */
+  velocityX: number;
+  velocityY: number;
+  lastMoveTime: number;
+  /** Phase 31A: Frame counter for throttled snap computation */
+  snapFrameCounter: number;
+  /** Phase 31A: Last snap result to reuse between throttled frames */
+  lastSnapOffset: { x: number; y: number } | null;
+  /** Phase 31A.1: Last group position for group movement delta calculation */
+  lastGroupX: number;
+  lastGroupY: number;
 }
 
 /** Phase 27B: Selection rectangle state */
@@ -53,29 +70,70 @@ interface SelectionRectState {
 /** Phase 27A: Wire color palette for cycling on new wire creation */
 const WIRE_COLORS = ['red', 'blue', 'green', 'yellow', 'orange', 'purple', 'black', 'white', 'brown'];
 
-/** Phase 27B: Drag threshold in screen pixels — prevents accidental move on click */
+/** Phase 27B: Drag threshold in screen pixels - prevents accidental move on click */
 const DRAG_THRESHOLD = 5;
 
-/** Phase 27B: Component scale ratios relative to breadboard_830 rendered width */
+/** Phase 31A: Lerp factor for smooth drag (0..1, higher = faster tracking) */
+const DRAG_LERP_FACTOR = 0.35;
+
+/** Phase 31A: Momentum deceleration per frame (multiplier, 0..1) */
+const MOMENTUM_FRICTION = 0.92;
+
+/** Phase 31A: Minimum velocity magnitude to keep momentum active */
+const MOMENTUM_MIN_VELOCITY = 0.3;
+
+/** Phase 31A: How often to recompute snap (every N pointer move events) */
+const SNAP_THROTTLE_FRAMES = 2;
+
+/** Phase 31A.1: Camera zoom limits */
+const CAMERA_MIN_ZOOM = 0.15;
+const CAMERA_MAX_ZOOM = 4.0;
+const CAMERA_ZOOM_STEP = 0.08;
+const CAMERA_LERP_SPEED = 0.18;
+const CAMERA_BOUNDS = 5000;
+
+/** Phase 31A.1: Wire destination highlight radius */
+const WIRE_SNAP_RADIUS = 25;
+
+/** Phase 31A.1: Selection bounds padding */
+const SELECTION_BOUNDS_PAD = 8;
+const SELECTION_HANDLE_SIZE = 7;
+
+/** Phase 27C: Component scale ratios - physically calibrated to MB-102 breadboard (165mm wide).
+ * ratio = (component real-world width in mm) / (breadboard real-world width 165mm)
+ * This ensures all components render at realistic relative sizes.
+ */
 export const COMPONENT_SCALE_RATIOS: Record<string, number> = {
-  'arduino_uno_r3': 0.30,
-  'esp32_devkit_v1': 0.25,
-  'arduino_nano': 0.20,
-  'hc_sr04': 0.18,
-  'led_5mm': 0.04,
-  'led_generic': 0.04,
-  'resistor': 0.08,
-  'resistor_generic': 0.08,
-  'sg90_servo': 0.15,
-  'oled_ssd1306': 0.12,
-  'lcd_1602': 0.22,
-  'relay_module': 0.15,
-  'ir_sensor': 0.10,
-  'mq2_sensor': 0.10,
-  'dht11_sensor': 0.08,
-  'buzzer': 0.06,
-  'potentiometer': 0.08,
-  'push_button': 0.05,
+  /* ── Boards ──────────────────────── real width → ratio ── */
+  'arduino_uno_r3': 0.41,           // 68mm  → 0.41
+  'esp32_devkit_v1': 0.17,          // 28mm  → 0.17
+  'arduino_nano': 0.11,             // 18mm  → 0.11
+
+  /* ── Sensors ─────────────────────────────────────────── */
+  'hc_sr04': 0.27,                  // 45mm  → 0.27
+  'ir_sensor': 0.12,                // 20mm  → 0.12
+  'mq2_sensor': 0.20,              // 33mm  → 0.20
+  'dht11_sensor': 0.10,             // 16mm  → 0.10
+
+  /* ── Passive components ──────────────────────────────── */
+  'led_5mm': 0.22,                  // 5mm   → enlarged for visibility
+  'led_generic': 0.22,              // 5mm   → enlarged for visibility
+  'resistor': 0.18,                 // 10mm body → enlarged for visibility
+  'resistor_generic': 0.18,         // 10mm body → enlarged for visibility
+  'push_button': 0.15,              // 6mm   → enlarged for visibility
+  'potentiometer': 0.15,            // 16mm  → 0.15
+  'buzzer': 0.15,                   // 12mm  → enlarged for visibility
+
+  /* ── Actuators ───────────────────────────────────────── */
+  'sg90_servo': 0.14,               // 23mm  → 0.14
+  'relay_module': 0.17,             // 28mm  → 0.17
+
+  /* ── Displays ────────────────────────────────────────── */
+  'oled_ssd1306': 0.17,             // 27mm  → 0.17
+  'lcd_1602': 0.48,                 // 80mm  → 0.48
+
+  /* ── Microcontrollers (additional) ──────────────────── */
+  'raspberry_pi_pico': 0.13,        // 21mm  → 0.13
 };
 
 export class PixiSceneRenderer {
@@ -89,7 +147,7 @@ export class PixiSceneRenderer {
   private isInitialized = false;
   private breadboardMap = new Map<string, PixiBreadboardRenderer>();
   private componentMap = new Map<string, PixiComponentRenderer>();
-  private wireMap = new Map<string, PixiWireRenderer>();
+  public wireMap = new Map<string, PixiWireRenderer>();
   private hoveredObjectIds = new Set<string>();
   private keyListenerBound = false;
 
@@ -129,21 +187,79 @@ export class PixiSceneRenderer {
   private referenceBreadboardWidth = 0;
 
   /** Phase 28: Stores the actual visual renderScale per objectId so
-   *  resolvePinPosition() and snap logic use the same scale as rendering */
-  private renderScaleMap = new Map<string, number>();
+   *  resolvePinPosition() and snap logic use the same scale as rendering.
+   *  Public so auto-wire-generator can use it for correct wire endpoints. */
+  public renderScaleMap = new Map<string, number>();
 
   /** Cached snapshot of latest workspace objects for drag lookups */
   private latestWorkspaceObjects: any[] = [];
   private latestComponentAssets: ComponentAssetDefinition[] = [];
   private latestBreadboardVisuals: BreadboardVisualModel[] = [];
 
+  /** Phase 31A.1: Wire anchor map — maps wireId to {sourceAnchorId, targetAnchorId} */
+  private wireAnchorMap = new Map<string, { sourceAnchorId: string; targetAnchorId: string }>();
+
+  /** Phase 31A.1: Camera target state for smooth interpolation */
+  private cameraTarget = { x: 0, y: 0, zoom: 1 };
+  private cameraLerping = false;
+
+  /** Phase 31A.1: Space-pan mode tracking */
+  private isSpacePanning = false;
+  private spacePanStart = { x: 0, y: 0, camX: 0, camY: 0 };
+  private isSpaceHeld = false;
+
+  /** Phase 31A.1: Middle-mouse pan tracking */
+  private isMiddlePanning = false;
+  private middlePanStart = { x: 0, y: 0, camX: 0, camY: 0 };
+
+  /** Phase 31A.1: Selection bounds graphics layer */
+  private selectionBoundsGraphics = new Graphics();
+
+  /** Phase 31A.1: Nearest pin highlight during wire routing */
+  private nearestPinHighlight = new Graphics();
+
+  /** Phase 31A.1: Cached wire placements for hole occupancy checks */
+  private latestWireRoutes: Array<{ routeId: string; sourceAnchorId: string; targetAnchorId: string }> = [];
+
+  /** Workspace grid background layer */
+  private gridBackground = new Graphics();
+
   constructor() {
+    // Draw dot-grid background pattern (Tinkercad-style workspace grid)
+    this.drawGridBackground();
+    this.viewport.addChild(this.gridBackground);
     this.viewport.addChild(this.breadboardRenderer.container);
     this.viewport.addChild(this.componentRenderer.container);
     this.viewport.addChild(this.wireRenderer.container);
     this.viewport.addChild(this.wirePreviewGraphics);
     this.viewport.addChild(this.snapPreviewGraphics);
     this.viewport.addChild(this.selectionRectGraphics);
+    this.viewport.addChild(this.selectionBoundsGraphics);
+    this.viewport.addChild(this.nearestPinHighlight);
+  }
+
+  /** Draw a subtle dot-grid pattern for a professional workspace feel */
+  private drawGridBackground(): void {
+    const gridSize = 20;
+    const gridW = 3000;
+    const gridH = 2000;
+    const startX = -500;
+    const startY = -300;
+
+    // Tinkercad-style: solid light-gray workspace surface
+    this.gridBackground.rect(startX, startY, gridW, gridH);
+    this.gridBackground.fill({ color: 0xC8C8C8 });
+
+    // Subtle grid lines (lighter than background)
+    for (let x = startX; x <= startX + gridW; x += gridSize) {
+      this.gridBackground.moveTo(x, startY);
+      this.gridBackground.lineTo(x, startY + gridH);
+    }
+    for (let y = startY; y <= startY + gridH; y += gridSize) {
+      this.gridBackground.moveTo(startX, y);
+      this.gridBackground.lineTo(startX + gridW, y);
+    }
+    this.gridBackground.stroke({ width: 0.5, color: 0xB8B8B8, alpha: 0.5 });
   }
 
   public initialize(options?: { app?: Application; rootContainer?: Container; runtime?: any }): void {
@@ -187,11 +303,19 @@ export class PixiSceneRenderer {
       const localX = (globalPos.x - this.viewport.x) / (this.viewport.scale.x || 1);
       const localY = (globalPos.y - this.viewport.y) / (this.viewport.scale.y || 1);
 
-      // Wire preview
+      // Phase 31A.1: Enhanced wire preview with orthogonal routing + nearest pin highlight
       if (this.wirePreviewStart) {
         this.wirePreviewGraphics.clear();
-        this.wirePreviewGraphics.moveTo(this.wirePreviewStart.x, this.wirePreviewStart.y);
-        this.wirePreviewGraphics.lineTo(localX, localY);
+        this.nearestPinHighlight.clear();
+
+        // Orthogonal route preview instead of straight line
+        const previewPoints = WireRoutingEngine.calculateRoute(
+          this.wirePreviewStart, { x: localX, y: localY }, { mode: 'ORTHOGONAL' },
+        );
+        for (let i = 0; i < previewPoints.length - 1; i++) {
+          this.wirePreviewGraphics.moveTo(previewPoints[i].x, previewPoints[i].y);
+          this.wirePreviewGraphics.lineTo(previewPoints[i + 1].x, previewPoints[i + 1].y);
+        }
         this.wirePreviewGraphics.stroke({ width: 3, color: 0x60a5fa, alpha: 0.7, cap: 'round' });
         // Start dot
         this.wirePreviewGraphics.circle(this.wirePreviewStart.x, this.wirePreviewStart.y, 5);
@@ -199,6 +323,17 @@ export class PixiSceneRenderer {
         // Cursor dot
         this.wirePreviewGraphics.circle(localX, localY, 4);
         this.wirePreviewGraphics.fill({ color: 0x60a5fa, alpha: 0.6 });
+
+        // Phase 31A.1: Find nearest pin/hole and highlight it
+        const nearest = this.findNearestPin(localX, localY, WIRE_SNAP_RADIUS);
+        if (nearest) {
+          this.nearestPinHighlight.circle(nearest.x, nearest.y, 10);
+          this.nearestPinHighlight.stroke({ width: 2.5, color: 0x06b6d4, alpha: 0.9 });
+          this.nearestPinHighlight.circle(nearest.x, nearest.y, 5);
+          this.nearestPinHighlight.fill({ color: 0x06b6d4, alpha: 0.4 });
+        }
+      } else {
+        this.nearestPinHighlight.clear();
       }
 
       // Phase 27B: Selection rectangle update
@@ -207,26 +342,116 @@ export class PixiSceneRenderer {
         this.selectionRect.endY = localY;
         this.renderSelectionRect();
       }
+
+      // Phase 31A.1: Space-pan camera dragging
+      if (this.isSpacePanning) {
+        const dx = globalPos.x - this.spacePanStart.x;
+        const dy = globalPos.y - this.spacePanStart.y;
+        this.cameraTarget.x = this.spacePanStart.camX + dx;
+        this.cameraTarget.y = this.spacePanStart.camY + dy;
+        this.applyCameraImmediate();
+      }
+
+      // Phase 31A.1: Middle-mouse pan
+      if (this.isMiddlePanning) {
+        const dx = globalPos.x - this.middlePanStart.x;
+        const dy = globalPos.y - this.middlePanStart.y;
+        this.cameraTarget.x = this.middlePanStart.camX + dx;
+        this.cameraTarget.y = this.middlePanStart.camY + dy;
+        this.applyCameraImmediate();
+      }
     });
 
-    // ── Global pointer up: finalize selection rectangle ──
-    this.viewport.on('pointerup', () => {
+    // ── Global pointer up: finalize selection rectangle + end panning ──
+    this.viewport.on('pointerup', (event) => {
       this.finalizeSelectionRect();
+      this.isSpacePanning = false;
+      const orig = event.originalEvent as unknown as PointerEvent;
+      if (orig?.button === 1) this.isMiddlePanning = false;
     });
     this.viewport.on('pointerupoutside', () => {
       this.finalizeSelectionRect();
+      this.isSpacePanning = false;
+      this.isMiddlePanning = false;
     });
 
-    // Phase 27A: Escape key cancels wire preview
+    // Phase 31A.1: Middle-mouse pan start
+    this.viewport.on('pointerdown', (event) => {
+      const orig = event.originalEvent as unknown as PointerEvent;
+      if (orig?.button === 1) {
+        event.stopPropagation();
+        this.isMiddlePanning = true;
+        this.middlePanStart = { x: event.global.x, y: event.global.y, camX: this.viewport.x, camY: this.viewport.y };
+      }
+      // Phase 31A.1: Space+click starts pan instead of selection
+      if (this.isSpaceHeld && orig?.button === 0) {
+        event.stopPropagation();
+        this.isSpacePanning = true;
+        this.spacePanStart = { x: event.global.x, y: event.global.y, camX: this.viewport.x, camY: this.viewport.y };
+        this.selectionRect.isActive = false;
+        this.selectionRectGraphics.clear();
+      }
+    });
+
+    // Phase 31A.1: Keyboard controls
     if (typeof window !== 'undefined') {
       window.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
           this.cancelWirePreview();
-          // Also cancel selection rect
           this.selectionRect.isActive = false;
           this.selectionRectGraphics.clear();
         }
+        if (e.key === ' ') {
+          this.isSpaceHeld = true;
+        }
+        // Home: fit to project
+        if (e.key === 'Home') {
+          e.preventDefault();
+          this.fitCameraToProject();
+        }
+        // F: zoom to selection
+        if (e.key === 'f' || e.key === 'F') {
+          if (!e.ctrlKey && !e.metaKey) this.zoomToSelection();
+        }
+        // Ctrl+D: duplicate selected
+        if ((e.ctrlKey || e.metaKey) && (e.key === 'd' || e.key === 'D')) {
+          e.preventDefault();
+          this.duplicateSelected();
+        }
       });
+      window.addEventListener('keyup', (e) => {
+        if (e.key === ' ') {
+          this.isSpaceHeld = false;
+          this.isSpacePanning = false;
+        }
+      });
+
+      // Phase 31A.1: Scroll-wheel cursor-centered zoom
+      const canvas = this.app?.canvas;
+      if (canvas) {
+        canvas.addEventListener('wheel', (e: WheelEvent) => {
+          e.preventDefault();
+          const rect = canvas.getBoundingClientRect();
+          const mouseScreenX = e.clientX - rect.left;
+          const mouseScreenY = e.clientY - rect.top;
+
+          // World position under cursor before zoom
+          const worldX = (mouseScreenX - this.viewport.x) / this.viewport.scale.x;
+          const worldY = (mouseScreenY - this.viewport.y) / this.viewport.scale.y;
+
+          // Adjust zoom
+          const direction = e.deltaY < 0 ? 1 : -1;
+          const newZoom = Math.max(CAMERA_MIN_ZOOM, Math.min(CAMERA_MAX_ZOOM,
+            this.cameraTarget.zoom * (1 + direction * CAMERA_ZOOM_STEP)));
+
+          // Recompute pan so cursor stays at same world point
+          this.cameraTarget.zoom = newZoom;
+          this.cameraTarget.x = mouseScreenX - worldX * newZoom;
+          this.cameraTarget.y = mouseScreenY - worldY * newZoom;
+          this.clampCamera();
+          this.startCameraLerp();
+        }, { passive: false });
+      }
     }
 
     this.isInitialized = true;
@@ -398,12 +623,28 @@ export class PixiSceneRenderer {
     const hitH = asset.imageHeight || 80;
     renderer.container.hitArea = new Rectangle(0, 0, hitW, hitH);
 
-    // ── Hover ──
+    // ── Hover — Phase 31A: Enhanced glow feedback ──
     renderer.container.on('pointerover', () => {
       this.hoveredObjectIds.add(objectId);
+      // Phase 31A: Subtle glow/scale on hover for interactive feedback
+      const state = this.dragStates.get(objectId);
+      if (!state?.isDragging) {
+        renderer.container.alpha = 0.95;
+        // Apply a subtle scale-up for "lift" effect
+        const baseScale = renderer.container.scale.x;
+        renderer.container.scale.set(baseScale * 1.02);
+      }
     });
     renderer.container.on('pointerout', () => {
       this.hoveredObjectIds.delete(objectId);
+      // Phase 31A: Restore from hover state
+      const state = this.dragStates.get(objectId);
+      if (!state?.isDragging) {
+        renderer.container.alpha = 1.0;
+        // Restore original scale — use the renderScale we computed
+        const renderScale = this.renderScaleMap.get(objectId) || 1.0;
+        renderer.container.scale.set(renderScale);
+      }
     });
 
     // ── Right-click context menu ──
@@ -460,8 +701,22 @@ export class PixiSceneRenderer {
         startObjectY: currentPos.y,
         objectId,
         attachedOffsets: [],
+        // Phase 31A: Initialize smooth drag state
+        visualX: currentPos.x,
+        visualY: currentPos.y,
+        targetX: currentPos.x,
+        targetY: currentPos.y,
+        velocityX: 0,
+        velocityY: 0,
+        lastMoveTime: performance.now(),
+        snapFrameCounter: 0,
+        lastSnapOffset: null,
+        lastGroupX: currentPos.x,
+        lastGroupY: currentPos.y,
       });
+      // Phase 31A: Smooth alpha transition and cursor change
       renderer.container.alpha = 0.85;
+      renderer.container.cursor = 'grabbing';
     });
 
     // ── Pointer move: drag with threshold + snap ──
@@ -537,22 +792,74 @@ export class PixiSceneRenderer {
         }
       }
 
+      // Phase 31A: Track velocity for momentum
+      const now = performance.now();
+      const dt = now - state.lastMoveTime;
+      if (dt > 0) {
+        state.velocityX = (newX - state.targetX) / Math.max(dt, 1) * 16; // normalize to ~60fps
+        state.velocityY = (newY - state.targetY) / Math.max(dt, 1) * 16;
+      }
+      state.lastMoveTime = now;
+
+      // Phase 31A: Set target position (lerp will smooth toward this)
+      state.targetX = newX;
+      state.targetY = newY;
+
+      // Phase 31A: Lerp visual position toward target for smooth motion
+      state.visualX += (state.targetX - state.visualX) * DRAG_LERP_FACTOR;
+      state.visualY += (state.targetY - state.visualY) * DRAG_LERP_FACTOR;
+
       if (this.runtime) {
         this.runtime.updateWorkspaceObjectModel(objectId, {
-          positionX: newX,
-          positionY: newY,
+          positionX: state.visualX,
+          positionY: state.visualY,
         });
+
+        // Phase 31A.1: Group movement — if this object is selected with others, move them all
+        const selected = this.runtime.getComponentSelectionModels()
+          .filter((s: any) => s.isSelected && s.componentId !== objectId)
+          .map((s: any) => s.componentId);
+        const movedIds = [objectId];
+        if (selected.length > 0) {
+          const dx = state.visualX - (state.lastGroupX ?? state.startObjectX);
+          const dy = state.visualY - (state.lastGroupY ?? state.startObjectY);
+          for (const sid of selected) {
+            const spos = this.getObjectPosition(sid);
+            this.runtime.updateWorkspaceObjectModel(sid, {
+              positionX: spos.x + dx,
+              positionY: spos.y + dy,
+            });
+            movedIds.push(sid);
+          }
+        }
+        state.lastGroupX = state.visualX;
+        state.lastGroupY = state.visualY;
+
+        // Phase 31A.1: Update wire geometry for moved objects
+        this.updateAttachedWireGeometry(movedIds);
       }
     });
 
-    // ── Pointer up: end drag ──
+    // ── Pointer up: end drag + apply momentum ──
     const endDrag = () => {
       const state = this.dragStates.get(objectId);
       if (state) {
+        // Phase 31A: Snap visual to final target position
+        if (state.thresholdMet && this.runtime) {
+          this.runtime.updateWorkspaceObjectModel(objectId, {
+            positionX: state.targetX,
+            positionY: state.targetY,
+          });
+        }
+        // Phase 31A: Apply momentum with deceleration
+        if (state.thresholdMet && (Math.abs(state.velocityX) > MOMENTUM_MIN_VELOCITY || Math.abs(state.velocityY) > MOMENTUM_MIN_VELOCITY)) {
+          this.applyMomentum(objectId, state.targetX, state.targetY, state.velocityX, state.velocityY);
+        }
         state.isDragging = false;
         state.thresholdMet = false;
       }
       renderer.container.alpha = 1.0;
+      renderer.container.cursor = 'pointer';
       this.snapPreviewGraphics.clear();
     };
     renderer.container.on('pointerup', endDrag);
@@ -692,8 +999,21 @@ export class PixiSceneRenderer {
         startObjectY: currentPos.y,
         objectId,
         attachedOffsets: attached,
+        // Phase 31A: Smooth drag state
+        visualX: currentPos.x,
+        visualY: currentPos.y,
+        targetX: currentPos.x,
+        targetY: currentPos.y,
+        velocityX: 0,
+        velocityY: 0,
+        lastMoveTime: performance.now(),
+        snapFrameCounter: 0,
+        lastSnapOffset: null,
+        lastGroupX: currentPos.x,
+        lastGroupY: currentPos.y,
       });
       renderer.container.alpha = 0.9;
+      renderer.container.cursor = 'grabbing';
     });
 
     // ── Pointer move: drag breadboard + attached components ──
@@ -724,12 +1044,17 @@ export class PixiSceneRenderer {
         });
 
         // Phase 27B: Move attached components to maintain relative offsets
+        const movedBBIds = [objectId];
         for (const att of state.attachedOffsets) {
           this.runtime.updateWorkspaceObjectModel(att.objectId, {
             positionX: newX + att.dx,
             positionY: newY + att.dy,
           });
+          movedBBIds.push(att.objectId);
         }
+
+        // Phase 31A.1: Update wire geometry for breadboard + all attached components
+        this.updateAttachedWireGeometry(movedBBIds);
       }
     });
 
@@ -741,6 +1066,7 @@ export class PixiSceneRenderer {
         state.thresholdMet = false;
       }
       renderer.container.alpha = 1.0;
+      renderer.container.cursor = 'grab';
     };
     renderer.container.on('pointerup', endDrag);
     renderer.container.on('pointerupoutside', endDrag);
@@ -760,12 +1086,28 @@ export class PixiSceneRenderer {
 
         hotspot.on('pointerover', () => {
           hotspot.clear();
+
+          // Phase 31A.1: State-dependent hole coloring
+          let ringColor = 0x22c55e; // green = empty
+          let fillAlpha = 0.4;
+          const holePinId = `${objectId}_hole_${hole.holeId}`;
+
+          if (this.wirePreviewStart) {
+            // Wire routing mode — destination highlight
+            ringColor = 0x06b6d4; // cyan
+            fillAlpha = 0.5;
+          } else if (this.isHoleOccupied(holePinId)) {
+            // Occupied hole
+            ringColor = 0x444444; // dark
+            fillAlpha = 0.3;
+          }
+
           hotspot.circle(hole.positionX, hole.positionY, 7);
-          hotspot.fill(0x3b82f6, 0.6);
+          hotspot.fill(ringColor, fillAlpha);
           hotspot.stroke({ width: 1.5, color: 0xffffff });
-          // Phase 27B: Outer glow ring
+          // Outer glow ring
           hotspot.circle(hole.positionX, hole.positionY, 11);
-          hotspot.stroke({ width: 1, color: 0x60a5fa, alpha: 0.3 });
+          hotspot.stroke({ width: 1, color: ringColor, alpha: 0.3 });
           if (this.onPinHover) {
             this.onPinHover({
               pinName: hole.holeId,
@@ -792,6 +1134,44 @@ export class PixiSceneRenderer {
         });
       }
     }
+  }
+
+  /* ── Phase 31A: Momentum physics after drag release ─────────────── */
+
+  private applyMomentum(
+    objectId: string,
+    startX: number, startY: number,
+    velocityX: number, velocityY: number,
+  ): void {
+    let x = startX;
+    let y = startY;
+    let vx = velocityX;
+    let vy = velocityY;
+
+    const tick = () => {
+      // Don't apply momentum if user started a new drag on this object
+      const state = this.dragStates.get(objectId);
+      if (state?.isDragging) return;
+
+      vx *= MOMENTUM_FRICTION;
+      vy *= MOMENTUM_FRICTION;
+
+      if (Math.abs(vx) < MOMENTUM_MIN_VELOCITY && Math.abs(vy) < MOMENTUM_MIN_VELOCITY) return;
+
+      x += vx;
+      y += vy;
+
+      if (this.runtime) {
+        this.runtime.updateWorkspaceObjectModel(objectId, {
+          positionX: x,
+          positionY: y,
+        });
+      }
+
+      requestAnimationFrame(tick);
+    };
+
+    requestAnimationFrame(tick);
   }
 
   /* ── Phase 27B: Snap preview indicators ──────────────────────────── */
@@ -927,11 +1307,15 @@ export class PixiSceneRenderer {
 
     // Phase 27B: Compute reference breadboard width for component scaling
     for (const obj of workspaceObjects) {
-      if (obj.objectType === 'breadboard_830') {
-        const bbVisual = breadboardVisuals.find((b) => b.assetId === 'breadboard_830');
+      if (obj.objectType.startsWith('breadboard')) {
+        const bbVisual = breadboardVisuals.find((b) => b.assetId === obj.objectType);
         this.referenceBreadboardWidth = ((bbVisual as any)?.totalWidth || bbVisual?.width || 830) * (obj.scale || 1);
         break;
       }
+    }
+    // Fallback: if no breadboard found, use a sensible default
+    if (this.referenceBreadboardWidth === 0) {
+      this.referenceBreadboardWidth = 500;
     }
 
     // Bind global keyboard listener for Deletion (once)
@@ -944,11 +1328,26 @@ export class PixiSceneRenderer {
               .filter((s: any) => s.isSelected)
               .map((s: any) => s.componentId);
             for (const id of selected) {
+              // Phase 31A.1: Disconnect wires before removing component
+              this.disconnectObject(id);
               this.runtime.removeWorkspaceObjectModel(id);
-              this.runtime.removeComponentSelectionModel(`sel_${id}`);
+              try { this.runtime.removeComponentSelectionModel(`sel_${id}`); } catch { /* noop */ }
               // Phase 27B: Clean up setup tracking
               this.setupObjectIds.delete(id);
               this.dragStates.delete(id);
+            }
+
+            // Phase 31A.1: Also delete any directly selected wires
+            const wireGeometries: any[] = this.runtime.getWireGeometries?.() || [];
+            const selections = this.runtime.getWorkspaceSelections?.() || [];
+            for (const g of wireGeometries) {
+              const isWireSelected = selections.some(
+                (s: any) => s.selectedObjectIds?.includes(g.wireId),
+              );
+              if (isWireSelected) {
+                try { this.runtime.removeWireGeometry?.(g.wireId); } catch { /* noop */ }
+                try { this.runtime.removeWireRoute?.(g.wireId); } catch { /* noop */ }
+              }
             }
           }
         }
@@ -986,6 +1385,7 @@ export class PixiSceneRenderer {
           renderer.container.x = obj.positionX;
           renderer.container.y = obj.positionY;
           renderer.container.scale.set(obj.scale || 1.0);
+          renderer.container.rotation = obj.rotation || 0;
 
           // Phase 27B: Setup interaction handlers ONCE (not every frame)
           if (isNewRenderer || !this.setupObjectIds.has(obj.objectId)) {
@@ -1103,6 +1503,11 @@ export class PixiSceneRenderer {
     const routes = stageTarget.wireRoutes || [];
     const activeWireIds = new Set<string>();
 
+    // Phase 31A.1: Cache wire routes for hole occupancy checks
+    this.latestWireRoutes = routes.map((r) => ({
+      routeId: r.routeId, sourceAnchorId: r.sourceAnchorId, targetAnchorId: r.targetAnchorId,
+    }));
+
     for (const g of geometries) {
       activeWireIds.add(g.wireId);
       const route = routes.find((r) => r.routeId === g.wireId);
@@ -1122,6 +1527,26 @@ export class PixiSceneRenderer {
         this.wireRenderer.container.addChild(wr.container);
       }
       wr.render(g, route, isWireSelected, false, currentViz, signalFlow);
+
+      // Enable wire click-to-select and context menu
+      const wirePoints = route?.pathPoints ?? [];
+      wr.setInteractive(wirePoints, g.segments, () => {
+        // Left-click: select the wire
+        if (this.runtime) {
+          const sels = this.runtime.getWorkspaceSelectionModels?.() || [];
+          let sel = sels[0];
+          if (!sel) {
+            sel = { selectionId: 'default_selection', selectedObjectIds: [], selectionBounds: null };
+          }
+          sel.selectedObjectIds = [g.wireId];
+          this.runtime.registerWorkspaceSelectionModel(sel);
+        }
+      }, (x: number, y: number) => {
+        // Right-click: fire context menu for wire
+        if (this.onContextMenu) {
+          this.onContextMenu({ x, y, targetId: g.wireId, targetType: 'wire' });
+        }
+      });
     }
 
     // Clean up old wires no longer present
@@ -1132,6 +1557,9 @@ export class PixiSceneRenderer {
         this.wireMap.delete(id);
       }
     }
+
+    // Phase 31A.1: Render selection bounds with handles
+    this.renderSelectionBounds();
   }
 
   /**
@@ -1142,7 +1570,7 @@ export class PixiSceneRenderer {
     if (!this.runtime) return;
 
     const activePlacements = this.runtime.getWirePlacements?.() || [];
-    const activePreview = activePlacements.find((p: any) => p.isRoutingPreview);
+    const activePreview = activePlacements.find((p: any) => p.isRoutingActive);
 
     if (!activePreview) {
       // Starting a new wire: record start pin and set up preview
@@ -1151,24 +1579,31 @@ export class PixiSceneRenderer {
         this.wirePreviewStart = startPos;
       }
 
-      this.runtime.registerWirePlacement({
-        id: `placement_${Date.now()}`,
-        startPinId: clickedPinId,
-        endPinId: '',
-        isRoutingPreview: true,
-        routingGeometry: [],
-        routingColor: WIRE_COLORS[this.wireColorIndex % WIRE_COLORS.length],
-        futurePlacementHints: {},
-      });
+      try {
+        this.runtime.registerWirePlacementModel({
+          placementId: `placement_${Date.now()}`,
+          startPinId: clickedPinId,
+          endPinId: '',
+          isRoutingActive: true,
+          previewPoints: [],
+          futurePlacementHints: {},
+        });
+      } catch {
+        // Placement registration optional — wiring still works via geometry
+      }
     } else {
       // Completing a wire: compute routing geometry
       const wireColor = WIRE_COLORS[this.wireColorIndex % WIRE_COLORS.length];
       this.wireColorIndex++;
 
-      this.runtime.updateWirePlacement(activePreview.id, {
-        endPinId: clickedPinId,
-        isRoutingPreview: false,
-      });
+      try {
+        this.runtime.updateWirePlacementModel(activePreview.placementId, {
+          endPinId: clickedPinId,
+          isRoutingActive: false,
+        });
+      } catch {
+        // Placement update optional
+      }
 
       // Resolve start and end positions for routing
       const startPos = this.resolvePinPosition(activePreview.startPinId);
@@ -1206,14 +1641,18 @@ export class PixiSceneRenderer {
           : [];
 
       const wireId = `wire_${Date.now()}`;
-      this.runtime.registerWireGeometry({
-        wireId,
-        thickness: 4,
-        color: wireColor,
-        segments,
-        controlPoints: [],
-        futureGeometryHints: {},
-      });
+      try {
+        this.runtime.registerWireGeometry({
+          wireId,
+          thickness: 4,
+          color: wireColor,
+          segments,
+          controlPoints: [],
+          futureGeometryHints: {},
+        });
+      } catch {
+        console.warn('[PixiSceneRenderer] Failed to register wire geometry');
+      }
 
       // Register route for the wire renderer
       if (routePoints.length > 0) {
@@ -1233,6 +1672,417 @@ export class PixiSceneRenderer {
       // Clear wire preview
       this.wirePreviewStart = null;
       this.wirePreviewGraphics.clear();
+      this.nearestPinHighlight.clear();
+    }
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════ */
+  /*  Phase 31A.1: Wire Geometry Sync During Drag                      */
+  /* ═══════════════════════════════════════════════════════════════════ */
+
+  /**
+   * Phase 31A.1: Update wire geometry for all wires connected to moved objects.
+   * Called during breadboard and component drag to rubber-band wires live.
+   */
+  private updateAttachedWireGeometry(movedObjectIds: string[]): void {
+    if (!this.runtime) return;
+
+    const wireRoutes: any[] = this.runtime.getWireRoutes?.() || [];
+    const wireGeometries: any[] = this.runtime.getWireGeometries?.() || [];
+
+    for (const route of wireRoutes) {
+      // Check if either anchor belongs to a moved object
+      const sourceMovedObj = movedObjectIds.find((id) => route.sourceAnchorId?.includes(id));
+      const targetMovedObj = movedObjectIds.find((id) => route.targetAnchorId?.includes(id));
+
+      if (!sourceMovedObj && !targetMovedObj) continue;
+
+      // Re-resolve both pin positions
+      const startPos = this.resolvePinPosition(route.sourceAnchorId);
+      const endPos = this.resolvePinPosition(route.targetAnchorId);
+      if (!startPos || !endPos) continue;
+
+      // Recompute route
+      const pathPoints = WireRoutingEngine.calculateRoute(startPos, endPos, { mode: 'ORTHOGONAL' });
+
+      // Update route
+      try {
+        this.runtime.updateWireRoute?.(route.routeId, { pathPoints, routeLength: WireRoutingEngine.calculatePathLength(pathPoints) });
+      } catch { /* route update optional */ }
+
+      // Update wire geometry segments
+      const geo = wireGeometries.find((g: any) => g.wireId === route.routeId);
+      if (geo) {
+        const segments: any[] = [];
+        for (let i = 0; i < pathPoints.length - 1; i++) {
+          segments.push({
+            segmentId: `seg_${i}`,
+            startX: pathPoints[i].x, startY: pathPoints[i].y,
+            endX: pathPoints[i + 1].x, endY: pathPoints[i + 1].y,
+            segmentType: 'LINE',
+          });
+        }
+        try {
+          this.runtime.updateWireGeometry?.(geo.wireId, { segments });
+        } catch { /* geometry update optional */ }
+      }
+    }
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════ */
+  /*  Phase 31A.1: Find Nearest Pin/Hole for Wire Destination Snap     */
+  /* ═══════════════════════════════════════════════════════════════════ */
+
+  private findNearestPin(worldX: number, worldY: number, radius: number): { x: number; y: number; pinId: string } | null {
+    let best: { x: number; y: number; pinId: string; dist: number } | null = null;
+
+    // Check component pins
+    for (const obj of this.latestWorkspaceObjects) {
+      if (obj.objectType?.startsWith('breadboard_')) continue;
+      const asset = this.latestComponentAssets.find((a) => a.assetId === obj.objectType);
+      if (!asset?.pinCoordinates) continue;
+      const scale = this.renderScaleMap.get(obj.objectId) || obj.scale || 1;
+      for (const pin of asset.pinCoordinates) {
+        const px = obj.positionX + pin.pixelX * scale;
+        const py = obj.positionY + pin.pixelY * scale;
+        const d = Math.sqrt((worldX - px) ** 2 + (worldY - py) ** 2);
+        if (d < radius && (!best || d < best.dist)) {
+          best = { x: px, y: py, pinId: `${obj.objectId}_pin_${pin.name}`, dist: d };
+        }
+      }
+    }
+
+    // Check breadboard holes
+    for (const obj of this.latestWorkspaceObjects) {
+      if (!obj.objectType?.startsWith('breadboard_')) continue;
+      const bbVisual = this.latestBreadboardVisuals.find((b) => b.assetId === obj.objectType);
+      if (!bbVisual?.holes) continue;
+      const scale = obj.scale || 1;
+      for (const hole of bbVisual.holes) {
+        const hx = obj.positionX + hole.positionX * scale;
+        const hy = obj.positionY + hole.positionY * scale;
+        const d = Math.sqrt((worldX - hx) ** 2 + (worldY - hy) ** 2);
+        if (d < radius && (!best || d < best.dist)) {
+          best = { x: hx, y: hy, pinId: `${obj.objectId}_hole_${hole.holeId}`, dist: d };
+        }
+      }
+    }
+
+    return best;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════ */
+  /*  Phase 31A.1: Hole Occupancy Check                                */
+  /* ═══════════════════════════════════════════════════════════════════ */
+
+  private isHoleOccupied(holePinId: string): boolean {
+    for (const route of this.latestWireRoutes) {
+      if (route.sourceAnchorId === holePinId || route.targetAnchorId === holePinId) return true;
+    }
+    return false;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════ */
+  /*  Phase 31A.1: Camera Controls                                     */
+  /* ═══════════════════════════════════════════════════════════════════ */
+
+  private clampCamera(): void {
+    const maxPan = CAMERA_BOUNDS * this.cameraTarget.zoom;
+    this.cameraTarget.x = Math.max(-maxPan, Math.min(maxPan, this.cameraTarget.x));
+    this.cameraTarget.y = Math.max(-maxPan, Math.min(maxPan, this.cameraTarget.y));
+  }
+
+  private applyCameraImmediate(): void {
+    this.clampCamera();
+    this.viewport.x = this.cameraTarget.x;
+    this.viewport.y = this.cameraTarget.y;
+    this.viewport.scale.set(this.cameraTarget.zoom);
+  }
+
+  private startCameraLerp(): void {
+    if (this.cameraLerping) return;
+    this.cameraLerping = true;
+    const lerpTick = () => {
+      const dx = this.cameraTarget.x - this.viewport.x;
+      const dy = this.cameraTarget.y - this.viewport.y;
+      const dz = this.cameraTarget.zoom - this.viewport.scale.x;
+      this.viewport.x += dx * CAMERA_LERP_SPEED;
+      this.viewport.y += dy * CAMERA_LERP_SPEED;
+      this.viewport.scale.set(this.viewport.scale.x + dz * CAMERA_LERP_SPEED);
+
+      if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5 || Math.abs(dz) > 0.001) {
+        requestAnimationFrame(lerpTick);
+      } else {
+        this.viewport.x = this.cameraTarget.x;
+        this.viewport.y = this.cameraTarget.y;
+        this.viewport.scale.set(this.cameraTarget.zoom);
+        this.cameraLerping = false;
+      }
+    };
+    requestAnimationFrame(lerpTick);
+  }
+
+  public fitCameraToProject(): void {
+    if (this.latestWorkspaceObjects.length === 0) return;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const obj of this.latestWorkspaceObjects) {
+      const asset = this.latestComponentAssets.find((a) => a.assetId === obj.objectType);
+      const bbVisual = this.latestBreadboardVisuals.find((b) => b.assetId === obj.objectType);
+      const w = (asset?.imageWidth || (bbVisual as any)?.totalWidth || bbVisual?.width || 100) * (obj.scale || 1);
+      const h = (asset?.imageHeight || (bbVisual as any)?.totalHeight || bbVisual?.height || 100) * (obj.scale || 1);
+      minX = Math.min(minX, obj.positionX);
+      minY = Math.min(minY, obj.positionY);
+      maxX = Math.max(maxX, obj.positionX + w);
+      maxY = Math.max(maxY, obj.positionY + h);
+    }
+    const pad = 60;
+    const canvasW = this.app?.canvas?.width || 800;
+    const canvasH = this.app?.canvas?.height || 600;
+    const projectW = maxX - minX + pad * 2;
+    const projectH = maxY - minY + pad * 2;
+    const zoom = Math.min(canvasW / projectW, canvasH / projectH, CAMERA_MAX_ZOOM);
+    this.cameraTarget.zoom = Math.max(CAMERA_MIN_ZOOM, zoom);
+    this.cameraTarget.x = (canvasW - projectW * this.cameraTarget.zoom) / 2 - (minX - pad) * this.cameraTarget.zoom;
+    this.cameraTarget.y = (canvasH - projectH * this.cameraTarget.zoom) / 2 - (minY - pad) * this.cameraTarget.zoom;
+    this.clampCamera();
+    this.startCameraLerp();
+  }
+
+  public zoomToSelection(): void {
+    if (!this.runtime) return;
+    const selected = this.runtime.getComponentSelectionModels()
+      .filter((s: any) => s.isSelected)
+      .map((s: any) => s.componentId);
+    if (selected.length === 0) return;
+
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const id of selected) {
+      const obj = this.latestWorkspaceObjects.find((o: any) => o.objectId === id);
+      if (!obj) continue;
+      const asset = this.latestComponentAssets.find((a) => a.assetId === obj.objectType);
+      const bbVisual = this.latestBreadboardVisuals.find((b) => b.assetId === obj.objectType);
+      const w = (asset?.imageWidth || (bbVisual as any)?.totalWidth || bbVisual?.width || 100) * (obj.scale || 1);
+      const h = (asset?.imageHeight || (bbVisual as any)?.totalHeight || bbVisual?.height || 100) * (obj.scale || 1);
+      minX = Math.min(minX, obj.positionX);
+      minY = Math.min(minY, obj.positionY);
+      maxX = Math.max(maxX, obj.positionX + w);
+      maxY = Math.max(maxY, obj.positionY + h);
+    }
+    const pad = 80;
+    const canvasW = this.app?.canvas?.width || 800;
+    const canvasH = this.app?.canvas?.height || 600;
+    const selW = maxX - minX + pad * 2;
+    const selH = maxY - minY + pad * 2;
+    const zoom = Math.min(canvasW / selW, canvasH / selH, CAMERA_MAX_ZOOM);
+    this.cameraTarget.zoom = Math.max(CAMERA_MIN_ZOOM, zoom);
+    this.cameraTarget.x = (canvasW - selW * this.cameraTarget.zoom) / 2 - (minX - pad) * this.cameraTarget.zoom;
+    this.cameraTarget.y = (canvasH - selH * this.cameraTarget.zoom) / 2 - (minY - pad) * this.cameraTarget.zoom;
+    this.clampCamera();
+    this.startCameraLerp();
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════ */
+  /*  Phase 31A.1: Group Duplicate                                     */
+  /* ═══════════════════════════════════════════════════════════════════ */
+
+  private duplicateSelected(): void {
+    if (!this.runtime) return;
+    const selected = this.runtime.getComponentSelectionModels()
+      .filter((s: any) => s.isSelected)
+      .map((s: any) => s.componentId);
+    if (selected.length === 0) return;
+
+    this.runtime.clearComponentSelectionModels();
+
+    for (const id of selected) {
+      const obj = this.latestWorkspaceObjects.find((o: any) => o.objectId === id);
+      if (!obj) continue;
+      const newId = `${obj.objectType}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+      try {
+        this.runtime.registerWorkspaceObjectModel({
+          objectId: newId,
+          objectType: obj.objectType,
+          positionX: obj.positionX + 20,
+          positionY: obj.positionY + 20,
+          rotation: obj.rotation || 0,
+          scale: obj.scale || 1,
+          zIndex: (obj.zIndex || 0) + 1,
+          isVisible: true,
+          isLocked: false,
+          futureObjectHints: {},
+        });
+        this.runtime.registerComponentSelectionModel({
+          id: `sel_${newId}`,
+          componentId: newId,
+          isSelected: true,
+          selectionOrder: Date.now(),
+          futureSelectionHints: {},
+        });
+      } catch { /* noop */ }
+    }
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════ */
+  /*  Phase 31A.1: Selection Bounds Rendering                          */
+  /* ═══════════════════════════════════════════════════════════════════ */
+
+  private renderSelectionBounds(): void {
+    this.selectionBoundsGraphics.clear();
+    if (!this.runtime) return;
+
+    const selected = this.runtime.getComponentSelectionModels()
+      .filter((s: any) => s.isSelected)
+      .map((s: any) => s.componentId);
+    if (selected.length === 0) return;
+
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const id of selected) {
+      const obj = this.latestWorkspaceObjects.find((o: any) => o.objectId === id);
+      if (!obj) continue;
+      const asset = this.latestComponentAssets.find((a) => a.assetId === obj.objectType);
+      const bbVisual = this.latestBreadboardVisuals.find((b) => b.assetId === obj.objectType);
+      const scale = this.renderScaleMap.get(id) || obj.scale || 1;
+      const w = (asset?.imageWidth || (bbVisual as any)?.totalWidth || bbVisual?.width || 80) * scale;
+      const h = (asset?.imageHeight || (bbVisual as any)?.totalHeight || bbVisual?.height || 80) * scale;
+      minX = Math.min(minX, obj.positionX);
+      minY = Math.min(minY, obj.positionY);
+      maxX = Math.max(maxX, obj.positionX + w);
+      maxY = Math.max(maxY, obj.positionY + h);
+    }
+
+    if (!isFinite(minX)) return;
+
+    const x = minX - SELECTION_BOUNDS_PAD;
+    const y = minY - SELECTION_BOUNDS_PAD;
+    const w = maxX - minX + SELECTION_BOUNDS_PAD * 2;
+    const h = maxY - minY + SELECTION_BOUNDS_PAD * 2;
+
+    // Dashed selection rectangle
+    this.selectionBoundsGraphics.rect(x, y, w, h);
+    this.selectionBoundsGraphics.stroke({ width: 1.5, color: 0x4a90d9, alpha: 0.6 });
+    this.selectionBoundsGraphics.rect(x, y, w, h);
+    this.selectionBoundsGraphics.fill({ color: 0x4a90d9, alpha: 0.03 });
+
+    // Selection handles (8 points: corners + midpoints)
+    const handles = [
+      { hx: x, hy: y }, { hx: x + w / 2, hy: y }, { hx: x + w, hy: y },
+      { hx: x + w, hy: y + h / 2 },
+      { hx: x + w, hy: y + h }, { hx: x + w / 2, hy: y + h }, { hx: x, hy: y + h },
+      { hx: x, hy: y + h / 2 },
+    ];
+    for (const { hx, hy } of handles) {
+      this.selectionBoundsGraphics.rect(
+        hx - SELECTION_HANDLE_SIZE / 2, hy - SELECTION_HANDLE_SIZE / 2,
+        SELECTION_HANDLE_SIZE, SELECTION_HANDLE_SIZE,
+      );
+      this.selectionBoundsGraphics.fill({ color: 0xffffff, alpha: 1 });
+      this.selectionBoundsGraphics.stroke({ width: 1, color: 0x4a90d9, alpha: 0.9 });
+    }
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════ */
+  /*  Phase 31A.1: Context Menu Action Execution                       */
+  /* ═══════════════════════════════════════════════════════════════════ */
+
+  public executeContextMenuAction(action: string, targetId: string): void {
+    if (!this.runtime) return;
+
+    switch (action) {
+      case 'DUPLICATE': {
+        const obj = this.latestWorkspaceObjects.find((o: any) => o.objectId === targetId);
+        if (!obj) break;
+        const newId = `${obj.objectType}_${Date.now()}_dup`;
+        try {
+          this.runtime.registerWorkspaceObjectModel({
+            objectId: newId, objectType: obj.objectType,
+            positionX: obj.positionX + 20, positionY: obj.positionY + 20,
+            rotation: obj.rotation || 0, scale: obj.scale || 1,
+            zIndex: (obj.zIndex || 0) + 1, isVisible: true, isLocked: false, futureObjectHints: {},
+          });
+        } catch { /* noop */ }
+        break;
+      }
+      case 'DELETE': {
+        this.runtime.removeWorkspaceObjectModel(targetId);
+        try { this.runtime.removeComponentSelectionModel(`sel_${targetId}`); } catch { /* noop */ }
+        this.setupObjectIds.delete(targetId);
+        this.dragStates.delete(targetId);
+        // Remove connected wires
+        this.disconnectObject(targetId);
+        break;
+      }
+      case 'ROTATE_CW': {
+        const pos = this.getObjectPosition(targetId);
+        this.runtime.updateWorkspaceObjectModel(targetId, { rotation: ((pos.rotation || 0) + Math.PI / 2) % (Math.PI * 2) });
+        this.updateAttachedWireGeometry([targetId]);
+        break;
+      }
+      case 'ROTATE_CCW': {
+        const pos = this.getObjectPosition(targetId);
+        let newRot = (pos.rotation || 0) - Math.PI / 2;
+        if (newRot < 0) newRot += Math.PI * 2;
+        this.runtime.updateWorkspaceObjectModel(targetId, { rotation: newRot });
+        this.updateAttachedWireGeometry([targetId]);
+        break;
+      }
+      case 'BRING_FORWARD': {
+        const obj = this.latestWorkspaceObjects.find((o: any) => o.objectId === targetId);
+        if (obj) this.runtime.updateWorkspaceObjectModel(targetId, { zIndex: (obj.zIndex || 0) + 1 });
+        break;
+      }
+      case 'SEND_BACKWARD': {
+        const obj = this.latestWorkspaceObjects.find((o: any) => o.objectId === targetId);
+        if (obj) this.runtime.updateWorkspaceObjectModel(targetId, { zIndex: Math.max(0, (obj.zIndex || 0) - 1) });
+        break;
+      }
+      case 'DISCONNECT':
+        this.disconnectObject(targetId);
+        break;
+      case 'INSPECT':
+        if (this.onPinHover) {
+          const obj = this.latestWorkspaceObjects.find((o: any) => o.objectId === targetId);
+          if (obj) {
+            this.onPinHover({
+              pinName: 'component', pinId: targetId, componentId: targetId,
+              componentType: obj.objectType, signalType: 'INSPECT',
+              pixelX: obj.positionX, pixelY: obj.positionY, screenX: 0, screenY: 0,
+            });
+          }
+        }
+        break;
+      case 'FOCUS_CAMERA': {
+        const obj = this.latestWorkspaceObjects.find((o: any) => o.objectId === targetId);
+        if (obj) {
+          // Select the object first, then zoom to it
+          try {
+            this.runtime.clearComponentSelectionModels();
+            this.runtime.registerComponentSelectionModel({
+              id: `sel_${targetId}`, componentId: targetId,
+              isSelected: true, selectionOrder: Date.now(), futureSelectionHints: {},
+            });
+          } catch { /* noop */ }
+          this.zoomToSelection();
+        }
+        break;
+      }
+      default:
+        console.warn(`[PixiSceneRenderer] Unknown context menu action: ${action}`);
+    }
+  }
+
+  /** Phase 31A.1: Remove all wires connected to an object */
+  private disconnectObject(objectId: string): void {
+    if (!this.runtime) return;
+    const wireRoutes: any[] = this.runtime.getWireRoutes?.() || [];
+    const toRemove: string[] = [];
+    for (const route of wireRoutes) {
+      if (route.sourceAnchorId?.includes(objectId) || route.targetAnchorId?.includes(objectId)) {
+        toRemove.push(route.routeId);
+      }
+    }
+    for (const wireId of toRemove) {
+      try { this.runtime.removeWireGeometry?.(wireId); } catch { /* noop */ }
+      try { this.runtime.removeWireRoute?.(wireId); } catch { /* noop */ }
     }
   }
 
@@ -1256,6 +2106,8 @@ export class PixiSceneRenderer {
 
     this.wirePreviewGraphics.destroy();
     this.selectionRectGraphics.destroy();
+    this.selectionBoundsGraphics.destroy();
+    this.nearestPinHighlight.destroy();
     this.snapPreviewGraphics.destroy();
     this.viewport.destroy({ children: true });
     this.onPinHover = null;

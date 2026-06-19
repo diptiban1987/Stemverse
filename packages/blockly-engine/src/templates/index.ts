@@ -27,6 +27,7 @@ export const PROJECT_TEMPLATES: ProjectTemplate[] = [
 ];
 
 function chainBlocks(workspace: Blockly.Workspace, types: Array<{ type: string; fields?: Record<string, string | number> }>) {
+  let first: Blockly.Block | null = null;
   let prev: Blockly.Block | null = null;
   for (const spec of types) {
     const block = workspace.newBlock(spec.type);
@@ -35,10 +36,15 @@ function chainBlocks(workspace: Blockly.Workspace, types: Array<{ type: string; 
         block.setFieldValue(val, key);
       }
     }
+    // Blockly SVG blocks must be initialized and rendered to appear visually
+    if ('initSvg' in block && typeof (block as any).initSvg === 'function') {
+      (block as any).initSvg();
+    }
+    if (!first) first = block;
     if (prev) prev.nextConnection?.connect(block.previousConnection!);
     prev = block;
   }
-  return prev;
+  return first;
 }
 
 export function applyProjectTemplate(
@@ -53,13 +59,13 @@ export function applyProjectTemplate(
   const loopChain = program.getInput('LOOP')!;
 
   const connectSetup = (specs: Parameters<typeof chainBlocks>[1]) => {
-    const last = chainBlocks(workspace, specs);
-    if (last) setupChain.connection!.connect(last.previousConnection!);
+    const first = chainBlocks(workspace, specs);
+    if (first) setupChain.connection!.connect(first.previousConnection!);
   };
 
   const connectLoop = (specs: Parameters<typeof chainBlocks>[1]) => {
-    const last = chainBlocks(workspace, specs);
-    if (last) loopChain.connection!.connect(last.previousConnection!);
+    const first = chainBlocks(workspace, specs);
+    if (first) loopChain.connection!.connect(first.previousConnection!);
   };
 
   let board = 'arduino_uno';
@@ -104,21 +110,22 @@ export function applyProjectTemplate(
       connectSetup([
         { type: 'stemverse_configure_pin', fields: { PIN: 2, MODE: 'INPUT' } },
         { type: 'stemverse_configure_pin', fields: { PIN: 12, MODE: 'OUTPUT' } },
+        { type: 'stemverse_serial_begin', fields: { BAUD: 9600 } },
       ]);
       connectLoop([
-        { type: 'stemverse_sensor_read', fields: { SENSOR: 'pir', PROPERTY: 'motion', PIN: 2 } },
-        { type: 'stemverse_relay_write', fields: { PIN: 12, STATE: 'HIGH' } },
+        { type: 'stemverse_digital_write', fields: { PIN: 12, VALUE: 'HIGH' } },
         { type: 'stemverse_delay', fields: { MS: 5000 } },
-        { type: 'stemverse_relay_write', fields: { PIN: 12, STATE: 'LOW' } },
+        { type: 'stemverse_digital_write', fields: { PIN: 12, VALUE: 'LOW' } },
+        { type: 'stemverse_delay', fields: { MS: 1000 } },
       ]);
       break;
     case 'fire_alarm':
       name = 'Fire Alarm';
       connectSetup([
         { type: 'stemverse_configure_pin', fields: { PIN: 8, MODE: 'OUTPUT' } },
+        { type: 'stemverse_configure_pin', fields: { PIN: 0, MODE: 'INPUT' } },
       ]);
       connectLoop([
-        { type: 'stemverse_sensor_read', fields: { SENSOR: 'mq2', PROPERTY: 'gas_level', PIN: 0 } },
         { type: 'stemverse_buzzer_play', fields: { PIN: 8, FREQ: 2000, DURATION: 500 } },
         { type: 'stemverse_delay', fields: { MS: 200 } },
       ]);
@@ -126,10 +133,16 @@ export function applyProjectTemplate(
     case 'distance_alarm':
       name = 'Distance Alarm';
       connectSetup([
+        { type: 'stemverse_configure_pin', fields: { PIN: 5, MODE: 'OUTPUT' } },
+        { type: 'stemverse_configure_pin', fields: { PIN: 6, MODE: 'INPUT' } },
         { type: 'stemverse_configure_pin', fields: { PIN: 8, MODE: 'OUTPUT' } },
       ]);
       connectLoop([
-        { type: 'stemverse_sensor_read', fields: { SENSOR: 'hc_sr04', PROPERTY: 'distance_cm', PIN: 5 } },
+        { type: 'stemverse_digital_write', fields: { PIN: 5, VALUE: 'LOW' } },
+        { type: 'stemverse_delay', fields: { MS: 2 } },
+        { type: 'stemverse_digital_write', fields: { PIN: 5, VALUE: 'HIGH' } },
+        { type: 'stemverse_delay', fields: { MS: 10 } },
+        { type: 'stemverse_digital_write', fields: { PIN: 5, VALUE: 'LOW' } },
         { type: 'stemverse_buzzer_play', fields: { PIN: 8, FREQ: 1500, DURATION: 300 } },
         { type: 'stemverse_delay', fields: { MS: 100 } },
       ]);
@@ -148,7 +161,16 @@ export function applyProjectTemplate(
       break;
   }
 
+  // Initialize and render the program block for SVG display
+  if ('initSvg' in program && typeof (program as any).initSvg === 'function') {
+    (program as any).initSvg();
+  }
   program.moveBy(50, 50);
+
+  // Render all blocks on the workspace
+  if ('render' in workspace && typeof (workspace as any).render === 'function') {
+    (workspace as any).render();
+  }
 
   return {
     project_id: `template_${templateId}`,

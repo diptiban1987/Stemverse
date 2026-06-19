@@ -30,7 +30,8 @@ function wsUrl(): string {
   if (typeof window === 'undefined') return '';
   const env = process.env.NEXT_PUBLIC_WS_URL;
   if (env) return env;
-  return `${window.location.protocol}//${window.location.hostname}:4000/collaboration`;
+  // In dev without a backend, return empty to skip connection
+  return '';
 }
 
 export function useCollaboration(options: {
@@ -50,8 +51,16 @@ export function useCollaboration(options: {
 
   useEffect(() => {
     if (!enabled || !projectId || !userId) return;
+    const url = wsUrl();
+    if (!url) return; // Skip in dev without backend
 
-    const socket = io(wsUrl(), { transports: ['websocket', 'polling'], autoConnect: true });
+    const socket = io(wsUrl(), {
+      transports: ['websocket', 'polling'],
+      autoConnect: true,
+      reconnectionAttempts: 3,
+      reconnectionDelay: 5000,
+      timeout: 5000,
+    });
     socketRef.current = socket;
 
     socket.on('connect', () => {

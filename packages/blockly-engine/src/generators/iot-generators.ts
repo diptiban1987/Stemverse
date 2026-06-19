@@ -3,7 +3,7 @@ import type { CodeGenerator } from 'blockly/core';
 
 const ATOMIC = 0;
 
-export type GeneratorTarget = 'arduino' | 'espidf';
+export type GeneratorTarget = 'arduino' | 'espidf' | 'micropython' | 'circuitpython';
 
 export function registerIotBlockGenerators(
   generator: CodeGenerator,
@@ -11,8 +11,10 @@ export function registerIotBlockGenerators(
 ): void {
   if (target === 'arduino') {
     registerArduinoIoT(generator);
-  } else {
+  } else if (target === 'espidf') {
     registerEspIdfIoT(generator);
+  } else {
+    registerMicroPythonIoT(generator);
   }
 }
 
@@ -227,4 +229,94 @@ export const ARDUINO_IOT_GLOBALS = [
   'FirebaseData fbdo;',
   'FirebaseAuth auth;',
   'FirebaseConfig config;',
+];
+
+/* ── MicroPython / CircuitPython IoT generators ───────────────── */
+
+function registerMicroPythonIoT(generator: CodeGenerator): void {
+  // ── UART ──
+  generator.forBlock['stemverse_uart_begin'] = (block: Block) =>
+    `from machine import UART\nuart = UART(0, baudrate=${block.getFieldValue('BAUD')})\n`;
+  generator.forBlock['stemverse_uart_print'] = (block: Block) => {
+    const text = block.getFieldValue('TEXT').replace(/"/g, '\\"');
+    return `print("${text}")\n`;
+  };
+  generator.forBlock['stemverse_uart_read'] = () => ['input()', ATOMIC];
+
+  // ── I2C ──
+  generator.forBlock['stemverse_i2c_begin'] = (block: Block) =>
+    `from machine import I2C, Pin\ni2c = I2C(0, scl=Pin(${block.getFieldValue('SCL')}), sda=Pin(${block.getFieldValue('SDA')}), freq=${block.getFieldValue('FREQ') || 400000})\n`;
+  generator.forBlock['stemverse_i2c_read'] = (block: Block) =>
+    [`i2c.readfrom_mem(${block.getFieldValue('ADDR')}, ${block.getFieldValue('REG')}, 1)[0]`, ATOMIC];
+  generator.forBlock['stemverse_i2c_write'] = (block: Block) =>
+    `i2c.writeto_mem(${block.getFieldValue('ADDR')}, ${block.getFieldValue('REG')}, bytes([${block.getFieldValue('VAL')}]))\n`;
+
+  // ── SPI ──
+  generator.forBlock['stemverse_spi_begin'] = (block: Block) =>
+    `from machine import SPI, Pin\nspi = SPI(1, sck=Pin(${block.getFieldValue('SCK')}), miso=Pin(${block.getFieldValue('MISO')}), mosi=Pin(${block.getFieldValue('MOSI')}))\n`;
+  generator.forBlock['stemverse_spi_transfer'] = (block: Block) =>
+    [`spi.read(1, ${block.getFieldValue('DATA')})[0]`, ATOMIC];
+
+  // ── WiFi ──
+  generator.forBlock['stemverse_wifi_begin'] = (block: Block) => {
+    const ssid = block.getFieldValue('SSID').replace(/"/g, '\\"');
+    const pass = block.getFieldValue('PASSWORD').replace(/"/g, '\\"');
+    return `import network\nwlan = network.WLAN(network.STA_IF)\nwlan.active(True)\nwlan.connect("${ssid}", "${pass}")\nimport time\nwhile not wlan.isconnected():\n    time.sleep(0.5)\n`;
+  };
+  generator.forBlock['stemverse_wifi_status'] = () => ['wlan.isconnected()', ATOMIC];
+  generator.forBlock['stemverse_wifi_disconnect'] = () => 'wlan.disconnect()\n';
+  generator.forBlock['stemverse_wifi_rssi'] = () => ['wlan.status("rssi")', ATOMIC];
+
+  // ── Bluetooth ──
+  generator.forBlock['stemverse_bluetooth_begin'] = (block: Block) => {
+    const name = block.getFieldValue('NAME').replace(/"/g, '\\"');
+    return `import ubluetooth\nble = ubluetooth.BLE()\nble.active(True)\n# BT name: ${name}\n`;
+  };
+  generator.forBlock['stemverse_ble_begin'] = (block: Block) => {
+    const name = block.getFieldValue('NAME').replace(/"/g, '\\"');
+    return `import ubluetooth\nble = ubluetooth.BLE()\nble.active(True)\n# BLE name: ${name}\n`;
+  };
+
+  // ── MQTT ──
+  generator.forBlock['stemverse_mqtt_connect'] = (block: Block) => {
+    const broker = block.getFieldValue('BROKER').replace(/"/g, '\\"');
+    const port = block.getFieldValue('PORT');
+    const client = block.getFieldValue('CLIENT').replace(/"/g, '\\"');
+    return `from umqtt.simple import MQTTClient\nmqtt = MQTTClient("${client}", "${broker}", port=${port})\nmqtt.connect()\n`;
+  };
+  generator.forBlock['stemverse_mqtt_publish'] = (block: Block) => {
+    const topic = block.getFieldValue('TOPIC').replace(/"/g, '\\"');
+    const msg = block.getFieldValue('MESSAGE').replace(/"/g, '\\"');
+    return `mqtt.publish("${topic}", "${msg}")\n`;
+  };
+  generator.forBlock['stemverse_mqtt_subscribe'] = (block: Block) => {
+    const topic = block.getFieldValue('TOPIC').replace(/"/g, '\\"');
+    return `mqtt.subscribe("${topic}")\n`;
+  };
+
+  // ── HTTP ──
+  generator.forBlock['stemverse_http_get'] = (block: Block) => {
+    const url = block.getFieldValue('URL').replace(/"/g, '\\"');
+    return [`urequests.get("${url}").text`, ATOMIC];
+  };
+  generator.forBlock['stemverse_http_post'] = (block: Block) => {
+    const url = block.getFieldValue('URL').replace(/"/g, '\\"');
+    const body = block.getFieldValue('BODY').replace(/"/g, '\\"');
+    return [`urequests.post("${url}", data="${body}").text`, ATOMIC];
+  };
+
+  // ── Firebase (HTTP-based for MicroPython) ──
+  generator.forBlock['stemverse_firebase_read'] = (block: Block) => {
+    const path = block.getFieldValue('PATH').replace(/"/g, '\\"');
+    return [`urequests.get(FIREBASE_URL + "/${path}.json").json()`, ATOMIC];
+  };
+  generator.forBlock['stemverse_firebase_write'] = (block: Block) => {
+    const path = block.getFieldValue('PATH').replace(/"/g, '\\"');
+    const val = block.getFieldValue('VALUE').replace(/"/g, '\\"');
+    return `urequests.put(FIREBASE_URL + "/${path}.json", data='"${val}"')\n`;
+  };
+}
+
+export const MICROPYTHON_IOT_IMPORTS = [
+  'import urequests',
 ];

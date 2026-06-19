@@ -5,11 +5,16 @@ import { useAuthStore } from '@/lib/auth-store';
 import { projectApi } from '@/lib/api';
 import { useSimulatorStore } from './simulator-store';
 import { WorkspaceToolbar } from './workspace-toolbar';
-import { ComponentPalette } from './component-palette';
+import { ComponentCatalog } from './component-catalog';
 import { PinAssignmentPanel } from './pin-assignment-panel';
+import { PropertyPanel } from './property-panel';
 import { PinInspector } from './pin-inspector';
 import { ContextMenu } from './context-menu';
+import { CanvasMagnifier } from './canvas-magnifier';
 import { usePinAssignmentStore, BOARD_ASSET_IDS, COMPONENT_PIN_CATALOG } from './pin-assignment-store';
+import { generateWireForAssignment, removeWire } from './auto-wire-generator';
+import { SmartPlacementEngine, ROBOTICS_BREADBOARD_LAYOUT, COMPONENT_DIMENSIONS } from './smart-placement';
+import type { PinAssignment } from './pin-assignment-store';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -47,6 +52,108 @@ interface CameraState {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Scene renderer scale ratios (mirrored from pixi-scene-renderer)    */
+/* ------------------------------------------------------------------ */
+
+const SCENE_SCALE_RATIOS: Record<string, number> = {
+  arduino_uno_r3: 0.41, esp32_devkit_v1: 0.17, arduino_nano: 0.11,
+  hc_sr04: 0.27, ir_sensor: 0.12, mq2_sensor: 0.20, dht11_sensor: 0.10,
+  led_5mm: 0.22, led_generic: 0.22, resistor: 0.18, resistor_generic: 0.18,
+  push_button: 0.15, potentiometer: 0.15, buzzer: 0.15,
+  sg90_servo: 0.14, relay_module: 0.17,
+  oled_ssd1306: 0.17, lcd_1602: 0.48, raspberry_pi_pico: 0.13,
+};
+
+/**
+ * Calculate optimal camera zoom & pan to fit all workspace objects in the canvas.
+ * Uses the same COMPONENT_SCALE_RATIOS that the scene renderer applies.
+ */
+function fitCameraToContent(
+  runtime: any, // eslint-disable-line @typescript-eslint/no-explicit-any
+  componentAssets: Array<{ assetId: string; imageWidth?: number; imageHeight?: number }>,
+  canvasWidth: number,
+  canvasHeight: number,
+  padding = 60,
+): CameraState {
+  const objects = runtime?.getWorkspaceObjectModels?.() ?? [];
+  if (objects.length === 0) return { x: 0, y: 0, zoom: 1 };
+
+  // Step 1: Determine the reference breadboard width (same logic as scene renderer)
+  let refBBWidth = 500;
+  for (const obj of objects) {
+    if ((obj.objectType as string).startsWith('breadboard')) {
+      // Breadboard visuals use width from BreadboardVisualModel (typically 940 for 830-point)
+      const bbDims: Record<string, number> = { breadboard_830: 940, breadboard_400: 500, breadboard_mini: 320 };
+      refBBWidth = (bbDims[obj.objectType] || 940) * (obj.scale || 1);
+      break;
+    }
+  }
+
+  // Step 2: Calculate bounds for each object
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+  for (const obj of objects) {
+    const asset = componentAssets.find(a => a.assetId === obj.objectType);
+    let renderW: number, renderH: number;
+    const rot = obj.rotation || 0;
+
+    if ((obj.objectType as string).startsWith('breadboard')) {
+      // Breadboard sizes (local, before rotation)
+      const bbDims: Record<string, { w: number; h: number }> = {
+        breadboard_830: { w: 940, h: 340 },
+        breadboard_400: { w: 500, h: 340 },
+        breadboard_mini: { w: 320, h: 170 },
+      };
+      const dims = bbDims[obj.objectType] || { w: 940, h: 340 };
+      const localW = dims.w * (obj.scale || 1);
+      const localH = dims.h * (obj.scale || 1);
+      // When rotated 90°, width and height swap
+      const isRotated = Math.abs(Math.sin(rot)) > 0.5;
+      renderW = isRotated ? localH : localW;
+      renderH = isRotated ? localW : localH;
+    } else {
+      // Use COMPONENT_SCALE_RATIOS to match what the scene renderer renders
+      const ratio = SCENE_SCALE_RATIOS[obj.objectType];
+      const assetW = asset?.imageWidth || 100;
+      const assetH = asset?.imageHeight || 100;
+      if (ratio && refBBWidth > 0) {
+        const renderScale = (refBBWidth * ratio) / assetW;
+        renderW = assetW * renderScale;
+        renderH = assetH * renderScale;
+      } else {
+        renderW = assetW * (obj.scale || 1);
+        renderH = assetH * (obj.scale || 1);
+      }
+    }
+
+    const x = obj.positionX || 0;
+    const y = obj.positionY || 0;
+
+    minX = Math.min(minX, x);
+    minY = Math.min(minY, y);
+    maxX = Math.max(maxX, x + renderW);
+    maxY = Math.max(maxY, y + renderH);
+  }
+
+  // Step 3: Calculate optimal zoom to fit all content
+  const contentW = maxX - minX;
+  const contentH = maxY - minY;
+  if (contentW <= 0 || contentH <= 0) return { x: 0, y: 0, zoom: 1 };
+
+  const availW = canvasWidth - padding * 2;
+  const availH = canvasHeight - padding * 2;
+  const zoom = Math.min(availW / contentW, availH / contentH, 1.5); // Cap at 1.5x
+
+  // Step 4: Center the content
+  const centerX = (minX + maxX) / 2;
+  const centerY = (minY + maxY) / 2;
+  const camX = canvasWidth / 2 - centerX * zoom;
+  const camY = canvasHeight / 2 - centerY * zoom;
+
+  return { x: camX, y: camY, zoom: Math.max(0.15, zoom) };
+}
+
+/* ------------------------------------------------------------------ */
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 
@@ -64,6 +171,14 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
   const objectCounterRef = useRef(0);
   const spacebarRef = useRef(false);
   const clipboardRef = useRef<any[]>([]); // eslint-disable-line @typescript-eslint/no-explicit-any
+  const placementEngineRef = useRef<SmartPlacementEngine | null>(null);
+  const componentAssetsRef = useRef<Array<{
+    assetId: string;
+    imageWidth?: number;
+    imageHeight?: number;
+    pinCoordinates?: Array<{ name: string; pixelX: number; pixelY: number }>;
+  }>>([]);
+  const [magnifierEnabled, setMagnifierEnabled] = useState(false);
 
   /* ── Store ──────────────────────────────────────────────────────── */
   const setTool = useSimulatorStore((s) => s.setTool);
@@ -203,26 +318,53 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
           }
         }
 
+        /* ── Add Stage target (required for getStageSnapshot) ── */
+        const stage = {
+          id: 'stage',
+          name: 'Stage',
+          isStage: true,
+          variables: {},
+          lists: {},
+          costumes: [],
+          sounds: [],
+          currentCostumeIndex: 0,
+          currentBackdropIndex: 0,
+          backdrops: [],
+          x: 0,
+          y: 0,
+          direction: 90,
+          visible: true,
+          size: 100,
+          draggable: false,
+          rotationStyle: 'all around',
+          layerOrder: 0,
+        };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        runtime.addTarget(stage as any);
+
         /* ── Register default workspace objects ─────────────────── */
+        // Breadboard placed vertically (column-wise, rotated 90°)
+        // so components have a wider area to the right
         runtime.registerWorkspaceObjectModel({
           objectId: 'breadboard_1',
           objectType: 'breadboard_830',
-          positionX: 50,
-          positionY: 200,
-          rotation: 0,
-          scale: 0.6,
+          positionX: 80,
+          positionY: 50,
+          rotation: Math.PI / 2,  // 90° rotation → vertical
+          scale: 0.55,
           selected: false,
           locked: false,
           metadata: {},
         });
 
+        // Board placed above the vertical breadboard
         runtime.registerWorkspaceObjectModel({
           objectId: 'board_1',
           objectType: 'esp32_devkit_v1',
-          positionX: 100,
-          positionY: 80,
+          positionX: 330,
+          positionY: 60,
           rotation: 0,
-          scale: 0.6,
+          scale: 0.45,
           selected: false,
           locked: false,
           metadata: {},
@@ -237,7 +379,9 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
           backgroundColor: 0x0f172a,
           antialias: true,
           resolution: window.devicePixelRatio || 1,
-        });
+          // Top-level option in Pixi.js v8 — required for canvas magnifier
+          preserveDrawingBuffer: true,
+        } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
 
         if (destroyed) { app.destroy(); runtime.destroy(); return; }
 
@@ -274,7 +418,7 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
           };
 
           // Phase 27A: Preload SVG textures for all registered assets
-          const allAssets = runtime.getRegisteredComponentAssets?.() || [];
+          const allAssets = runtime.getComponentAssets?.() || [];
           if (allAssets.length > 0) {
             adapter.sceneRenderer.preloadTextures(allAssets).catch(() => { /* noop */ });
           }
@@ -299,6 +443,21 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
           animFrameRef.current = requestAnimationFrame(syncLoop);
         };
         syncLoop();
+
+        /* ── Build component assets lookup for auto-wire generator ── */
+        const allRegistered = runtime.getComponentAssets?.() || [];
+        componentAssetsRef.current = allRegistered.map((a: any) => ({ // eslint-disable-line @typescript-eslint/no-explicit-any
+          assetId: a.assetId,
+          imageWidth: a.imageWidth,
+          imageHeight: a.imageHeight,
+          pinCoordinates: a.pinCoordinates,
+        }));
+
+        /* ── Create smart placement engine ──────────────────────── */
+        placementEngineRef.current = new SmartPlacementEngine(ROBOTICS_BREADBOARD_LAYOUT);
+
+        /* ── Auto-register board in pin assignment store ─────────── */
+        usePinAssignmentStore.getState().setBoard('board_1', 'esp32_devkit_v1');
 
         /* ── Resize observer ────────────────────────────────────── */
         const ro = new ResizeObserver((entries) => {
@@ -333,6 +492,25 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
         }
 
         setStatus('Simulator ready — drag components from the palette');
+
+        /* ── Auto-fit camera to show all components ────────────── */
+        // Small delay to let the first render frame establish sizes
+        setTimeout(() => {
+          if (destroyed) return;
+          const fitRect = container.getBoundingClientRect();
+          const cam = fitCameraToContent(
+            runtime,
+            componentAssetsRef.current,
+            fitRect.width || 800,
+            fitRect.height || 600,
+            50,
+          );
+          cameraRef.current = cam;
+          if (adapter?.app?.stage) {
+            adapter.app.stage.scale.set(cam.zoom);
+            adapter.app.stage.position.set(cam.x, cam.y);
+          }
+        }, 200);
 
         // Store cleanup reference on the container element
         (container as any).__resizeObserver = ro; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -392,8 +570,13 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
-      // Middle button, Pan tool, or spacebar held
-      if (e.button === 1 || (e.button === 0 && activeTool === 'pan') || (e.button === 0 && spacebarRef.current)) {
+      // Middle button, Pan tool, spacebar held, or left-click on canvas background
+      if (
+        e.button === 1 ||
+        (e.button === 0 && activeTool === 'pan') ||
+        (e.button === 0 && spacebarRef.current) ||
+        (e.button === 0 && activeTool === 'select')
+      ) {
         panningRef.current = true;
         lastMouseRef.current = { x: e.clientX, y: e.clientY };
         e.preventDefault();
@@ -440,12 +623,30 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
   }, []);
 
   const handleFitView = useCallback(() => {
-    cameraRef.current = { x: 0, y: 0, zoom: 1 };
+    const runtime = runtimeRef.current;
     const adapter = adapterRef.current;
-    if (adapter?.app?.stage) {
-      adapter.app.stage.scale.set(1);
-      adapter.app.stage.position.set(0, 0);
+    const container = pixiContainerRef.current;
+    if (!adapter?.app?.stage || !container) {
+      // Fallback: reset to default
+      cameraRef.current = { x: 0, y: 0, zoom: 1 };
+      if (adapter?.app?.stage) {
+        adapter.app.stage.scale.set(1);
+        adapter.app.stage.position.set(0, 0);
+      }
+      return;
     }
+
+    const rect = container.getBoundingClientRect();
+    const cam = fitCameraToContent(
+      runtime,
+      componentAssetsRef.current,
+      rect.width || 800,
+      rect.height || 600,
+      50,
+    );
+    cameraRef.current = cam;
+    adapter.app.stage.scale.set(cam.zoom);
+    adapter.app.stage.position.set(cam.x, cam.y);
   }, []);
 
   /* ── Drag & drop from palette ───────────────────────────────────── */
@@ -463,27 +664,56 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
       const container = pixiContainerRef.current;
       if (!container) return;
 
-      const rect = container.getBoundingClientRect();
-      const cam = cameraRef.current;
-      const dropX = (e.clientX - rect.left - cam.x) / cam.zoom;
-      const dropY = (e.clientY - rect.top - cam.y) / cam.zoom;
-
       const objectId = `${assetId}_${++objectCounterRef.current}`;
 
       pushUndo(`Add ${assetId}`);
+
+      // ── Smart placement: auto-position below breadboard ──────────
+      const dims = COMPONENT_DIMENSIONS[assetId];
+      const imgW = dims?.w ?? 100;
+      const imgH = dims?.h ?? 100;
+      const compScale = dims?.defaultScale ?? 1.0;
+
+      let posX: number;
+      let posY: number;
+      const engine = placementEngineRef.current;
+      if (engine && !BOARD_ASSET_IDS.has(assetId) && assetId !== 'breadboard_830' && assetId !== 'breadboard_400' && assetId !== 'breadboard_mini') {
+        const pos = engine.placeByType(objectId, assetId, imgW, imgH, compScale);
+        posX = pos.x;
+        posY = pos.y;
+      } else {
+        // Boards and breadboards use raw drop coordinates
+        const rect = container.getBoundingClientRect();
+        const cam = cameraRef.current;
+        posX = (e.clientX - rect.left - cam.x) / cam.zoom;
+        posY = (e.clientY - rect.top - cam.y) / cam.zoom;
+      }
 
       try {
         runtimeRef.current.registerWorkspaceObjectModel({
           objectId,
           objectType: assetId,
-          positionX: Math.round(dropX),
-          positionY: Math.round(dropY),
+          positionX: Math.round(posX),
+          positionY: Math.round(posY),
           rotation: 0,
-          scale: 1.0,
+          scale: compScale,
           selected: false,
           locked: false,
           metadata: {},
         });
+
+        // If this is a breadboard, also register its breadboard visual
+        // (the scene renderer needs a BreadboardVisualModel to render the holes)
+        if (assetId === 'breadboard_830' || assetId === 'breadboard_400' || assetId === 'breadboard_mini') {
+          void import('@stemverse/runtime-engine').then((runtimeModule) => {
+            const { generateBreadboardVisual } = runtimeModule;
+            if (generateBreadboardVisual && runtimeRef.current) {
+              const visual = generateBreadboardVisual(objectId, assetId);
+              runtimeRef.current.registerBreadboardVisual?.(visual);
+            }
+          }).catch(() => { /* noop */ });
+        }
+
         addRecent(assetId);
         selectComponent(objectId);
         setStatus(`Added ${assetId}`);
@@ -506,8 +736,59 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
           pinAutoAssignPower(objectId);
           // Open the pin assignment panel
           pinSetPropertyPanelOpen(true);
-          setStatus(`Added ${catalog.displayName} — assign GPIO pins in the panel`);
+
+          // ── Auto-wire VCC/GND after placement ───────────────────
+          // Small delay to ensure the runtime has the object registered
+          setTimeout(() => {
+            const rt = runtimeRef.current;
+            if (!rt) return;
+            const store = usePinAssignmentStore.getState();
+            const autoAssignments = store.assignments.filter(
+              (a) => a.componentObjectId === objectId && a.isAutoAssigned,
+            );
+            for (const assignment of autoAssignments) {
+              const wireId = generateWireForAssignment(
+                assignment,
+                rt,
+                componentAssetsRef.current,
+                adapterRef.current?.sceneRenderer?.renderScaleMap,
+              );
+              if (wireId) {
+                usePinAssignmentStore.getState().setWireId(
+                  assignment.componentObjectId,
+                  assignment.componentPinName,
+                  wireId,
+                );
+              }
+            }
+            if (autoAssignments.length > 0) {
+              setStatus(`${catalog.displayName} placed — VCC/GND auto-wired. Assign GPIO pins →`);
+            }
+          }, 150);
+
+          setStatus(`${catalog.displayName} auto-placed — wiring power pins…`);
         }
+
+        // Auto-fit camera after each drop so everything is clearly visible
+        setTimeout(() => {
+          const fitContainer = pixiContainerRef.current;
+          const fitAdapter = adapterRef.current;
+          const fitRuntime = runtimeRef.current;
+          if (fitContainer && fitAdapter?.app?.stage && fitRuntime) {
+            const fitRect = fitContainer.getBoundingClientRect();
+            const cam = fitCameraToContent(
+              fitRuntime,
+              componentAssetsRef.current,
+              fitRect.width || 800,
+              fitRect.height || 600,
+              60,
+            );
+            cameraRef.current = cam;
+            fitAdapter.app.stage.scale.set(cam.zoom);
+            fitAdapter.app.stage.position.set(cam.x, cam.y);
+          }
+        }, 300);
+
       } catch (err) {
         setStatus(err instanceof Error ? err.message : 'Failed to add component');
       }
@@ -661,9 +942,23 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
       const runtime = runtimeRef.current;
       if (!runtime) return;
       pushUndo(`Delete ${id}`);
+
+      // Remove all wires for this component
+      const store = usePinAssignmentStore.getState();
+      const compAssignments = store.assignments.filter((a) => a.componentObjectId === id);
+      for (const a of compAssignments) {
+        if (a.wireId) {
+          removeWire(a.wireId, runtime);
+        }
+      }
+
       try {
         runtime.removeWorkspaceObject?.(id);
       } catch { /* noop */ }
+
+      // Remove from placement engine
+      placementEngineRef.current?.remove(id);
+
       // Also remove from pin assignment store
       pinRemoveComponent(id);
       clearSelection();
@@ -787,6 +1082,13 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
         return;
       }
 
+      // Alt key activates the magnifier lens
+      if (e.key === 'Alt') {
+        e.preventDefault();
+        setMagnifierEnabled(true);
+        return;
+      }
+
       // Tool shortcuts
       if (!e.ctrlKey && !e.metaKey) {
         switch (e.key.toLowerCase()) {
@@ -880,6 +1182,9 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
       if (e.key === ' ') {
         spacebarRef.current = false;
       }
+      if (e.key === 'Alt') {
+        setMagnifierEnabled(false);
+      }
     };
 
     window.addEventListener('keydown', handler);
@@ -913,15 +1218,15 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
 
       {/* Main workspace */}
       <div className="flex min-h-0 flex-1">
-        {/* Left: Component palette */}
-        <ComponentPalette onComponentDrag={handleComponentDrag} />
+        {/* Left: Component catalog */}
+        <ComponentCatalog />
 
         {/* Center: Pixi canvas */}
         <main className="relative flex-1 overflow-hidden">
           <div
             ref={pixiContainerRef}
             className="h-full w-full"
-            style={{ cursor: spacebarRef.current ? 'grab' : undefined }}
+            style={{ cursor: panningRef.current ? 'grabbing' : (spacebarRef.current || activeTool === 'pan') ? 'grab' : 'default' }}
             onDragOver={handleDragOver}
             onDrop={handleDrop}
             onWheel={handleWheel}
@@ -934,13 +1239,59 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
             aria-label="Simulator canvas"
           />
 
+          {/* Amazon-style magnifier lens — hold Alt to activate */}
+          <CanvasMagnifier containerRef={pixiContainerRef} enabled={magnifierEnabled} />
+
           {/* Pin inspector tooltip */}
           <PinInspector />
 
           {/* Phase 27B: Context menu */}
           <ContextMenu
             onDuplicate={handleDuplicate}
-            onDelete={handleDelete}
+            onDelete={(id) => {
+              const runtime = runtimeRef.current;
+              if (!runtime) { handleDelete(id); return; }
+
+              // Check if this ID is a wire (in the wire geometry registry)
+              const isWire = id.startsWith('auto_wire_') ||
+                runtime.getWireGeometries?.()?.some?.((g: any) => g.wireId === id); // eslint-disable-line @typescript-eslint/no-explicit-any
+              if (isWire) {
+                // Remove wire geometry and route from runtime
+                try { runtime.removeWireGeometry?.(id); } catch { /* noop */ }
+                try { runtime.removeWireRoute?.(id); } catch { /* noop */ }
+
+                // Also directly remove the wire renderer from the scene for instant visual feedback
+                const sceneRenderer = adapterRef.current?.sceneRenderer;
+                if (sceneRenderer?.wireMap) {
+                  const wr = sceneRenderer.wireMap.get(id);
+                  if (wr) {
+                    try {
+                      sceneRenderer.wireRenderer?.container?.removeChild(wr.container);
+                      wr.container.destroy({ children: true });
+                    } catch { /* noop */ }
+                    sceneRenderer.wireMap.delete(id);
+                  }
+                }
+
+                // Clear selection so the deleted wire isn't still "selected"
+                try {
+                  runtime.registerWorkspaceSelectionModel?.({
+                    selectionId: 'primary',
+                    selectedObjectIds: [],
+                  });
+                } catch { /* noop */ }
+
+                // Clean up pin assignment store
+                const store = usePinAssignmentStore.getState();
+                const assignment = store.assignments.find((a: any) => a.wireId === id); // eslint-disable-line @typescript-eslint/no-explicit-any
+                if (assignment) {
+                  store.setWireId(assignment.componentObjectId, assignment.componentPinName, null as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+                }
+                setStatus(`Deleted wire ${id}`);
+              } else {
+                handleDelete(id);
+              }
+            }}
             onRotate={(id, dir) => handleRotate(id, dir === 'cw' ? Math.PI / 2 : -Math.PI / 2)}
             onBringToFront={(id) => { /* z-order managed by render order */ setStatus(`Brought ${id} to front`); }}
             onSendToBack={(id) => { /* z-order managed by render order */ setStatus(`Sent ${id} to back`); }}
@@ -963,8 +1314,16 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
                   {simulationState}
                 </span>
               )}
+              {magnifierEnabled && (
+                <span className="rounded-full px-2 py-0.5 text-[10px] font-medium bg-primary/20 text-primary animate-pulse">
+                  🔍 Magnifier ON
+                </span>
+              )}
               <span className="text-[10px] text-muted">
                 Zoom: {Math.round(cameraRef.current.zoom * 100)}%
+              </span>
+              <span className="text-[9px] text-muted/50 hidden sm:inline">
+                Hold Alt to magnify
               </span>
             </div>
           </div>
@@ -988,17 +1347,108 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
           )}
         </main>
 
-        {/* Right: Pin Assignment panel */}
+        {/* Right: Property Panel + Pin Assignment panel */}
+        <div className="flex flex-col w-80 border-l border-border/30 overflow-hidden">
+          {/* Property panel — shows when a component is selected */}
+          <PropertyPanel
+            runtime={runtimeRef.current}
+            selectedObjectId={selectedId}
+            onDelete={handleDelete}
+            onDuplicate={handleDuplicate}
+            onRotate={(id, angle) => handleRotate(id, angle)}
+          />
         <PinAssignmentPanel
           runtime={runtimeRef.current}
           onDeleteComponent={(id) => {
             handleDelete(id);
           }}
-          onWireGenerated={() => {
-            // Wires are generated via the auto-wire system
-            setStatus('Wire connection updated');
+          onWireGenerated={(assignment: PinAssignment, _wireId: string) => { // eslint-disable-line @typescript-eslint/no-unused-vars
+            const runtime = runtimeRef.current;
+            if (!runtime) return;
+
+            // Remove old wire if it exists
+            if (assignment.wireId) {
+              removeWire(assignment.wireId, runtime);
+            }
+
+            const wireId = generateWireForAssignment(
+              assignment,
+              runtime,
+              componentAssetsRef.current,
+              adapterRef.current?.sceneRenderer?.renderScaleMap,
+            );
+            if (wireId) {
+              usePinAssignmentStore.getState().setWireId(
+                assignment.componentObjectId,
+                assignment.componentPinName,
+                wireId,
+              );
+              setStatus(`Wire: ${assignment.componentPinName} → ${assignment.boardPinName}`);
+            } else {
+              setStatus(`Could not route wire for ${assignment.componentPinName}`);
+            }
+          }}
+          onZoomToComponent={(objectId) => {
+            const runtime = runtimeRef.current;
+            const adapter = adapterRef.current;
+            const container = pixiContainerRef.current;
+            if (!runtime || !adapter?.app?.stage || !container) return;
+
+            const obj = runtime.getWorkspaceObjectModel?.(objectId);
+            if (!obj) return;
+
+            // Calculate rendered size of the component (matching scene renderer logic)
+            const asset = componentAssetsRef.current.find((a: any) => a.assetId === obj.objectType); // eslint-disable-line @typescript-eslint/no-explicit-any
+            let renderW: number, renderH: number;
+            // Reference breadboard width
+            let refBBWidth = 500;
+            const allObjs = runtime.getWorkspaceObjectModels?.() ?? [];
+            for (const o of allObjs) {
+              if ((o.objectType as string).startsWith('breadboard')) {
+                const bbW: Record<string, number> = { breadboard_830: 940, breadboard_400: 500, breadboard_mini: 320 };
+                refBBWidth = (bbW[o.objectType] || 940) * (o.scale || 1);
+                break;
+              }
+            }
+            if ((obj.objectType as string).startsWith('breadboard')) {
+              const bbD: Record<string, { w: number; h: number }> = { breadboard_830: { w: 940, h: 340 }, breadboard_400: { w: 500, h: 340 }, breadboard_mini: { w: 320, h: 170 } };
+              const d = bbD[obj.objectType] || { w: 940, h: 340 };
+              const localW = d.w * (obj.scale || 1);
+              const localH = d.h * (obj.scale || 1);
+              const isRotated = Math.abs(Math.sin(obj.rotation || 0)) > 0.5;
+              renderW = isRotated ? localH : localW;
+              renderH = isRotated ? localW : localH;
+            } else {
+              const ratio = SCENE_SCALE_RATIOS[obj.objectType];
+              const assetW = asset?.imageWidth || 100;
+              const assetH = asset?.imageHeight || 100;
+              if (ratio && refBBWidth > 0) {
+                const rs = (refBBWidth * ratio) / assetW;
+                renderW = assetW * rs;
+                renderH = assetH * rs;
+              } else {
+                renderW = assetW * (obj.scale || 1);
+                renderH = assetH * (obj.scale || 1);
+              }
+            }
+
+            // Center and zoom to show the component at ~2x for pin detail
+            const rect = container.getBoundingClientRect();
+            const canvasW = rect.width || 800;
+            const canvasH = rect.height || 600;
+            const padded = 80;
+            const zoom = Math.min((canvasW - padded) / renderW, (canvasH - padded) / renderH, 2.5);
+            const centerX = (obj.positionX || 0) + renderW / 2;
+            const centerY = (obj.positionY || 0) + renderH / 2;
+            const cam = { x: canvasW / 2 - centerX * zoom, y: canvasH / 2 - centerY * zoom, zoom: Math.max(0.5, zoom) };
+
+            cameraRef.current = cam;
+            adapter.app.stage.scale.set(cam.zoom);
+            adapter.app.stage.position.set(cam.x, cam.y);
+            setStatus(`Focused on ${obj.objectType}`);
           }}
         />
+        </div>{/* end right panel */}
       </div>
     </div>
   );

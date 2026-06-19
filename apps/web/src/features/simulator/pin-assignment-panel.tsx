@@ -12,6 +12,7 @@ import {
   Cable,
   Trash2,
   PlugZap,
+  Focus,
 } from 'lucide-react';
 import { useSimulatorStore } from './simulator-store';
 import { usePinAssignmentStore } from './pin-assignment-store';
@@ -123,14 +124,30 @@ function PinRow({
               }
             }}
             className="w-full rounded border border-border/50 bg-background/60 px-1.5 py-0.5 text-[10px] text-muted focus:outline-none focus:ring-1 focus:ring-primary/40 cursor-pointer hover:border-primary/40 transition-colors"
-            aria-label={`Select GPIO pin for ${pin.name}`}
+            aria-label={`Select pin for ${pin.name}`}
           >
-            <option value="">Select GPIO pin...</option>
-            {freePins.map((fp) => (
-              <option key={fp.name} value={fp.name}>
-                {fp.name} ({fp.signalType})
-              </option>
-            ))}
+            <option value="">{pin.signalType === 'PASSIVE' ? 'Select pin (GPIO or GND)...' : 'Select GPIO pin...'}</option>
+            {(() => {
+              const gpioPins = freePins.filter(fp => fp.signalType !== 'GND');
+              const gndPins = freePins.filter(fp => fp.signalType === 'GND');
+              return (
+                <>
+                  {gpioPins.map((fp) => (
+                    <option key={fp.name} value={fp.name}>
+                      {fp.name} ({fp.signalType})
+                    </option>
+                  ))}
+                  {gndPins.length > 0 && (
+                    <option disabled>── GND Pins ──</option>
+                  )}
+                  {gndPins.map((fp) => (
+                    <option key={fp.name} value={fp.name}>
+                      ⏚ {fp.name} (GND)
+                    </option>
+                  ))}
+                </>
+              );
+            })()}
           </select>
         )}
       </div>
@@ -158,11 +175,13 @@ function ComponentCard({
   onAssign,
   onUnassign,
   onRemove,
+  onZoomTo,
 }: {
   component: { objectId: string; objectType: string; displayName: string; pins: Array<{ name: string; signalType: string }> };
   onAssign: (componentId: string, pinName: string, boardPin: string) => void;
   onUnassign: (componentId: string, pinName: string) => void;
   onRemove: (objectId: string) => void;
+  onZoomTo?: (objectId: string) => void;
 }) {
   const assignments = usePinAssignmentStore((s) => s.assignments);
   const getFreeBoardPins = usePinAssignmentStore((s) => s.getFreeBoardPins);
@@ -202,6 +221,15 @@ function ComponentCard({
           }`}>
             {assignedCount}/{totalPins}
           </span>
+          <button
+            type="button"
+            onClick={() => onZoomTo?.(component.objectId)}
+            className="p-0.5 rounded text-muted hover:text-primary hover:bg-primary/10 transition-colors"
+            aria-label={`Zoom to ${component.displayName}`}
+            title="Zoom to component"
+          >
+            <Focus className="h-3 w-3" />
+          </button>
           <button
             type="button"
             onClick={() => onRemove(component.objectId)}
@@ -258,12 +286,14 @@ export interface PinAssignmentPanelProps {
   runtime: any; // eslint-disable-line @typescript-eslint/no-explicit-any
   onDeleteComponent: (id: string) => void;
   onWireGenerated: (assignment: PinAssignment, wireId: string) => void;
+  onZoomToComponent?: (objectId: string) => void;
 }
 
 export function PinAssignmentPanel({
   runtime: _runtime, // eslint-disable-line @typescript-eslint/no-unused-vars
   onDeleteComponent,
   onWireGenerated,
+  onZoomToComponent,
 }: PinAssignmentPanelProps) {
   const isPropertyPanelOpen = useSimulatorStore((s) => s.isPropertyPanelOpen);
   const setPropertyPanelOpen = useSimulatorStore((s) => s.setPropertyPanelOpen);
@@ -412,6 +442,7 @@ export function PinAssignmentPanel({
               onAssign={handleAssign}
               onUnassign={handleUnassign}
               onRemove={handleRemove}
+              onZoomTo={onZoomToComponent}
             />
           ))
         )}

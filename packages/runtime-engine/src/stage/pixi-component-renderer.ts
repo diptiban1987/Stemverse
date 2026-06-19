@@ -86,9 +86,15 @@ function resolveComponentTexture(svgDataUri: string): Texture | null {
 export async function preloadComponentTextures(assets: ComponentAssetDefinition[]): Promise<void> {
   if (typeof document === 'undefined') return;
   const promises: Promise<Texture | null>[] = [];
+  // Render at 3x resolution for crisp detail at all zoom levels
+  const TEXTURE_SCALE = 3;
   for (const asset of assets) {
     if (asset.textureSvgData && asset.textureSvgData.length > 0) {
-      promises.push(loadSvgTexture(asset.textureSvgData, asset.imageWidth, asset.imageHeight));
+      promises.push(loadSvgTexture(
+        asset.textureSvgData,
+        (asset.imageWidth || 200) * TEXTURE_SCALE,
+        (asset.imageHeight || 200) * TEXTURE_SCALE,
+      ));
     }
   }
   await Promise.all(promises);
@@ -788,6 +794,22 @@ export class PixiComponentRenderer {
         this.selectionGraphics.stroke({ width: 2, color: 0x60a5fa });
       }
 
+      // Delete button (red X) when selected
+      if (isSelected) {
+        const btnX = w + 4;
+        const btnY = -16;
+        const btnSize = 20;
+        this.selectionGraphics.circle(btnX, btnY, btnSize / 2);
+        this.selectionGraphics.fill({ color: 0xef4444, alpha: 0.9 });
+        // X lines
+        this.selectionGraphics.moveTo(btnX - 4, btnY - 4);
+        this.selectionGraphics.lineTo(btnX + 4, btnY + 4);
+        this.selectionGraphics.stroke({ width: 2.5, color: 0xffffff });
+        this.selectionGraphics.moveTo(btnX + 4, btnY - 4);
+        this.selectionGraphics.lineTo(btnX - 4, btnY + 4);
+        this.selectionGraphics.stroke({ width: 2.5, color: 0xffffff });
+      }
+
       // LED glow overlay in texture mode (energized state)
       if (def.componentType === 'LED') {
         const liveBrightness = activityViz?.brightness ?? (isEnergized ? 1.0 : 0);
@@ -808,14 +830,19 @@ export class PixiComponentRenderer {
     // Draw display name text (if document environment exists, cached to avoid memory leaks)
     if (typeof document !== 'undefined' && def.displayName) {
       if (!this.labelText) {
+        const label = def.displayName.length > 20
+          ? (def.displayName.split(' ')[0] || def.displayName.slice(0, 18) + '\u2026')
+          : def.displayName;
         this.labelText = new Text({
-          text: def.displayName,
-          style: { fontFamily: 'sans-serif', fontSize: 10, fill: 0xffffff }
+          text: label,
+          style: { fontFamily: 'Inter, sans-serif', fontSize: 10, fill: 0xe2e8f0, fontWeight: '600', dropShadow: { color: 0xffffff, blur: 2, distance: 0, alpha: 0.5 } }
         });
         this.container.addChild(this.labelText);
       }
-      this.labelText.x = 10;
-      this.labelText.y = h - 20;
+      // Position label above the component for clarity
+      this.labelText.x = w / 2;
+      this.labelText.y = -12;
+      this.labelText.anchor = { x: 0.5, y: 1 };
     }
 
     // Set position, rotation, scale
@@ -854,33 +881,53 @@ export class PixiComponentRenderer {
       const st = (pin.signalType || '').toUpperCase();
       if (st === 'POWER') color = 0xef4444;
       else if (st === 'GND') color = 0x60a5fa;
-      else if (st === 'DIGITAL') color = 0x34d399;
+      else if (st === 'DIGITAL' || st === 'PWM') color = 0x34d399;
       else if (st === 'ANALOG') color = 0xfbbf24;
       else if (st === 'RESET') color = 0xc084fc;
 
       const isLeftPin = pin.pixelX < centerX;
 
+      // Draw a small colored circle at the pin position
+      const pinDot = new Graphics();
+      pinDot.circle(pin.pixelX, pin.pixelY, 4);
+      pinDot.fill({ color, alpha: 0.9 });
+      pinDot.circle(pin.pixelX, pin.pixelY, 6);
+      pinDot.stroke({ width: 1, color, alpha: 0.4 });
+      this.pinLabelContainer.addChild(pinDot);
+
+      // Draw a dark background behind the label for contrast
+      const labelBg = new Graphics();
       const txt = new Text({
         text: pin.name,
         style: {
           fontFamily: 'monospace',
-          fontSize: 8,
+          fontSize: 16,
           fill: color,
           fontWeight: 'bold',
+          letterSpacing: 0.5,
         },
       });
 
       if (isLeftPin) {
         // Left-side pin: label to the left of the pin
         txt.anchor = { x: 1, y: 0.5 };
-        txt.x = pin.pixelX - 10;
+        txt.x = pin.pixelX - 12;
+        // Background behind text
+        const bgW = txt.text.length * 10 + 10;
+        labelBg.roundRect(pin.pixelX - 14 - bgW, pin.pixelY - 10, bgW, 22, 4);
       } else {
         // Right-side pin: label to the right of the pin
         txt.anchor = { x: 0, y: 0.5 };
-        txt.x = pin.pixelX + 10;
+        txt.x = pin.pixelX + 12;
+        // Background behind text
+        const bgW = txt.text.length * 10 + 10;
+        labelBg.roundRect(pin.pixelX + 12, pin.pixelY - 10, bgW, 22, 4);
       }
       txt.y = pin.pixelY;
+      labelBg.fill({ color: 0xffffff, alpha: 0.85 });
+      labelBg.stroke({ width: 0.5, color: 0x999999, alpha: 0.4 });
 
+      this.pinLabelContainer.addChild(labelBg);
       this.pinLabelContainer.addChild(txt);
     }
 

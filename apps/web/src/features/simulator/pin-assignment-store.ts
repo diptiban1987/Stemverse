@@ -266,7 +266,7 @@ export const BOARD_ASSET_IDS = new Set(Object.keys(BOARD_PIN_MAP));
 /* ------------------------------------------------------------------ */
 
 const WIRE_COLOR_VCC = '#EF4444';   // Red
-const WIRE_COLOR_GND = '#1F2937';   // Dark/Black
+const WIRE_COLOR_GND = '#374151';   // Visible dark/black (contrasts with dark canvas)
 const SIGNAL_WIRE_COLORS = [
   '#3B82F6', // Blue
   '#22C55E', // Green
@@ -371,12 +371,13 @@ export const usePinAssignmentStore = create<PinAssignmentState>((set, get) => ({
 
       // Determine wire color
       const st = pin.signalType.toUpperCase();
+      const boardInfo = s.boardType ? BOARD_PIN_MAP[s.boardType] : null;
+      const isGndBoardPin = boardInfo?.gnd.some((p) => p.name === boardPinName) ?? false;
       let wireColor: string;
       if (st === 'POWER') wireColor = WIRE_COLOR_VCC;
       else if (st === 'GND') wireColor = WIRE_COLOR_GND;
-      else {
-        wireColor = SIGNAL_WIRE_COLORS[s.wireColorIndex % SIGNAL_WIRE_COLORS.length];
-      }
+      else if (isGndBoardPin) wireColor = WIRE_COLOR_GND;
+      else wireColor = SIGNAL_WIRE_COLORS[s.wireColorIndex % SIGNAL_WIRE_COLORS.length];
 
       const newAssignment: PinAssignment = {
         componentObjectId,
@@ -393,7 +394,7 @@ export const usePinAssignmentStore = create<PinAssignmentState>((set, get) => ({
 
       return {
         assignments: [...filtered, newAssignment],
-        wireColorIndex: st !== 'POWER' && st !== 'GND' ? s.wireColorIndex + 1 : s.wireColorIndex,
+        wireColorIndex: st !== 'POWER' && st !== 'GND' && !isGndBoardPin ? s.wireColorIndex + 1 : s.wireColorIndex,
       };
     }),
 
@@ -455,6 +456,13 @@ export const usePinAssignmentStore = create<PinAssignmentState>((set, get) => ({
       // For POWER/GND, return power/gnd pins
       if (st === 'POWER') return boardInfo.power.filter((p) => !usedPins.has(p.name));
       if (st === 'GND') return boardInfo.gnd.filter((p) => !usedPins.has(p.name));
+      // PASSIVE pins (LED anode/cathode, resistor leads) can connect to
+      // GPIO pins OR GND pins — user chooses which (e.g. cathode → GND)
+      if (st === 'PASSIVE') {
+        const gpioPins = boardInfo.gpio.filter((p) => !usedPins.has(p.name));
+        const gndPins = boardInfo.gnd.filter((p) => !usedPins.has(p.name));
+        return [...gpioPins, ...gndPins];
+      }
     }
 
     return allPins.filter((p) => !usedPins.has(p.name));

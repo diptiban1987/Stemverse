@@ -214,4 +214,81 @@ export class PixiBreadboardRenderer {
       }
     }
   }
+
+  // ── Phase 27C: Hole highlighting system ─────────────────────────────────────
+
+  private highlightGraphics: Graphics | null = null;
+  private highlightedHoles = new Map<string, number>(); // holeId → color
+
+  /** Highlight a specific hole with a colored ring (for snap preview, occupancy, etc.) */
+  public highlightHole(holeX: number, holeY: number, holeId: string, color: number = 0x22c55e, radius: number = 6): void {
+    if (!this.highlightGraphics) {
+      this.highlightGraphics = new Graphics();
+      this.container.addChild(this.highlightGraphics);
+    }
+    this.highlightedHoles.set(holeId, color);
+    // Draw a glowing ring around the hole
+    this.highlightGraphics.circle(holeX, holeY, radius);
+    this.highlightGraphics.stroke({ width: 2.5, color, alpha: 0.9 });
+    this.highlightGraphics.circle(holeX, holeY, radius + 2);
+    this.highlightGraphics.stroke({ width: 1, color, alpha: 0.3 });
+  }
+
+  /** Highlight multiple holes at once (for pin array snap preview) */
+  public highlightHoles(holes: Array<{ x: number; y: number; id: string }>, color: number = 0x22c55e): void {
+    this.clearHighlights();
+    for (const h of holes) {
+      this.highlightHole(h.x, h.y, h.id, color);
+    }
+  }
+
+  /** Show occupied holes with a dark fill (pins already inserted) */
+  public showOccupiedHoles(holes: Array<{ x: number; y: number; id: string }>): void {
+    if (!this.highlightGraphics) {
+      this.highlightGraphics = new Graphics();
+      this.container.addChild(this.highlightGraphics);
+    }
+    for (const h of holes) {
+      this.highlightGraphics.circle(h.x, h.y, 3.5);
+      this.highlightGraphics.fill({ color: 0x1e293b, alpha: 0.8 });
+    }
+  }
+
+  /** Show invalid placement preview (red highlights) */
+  public showInvalidPlacement(holes: Array<{ x: number; y: number; id: string }>): void {
+    for (const h of holes) {
+      this.highlightHole(h.x, h.y, h.id, 0xef4444, 7);
+    }
+  }
+
+  /** Clear all hole highlights */
+  public clearHighlights(): void {
+    if (this.highlightGraphics) {
+      this.highlightGraphics.clear();
+      this.highlightedHoles.clear();
+    }
+  }
+
+  /** Hover highlight for a single hole (wire tool) */
+  public hoverHole(holeX: number, holeY: number): void {
+    if (!this.highlightGraphics) {
+      this.highlightGraphics = new Graphics();
+      this.container.addChild(this.highlightGraphics);
+    }
+    this.highlightGraphics.clear();
+    // Bright cyan glow
+    this.highlightGraphics.circle(holeX, holeY, 7);
+    this.highlightGraphics.fill({ color: 0x06b6d4, alpha: 0.25 });
+    this.highlightGraphics.circle(holeX, holeY, 5);
+    this.highlightGraphics.stroke({ width: 2, color: 0x06b6d4, alpha: 0.9 });
+  }
+
+  public destroy(): void {
+    if (this.highlightGraphics) {
+      this.highlightGraphics.destroy();
+      this.highlightGraphics = null;
+    }
+    this.highlightedHoles.clear();
+    this.container.destroy({ children: true });
+  }
 }

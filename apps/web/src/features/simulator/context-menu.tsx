@@ -136,6 +136,7 @@ export function ContextMenu({
   if (!contextMenu) return null;
 
   const { targetId } = contextMenu;
+  const isWire = contextMenu.targetType === 'wire';
 
   /* ---- action wrapper ---------------------------------------------- */
   function act(fn: (id: string) => void) {
@@ -150,72 +151,87 @@ export function ContextMenu({
       className="fixed z-50 min-w-[200px] bg-card border border-border/50 rounded-lg shadow-2xl p-1.5 backdrop-blur-sm animate-in fade-in zoom-in-95 duration-100"
       style={{ left: pos.x, top: pos.y }}
     >
-      {/* Duplicate */}
-      <MenuItem
-        icon={<Copy className="h-4 w-4 opacity-70" />}
-        label="Duplicate"
-        shortcut="Ctrl+D"
-        onClick={() => act(onDuplicate)}
-      />
+      {/* Wire-specific menu */}
+      {isWire && (
+        <MenuItem
+          icon={<Trash2 className="h-4 w-4 opacity-70" />}
+          label="Delete Wire"
+          shortcut="Del"
+          onClick={() => act(onDelete)}
+        />
+      )}
 
-      {/* Delete */}
-      <MenuItem
-        icon={<Trash2 className="h-4 w-4 opacity-70" />}
-        label="Delete"
-        shortcut="Del"
-        onClick={() => act(onDelete)}
-      />
+      {/* Component menu */}
+      {!isWire && (
+        <>
+          {/* Duplicate */}
+          <MenuItem
+            icon={<Copy className="h-4 w-4 opacity-70" />}
+            label="Duplicate"
+            shortcut="Ctrl+D"
+            onClick={() => act(onDuplicate)}
+          />
 
-      <Separator />
+          {/* Delete */}
+          <MenuItem
+            icon={<Trash2 className="h-4 w-4 opacity-70" />}
+            label="Delete"
+            shortcut="Del"
+            onClick={() => act(onDelete)}
+          />
 
-      {/* Rotate CW */}
-      <MenuItem
-        icon={<RotateCw className="h-4 w-4 opacity-70" />}
-        label="Rotate CW"
-        shortcut="R"
-        onClick={() => { onRotate(targetId, 'cw'); close(); }}
-      />
+          <Separator />
 
-      {/* Rotate CCW */}
-      <MenuItem
-        icon={<RotateCcw className="h-4 w-4 opacity-70" />}
-        label="Rotate CCW"
-        shortcut="Shift+R"
-        onClick={() => { onRotate(targetId, 'ccw'); close(); }}
-      />
+          {/* Rotate CW */}
+          <MenuItem
+            icon={<RotateCw className="h-4 w-4 opacity-70" />}
+            label="Rotate CW"
+            shortcut="R"
+            onClick={() => { onRotate(targetId, 'cw'); close(); }}
+          />
 
-      <Separator />
+          {/* Rotate CCW */}
+          <MenuItem
+            icon={<RotateCcw className="h-4 w-4 opacity-70" />}
+            label="Rotate CCW"
+            shortcut="Shift+R"
+            onClick={() => { onRotate(targetId, 'ccw'); close(); }}
+          />
 
-      {/* Bring to Front */}
-      <MenuItem
-        icon={<ArrowUp className="h-4 w-4 opacity-70" />}
-        label="Bring to Front"
-        onClick={() => act(onBringToFront)}
-      />
+          <Separator />
 
-      {/* Send to Back */}
-      <MenuItem
-        icon={<ArrowDown className="h-4 w-4 opacity-70" />}
-        label="Send to Back"
-        onClick={() => act(onSendToBack)}
-      />
+          {/* Bring to Front */}
+          <MenuItem
+            icon={<ArrowUp className="h-4 w-4 opacity-70" />}
+            label="Bring to Front"
+            onClick={() => act(onBringToFront)}
+          />
 
-      <Separator />
+          {/* Send to Back */}
+          <MenuItem
+            icon={<ArrowDown className="h-4 w-4 opacity-70" />}
+            label="Send to Back"
+            onClick={() => act(onSendToBack)}
+          />
 
-      {/* Inspect */}
-      <MenuItem
-        icon={<Info className="h-4 w-4 opacity-70" />}
-        label="Inspect"
-        shortcut="I"
-        onClick={() => act(onInspect)}
-      />
+          <Separator />
 
-      {/* Disconnect Wires */}
-      <MenuItem
-        icon={<Unplug className="h-4 w-4 opacity-70" />}
-        label="Disconnect Wires"
-        onClick={() => act(onDisconnectWires)}
-      />
+          {/* Inspect */}
+          <MenuItem
+            icon={<Info className="h-4 w-4 opacity-70" />}
+            label="Inspect"
+            shortcut="I"
+            onClick={() => act(onInspect)}
+          />
+
+          {/* Disconnect Wires */}
+          <MenuItem
+            icon={<Unplug className="h-4 w-4 opacity-70" />}
+            label="Disconnect Wires"
+            onClick={() => act(onDisconnectWires)}
+          />
+        </>
+      )}
     </div>
   );
 }

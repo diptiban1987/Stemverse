@@ -42,22 +42,17 @@ interface WireRuntime {
     routeLength: number;
   }) => void;
   removeWireGeometry?: (wireId: string) => void;
-  getStageSnapshot?: () => {
-    targets?: Array<{
-      objectId: string;
-      objectType: string;
-      positionX: number;
-      positionY: number;
-      scale?: number;
-    }>;
-    children?: Array<{
-      objectId: string;
-      objectType: string;
-      positionX: number;
-      positionY: number;
-      scale?: number;
-    }>;
-  };
+  /**
+   * Returns all workspace objects registered on the runtime.
+   * Each object has objectId, objectType, positionX, positionY, scale, etc.
+   */
+  getWorkspaceObjectModels?: () => Array<{
+    objectId: string;
+    objectType: string;
+    positionX: number;
+    positionY: number;
+    scale?: number;
+  }>;
 }
 
 /* ------------------------------------------------------------------ */
@@ -78,9 +73,9 @@ function resolvePinWorldPosition(
   }>,
   renderScaleMap?: Map<string, number>,
 ): WireEndpoint | null {
-  const snapshot = runtime.getStageSnapshot?.();
-  const targets = snapshot?.targets ?? snapshot?.children ?? [];
-  const obj = targets.find((t) => t.objectId === objectId);
+  // Use getWorkspaceObjectModels — the correct API for workspace objects
+  const objects = runtime.getWorkspaceObjectModels?.() ?? [];
+  const obj = objects.find((t) => t.objectId === objectId);
   if (!obj) return null;
 
   const asset = componentAssets.find((a) => a.assetId === obj.objectType);

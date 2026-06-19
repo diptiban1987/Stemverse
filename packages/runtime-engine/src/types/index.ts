@@ -736,6 +736,32 @@ export interface StageSyncState {
   workspaceTools?: WorkspaceToolModel[];
   pinInspectors?: PinInspectorModel[];
   connectionWarnings?: ConnectionWarningModel[];
+
+  // Phase 28B: Live Circuit ↔ Blockly Synchronization
+  circuitGraphSnapshot?: CircuitGraphSnapshot;
+  gpioOwnershipSnapshot?: GpioOwnershipSnapshot;
+  circuitSyncSnapshot?: CircuitSyncSnapshot;
+  projectHealth?: ProjectHealthModel;
+
+  // Phase 29A: Circuit Diagnostics & Learning Assistant
+  circuitDiagnosticSnapshot?: CircuitDiagnosticSnapshot;
+
+  // Phase 29B: Auto-Wiring Assistant & Guided Circuit Builder
+  autoWireSnapshot?: AutoWireSnapshot;
+  componentKnowledgeSnapshot?: ComponentKnowledgeSnapshot;
+  circuitWizardSnapshot?: CircuitWizardSnapshot;
+
+  // Phase 30A: Project Library, Save/Load & Versioning
+  projectManagementSnapshot?: ProjectManagementSnapshot;
+
+  // Phase 30B: Project Sharing, Classrooms & Collaboration
+  classroomSnapshot?: ClassroomSnapshot;
+  projectSharingSnapshot?: ProjectSharingSnapshot;
+  assignmentSnapshot?: AssignmentSnapshot;
+  collaborationSnapshot?: CollaborationSnapshot;
+
+  // Phase 31A: Professional Simulator UX/UI Completion
+  simulatorUXSnapshot?: SimulatorUXSnapshot;
 }
 
 
@@ -5353,3 +5379,1667 @@ export interface SimulatorUISnapshot {
   connectionWarnings: ConnectionWarningModel[];
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// Phase 28B: Circuit Graph & Blockly Synchronization Types
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/** Node type within the circuit graph */
+export type CircuitNodeType = 'COMPONENT_PIN' | 'BREADBOARD_HOLE' | 'POWER_RAIL' | 'GROUND_RAIL' | 'BOARD_PIN';
+
+/** Edge type connecting two circuit graph nodes */
+export type CircuitEdgeType = 'WIRE' | 'BREADBOARD_ROW' | 'BREADBOARD_RAIL' | 'INTERNAL' | 'VIRTUAL';
+
+/** State of a circuit net */
+export type CircuitNetState = 'ACTIVE' | 'INACTIVE' | 'FLOATING' | 'CONFLICT' | 'SHORT_CIRCUIT';
+
+/** Direction of GPIO usage */
+export type GpioDirection = 'INPUT' | 'OUTPUT' | 'BIDIRECTIONAL' | 'POWER' | 'GROUND' | 'UNASSIGNED';
+
+/** Severity of a GPIO conflict */
+export type GpioConflictSeverity = 'WARNING' | 'ERROR' | 'CRITICAL';
+
+/** Type of GPIO conflict */
+export type GpioConflictType = 'DUPLICATE_OUTPUT' | 'INVALID_WIRING' | 'SHORT_CIRCUIT' | 'MULTIPLE_DRIVERS' | 'INPUT_ONLY_AS_OUTPUT' | 'RESERVED_PIN';
+
+/** State of circuit synchronization */
+export type CircuitSyncState = 'IDLE' | 'SYNCING' | 'SYNCHRONIZED' | 'DIRTY' | 'ERROR';
+
+/** A single node in the circuit graph (component pin, hole, rail) */
+export interface CircuitNodeModel {
+  nodeId: string;
+  nodeType: CircuitNodeType;
+  componentId: string;
+  pinName: string;
+  gpioNumber: number;
+  voltage: number;
+  netId: string;
+  positionX: number;
+  positionY: number;
+  futureCircuitNodeHints: Record<string, unknown>;
+}
+
+/** An edge connecting two nodes in the circuit graph */
+export interface CircuitEdgeModel {
+  edgeId: string;
+  sourceNodeId: string;
+  targetNodeId: string;
+  edgeType: CircuitEdgeType;
+  wireId: string;
+  resistance: number;
+  futureCircuitEdgeHints: Record<string, unknown>;
+}
+
+/** A set of connected nodes forming an electrical net */
+export interface CircuitNetModel {
+  netId: string;
+  nodeIds: string[];
+  netState: CircuitNetState;
+  netVoltage: number;
+  isPowerNet: boolean;
+  isGroundNet: boolean;
+  netLabel: string;
+  futureCircuitNetHints: Record<string, unknown>;
+}
+
+/** Complete circuit graph model */
+export interface CircuitGraphModel {
+  graphId: string;
+  nodes: CircuitNodeModel[];
+  edges: CircuitEdgeModel[];
+  nets: CircuitNetModel[];
+  componentIds: string[];
+  wireIds: string[];
+  breadboardIds: string[];
+  boardId: string;
+  version: number;
+  futureCircuitGraphHints: Record<string, unknown>;
+}
+
+/** Maps circuit graph nodes to Blockly block IDs and GPIO numbers */
+export interface CircuitMappingModel {
+  mappingId: string;
+  graphId: string;
+  componentId: string;
+  componentType: string;
+  pinName: string;
+  gpioNumber: number;
+  blocklyBlockId: string;
+  signalType: string;
+  futureCircuitMappingHints: Record<string, unknown>;
+}
+
+/** Snapshot of all circuit graph state */
+export interface CircuitGraphSnapshot {
+  nodes: CircuitNodeModel[];
+  edges: CircuitEdgeModel[];
+  nets: CircuitNetModel[];
+  graphs: CircuitGraphModel[];
+  mappings: CircuitMappingModel[];
+}
+
+/** GPIO ownership record — who owns this GPIO */
+export interface GpioOwnershipModel {
+  ownershipId: string;
+  gpioNumber: number;
+  componentId: string;
+  componentType: string;
+  pinName: string;
+  direction: GpioDirection;
+  claimedAt: number;
+  futureGpioOwnershipHints: Record<string, unknown>;
+}
+
+/** GPIO conflict record */
+export interface GpioConflictModel {
+  conflictId: string;
+  gpioNumber: number;
+  conflictType: GpioConflictType;
+  severity: GpioConflictSeverity;
+  ownershipIds: string[];
+  description: string;
+  futureGpioConflictHints: Record<string, unknown>;
+}
+
+/** Snapshot of all GPIO ownership state */
+export interface GpioOwnershipSnapshot {
+  ownerships: GpioOwnershipModel[];
+  conflicts: GpioConflictModel[];
+}
+
+/** Circuit sync orchestration state */
+export interface CircuitSyncModel {
+  syncId: string;
+  syncState: CircuitSyncState;
+  graphVersion: number;
+  lastSyncTick: number;
+  isDirty: boolean;
+  lastGraphId: string;
+  lastProgramId: string;
+  errorLog: string[];
+  futureCircuitSyncHints: Record<string, unknown>;
+}
+
+/** Snapshot of circuit sync state */
+export interface CircuitSyncSnapshot {
+  syncModels: CircuitSyncModel[];
+}
+
+/** Project health assessment */
+export interface ProjectHealthModel {
+  healthId: string;
+  readinessPercent: number;
+  errorCount: number;
+  warningCount: number;
+  disconnectedComponents: string[];
+  unmappedGpios: number[];
+  unusedComponents: string[];
+  totalComponents: number;
+  totalWires: number;
+  totalNets: number;
+  healthGrade: string;
+  futureProjectHealthHints: Record<string, unknown>;
+}
+
+// ─── Phase 29A: Circuit Diagnostics & Learning Assistant ──────────────────
+
+export type DiagnosticSeverity = 'ERROR' | 'WARNING' | 'SUGGESTION' | 'INFO';
+export type DiagnosticCategory = 'ELECTRICAL' | 'BLOCKLY' | 'RUNTIME' | 'HARDWARE';
+export type HighlightColor = 'RED' | 'YELLOW' | 'BLUE' | 'GREEN';
+
+/** A single circuit issue detected by the diagnostics engine */
+export interface CircuitIssueModel {
+  issueId: string;
+  code: string;
+  severity: DiagnosticSeverity;
+  category: DiagnosticCategory;
+  componentId: string;
+  pinName: string;
+  gpioNumber: number;
+  wireId: string;
+  netId: string;
+  title: string;
+  message: string;
+  whyWrong: string;
+  howToFix: string;
+  expectedOutcome: string;
+  highlightColor: HighlightColor;
+  affectedIds: string[];
+  futureIssueHints: Record<string, unknown>;
+}
+
+/** A fix recommendation linked to an issue */
+export interface CircuitRecommendationModel {
+  recommendationId: string;
+  issueId: string;
+  title: string;
+  description: string;
+  actionType: string;
+  targetComponentId: string;
+  targetPinName: string;
+  targetGpioNumber: number;
+  isAutoFixable: boolean;
+  fixPayload: Record<string, unknown>;
+  futureRecommendationHints: Record<string, unknown>;
+}
+
+/** An educational hint for learners */
+export interface LearningHintModel {
+  hintId: string;
+  componentType: string;
+  issueCode: string;
+  difficulty: string;
+  title: string;
+  explanation: string;
+  example: string;
+  relatedConcept: string;
+  futureHintHints: Record<string, unknown>;
+}
+
+/** Project readiness assessment across 4 dimensions */
+export interface ProjectReadinessModel {
+  readinessId: string;
+  hardwarePercent: number;
+  codePercent: number;
+  electricalPercent: number;
+  simulationPercent: number;
+  overallPercent: number;
+  criticalIssues: string[];
+  notReadyReasons: string[];
+  isReady: boolean;
+  futureReadinessHints: Record<string, unknown>;
+}
+
+/** A Blockly-specific diagnostic issue */
+export interface BlocklyDiagnosticModel {
+  diagnosticId: string;
+  code: string;
+  severity: DiagnosticSeverity;
+  blockId: string;
+  variableName: string;
+  gpioNumber: number;
+  title: string;
+  message: string;
+  howToFix: string;
+  futureDiagnosticHints: Record<string, unknown>;
+}
+
+/** Complete diagnostics snapshot */
+export interface CircuitDiagnosticSnapshot {
+  issues: CircuitIssueModel[];
+  recommendations: CircuitRecommendationModel[];
+  learningHints: LearningHintModel[];
+  blocklyDiagnostics: BlocklyDiagnosticModel[];
+  projectReadiness: ProjectReadinessModel | null;
+  healthScore: number;
+  healthGrade: string;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Phase 29B: Auto-Wiring Assistant & Guided Circuit Builder
+// ═══════════════════════════════════════════════════════════════
+
+/** Signal type for wire color assignment */
+export type WireSignalType =
+  | 'VCC'
+  | 'GND'
+  | 'DIGITAL'
+  | 'ANALOG'
+  | 'I2C'
+  | 'PWM'
+  | 'DATA'
+  | 'SPI'
+  | 'UART';
+
+/** Wire color assignment */
+export type WireColor =
+  | 'RED'
+  | 'BLACK'
+  | 'BLUE'
+  | 'GREEN'
+  | 'YELLOW'
+  | 'ORANGE'
+  | 'WHITE'
+  | 'PURPLE';
+
+/** Guided build step action type */
+export type GuidedBuildAction =
+  | 'PLACE_COMPONENT'
+  | 'WIRE_CONNECTION'
+  | 'CONFIGURE_GPIO'
+  | 'GENERATE_CODE'
+  | 'VALIDATE_CIRCUIT';
+
+/** Circuit template difficulty level */
+export type TemplateDifficulty =
+  | 'BEGINNER'
+  | 'INTERMEDIATE'
+  | 'ADVANCED';
+
+/** Circuit template category */
+export type TemplateCategory =
+  | 'BEGINNER'
+  | 'INTERMEDIATE'
+  | 'ADVANCED'
+  | 'ROBOTICS'
+  | 'IOT'
+  | 'DISPLAYS'
+  | 'SENSORS';
+
+/** A single auto-wire suggestion with source/target pins, color, signal type */
+export interface AutoWireSuggestionModel {
+  suggestionId: string;
+  componentId: string;
+  componentType: string;
+  sourcePinName: string;
+  targetPinName: string;
+  targetRail: string;
+  gpioNumber: number;
+  signalType: WireSignalType;
+  wireColor: WireColor;
+  explanation: string;
+  priority: number;
+  isRequired: boolean;
+  futureWireHints: Record<string, unknown>;
+}
+
+/** Wiring rule for a component type with pin→GPIO mappings */
+export interface AutoWireRuleModel {
+  ruleId: string;
+  componentType: string;
+  pinMappings: Array<{
+    pinName: string;
+    signalType: WireSignalType;
+    wireColor: WireColor;
+    defaultGpio: number;
+    targetRail: string;
+    description: string;
+  }>;
+  placementRow: number;
+  placementCol: number;
+  placementSpan: number;
+  futureRuleHints: Record<string, unknown>;
+}
+
+/** Complete wiring plan with components, wire suggestions, positions */
+export interface AutoWirePlanModel {
+  planId: string;
+  templateId: string;
+  components: Array<{
+    componentId: string;
+    componentType: string;
+    placementRow: number;
+    placementCol: number;
+  }>;
+  wireSuggestions: AutoWireSuggestionModel[];
+  validationStatus: 'PENDING' | 'VALID' | 'INVALID';
+  validationErrors: string[];
+  totalWires: number;
+  completedWires: number;
+  futurePlanHints: Record<string, unknown>;
+}
+
+/** Snapshot of all auto-wire state */
+export interface AutoWireSnapshot {
+  suggestions: AutoWireSuggestionModel[];
+  rules: AutoWireRuleModel[];
+  plans: AutoWirePlanModel[];
+}
+
+/** Per-component knowledge entry */
+export interface ComponentKnowledgeModel {
+  knowledgeId: string;
+  componentType: string;
+  displayName: string;
+  category: string;
+  requiredPins: string[];
+  optionalPins: string[];
+  powerPins: string[];
+  communicationPins: string[];
+  recommendedGpios: Record<string, number>;
+  blocklyTemplateId: string;
+  placementWidth: number;
+  placementHeight: number;
+  educationalNotes: string;
+  wiringTips: string[];
+  commonMistakes: string[];
+  futureKnowledgeHints: Record<string, unknown>;
+}
+
+/** Snapshot of all component knowledge entries */
+export interface ComponentKnowledgeSnapshot {
+  entries: ComponentKnowledgeModel[];
+}
+
+/** Circuit template definition */
+export interface CircuitTemplateModel {
+  templateId: string;
+  name: string;
+  description: string;
+  difficulty: TemplateDifficulty;
+  category: TemplateCategory;
+  components: Array<{
+    componentType: string;
+    quantity: number;
+    label: string;
+  }>;
+  wiringPlan: Array<{
+    sourceComponent: string;
+    sourcePin: string;
+    targetComponent: string;
+    targetPin: string;
+    wireColor: WireColor;
+    signalType: WireSignalType;
+  }>;
+  blocklyProgramId: string;
+  estimatedTimeMinutes: number;
+  prerequisiteTemplates: string[];
+  futureTemplateHints: Record<string, unknown>;
+}
+
+/** Individual guided build step */
+export interface GuidedBuildStepModel {
+  stepId: string;
+  buildId: string;
+  stepNumber: number;
+  action: GuidedBuildAction;
+  targetComponentId: string;
+  targetComponentType: string;
+  targetPinName: string;
+  instruction: string;
+  explanation: string;
+  isCompleted: boolean;
+  isOptional: boolean;
+  futureStepHints: Record<string, unknown>;
+}
+
+/** Ordered sequence of guided steps with progress */
+export interface GuidedBuildModel {
+  buildId: string;
+  templateId: string;
+  templateName: string;
+  steps: GuidedBuildStepModel[];
+  currentStepIndex: number;
+  totalSteps: number;
+  completedSteps: number;
+  isComplete: boolean;
+  startedAt: number;
+  futureBuildHints: Record<string, unknown>;
+}
+
+/** Learning progress tracking */
+export interface LearningProgressModel {
+  progressId: string;
+  userId: string;
+  circuitsBuilt: number;
+  circuitsCompleted: number;
+  mistakesCorrected: number;
+  guidedStepsCompleted: number;
+  healthScores: number[];
+  averageHealthScore: number;
+  templatesCompleted: string[];
+  totalTimeMinutes: number;
+  lastActivityAt: number;
+  futureProgressHints: Record<string, unknown>;
+}
+
+/** Snapshot of circuit wizard state */
+export interface CircuitWizardSnapshot {
+  templates: CircuitTemplateModel[];
+  guidedBuilds: GuidedBuildModel[];
+  steps: GuidedBuildStepModel[];
+  learningProgress: LearningProgressModel[];
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Phase 30A: Project Library, Save/Load, Versioning & Template Management
+// ═══════════════════════════════════════════════════════════════
+
+// ─── Enums ───────────────────────────────────────────────────
+
+/** Project lifecycle status */
+export type ProjectStatus = 'ACTIVE' | 'ARCHIVED' | 'DELETED' | 'TEMPLATE';
+
+/** Fields available for sorting project lists */
+export type ProjectSortField = 'NAME' | 'CREATED' | 'MODIFIED' | 'HEALTH_SCORE' | 'COMPLEXITY';
+
+/** Type of action that created a project version */
+export type VersionAction = 'SAVE' | 'AUTO_SAVE' | 'CHECKPOINT' | 'ROLLBACK' | 'IMPORT';
+
+/** Supported export file formats */
+export type ExportFormat = 'STEMVERSE' | 'JSON';
+
+/** Permission level for shared projects */
+export type SharePermission = 'VIEW' | 'DUPLICATE' | 'EDIT';
+
+/** Target area for thumbnail generation */
+export type ThumbnailTarget = 'WORKSPACE' | 'CIRCUIT' | 'BLOCKLY';
+
+// ─── Project Library Models ─────────────────────────────────
+
+/** Core project metadata and lifecycle state */
+export interface ProjectModel {
+  projectId: string;
+  name: string;
+  description: string;
+  status: ProjectStatus;
+  folderId: string;
+  tags: string[];
+  createdAt: number;
+  modifiedAt: number;
+  isFavorite: boolean;
+  isPinned: boolean;
+  complexity: number;
+  healthScore: number;
+  thumbnailMetadata: string;
+  futureProjectHints: Record<string, unknown>;
+}
+
+/** Folder for organizing projects into hierarchies */
+export interface ProjectFolderModel {
+  folderId: string;
+  name: string;
+  parentFolderId: string;
+  projectIds: string[];
+  createdAt: number;
+  color: string;
+  futureFolderHints: Record<string, unknown>;
+}
+
+/** Tag for labeling and filtering projects */
+export interface ProjectTagModel {
+  tagId: string;
+  name: string;
+  color: string;
+  projectIds: string[];
+  futureTagHints: Record<string, unknown>;
+}
+
+/** Extended project metadata with counts and metrics */
+export interface ProjectMetadataModel {
+  metadataId: string;
+  projectId: string;
+  componentCount: number;
+  wireCount: number;
+  sensorCount: number;
+  blocklyBlockCount: number;
+  simulationRuns: number;
+  lastHealthScore: number;
+  lastSimulatedAt: number;
+  estimatedComplexity: number;
+  futureMetadataHints: Record<string, unknown>;
+}
+
+// ─── Project Versioning Models ──────────────────────────────
+
+/** A saved point-in-time snapshot of a project */
+export interface ProjectVersionModel {
+  versionId: string;
+  projectId: string;
+  versionNumber: number;
+  label: string;
+  action: VersionAction;
+  snapshot: string;
+  changeSummary: string;
+  createdAt: number;
+  sizeBytes: number;
+  futureVersionHints: Record<string, unknown>;
+}
+
+/** A single change within a version delta */
+export interface ProjectChangeModel {
+  changeId: string;
+  versionId: string;
+  entityType: string;
+  entityId: string;
+  changeType: 'ADD' | 'MODIFY' | 'DELETE';
+  previousValue: string;
+  newValue: string;
+  futureChangeHints: Record<string, unknown>;
+}
+
+// ─── Auto-Save Models ───────────────────────────────────────
+
+/** An auto-saved project snapshot for crash recovery */
+export interface AutoSaveEntryModel {
+  entryId: string;
+  projectId: string;
+  snapshot: string;
+  savedAt: number;
+  isDirty: boolean;
+  recoveryKey: string;
+  sizeBytes: number;
+  futureAutoSaveHints: Record<string, unknown>;
+}
+
+/** Configuration for the auto-save system */
+export interface AutoSaveConfigModel {
+  configId: string;
+  enabled: boolean;
+  intervalMs: number;
+  maxSnapshots: number;
+  debounceMs: number;
+  futureConfigHints: Record<string, unknown>;
+}
+
+// ─── Thumbnail & Statistics Models ──────────────────────────
+
+/** Metadata for a project thumbnail preview */
+export interface ProjectThumbnailModel {
+  thumbnailId: string;
+  projectId: string;
+  target: ThumbnailTarget;
+  dataUrl: string;
+  width: number;
+  height: number;
+  generatedAt: number;
+  futureThumbnailHints: Record<string, unknown>;
+}
+
+/** Aggregated statistics for a project */
+export interface ProjectStatisticsModel {
+  statisticsId: string;
+  projectId: string;
+  componentCount: number;
+  wireCount: number;
+  sensorCount: number;
+  runtimeCount: number;
+  healthScore: number;
+  simulationRuns: number;
+  lastModifiedAt: number;
+  complexity: number;
+  totalBuildTimeMinutes: number;
+  futureStatisticsHints: Record<string, unknown>;
+}
+
+// ─── Export/Import Models ───────────────────────────────────
+
+/** Record of a project export operation */
+export interface ProjectExportModel {
+  exportId: string;
+  projectId: string;
+  format: ExportFormat;
+  exportedAt: number;
+  version: string;
+  serializedData: string;
+  checksum: string;
+  futureExportHints: Record<string, unknown>;
+}
+
+/** Result of a project import operation */
+export interface ProjectImportResultModel {
+  importId: string;
+  success: boolean;
+  projectId: string;
+  validationErrors: string[];
+  warnings: string[];
+  importedAt: number;
+  futureImportHints: Record<string, unknown>;
+}
+
+// ─── Share Preparation Models ───────────────────────────────
+
+/** Metadata for sharing a project (no backend yet) */
+export interface ProjectShareModel {
+  shareId: string;
+  projectId: string;
+  slug: string;
+  permission: SharePermission;
+  sharedAt: number;
+  expiresAt: number;
+  futureShareHints: Record<string, unknown>;
+}
+
+// ─── Snapshots ──────────────────────────────────────────────
+
+/** Snapshot of the project library state */
+export interface ProjectLibrarySnapshot {
+  projects: ProjectModel[];
+  folders: ProjectFolderModel[];
+  tags: ProjectTagModel[];
+  metadata: ProjectMetadataModel[];
+}
+
+/** Snapshot of the project versioning state */
+export interface ProjectVersionSnapshot {
+  versions: ProjectVersionModel[];
+  changes: ProjectChangeModel[];
+}
+
+/** Snapshot of the auto-save state */
+export interface AutoSaveSnapshot {
+  entries: AutoSaveEntryModel[];
+  config: AutoSaveConfigModel[];
+}
+
+/** Snapshot of thumbnail metadata */
+export interface ProjectThumbnailSnapshot {
+  thumbnails: ProjectThumbnailModel[];
+}
+
+/** Snapshot of project statistics */
+export interface ProjectStatisticsSnapshot {
+  statistics: ProjectStatisticsModel[];
+}
+
+/** Combined snapshot for all project management state */
+export interface ProjectManagementSnapshot {
+  library: ProjectLibrarySnapshot;
+  versioning: ProjectVersionSnapshot;
+  autoSave: AutoSaveSnapshot;
+  thumbnails: ProjectThumbnailSnapshot;
+  statistics: ProjectStatisticsSnapshot;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Phase 30B: Project Sharing, Classrooms & Collaboration
+// ═══════════════════════════════════════════════════════════════
+
+// ─── Enum Types ─────────────────────────────────────────────────
+
+/** User role within the platform/classroom hierarchy */
+export type UserRole = 'OWNER' | 'TEACHER' | 'ASSISTANT' | 'STUDENT' | 'VIEWER';
+
+/** Classroom lifecycle status */
+export type ClassroomStatus = 'ACTIVE' | 'ARCHIVED' | 'DELETED';
+
+/** Project share visibility */
+export type ShareVisibility = 'PUBLIC' | 'PRIVATE' | 'CLASSROOM_ONLY';
+
+/** Project share access level */
+export type ShareAccessLevel = 'READ_ONLY' | 'EDITABLE' | 'TEMPLATE_SHARE';
+
+/** Assignment lifecycle status */
+export type AssignmentStatus = 'DRAFT' | 'PUBLISHED' | 'CLOSED' | 'ARCHIVED';
+
+/** Student submission lifecycle status */
+export type SubmissionStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'SUBMITTED' | 'GRADED' | 'RETURNED';
+
+/** Comment lifecycle status */
+export type CommentStatus = 'ACTIVE' | 'RESOLVED' | 'DELETED';
+
+/** Realtime collaboration role indicator */
+export type CollaborationRole = 'EDITING' | 'VIEWING' | 'IDLE';
+
+/** Template publishing workflow status */
+export type TemplatePublishStatus = 'DRAFT' | 'PUBLISHED' | 'FEATURED' | 'UNPUBLISHED';
+
+/** Fork origin type */
+export type ForkType = 'PROJECT' | 'TEMPLATE' | 'CLASSROOM';
+
+// ─── Classroom Models ───────────────────────────────────────────
+
+/** Represents a classroom workspace for collaborative learning */
+export interface ClassroomModel {
+  classroomId: string;
+  name: string;
+  description: string;
+  ownerId: string;
+  joinCode: string;
+  status: ClassroomStatus;
+  createdAt: number;
+  memberCount: number;
+  maxMembers: number;
+  subject: string;
+  grade: string;
+  futureClassroomHints: Record<string, unknown>;
+}
+
+/** Represents a member within a classroom */
+export interface ClassroomMemberModel {
+  memberId: string;
+  classroomId: string;
+  userId: string;
+  displayName: string;
+  role: UserRole;
+  joinedAt: number;
+  lastActiveAt: number;
+  status: string;
+  futureMemberHints: Record<string, unknown>;
+}
+
+/** Reference linking a classroom to an assignment */
+export interface ClassroomAssignmentModel {
+  refId: string;
+  classroomId: string;
+  assignmentId: string;
+  assignedAt: number;
+  dueAt: number;
+  futureAssignmentRefHints: Record<string, unknown>;
+}
+
+/** Represents a shared workspace within a classroom */
+export interface ClassroomWorkspaceModel {
+  workspaceId: string;
+  classroomId: string;
+  projectId: string;
+  ownerId: string;
+  visibility: ShareVisibility;
+  sharedWithRoles: UserRole[];
+  createdAt: number;
+  futureWorkspaceHints: Record<string, unknown>;
+}
+
+// ─── Sharing Models ─────────────────────────────────────────────
+
+/** Represents a shared project configuration */
+export interface SharedProjectModel {
+  shareId: string;
+  projectId: string;
+  ownerId: string;
+  visibility: ShareVisibility;
+  accessLevel: ShareAccessLevel;
+  sharedAt: number;
+  expiresAt: number;
+  allowForking: boolean;
+  allowComments: boolean;
+  futureShareHints: Record<string, unknown>;
+}
+
+/** Represents a user's permission on a shared project */
+export interface SharePermissionModel {
+  permissionId: string;
+  shareId: string;
+  userId: string;
+  role: UserRole;
+  grantedBy: string;
+  grantedAt: number;
+  futurePermissionHints: Record<string, unknown>;
+}
+
+/** Represents a shareable link for a project */
+export interface ShareLinkModel {
+  linkId: string;
+  shareId: string;
+  token: string;
+  createdBy: string;
+  createdAt: number;
+  expiresAt: number;
+  maxUses: number;
+  useCount: number;
+  isActive: boolean;
+  futureLinkHints: Record<string, unknown>;
+}
+
+/** Represents a collaborative workspace session for a shared project */
+export interface SharedWorkspaceModel {
+  workspaceId: string;
+  shareId: string;
+  projectId: string;
+  collaborators: string[];
+  isLocked: boolean;
+  lockedBy: string;
+  futureSharedWorkspaceHints: Record<string, unknown>;
+}
+
+// ─── Assignment Models ──────────────────────────────────────────
+
+/** Represents a teacher-created assignment */
+export interface AssignmentModel {
+  assignmentId: string;
+  classroomId: string;
+  title: string;
+  description: string;
+  templateProjectId: string;
+  createdBy: string;
+  status: AssignmentStatus;
+  createdAt: number;
+  dueAt: number;
+  maxScore: number;
+  rubric: string;
+  allowLateSubmission: boolean;
+  futureAssignmentHints: Record<string, unknown>;
+}
+
+/** Represents a student's submission for an assignment */
+export interface AssignmentSubmissionModel {
+  submissionId: string;
+  assignmentId: string;
+  studentId: string;
+  projectId: string;
+  submittedAt: number;
+  status: SubmissionStatus;
+  attemptNumber: number;
+  futureSubmissionHints: Record<string, unknown>;
+}
+
+/** Represents teacher feedback on a submission */
+export interface AssignmentFeedbackModel {
+  feedbackId: string;
+  submissionId: string;
+  teacherId: string;
+  content: string;
+  createdAt: number;
+  futureFeedbackHints: Record<string, unknown>;
+}
+
+/** Represents a grade assigned to a submission */
+export interface AssignmentGradeModel {
+  gradeId: string;
+  submissionId: string;
+  teacherId: string;
+  score: number;
+  maxScore: number;
+  gradedAt: number;
+  futureGradeHints: Record<string, unknown>;
+}
+
+// ─── Comment Models ─────────────────────────────────────────────
+
+/** Represents a single comment on a project */
+export interface CommentModel {
+  commentId: string;
+  threadId: string;
+  projectId: string;
+  authorId: string;
+  authorRole: UserRole;
+  content: string;
+  createdAt: number;
+  updatedAt: number;
+  status: CommentStatus;
+  isPinned: boolean;
+  futureCommentHints: Record<string, unknown>;
+}
+
+/** Represents a comment thread on a project */
+export interface CommentThreadModel {
+  threadId: string;
+  projectId: string;
+  title: string;
+  createdBy: string;
+  createdAt: number;
+  status: CommentStatus;
+  commentIds: string[];
+  futureThreadHints: Record<string, unknown>;
+}
+
+// ─── Collaboration Models ───────────────────────────────────────
+
+/** Represents a user's active collaboration session (future realtime) */
+export interface CollaborationSessionModel {
+  sessionId: string;
+  projectId: string;
+  userId: string;
+  displayName: string;
+  role: CollaborationRole;
+  cursorX: number;
+  cursorY: number;
+  selectedObjectIds: string[];
+  lockedComponentIds: string[];
+  joinedAt: number;
+  lastHeartbeat: number;
+  futureSessionHints: Record<string, unknown>;
+}
+
+// ─── Forking Model ──────────────────────────────────────────────
+
+/** Represents a project fork relationship */
+export interface ProjectForkModel {
+  forkId: string;
+  sourceProjectId: string;
+  forkedProjectId: string;
+  forkedBy: string;
+  forkedAt: number;
+  forkType: ForkType;
+  futureForkHints: Record<string, unknown>;
+}
+
+// ─── Analytics Model ────────────────────────────────────────────
+
+/** Tracks learning analytics for a user within a classroom */
+export interface LearningAnalyticsModel {
+  analyticsId: string;
+  userId: string;
+  classroomId: string;
+  projectsBuilt: number;
+  simulationsRun: number;
+  errorsFixed: number;
+  healthScoreHistory: number[];
+  assignmentsCompleted: number;
+  averageScore: number;
+  totalTimeMinutes: number;
+  lastUpdatedAt: number;
+  futureAnalyticsHints: Record<string, unknown>;
+}
+
+// ─── Template Publishing Model ──────────────────────────────────
+
+/** Represents a published template for sharing */
+export interface PublishedTemplateModel {
+  publishId: string;
+  templateId: string;
+  projectId: string;
+  publishedBy: string;
+  publishStatus: TemplatePublishStatus;
+  title: string;
+  description: string;
+  difficulty: string;
+  category: string;
+  cloneCount: number;
+  rating: number;
+  featuredAt: number;
+  publishedAt: number;
+  futurePublishHints: Record<string, unknown>;
+}
+
+// ─── Permission Matrix Model ────────────────────────────────────
+
+/** Defines permissions for a given role */
+export interface PermissionMatrixModel {
+  role: UserRole;
+  canView: boolean;
+  canEdit: boolean;
+  canShare: boolean;
+  canSubmit: boolean;
+  canGrade: boolean;
+  canAssign: boolean;
+  canManageMembers: boolean;
+  canArchive: boolean;
+}
+
+// ─── Phase 30B Snapshot Types ───────────────────────────────────
+
+/** Snapshot of classroom state */
+export interface ClassroomSnapshot {
+  classrooms: ClassroomModel[];
+  members: ClassroomMemberModel[];
+  workspaces: ClassroomWorkspaceModel[];
+  assignmentRefs: ClassroomAssignmentModel[];
+}
+
+/** Snapshot of project sharing state */
+export interface ProjectSharingSnapshot {
+  shares: SharedProjectModel[];
+  permissions: SharePermissionModel[];
+  links: ShareLinkModel[];
+  sharedWorkspaces: SharedWorkspaceModel[];
+}
+
+/** Snapshot of assignment state */
+export interface AssignmentSnapshot {
+  assignments: AssignmentModel[];
+  submissions: AssignmentSubmissionModel[];
+  feedback: AssignmentFeedbackModel[];
+  grades: AssignmentGradeModel[];
+}
+
+/** Snapshot of collaboration state */
+export interface CollaborationSnapshot {
+  sessions: CollaborationSessionModel[];
+  comments: CommentModel[];
+  threads: CommentThreadModel[];
+  forks: ProjectForkModel[];
+  analytics: LearningAnalyticsModel[];
+  publishedTemplates: PublishedTemplateModel[];
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Phase 31A: Cloud Sync, Multi-Device Persistence & Offline Workspace
+// ═══════════════════════════════════════════════════════════════
+
+// ─── Enum Types ─────────────────────────────────────────────────
+
+/** Cloud sync lifecycle status */
+export type CloudSyncStatus = 'IDLE' | 'SYNCING' | 'ERROR' | 'OFFLINE' | 'CONFLICT';
+
+/** Type of sync operation */
+export type SyncOperationType = 'CREATE' | 'UPDATE' | 'DELETE' | 'MERGE';
+
+/** Status of a queued sync operation */
+export type SyncOperationStatus = 'QUEUED' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED' | 'RETRYING';
+
+/** Priority level for sync operations */
+export type SyncPriority = 'LOW' | 'NORMAL' | 'HIGH' | 'CRITICAL';
+
+/** Strategy for resolving sync conflicts */
+export type ConflictResolutionStrategy = 'KEEP_LOCAL' | 'KEEP_REMOTE' | 'MERGE' | 'MANUAL';
+
+/** Status of a detected conflict */
+export type ConflictStatus = 'DETECTED' | 'RESOLVING' | 'RESOLVED' | 'FAILED';
+
+/** Type of storage backend */
+export type StorageProviderType = 'MEMORY' | 'LOCAL_STORAGE' | 'FUTURE_CLOUD';
+
+/** Recovery snapshot lifecycle status */
+export type RecoveryStatus = 'PENDING' | 'APPLIED' | 'DISCARDED' | 'EXPIRED';
+
+/** Trigger that caused a recovery snapshot to be created */
+export type RecoveryTrigger = 'CRASH' | 'SHUTDOWN' | 'REFRESH' | 'SESSION_EXPIRED' | 'MANUAL';
+
+/** Types of entities that can be cached */
+export type CacheEntityType = 'PROJECT' | 'TEMPLATE' | 'CLASSROOM' | 'ASSIGNMENT' | 'VERSION' | 'DIAGNOSTICS' | 'SIMULATION';
+
+/** Types of entities that can be merged */
+export type MergeEntityType = 'PROJECT' | 'BLOCKLY' | 'METADATA' | 'COMMENTS' | 'DIAGNOSTICS';
+
+/** Status of a merge request */
+export type MergeRequestStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'ABORTED' | 'CONFLICT';
+
+// ─── Cloud Workspace Models ─────────────────────────────────────
+
+/** Represents a user workspace in the cloud sync system */
+export interface CloudWorkspaceModel {
+  workspaceId: string;
+  userId: string;
+  deviceId: string;
+  name: string;
+  lastSyncedAt: number;
+  syncStatus: CloudSyncStatus;
+  projectIds: string[];
+  isOffline: boolean;
+  offlineSince: number;
+  createdAt: number;
+  futureCloudWorkspaceHints: Record<string, unknown>;
+}
+
+/** Represents a project's cloud synchronization state */
+export interface CloudProjectModel {
+  cloudProjectId: string;
+  localProjectId: string;
+  userId: string;
+  syncHash: string;
+  versionVector: number;
+  lastSyncedAt: number;
+  lastModifiedAt: number;
+  sizeBytes: number;
+  isDeleted: boolean;
+  futureCloudProjectHints: Record<string, unknown>;
+}
+
+/** Represents the global sync state of the system */
+export interface CloudSyncStateModel {
+  syncStateId: string;
+  status: CloudSyncStatus;
+  lastSyncStartedAt: number;
+  lastSyncCompletedAt: number;
+  pendingOperations: number;
+  failedOperations: number;
+  totalSynced: number;
+  errorMessage: string;
+  isOnline: boolean;
+  futureSyncStateHints: Record<string, unknown>;
+}
+
+/** Represents a single queued sync operation */
+export interface CloudSyncOperationModel {
+  operationId: string;
+  entityType: string;
+  entityId: string;
+  operationType: SyncOperationType;
+  status: SyncOperationStatus;
+  priority: SyncPriority;
+  payload: string;
+  createdAt: number;
+  scheduledAt: number;
+  completedAt: number;
+  retryCount: number;
+  maxRetries: number;
+  errorMessage: string;
+  batchId: string;
+  futureSyncOpHints: Record<string, unknown>;
+}
+
+// ─── Device Management Models ───────────────────────────────────
+
+/** Represents a registered device in the multi-device system */
+export interface DeviceModel {
+  deviceId: string;
+  userId: string;
+  deviceName: string;
+  browserName: string;
+  browserVersion: string;
+  osName: string;
+  osVersion: string;
+  screenWidth: number;
+  screenHeight: number;
+  lastSeenAt: number;
+  registeredAt: number;
+  isActive: boolean;
+  futureDeviceHints: Record<string, unknown>;
+}
+
+/** Represents an active session on a device */
+export interface DeviceSessionModel {
+  sessionId: string;
+  deviceId: string;
+  userId: string;
+  startedAt: number;
+  endedAt: number;
+  isActive: boolean;
+  workspaceStateHash: string;
+  lastHeartbeat: number;
+  futureSessionModelHints: Record<string, unknown>;
+}
+
+// ─── Offline Workspace Models ───────────────────────────────────
+
+/** Represents the offline state of a workspace */
+export interface OfflineWorkspaceModel {
+  offlineId: string;
+  workspaceId: string;
+  userId: string;
+  isOffline: boolean;
+  offlineSince: number;
+  lastOnlineAt: number;
+  queuedEditCount: number;
+  dirtyProjectIds: string[];
+  offlineCreatedProjectIds: string[];
+  offlineVersionCount: number;
+  futureOfflineHints: Record<string, unknown>;
+}
+
+// ─── Sync Conflict Models ───────────────────────────────────────
+
+/** Represents a detected sync conflict between local and remote versions */
+export interface SyncConflictModel {
+  conflictId: string;
+  entityType: string;
+  entityId: string;
+  localVersion: string;
+  remoteVersion: string;
+  localModifiedAt: number;
+  remoteModifiedAt: number;
+  detectedAt: number;
+  resolvedAt: number;
+  status: ConflictStatus;
+  strategy: ConflictResolutionStrategy;
+  resolvedData: string;
+  futureConflictHints: Record<string, unknown>;
+}
+
+/** Represents the result of a conflict merge operation */
+export interface MergeResultModel {
+  mergeId: string;
+  conflictId: string;
+  success: boolean;
+  mergedData: string;
+  conflictsRemaining: number;
+  appliedAt: number;
+  futureMergeResultHints: Record<string, unknown>;
+}
+
+// ─── Cache Layer Models ─────────────────────────────────────────
+
+/** Represents a single cached entity */
+export interface CacheEntryModel {
+  cacheKey: string;
+  entityType: CacheEntityType;
+  entityId: string;
+  data: string;
+  storedAt: number;
+  expiresAt: number;
+  sizeBytes: number;
+  accessCount: number;
+  lastAccessedAt: number;
+  futureCacheHints: Record<string, unknown>;
+}
+
+/** Represents the cache manifest / index */
+export interface CacheManifestModel {
+  manifestId: string;
+  totalEntries: number;
+  totalSizeBytes: number;
+  maxSizeBytes: number;
+  lastPrunedAt: number;
+  providerType: StorageProviderType;
+  futureCacheManifestHints: Record<string, unknown>;
+}
+
+// ─── Recovery Models ────────────────────────────────────────────
+
+/** Represents a recovery snapshot for crash/shutdown recovery */
+export interface RecoverySnapshotModel {
+  recoveryId: string;
+  workspaceId: string;
+  deviceId: string;
+  userId: string;
+  snapshotData: string;
+  createdAt: number;
+  expiresAt: number;
+  trigger: RecoveryTrigger;
+  status: RecoveryStatus;
+  appliedAt: number;
+  sizeBytes: number;
+  futureRecoveryHints: Record<string, unknown>;
+}
+
+// ─── Project Merge Models ───────────────────────────────────────
+
+/** Represents a request to merge two project versions */
+export interface ProjectMergeRequestModel {
+  mergeRequestId: string;
+  sourceProjectId: string;
+  targetProjectId: string;
+  sourceVersionId: string;
+  targetVersionId: string;
+  mergeEntityType: MergeEntityType;
+  strategy: ConflictResolutionStrategy;
+  requestedBy: string;
+  requestedAt: number;
+  status: MergeRequestStatus;
+  futureMergeRequestHints: Record<string, unknown>;
+}
+
+/** Represents the result of a project merge */
+export interface ProjectMergeResultModel {
+  mergeResultId: string;
+  mergeRequestId: string;
+  success: boolean;
+  mergedSnapshot: string;
+  conflictCount: number;
+  changesApplied: number;
+  mergedAt: number;
+  futureMergeResultModelHints: Record<string, unknown>;
+}
+
+// ─── Phase 31A Snapshot Types ───────────────────────────────────
+
+/** Snapshot of all cloud sync, device, offline, conflict, cache, recovery, and merge state */
+export interface CloudSyncSnapshot {
+  workspaces: CloudWorkspaceModel[];
+  cloudProjects: CloudProjectModel[];
+  syncStates: CloudSyncStateModel[];
+  operations: CloudSyncOperationModel[];
+  devices: DeviceModel[];
+  sessions: DeviceSessionModel[];
+  offlineWorkspaces: OfflineWorkspaceModel[];
+  conflicts: SyncConflictModel[];
+  mergeResults: MergeResultModel[];
+  cacheEntries: CacheEntryModel[];
+  cacheManifests: CacheManifestModel[];
+  recoverySnapshots: RecoverySnapshotModel[];
+  mergeRequests: ProjectMergeRequestModel[];
+  mergeResultModels: ProjectMergeResultModel[];
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Phase 31A: Professional Simulator UX/UI Completion Types
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ─── Hover Feedback Types ───────────────────────────────────────
+
+/** Target type for hover feedback identification */
+export type HoverTargetType = 'COMPONENT' | 'PIN' | 'WIRE' | 'BREADBOARD_HOLE' | 'BREADBOARD' | 'NONE';
+
+/** Cursor style applied during hover */
+export type HoverCursorStyle = 'default' | 'pointer' | 'grab' | 'grabbing' | 'crosshair' | 'not-allowed' | 'move';
+
+/** Visual feedback model for when a user hovers over workspace objects */
+export interface HoverFeedbackModel {
+  feedbackId: string;
+  hoveredObjectId: string;
+  targetType: HoverTargetType;
+  cursorStyle: HoverCursorStyle;
+  glowColor: string;
+  glowIntensity: number;
+  glowRadius: number;
+  pinLabel: string;
+  voltageLabel: string;
+  tooltipText: string;
+  positionX: number;
+  positionY: number;
+  isActive: boolean;
+  futureHoverFeedbackHints: Record<string, unknown>;
+}
+
+/** Tracks current and previous hover state transitions */
+export interface HoverStateModel {
+  stateId: string;
+  currentHoverId: string;
+  previousHoverId: string;
+  currentTargetType: HoverTargetType;
+  previousTargetType: HoverTargetType;
+  hoverStartTimestamp: number;
+  hoverDurationMs: number;
+  isHovering: boolean;
+  futureHoverStateHints: Record<string, unknown>;
+}
+
+// ─── Context Menu Types ─────────────────────────────────────────
+
+/** Actions available in the right-click context menu */
+export type ContextMenuAction =
+  | 'DUPLICATE'
+  | 'DELETE'
+  | 'ROTATE_CW'
+  | 'ROTATE_CCW'
+  | 'BRING_FORWARD'
+  | 'SEND_BACKWARD'
+  | 'DISCONNECT'
+  | 'INSPECT'
+  | 'FOCUS_CAMERA';
+
+/** A single item in the context menu */
+export interface ContextMenuItemModel {
+  itemId: string;
+  action: ContextMenuAction;
+  label: string;
+  icon: string;
+  enabled: boolean;
+  shortcut: string;
+  dividerAfter: boolean;
+  futureMenuItemHints: Record<string, unknown>;
+}
+
+/** State of the context menu (visibility, position, target) */
+export interface ContextMenuStateModel {
+  menuId: string;
+  visible: boolean;
+  positionX: number;
+  positionY: number;
+  targetObjectId: string;
+  targetObjectType: HoverTargetType;
+  items: ContextMenuItemModel[];
+  futureContextMenuHints: Record<string, unknown>;
+}
+
+// ─── Professional Selection Types ───────────────────────────────
+
+/** Selection interaction mode */
+export type SelectionMode = 'SINGLE' | 'MULTI' | 'BOX' | 'SHIFT';
+
+/** Type of selection handle for resize/rotate */
+export type SelectionHandleType = 'RESIZE_N' | 'RESIZE_S' | 'RESIZE_E' | 'RESIZE_W' | 'RESIZE_NE' | 'RESIZE_NW' | 'RESIZE_SE' | 'RESIZE_SW' | 'ROTATE';
+
+/** A single drag handle on a selection bounding box */
+export interface SelectionHandleModel {
+  handleId: string;
+  handleType: SelectionHandleType;
+  positionX: number;
+  positionY: number;
+  cursor: HoverCursorStyle;
+  isActive: boolean;
+  futureHandleHints: Record<string, unknown>;
+}
+
+/** Professional selection with handles, mode, and clipboard support */
+export interface ProfessionalSelectionModel {
+  selectionId: string;
+  selectedObjectIds: string[];
+  selectionMode: SelectionMode;
+  boundsX: number;
+  boundsY: number;
+  boundsWidth: number;
+  boundsHeight: number;
+  handles: SelectionHandleModel[];
+  isBoxSelecting: boolean;
+  boxStartX: number;
+  boxStartY: number;
+  boxEndX: number;
+  boxEndY: number;
+  clipboardObjectIds: string[];
+  hasClipboardData: boolean;
+  futureSelectionModelHints: Record<string, unknown>;
+}
+
+// ─── Wire Creation Workflow Types ───────────────────────────────
+
+/** Phase of the wire creation workflow */
+export type WireCreationPhase = 'IDLE' | 'SOURCE_SELECTED' | 'ROUTING' | 'TARGET_HOVER' | 'COMPLETING' | 'CANCELLED';
+
+/** Validation status for a wire overlay */
+export type WireValidationStatus = 'valid' | 'warning' | 'error';
+
+/** State of the wire creation workflow */
+export interface WireCreationStateModel {
+  creationId: string;
+  phase: WireCreationPhase;
+  sourcePinId: string;
+  sourceComponentId: string;
+  targetPinId: string;
+  targetComponentId: string;
+  previewPoints: Array<{ x: number; y: number }>;
+  wireColor: string;
+  isValidTarget: boolean;
+  snapTargetPinId: string;
+  snapDistance: number;
+  routingMode: string;
+  futureWireCreationHints: Record<string, unknown>;
+}
+
+/** Visual overlay for wire validation feedback */
+export interface WireValidationOverlayModel {
+  overlayId: string;
+  wireId: string;
+  status: WireValidationStatus;
+  overlayColor: string;
+  message: string;
+  affectedPinIds: string[];
+  pulseAnimation: boolean;
+  futureOverlayHints: Record<string, unknown>;
+}
+
+// ─── Camera Navigation Types ────────────────────────────────────
+
+/** Camera navigation mode */
+export type CameraNavigationMode = 'IDLE' | 'PANNING' | 'ZOOMING' | 'FIT_PROJECT' | 'ZOOM_TO_SELECTION';
+
+/** Easing function for camera animation */
+export type CameraEasing = 'LINEAR' | 'EASE_IN' | 'EASE_OUT' | 'EASE_IN_OUT';
+
+/** Animated camera transition model */
+export interface CameraAnimationModel {
+  animationId: string;
+  fromZoom: number;
+  toZoom: number;
+  fromPanX: number;
+  fromPanY: number;
+  toPanX: number;
+  toPanY: number;
+  durationMs: number;
+  elapsedMs: number;
+  progress: number;
+  easing: CameraEasing;
+  isComplete: boolean;
+  navigationMode: CameraNavigationMode;
+  futureCameraAnimationHints: Record<string, unknown>;
+}
+
+/** Minimap viewport overview model */
+export interface MinimapModel {
+  minimapId: string;
+  enabled: boolean;
+  boundsX: number;
+  boundsY: number;
+  boundsWidth: number;
+  boundsHeight: number;
+  viewportRectX: number;
+  viewportRectY: number;
+  viewportRectWidth: number;
+  viewportRectHeight: number;
+  objectPositions: Array<{ objectId: string; x: number; y: number; type: string }>;
+  minimapScale: number;
+  futureMinimapHints: Record<string, unknown>;
+}
+
+// ─── Component Palette Drag Types ───────────────────────────────
+
+/** Drag state for palette component being dragged to workspace */
+export interface PaletteDragModel {
+  dragId: string;
+  draggedComponentId: string;
+  draggedAssetId: string;
+  dragStartX: number;
+  dragStartY: number;
+  currentX: number;
+  currentY: number;
+  previewVisible: boolean;
+  snapTargetX: number;
+  snapTargetY: number;
+  isOverWorkspace: boolean;
+  isDragging: boolean;
+  futureDragHints: Record<string, unknown>;
+}
+
+/** Filter and sort configuration for the component palette */
+export interface PaletteFilterModel {
+  filterId: string;
+  searchQuery: string;
+  activeCategory: string;
+  showFavoritesOnly: boolean;
+  showRecentOnly: boolean;
+  sortBy: string;
+  sortDirection: string;
+  matchedComponentIds: string[];
+  totalResults: number;
+  futureFilterHints: Record<string, unknown>;
+}
+
+// ─── Performance Metrics Types ──────────────────────────────────
+
+/** Rendering performance metrics snapshot */
+export interface PerformanceMetricsModel {
+  metricsId: string;
+  fps: number;
+  frameTimeMs: number;
+  averageFrameTimeMs: number;
+  renderCalls: number;
+  textureMemoryBytes: number;
+  geometryPoolSize: number;
+  objectCount: number;
+  visibleObjectCount: number;
+  wireCount: number;
+  componentCount: number;
+  lastUpdatedAt: number;
+  frameHistory: number[];
+  maxFrameHistoryLength: number;
+  futurePerformanceHints: Record<string, unknown>;
+}
+
+// ─── Workspace Visual Theme Types ───────────────────────────────
+
+/** Workspace theme configuration for visual polish */
+export interface WorkspaceThemeConfigModel {
+  themeId: string;
+  themeName: string;
+  backgroundColor: string;
+  gridColor: string;
+  gridOpacity: number;
+  selectionColor: string;
+  selectionOpacity: number;
+  hoverGlowColor: string;
+  hoverGlowIntensity: number;
+  wirePreviewColor: string;
+  wirePreviewOpacity: number;
+  validationValidColor: string;
+  validationWarningColor: string;
+  validationErrorColor: string;
+  breadboardColor: string;
+  breadboardHoleColor: string;
+  pinHighlightColor: string;
+  tooltipBackgroundColor: string;
+  tooltipTextColor: string;
+  futureThemeHints: Record<string, unknown>;
+}
+
+// ─── Component Scale Calibration Types ──────────────────────────
+
+/** Real-world component dimension data in millimeters */
+export interface ComponentDimensionsMM {
+  componentType: string;
+  widthMm: number;
+  heightMm: number;
+  depthMm: number;
+  pinSpacingMm: number;
+  pinCount: number;
+}
+
+/** Scale calibration result for a single component */
+export interface ScaleCalibrationResult {
+  componentType: string;
+  currentScale: number;
+  calibratedScale: number;
+  deviation: number;
+  realWidthMm: number;
+  realHeightMm: number;
+  referenceWidthMm: number;
+  status: 'CALIBRATED' | 'NEEDS_ADJUSTMENT' | 'MISSING_DATA';
+}
+
+/** Overall scale calibration report */
+export interface ScaleCalibrationReport {
+  reportId: string;
+  referenceBreadboard: string;
+  referenceWidthMm: number;
+  referenceHeightMm: number;
+  calibrations: ScaleCalibrationResult[];
+  overallScore: number;
+  generatedAt: number;
+}
+
+// ─── Simulator UX Snapshot ──────────────────────────────────────
+
+/** Aggregate snapshot of all Phase 31A UX state */
+export interface SimulatorUXSnapshot {
+  hoverFeedbacks: HoverFeedbackModel[];
+  hoverStates: HoverStateModel[];
+  contextMenuStates: ContextMenuStateModel[];
+  professionalSelections: ProfessionalSelectionModel[];
+  wireCreationStates: WireCreationStateModel[];
+  wireValidationOverlays: WireValidationOverlayModel[];
+  cameraAnimations: CameraAnimationModel[];
+  minimapModels: MinimapModel[];
+  paletteDragModels: PaletteDragModel[];
+  paletteFilterModels: PaletteFilterModel[];
+  performanceMetrics: PerformanceMetricsModel[];
+  workspaceThemeConfigs: WorkspaceThemeConfigModel[];
+}

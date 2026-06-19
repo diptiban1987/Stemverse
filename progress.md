@@ -262,6 +262,7 @@
 | 9.6 | Project save/load (workspace.json) | JSON Schema Architecture | ✅ | PostgreSQL via Projects API (ROBOTICS type); JSON import/export |
 | 9.7 | Hardware Abstraction Layer | JSON Schema Architecture | ✅ | Component registry with board capabilities + DB hydration |
 | 9.8 | Simulator Workspace (`/simulator`) | V3 Enterprise Spec, System Design | ✅ | Component palette, virtual board (Three.js), property inspector, Start/Stop/Reset; Blockly + registry + validation + codegen integration |
+| 9.9 | Tinkercad Circuit Editor (Phase 28A) | Phase 28A Spec | ✅ | ComponentCatalog (10 categories, search, favorites, SVG thumbnails), PropertyPanel (transform/pins/wires), PinInspector (hover tooltip), circuit editor toolbar (Select/Wire/Pan/Rotate/Delete tools), keyboard shortcuts (V/W/H/R/X/Del/Esc), status bar, 3-column layout, context menu prevention, demo projects |
 
 ---
 
@@ -625,6 +626,7 @@ Based on V3 Enterprise Spec quarterly breakdown:
 | 2026-06-12 | 8 | Phase 20B — Interactive Wiring Runtime: Implemented WiringSessionModel, WirePreviewModel, WireConnectionModel, PinConnectionModel with warning-only validation, duplicate checking, BaseRuntime CRUD sync, lifecycle integration, stage snapshot sync, and export/import serialization. | Antigravity |
 | 2026-06-12 | 8 | Phase 20C — Live Electrical Visualization Runtime: Implemented VoltageVisualizationModel, CurrentVisualizationModel, LogicStateVisualizationModel, ActivityVisualizationModel, SignalFlowModel with LiveElectricalVisualizationSynchronizer, resolveGlowColor helper, BaseRuntime CRUD registries, lifecycle hooks, snapshot sync, and export/import serialization. | Antigravity |
 | 2026-06-12 | 8 | Phase 21A — Virtual ESP32 Execution Runtime Foundation: Implemented VirtualESP32Model, VirtualGPIOPinModel, VirtualPWMChannelModel, VirtualTimerModel, VirtualInterruptModel with VirtualExecutionSynchronizer, 10 simulation helpers (applyPinMode, applyDigitalWrite, readDigitalPin, togglePin, shouldTriggerInterrupt, applyLedcAttachPin, applyLedcWrite, computeNormalizedDuty, advanceClock, tickTimers), 9 high-level runtime APIs, BaseRuntime CRUD registries, lifecycle hooks, snapshot sync, export/import serialization, and 9,879 unit test assertions. | Antigravity |
+| 2026-06-16 | 9 | Phase 28A — Tinkercad Circuit Editor Completion: Upgraded Robotics Studio's simulator tab from basic ComponentPalette to premium ComponentCatalog (10 categories, search, favorites, SVG thumbnails), added PropertyPanel (transform/pins/wires inspector), PinInspector (hover tooltip), circuit editor toolbar with 5 tool buttons (Select/Wire/Pan/Rotate/Delete), keyboard shortcuts (V/W/H/R/X/Del/Esc), status bar with tool indicator and zoom info, 3-column responsive layout, context menu prevention, right-side panel with PropertyPanel + PinAssignmentPanel, 3D SVG upgrades for LED/Resistor/Button/Pot/Buzzer, scale calibration to real-world proportions, breadboard hole highlighting system, wire click-to-select interactivity, and E2E test suite. | Antigravity |
 
 ---
 
