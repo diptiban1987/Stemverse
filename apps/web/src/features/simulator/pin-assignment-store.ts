@@ -211,6 +211,7 @@ const ESP32_POWER_PINS = [
 const ESP32_GND_PINS = [
   { name: 'GND1', signalType: 'GND' },
   { name: 'GND2', signalType: 'GND' },
+  { name: 'GND3', signalType: 'GND' },
 ];
 
 const ARDUINO_UNO_GPIO_PINS = [
@@ -411,29 +412,25 @@ export const usePinAssignmentStore = create<PinAssignmentState>((set, get) => ({
     const boardInfo = s.boardType ? BOARD_PIN_MAP[s.boardType] : null;
     if (!comp || !boardInfo || !s.boardObjectId) return;
 
-    // Track which power/gnd pins on the board are already used
-    const usedPower = new Set(
-      s.assignments.filter((a) => a.componentPinSignalType === 'POWER').map((a) => a.boardPinName),
-    );
-    const usedGnd = new Set(
-      s.assignments.filter((a) => a.componentPinSignalType === 'GND').map((a) => a.boardPinName),
-    );
+    // Power and GND pins are SHARED — multiple components can connect to
+    // the same VCC/GND pin, just like a real breadboard power bus.
+    // We round-robin through available pins for visual variety in wire routing.
+    const existingPowerCount = s.assignments.filter((a) => a.componentPinSignalType === 'POWER').length;
+    const existingGndCount = s.assignments.filter((a) => a.componentPinSignalType === 'GND').length;
 
     for (const pin of comp.pins) {
       const st = pin.signalType.toUpperCase();
       if (st === 'POWER') {
-        // Find first free power pin
-        const freePin = boardInfo.power.find((p) => !usedPower.has(p.name));
-        if (freePin) {
-          get().assignPin(componentObjectId, pin.name, freePin.name);
-          usedPower.add(freePin.name);
+        // Round-robin through power pins for visual variety
+        const powerPin = boardInfo.power[existingPowerCount % boardInfo.power.length];
+        if (powerPin) {
+          get().assignPin(componentObjectId, pin.name, powerPin.name);
         }
       } else if (st === 'GND') {
-        // Find first free GND pin
-        const freePin = boardInfo.gnd.find((p) => !usedGnd.has(p.name));
-        if (freePin) {
-          get().assignPin(componentObjectId, pin.name, freePin.name);
-          usedGnd.add(freePin.name);
+        // Round-robin through GND pins for visual variety
+        const gndPin = boardInfo.gnd[existingGndCount % boardInfo.gnd.length];
+        if (gndPin) {
+          get().assignPin(componentObjectId, pin.name, gndPin.name);
         }
       }
     }
