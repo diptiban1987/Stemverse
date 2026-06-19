@@ -344,12 +344,14 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
 
         /* ── Register default workspace objects ─────────────────── */
         // Breadboard placed vertically (column-wise, rotated 90°)
-        // so components have a wider area to the right
+        // so components have a wider area to the right.
+        // breadboard_830 local: 900w × 350h → at scale 0.55, rotated 90°:
+        //   rendered width ≈ 350×0.55 = 192px, rendered height ≈ 900×0.55 = 495px
         runtime.registerWorkspaceObjectModel({
           objectId: 'breadboard_1',
           objectType: 'breadboard_830',
-          positionX: 80,
-          positionY: 50,
+          positionX: 60,
+          positionY: 30,
           rotation: Math.PI / 2,  // 90° rotation → vertical
           scale: 0.55,
           selected: false,
@@ -357,12 +359,13 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
           metadata: {},
         });
 
-        // Board placed above the vertical breadboard
+        // Board (ESP32) placed to the right of the vertical breadboard
+        // breadboard right edge ≈ 60 + 192 = 252, add gap → 280
         runtime.registerWorkspaceObjectModel({
           objectId: 'board_1',
           objectType: 'esp32_devkit_v1',
-          positionX: 330,
-          positionY: 60,
+          positionX: 280,
+          positionY: 50,
           rotation: 0,
           scale: 0.45,
           selected: false,

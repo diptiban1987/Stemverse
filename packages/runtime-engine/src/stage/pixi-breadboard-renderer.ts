@@ -54,8 +54,8 @@ export class PixiBreadboardRenderer {
       this.graphics.lineTo(width - 60, 298);
       this.graphics.stroke({ width: 2, color: 0x3b82f6 }); // Negative line (-)
     } else {
-      // Mini has a center ravine
-      this.graphics.rect(30, 80, width - 60, 10);
+      // Mini: center ravine between top holes (Y≈78) and bottom holes (Y≈95)
+      this.graphics.rect(30, 82, width - 60, 10);
       this.graphics.fill(0xded9c3);
     }
 

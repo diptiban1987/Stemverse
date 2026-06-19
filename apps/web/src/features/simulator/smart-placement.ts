@@ -331,19 +331,19 @@ export class SmartPlacementEngine {
 
 /**
  * Default breadboard layout for the Robotics workspace simulator tab.
- * Matches: breadboard_830 at (80, 50), rotated 90°, scale 0.55
+ * Matches: breadboard_830 at (60, 30), rotated 90°, scale 0.55
  *
  * The breadboard is placed VERTICALLY (column-wise) on the left side.
  * When rotated 90°, the rendered dimensions swap:
- *   Local: 900w × 350h → Rendered: 350w × 900h (approx, × scale)
- * Board (ESP32/Arduino) is placed ABOVE the breadboard.
- * Components spread to the RIGHT of the breadboard.
+ *   Local: 900w × 350h → Rendered: 192w × 495h (× 0.55 scale)
+ * Board (ESP32/Arduino) is placed to the RIGHT of the breadboard.
+ * Components spread further RIGHT in wrapping columns.
  */
 export const ROBOTICS_BREADBOARD_LAYOUT: BreadboardLayout = {
-  breadboardX: 80,
-  breadboardY: 50,
+  breadboardX: 60,
+  breadboardY: 30,
   breadboardScale: 0.55,
-  // Note: these are the RENDERED dimensions (after 90° rotation)
+  // Note: these are the RENDERED dimensions (after 90° rotation, × scale)
   // Local 900×350 rotated → 350×900
   breadboardLocalWidth: 350,    // Rendered width (was height before rotation)
   breadboardLocalHeight: 900,   // Rendered height (was width before rotation)
