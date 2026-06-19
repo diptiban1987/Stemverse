@@ -690,13 +690,42 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
       }
 
       try {
+        // Breadboards should be rotated 90° to match the vertical column layout
+        const isBreadboard = assetId === 'breadboard_830' || assetId === 'breadboard_400' || assetId === 'breadboard_mini';
+        const dropRotation = isBreadboard ? Math.PI / 2 : 0;
+
+        // For breadboards, use a smarter scale and position alongside the main breadboard
+        let dropScale = compScale;
+        if (isBreadboard) {
+          dropScale = assetId === 'breadboard_830' ? 0.55 : assetId === 'breadboard_400' ? 0.5 : 0.45;
+          // Position the new breadboard to the right of the main breadboard area
+          // (after the first column of components)
+          const objects = runtimeRef.current.getWorkspaceObjectModels?.() ?? [];
+          const existingBBs = objects.filter((o: any) => (o.objectType as string).startsWith('breadboard'));  // eslint-disable-line @typescript-eslint/no-explicit-any
+          if (existingBBs.length > 0) {
+            // Place below the last breadboard (in vertical layout, "below" means further right)
+            const lastBB = existingBBs[existingBBs.length - 1];
+            // Breadboard_830 local width is 900, after 90° rotation rendered height ≈ 900*scale
+            const bbDims: Record<string, { w: number; h: number }> = {
+              breadboard_830: { w: 900, h: 350 },
+              breadboard_400: { w: 475, h: 350 },
+              breadboard_mini: { w: 300, h: 250 },
+            };
+            const lastDims = bbDims[lastBB.objectType] || { w: 900, h: 350 };
+            // When rotated 90°, rendered width = localHeight * scale
+            const lastRenderedWidth = lastDims.h * (lastBB.scale || 0.55);
+            posX = lastBB.positionX + lastRenderedWidth + 40;
+            posY = lastBB.positionY;
+          }
+        }
+
         runtimeRef.current.registerWorkspaceObjectModel({
           objectId,
           objectType: assetId,
           positionX: Math.round(posX),
           positionY: Math.round(posY),
-          rotation: 0,
-          scale: compScale,
+          rotation: dropRotation,
+          scale: dropScale,
           selected: false,
           locked: false,
           metadata: {},
