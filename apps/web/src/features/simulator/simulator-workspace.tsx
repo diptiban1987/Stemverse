@@ -683,12 +683,14 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
       let posX: number;
       let posY: number;
       const engine = placementEngineRef.current;
-      if (engine && !BOARD_ASSET_IDS.has(assetId) && assetId !== 'breadboard_830' && assetId !== 'breadboard_400' && assetId !== 'breadboard_mini') {
+      const isBreadboardDrop = assetId === 'breadboard_830' || assetId === 'breadboard_400' || assetId === 'breadboard_mini';
+      if (engine && !isBreadboardDrop) {
+        // Both boards (ESP32/Arduino) and components use smart placement
         const pos = engine.placeByType(objectId, assetId, imgW, imgH, compScale);
         posX = pos.x;
         posY = pos.y;
       } else {
-        // Boards and breadboards use raw drop coordinates
+        // Only breadboards use raw drop coordinates
         const rect = container.getBoundingClientRect();
         const cam = cameraRef.current;
         posX = (e.clientX - rect.left - cam.x) / cam.zoom;

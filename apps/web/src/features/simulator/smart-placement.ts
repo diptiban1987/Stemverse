@@ -136,7 +136,8 @@ export class SmartPlacementEngine {
 
   /**
    * Place using explicit asset type.
-   * Board components go LEFT of breadboard, others go RIGHT in a grid.
+   * Board → RIGHT of breadboard, top-aligned.
+   * Components → RIGHT of breadboard, BELOW the board area, in a row-wrapping grid.
    */
   placeByType(
     objectId: string,
@@ -164,36 +165,47 @@ export class SmartPlacementEngine {
   }
 
   /**
-   * Place a board (ESP32/Arduino) to the LEFT of the breadboard.
-   * Boards stack vertically.
+   * Place a board (ESP32/Arduino) to the RIGHT of the breadboard, top-aligned.
+   * Multiple boards stack horizontally.
    */
   private placeBoard(w: number, h: number): { x: number; y: number } {
     const existing = this.slots.filter(s => s.zone === 'board');
 
-    // Position to the left of the breadboard, vertically aligned to top
-    const x = this.bbLeft - w - this.zoneGap;
-    let y = this.bbTop;
+    // Position right of the breadboard, aligned to the top
+    let x = this.bbRight + this.zoneGap;
+    const y = this.bbTop;
 
     if (existing.length > 0) {
+      // Stack additional boards to the right of the last one
       const last = existing[existing.length - 1];
-      y = last.y + last.slotH + this.cellGap;
+      x = last.x + last.slotW + this.cellGap;
     }
 
     return { x: Math.round(x), y: Math.round(y) };
   }
 
   /**
-   * Place a component to the RIGHT of the breadboard in a grid layout.
+   * Get the bottom edge of the board zone (below all placed boards).
+   * Components start below this line.
+   */
+  private get boardZoneBottom(): number {
+    const boards = this.slots.filter(s => s.zone === 'board');
+    if (boards.length === 0) return this.bbTop;
+    return Math.max(...boards.map(s => s.y + s.slotH)) + this.cellGap;
+  }
+
+  /**
+   * Place a component to the RIGHT of the breadboard, BELOW the board(s).
    * Components fill left-to-right in rows, wrapping downward.
-   * Each row starts at bbRight + zoneGap.
    */
   private placeComponent(w: number, h: number): { x: number; y: number } {
     const existing = this.slots.filter(s => s.zone === 'component');
     const startX = this.bbRight + this.zoneGap;
+    const startY = this.boardZoneBottom;
     const maxRowWidth = 600; // Max width for a row before wrapping
 
     if (existing.length === 0) {
-      return { x: Math.round(startX), y: Math.round(this.bbTop) };
+      return { x: Math.round(startX), y: Math.round(startY) };
     }
 
     // Find the current row (components with similar Y)
