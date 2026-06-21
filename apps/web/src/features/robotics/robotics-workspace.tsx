@@ -90,6 +90,8 @@ export function RoboticsWorkspace({
   );
   const [generatedCode, setGeneratedCode] = useState('');
   const [codeTarget, setCodeTarget] = useState<CodegenTarget>('arduino_cpp');
+  const [userPastedCode, setUserPastedCode] = useState(''); // persists pasted/imported code
+  const [simulationErrors, setSimulationErrors] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<'blocks' | 'simulator'>('blocks');
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState('Ready');
@@ -517,7 +519,10 @@ export function RoboticsWorkspace({
     setValidationIssues(validation.issues);
     // Use the user-selected code target (dropdown)
     const result = generateCodeFromWorkspace(ws, boardId, board.name, codeTarget);
-    setGeneratedCode(result.code);
+    // Only overwrite generatedCode from blocks if user hasn't pasted custom code
+    if (!userPastedCode) {
+      setGeneratedCode(result.code);
+    }
     setWorkspaceSnapshot(
       serializeWorkspace(ws, {
         project_id: dbProjectId ?? projectId ?? 'draft',
@@ -807,12 +812,30 @@ export function RoboticsWorkspace({
   const handlePasteCodeApply = () => {
     if (!pasteCode.trim()) return;
     setGeneratedCode(pasteCode);
+    setUserPastedCode(pasteCode); // persist the pasted code
     setCodeTarget(pasteLanguage);
     setShowPasteModal(false);
-    setPasteCode('');
-    setStatus('Code pasted — blocks will sync on next workspace change');
+    // Don't clear pasteCode — keep it in the textarea for re-editing
+    setSimulationErrors([]); // clear old errors
+    setStatus('Code applied — switch to Simulator tab and click Run');
     toast(`Code applied: ${pasteLanguage} code loaded into editor`);
   };
+
+  /** Clear the user-pasted code and revert to block-generated code */
+  const handleClearPastedCode = useCallback(() => {
+    setUserPastedCode('');
+    setPasteCode('');
+    setSimulationErrors([]);
+    // Refresh from blocks
+    const ws = workspaceRef.current;
+    if (ws) {
+      const board = getBoard(boardId);
+      const result = generateCodeFromWorkspace(ws, boardId, board.name, codeTarget);
+      setGeneratedCode(result.code);
+    }
+    setStatus('Reverted to block-generated code');
+    toast('Custom code cleared — using blocks code');
+  }, [boardId, codeTarget]);
 
 
 
@@ -1431,6 +1454,7 @@ export function RoboticsWorkspace({
       }
       setSimRunning(false);
       setStatus('Simulation stopped');
+      setSimulationErrors([]);
 
       // Reset all LED visual states and LCD displays
       if (runtime) {
@@ -1457,6 +1481,48 @@ export function RoboticsWorkspace({
         setStatus('No code to simulate. Add some blocks or paste code first.');
         return;
       }
+
+      // ── Library detection & virtual resolution ──
+      // These libraries are "virtually supported" in simulation mode
+      const SUPPORTED_LIBS: Record<string, string> = {
+        'Wire.h': 'I2C communication (simulated)',
+        'LiquidCrystal_I2C.h': 'I2C LCD display (simulated)',
+        'LiquidCrystal.h': 'LCD display (simulated)',
+        'Servo.h': 'Servo motor control (simulated)',
+        'SPI.h': 'SPI communication (simulated)',
+        'WiFi.h': 'WiFi (not simulated — skipped)',
+        'ESP32Servo.h': 'ESP32 Servo (simulated)',
+        'DHT.h': 'DHT temperature sensor (simulated)',
+        'Adafruit_SSD1306.h': 'OLED display (simulated)',
+        'Arduino.h': 'Arduino core (built-in)',
+      };
+
+      const includeRegex = /#include\s*[<"]([^>"]+)[>"]/g;
+      const detectedLibs: string[] = [];
+      const unsupportedLibs: string[] = [];
+      let includeMatch;
+      while ((includeMatch = includeRegex.exec(codeToSimulate)) !== null) {
+        const libName = includeMatch[1];
+        detectedLibs.push(libName);
+        if (!SUPPORTED_LIBS[libName]) {
+          unsupportedLibs.push(libName);
+        }
+      }
+
+      // Build simulation log messages
+      const simErrors: string[] = [];
+      if (detectedLibs.length > 0) {
+        simErrors.push(`📚 Libraries detected: ${detectedLibs.join(', ')}`);
+        const supported = detectedLibs.filter(l => SUPPORTED_LIBS[l]);
+        if (supported.length > 0) {
+          simErrors.push(`✅ Simulated: ${supported.map(l => `${l} → ${SUPPORTED_LIBS[l]}`).join(', ')}`);
+        }
+        if (unsupportedLibs.length > 0) {
+          simErrors.push(`⚠️ Not simulated (skipped): ${unsupportedLibs.join(', ')} — these won't cause errors but their functions won't execute`);
+        }
+      }
+
+      setSimulationErrors(simErrors);
       setSimRunning(true);
       setStatus('▶ Simulation running…');
 
@@ -1489,6 +1555,9 @@ export function RoboticsWorkspace({
             lineIdx++;
           }
         }
+
+        simErrors.push(`🖥️ LCD output: Line 1="${lcdLines[0]}" | Line 2="${lcdLines[1]}"`);
+        setSimulationErrors([...simErrors]);
       }
 
       // Simulation tick: toggle LED states, update sensors, show LCD text
@@ -1742,16 +1811,33 @@ export function RoboticsWorkspace({
 
             {/* Modal footer */}
             <div className="flex items-center justify-between border-t border-[#334155] bg-[#1E293B] px-5 py-3">
-              <p className="text-[10px] text-[#64748B]">
-                Code will be loaded into the editor. You can test it with the simulator.
-              </p>
+              <div className="flex items-center gap-2">
+                {userPastedCode ? (
+                  <span className="flex items-center gap-1 text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded px-2 py-0.5">
+                    ✅ Code loaded — switch to Simulator and click Run
+                  </span>
+                ) : (
+                  <p className="text-[10px] text-[#64748B]">
+                    Code will be loaded into the editor. Libraries are auto-resolved during simulation.
+                  </p>
+                )}
+              </div>
               <div className="flex gap-2">
+                {userPastedCode && (
+                  <button
+                    type="button"
+                    onClick={() => { handleClearPastedCode(); setShowPasteModal(false); }}
+                    className="rounded-lg px-3 py-1.5 text-xs font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20 transition-colors"
+                  >
+                    Clear Code
+                  </button>
+                )}
                 <button
                   type="button"
-                  onClick={() => { setShowPasteModal(false); setPasteCode(''); }}
+                  onClick={() => setShowPasteModal(false)}
                   className="rounded-lg px-4 py-1.5 text-xs font-medium text-[#94A3B8] hover:text-white hover:bg-[#334155] transition-colors"
                 >
-                  Cancel
+                  {userPastedCode ? 'Close' : 'Cancel'}
                 </button>
                 <button
                   type="button"
@@ -2232,6 +2318,41 @@ export function RoboticsWorkspace({
 
                     {/* Pin inspector tooltip */}
                     <PinInspector />
+
+                    {/* ── Simulation Log Panel ─────────────────── */}
+                    {simulationErrors.length > 0 && (
+                      <div className="absolute bottom-2 left-2 right-2 z-30 max-h-32 overflow-y-auto bg-[#0F172A]/95 backdrop-blur-sm border border-sky-500/30 rounded-lg p-2 shadow-lg">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[10px] font-bold text-sky-400 uppercase tracking-wider">Simulation Log</span>
+                          <button
+                            type="button"
+                            onClick={() => setSimulationErrors([])}
+                            className="text-gray-500 hover:text-white text-xs px-1"
+                            aria-label="Close simulation log"
+                          >✕</button>
+                        </div>
+                        {simulationErrors.map((err, i) => (
+                          <div key={i} className={`text-[10px] font-mono leading-relaxed ${
+                            err.startsWith('✅') ? 'text-emerald-400' :
+                            err.startsWith('⚠️') ? 'text-amber-400' :
+                            err.startsWith('🖥️') ? 'text-violet-400' :
+                            'text-sky-300'
+                          }`}>
+                            {err}
+                          </div>
+                        ))}
+                        {userPastedCode && (
+                          <div className="mt-1 pt-1 border-t border-white/10 flex items-center gap-2">
+                            <span className="text-[9px] text-gray-500">Using pasted code</span>
+                            <button
+                              type="button"
+                              onClick={handleClearPastedCode}
+                              className="text-[9px] text-red-400 hover:text-red-300 underline"
+                            >Clear & use blocks</button>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     {/* Context menu overlay */}
                     <ContextMenu
