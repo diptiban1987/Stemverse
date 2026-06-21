@@ -1236,7 +1236,7 @@ export function RoboticsWorkspace({
     panningRef.current = false;
   }, []);
 
-  /* ── Phase 31A.1: Auto-place components from blocks when switching to simulator ── */
+  /* ── Auto-sync: populate simulator components from block code ──── */
   useEffect(() => {
     if (activeTab !== 'simulator') return;
     if (!generatedCode.trim()) return;
@@ -1245,20 +1245,44 @@ export function RoboticsWorkspace({
     if (!runtime) return;
 
     // Detect which components are needed from the block code
-    const detected = detectComponentsFromCode(generatedCode);
-    if (detected.length === 0) return;
+    const detected = detectComponentsFromCode(generatedCode, boardId);
 
-    // Check which components are already placed
+    // Get existing auto-placed objects (prefixed with "auto_")
     const existingObjects = runtime.getWorkspaceObjectModels?.() ?? [];
-    const existingTypes = new Set(existingObjects.map((o: { objectType: string }) => o.objectType));
+    const autoPlacedObjects = existingObjects.filter(
+      (o: { objectId: string }) => o.objectId.startsWith('auto_')
+    );
+
+    // Build set of asset types currently needed
+    const neededAssetTypes = new Set(detected.map(c => c.assetId));
+
+    // ── Remove auto-placed components no longer needed by blocks ──
+    for (const obj of autoPlacedObjects) {
+      const objType = (obj as { objectType: string }).objectType;
+      // Keep if this asset type is still needed, or if it's a resistor for an LED
+      if (neededAssetTypes.has(objType)) continue;
+      if (objType === 'resistor_generic' && neededAssetTypes.has('led_generic')) continue;
+
+      const objId = (obj as { objectId: string }).objectId;
+      try {
+        runtime.removeWorkspaceObjectModel?.(objId);
+        pinRemoveComponent(objId);
+      } catch { /* object may already be removed */ }
+    }
+
+    // ── Place new components ──────────────────────────────────────
+    // Re-read after removals
+    const currentObjects = runtime.getWorkspaceObjectModels?.() ?? [];
+    const existingTypes = new Set(currentObjects.map((o: { objectType: string }) => o.objectType));
 
     let placedCount = 0;
+    const placedDetails: string[] = [];
 
     for (const comp of detected) {
       // Skip if this component type is already on the canvas
       if (existingTypes.has(comp.assetId)) continue;
 
-      const objectId = `auto_${comp.assetId}_pin${comp.pinNumber}_${Date.now()}`;
+      const objectId = `auto_${comp.assetId}_pin${comp.pinNumber}_${Date.now()}_${placedCount}`;
       const dims = COMPONENT_DIMENSIONS[comp.assetId];
       const imgW = dims?.w ?? 80;
       const imgH = dims?.h ?? 80;
@@ -1299,36 +1323,59 @@ export function RoboticsWorkspace({
           });
           pinAutoAssignPower(objectId);
 
-          // Auto-assign the signal pin to the detected GPIO
+          // Auto-assign the PRIMARY signal pin
           const store = usePinAssignmentStore.getState();
           if (comp.componentPin && comp.pinName) {
             store.assignPin(objectId, comp.componentPin, comp.pinName);
           }
 
-          // Auto-wire after a short delay to let the runtime register the object
-          setTimeout(() => {
-            const rt = simRuntimeRef.current;
-            if (!rt) return;
-            const currentStore = usePinAssignmentStore.getState();
-            const compAssignments = currentStore.assignments.filter(
-              (a) => a.componentObjectId === objectId,
-            );
-            for (const assignment of compAssignments) {
-              const wireId = generateWireForAssignment(
-                assignment,
-                rt,
-                componentAssetsRef.current,
-                simAdapterRef.current?.sceneRenderer?.renderScaleMap,
-              );
-              if (wireId) {
-                currentStore.setWireId(
-                  assignment.componentObjectId,
-                  assignment.componentPinName,
-                  wireId,
-                );
-              }
+          // Auto-assign EXTRA signal pins (e.g. SCL, ECHO)
+          if (comp.extraPins) {
+            for (const ep of comp.extraPins) {
+              store.assignPin(objectId, ep.componentPin, ep.pinName);
             }
-          }, 200);
+          }
+
+          // Build description for status
+          const pinDesc = [
+            `${comp.componentPin}:${comp.pinName}`,
+            ...(comp.extraPins?.map(ep => `${ep.componentPin}:${ep.pinName}`) ?? []),
+          ].join(', ');
+          placedDetails.push(`${catalog.displayName} → ${pinDesc}`);
+
+          // Auto-wire with retry (up to 5 attempts, 300ms apart)
+          const wireRetry = (attempt: number) => {
+            if (attempt > 5) return;
+            setTimeout(() => {
+              const rt = simRuntimeRef.current;
+              if (!rt) return;
+              const currentStore = usePinAssignmentStore.getState();
+              const compAssignments = currentStore.assignments.filter(
+                (a) => a.componentObjectId === objectId,
+              );
+              let allWired = true;
+              for (const assignment of compAssignments) {
+                if (assignment.wireId) continue; // Already wired
+                const wireId = generateWireForAssignment(
+                  assignment,
+                  rt,
+                  componentAssetsRef.current,
+                  simAdapterRef.current?.sceneRenderer?.renderScaleMap,
+                );
+                if (wireId) {
+                  currentStore.setWireId(
+                    assignment.componentObjectId,
+                    assignment.componentPinName,
+                    wireId,
+                  );
+                } else {
+                  allWired = false;
+                }
+              }
+              if (!allWired) wireRetry(attempt + 1);
+            }, attempt * 300);
+          };
+          wireRetry(1);
         }
 
         // Also auto-place a resistor for LEDs
@@ -1374,7 +1421,7 @@ export function RoboticsWorkspace({
     }
 
     if (placedCount > 0) {
-      setStatus(`Auto-placed ${placedCount} component(s) from block code`);
+      setStatus(`Auto-placed: ${placedDetails.join(' | ')}`);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, generatedCode]);
