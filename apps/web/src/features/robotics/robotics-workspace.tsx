@@ -585,9 +585,28 @@ export function RoboticsWorkspace({
 
     ws.addChangeListener(onSelect);
 
+    // ResizeObserver: call Blockly.svgResize when container changes size
+    // (e.g., sidebar collapse/expand)
+    const blocklyContainer = blocklyRef.current;
+    let blocklyResizeTimer: ReturnType<typeof setTimeout> | null = null;
+    const blocklyRo = new ResizeObserver(() => {
+      // Debounce to avoid excessive recalcs during sidebar transition
+      if (blocklyResizeTimer) clearTimeout(blocklyResizeTimer);
+      blocklyResizeTimer = setTimeout(() => {
+        if (workspaceRef.current) {
+          Blockly.svgResize(workspaceRef.current);
+        }
+      }, 100);
+    });
+    if (blocklyContainer) {
+      blocklyRo.observe(blocklyContainer);
+    }
+
     return () => {
       ws.removeChangeListener(wsListener);
       ws.removeChangeListener(onSelect);
+      blocklyRo.disconnect();
+      if (blocklyResizeTimer) clearTimeout(blocklyResizeTimer);
       ws.dispose();
       workspaceRef.current = null;
     };

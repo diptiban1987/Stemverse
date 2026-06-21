@@ -55,26 +55,49 @@
   }
 }
 
-/* ── Robotics Studio: hide persistent scrollbar inside Blockly ── */
-.robotics-blockly-wrap,
-.robotics-blockly-wrap > div,
-.robotics-blockly-wrap .injectionDiv {
-  overflow: hidden !important;
-  scrollbar-width: none !important;           /* Firefox */
-  -ms-overflow-style: none !important;        /* IE/Edge legacy */
+/* ── Robotics Studio: Blockly workspace styling ── */
+/* Only hide the BROWSER scrollbar on the wrapper — keep Blockly's own SVG UI */
+.robotics-blockly-wrap {
+  overflow: hidden !important;        /* prevent browser scrollbar on wrapper */
+  position: relative;
 }
-.robotics-blockly-wrap::-webkit-scrollbar,
-.robotics-blockly-wrap > div::-webkit-scrollbar,
-.robotics-blockly-wrap .injectionDiv::-webkit-scrollbar {
-  display: none !important;                   /* Chrome/Safari/Edge */
-  width: 0 !important;
-  height: 0 !important;
+.robotics-blockly-wrap::-webkit-scrollbar {
+  display: none !important;
 }
 
 /* Ensure the Blockly SVG workspace fills its container exactly */
 .robotics-blockly-wrap .blocklySvg {
   position: absolute !important;
   top: 0; left: 0; right: 0; bottom: 0;
+}
+
+/* ── Blockly zoom controls: position bottom-right, style for dark theme ── */
+.robotics-blockly-wrap .blocklyZoom {
+  opacity: 0.85;
+  transition: opacity 0.2s ease;
+}
+.robotics-blockly-wrap .blocklyZoom:hover {
+  opacity: 1;
+}
+
+/* ── Blockly trashcan: keep visible ── */
+.robotics-blockly-wrap .blocklyTrash {
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+.robotics-blockly-wrap .blocklyTrash:hover {
+  opacity: 1;
+}
+
+/* ── Blockly scrollbars: thin, subtle, on the right/bottom edges ── */
+.robotics-blockly-wrap .blocklyScrollbarHorizontal,
+.robotics-blockly-wrap .blocklyScrollbarVertical {
+  opacity: 0.4;
+  transition: opacity 0.2s ease;
+}
+.robotics-blockly-wrap .blocklyScrollbarHorizontal:hover,
+.robotics-blockly-wrap .blocklyScrollbarVertical:hover {
+  opacity: 0.7;
 }
 
 /* ── Fix bottom gap on code panel and serial monitor ── */
