@@ -1476,6 +1476,59 @@ export class PixiSceneRenderer {
             const distText = (renderer.container as any).__distLabel as Text | undefined;
             if (distText) distText.visible = false;
           }
+
+          // ── LCD text display overlay ──────────────────────────────
+          if (obj.objectType.includes('lcd') || obj.objectType.includes('oled')) {
+            const meta = obj.metadata || {};
+            const line1 = (meta as any).lcdLine1 || '';
+            const line2 = (meta as any).lcdLine2 || '';
+            const backlightOn = (meta as any).lcdBacklight || false;
+
+            // LCD line 1 text
+            let lcdText1 = (renderer.container as any).__lcdLine1 as Text | undefined;
+            if (!lcdText1) {
+              lcdText1 = new Text({
+                text: '',
+                style: { fontFamily: '"Courier New", monospace', fontSize: 13, fill: 0x76FF03, fontWeight: 'bold', letterSpacing: 3 },
+              });
+              (renderer.container as any).__lcdLine1 = lcdText1;
+              renderer.container.addChild(lcdText1);
+            }
+            lcdText1.text = line1;
+            // Position over the LCD screen area (relative to asset coords)
+            lcdText1.x = 65;
+            lcdText1.y = 52;
+            lcdText1.visible = line1.length > 0;
+
+            // LCD line 2 text
+            let lcdText2 = (renderer.container as any).__lcdLine2 as Text | undefined;
+            if (!lcdText2) {
+              lcdText2 = new Text({
+                text: '',
+                style: { fontFamily: '"Courier New", monospace', fontSize: 13, fill: 0x76FF03, fontWeight: 'bold', letterSpacing: 3 },
+              });
+              (renderer.container as any).__lcdLine2 = lcdText2;
+              renderer.container.addChild(lcdText2);
+            }
+            lcdText2.text = line2;
+            lcdText2.x = 65;
+            lcdText2.y = 82;
+            lcdText2.visible = line2.length > 0;
+
+            // Backlight glow effect (green background rect)
+            let lcdBg = (renderer.container as any).__lcdBg as Graphics | undefined;
+            if (!lcdBg) {
+              lcdBg = new Graphics();
+              (renderer.container as any).__lcdBg = lcdBg;
+              // Insert BELOW the text layers
+              renderer.container.addChildAt(lcdBg, 0);
+            }
+            lcdBg.clear();
+            if (backlightOn) {
+              lcdBg.rect(52, 42, 296, 81);
+              lcdBg.fill({ color: 0x2E7D32, alpha: 0.85 });
+            }
+          }
         }
       }
     }

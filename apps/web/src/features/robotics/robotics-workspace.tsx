@@ -1432,31 +1432,70 @@ export function RoboticsWorkspace({
       setSimRunning(false);
       setStatus('Simulation stopped');
 
-      // Reset all LED visual states
+      // Reset all LED visual states and LCD displays
       if (runtime) {
         const objects = runtime.getWorkspaceObjectModels?.() ?? [];
         for (const obj of objects) {
-          if ((obj.objectType as string).includes('led')) {
+          const t = obj.objectType as string;
+          if (t.includes('led')) {
             runtime.updateWorkspaceObjectModel?.(obj.objectId, {
               metadata: { ...obj.metadata, ledOn: false },
+            });
+          }
+          if (t.includes('lcd') || t.includes('oled')) {
+            runtime.updateWorkspaceObjectModel?.(obj.objectId, {
+              metadata: { ...obj.metadata, lcdLine1: '', lcdLine2: '', lcdBacklight: false },
             });
           }
         }
       }
     } else {
       // ── START ──
-      if (!generatedCode.trim()) {
-        setStatus('No code to simulate. Add some blocks first.');
+      // Use either generated block code or pasted code from the editor
+      const codeToSimulate = generatedCode.trim() || '';
+      if (!codeToSimulate) {
+        setStatus('No code to simulate. Add some blocks or paste code first.');
         return;
       }
       setSimRunning(true);
       setStatus('▶ Simulation running…');
 
-      // Simulation tick: toggle LED states based on code patterns
+      // ── Parse LCD commands from code ──
+      const lcdLines: string[] = ['', ''];
+      const hasLcdPrint = /lcd\.print|lcd\.setCursor|LiquidCrystal|lcd\.init/i.test(codeToSimulate);
+
+      if (hasLcdPrint) {
+        // Extract lcd.setCursor + lcd.print pairs
+        // Match patterns like: lcd.setCursor(col, row); lcd.print("text");
+        const printRegex = /lcd\.setCursor\s*\(\s*(\d+)\s*,\s*(\d+)\s*\)\s*;?\s*\n?\s*lcd\.print\s*\(\s*"([^"]*)"\s*\)/gi;
+        let match;
+        while ((match = printRegex.exec(codeToSimulate)) !== null) {
+          const col = parseInt(match[1], 10);
+          const row = parseInt(match[2], 10);
+          const text = match[3];
+          if (row >= 0 && row <= 1) {
+            // Pad to column position
+            const padded = lcdLines[row].padEnd(col, ' ') + text;
+            lcdLines[row] = padded.slice(0, 16); // LCD is 16 chars wide
+          }
+        }
+
+        // Also try simple lcd.print without setCursor
+        if (lcdLines[0] === '' && lcdLines[1] === '') {
+          const simplePrint = /lcd\.print\s*\(\s*"([^"]*)"\s*\)/gi;
+          let lineIdx = 0;
+          while ((match = simplePrint.exec(codeToSimulate)) !== null && lineIdx < 2) {
+            lcdLines[lineIdx] = match[1].slice(0, 16);
+            lineIdx++;
+          }
+        }
+      }
+
+      // Simulation tick: toggle LED states, update sensors, show LCD text
       let tick = 0;
-      const hasDelay = /delay|sleep|time\.sleep/i.test(generatedCode);
-      const hasDigitalWrite = /digitalWrite|pin\.value|GPIO/i.test(generatedCode);
-      const hasAnalogRead = /analogRead|ADC|adc\.read/i.test(generatedCode);
+      const hasDelay = /delay|sleep|time\.sleep/i.test(codeToSimulate);
+      const hasDigitalWrite = /digitalWrite|pin\.value|GPIO/i.test(codeToSimulate);
+      const hasAnalogRead = /analogRead|ADC|adc\.read/i.test(codeToSimulate);
 
       simIntervalRef.current = setInterval(() => {
         tick++;
@@ -1485,6 +1524,23 @@ export function RoboticsWorkspace({
                 metadata: {
                   ...obj.metadata,
                   sensorValue: Math.round(20 + Math.sin(tick * 0.3) * 10),
+                },
+              });
+            }
+          }
+        }
+
+        // Update LCD display text
+        if (hasLcdPrint) {
+          for (const obj of objects) {
+            const t = obj.objectType as string;
+            if (t.includes('lcd') || t.includes('oled')) {
+              runtime.updateWorkspaceObjectModel?.(obj.objectId, {
+                metadata: {
+                  ...obj.metadata,
+                  lcdLine1: lcdLines[0],
+                  lcdLine2: lcdLines[1],
+                  lcdBacklight: true,
                 },
               });
             }
