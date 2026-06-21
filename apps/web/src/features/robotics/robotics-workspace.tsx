@@ -52,6 +52,8 @@ import { PinAssignmentPanel } from '@/features/simulator/pin-assignment-panel';
 import { PropertyPanel } from '@/features/simulator/property-panel';
 import { PinInspector } from '@/features/simulator/pin-inspector';
 import { PinConnectionTable } from '@/features/simulator/pin-connection-table';
+import { ContextMenu } from '@/features/simulator/context-menu';
+import { useSimulatorStore } from '@/features/simulator/simulator-store';
 import { usePinAssignmentStore, BOARD_ASSET_IDS, COMPONENT_PIN_CATALOG } from '@/features/simulator/pin-assignment-store';
 import { generateWireForAssignment, removeWire } from '@/features/simulator/auto-wire-generator';
 import { SmartPlacementEngine, ROBOTICS_BREADBOARD_LAYOUT, COMPONENT_DIMENSIONS } from '@/features/simulator/smart-placement';
@@ -122,6 +124,17 @@ export function RoboticsWorkspace({
   const [showConnectionTable, setShowConnectionTable] = useState(false);
   const [simRunning, setSimRunning] = useState(false);
   const simIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  /* ── Canvas pan state ──────────────────────────────────────────── */
+  const panningRef = useRef(false);
+  const lastMouseRef = useRef({ x: 0, y: 0 });
+  const spacebarRef = useRef(false);
+  const selectedSimComponentIdRef = useRef<string | null>(null);
+
+  /* ── Context menu ──────────────────────────────────────────────── */
+  const contextMenu = useSimulatorStore((s) => s.contextMenu);
+  const setContextMenu = useSimulatorStore((s) => s.setContextMenu);
+  const clearSelection = useSimulatorStore((s) => s.clearSelection);
 
   /* ── Canvas zoom state ──────────────────────────────────────────── */
   const [canvasZoom, setCanvasZoom] = useState(1);
@@ -278,6 +291,13 @@ export function RoboticsWorkspace({
         adapter.initialize();
         simAdapterRef.current = adapter;
 
+        // Bridge context menu from scene renderer to store
+        if (adapter.sceneRenderer) {
+          adapter.sceneRenderer.onContextMenu = (data: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+            useSimulatorStore.getState().setContextMenu(data);
+          };
+        }
+
         if (destroyed) {
           adapter.destroy();
           adapter = null;
@@ -391,6 +411,18 @@ export function RoboticsWorkspace({
           // Phase 20C: update live electrical visualization state each frame
           try { runtime.updateElectricalVisualizationState(vizClockTick++); } catch {}
           adapter.syncStage(runtime.getStageSnapshot());
+
+          // Bridge selection from runtime to React state
+          try {
+            const selections = runtime.getComponentSelectionModels?.() ?? [];
+            const selected = selections.find((s: any) => s.isSelected); // eslint-disable-line @typescript-eslint/no-explicit-any
+            const newId = selected?.componentId ?? null;
+            if (newId !== selectedSimComponentIdRef.current) {
+              selectedSimComponentIdRef.current = newId;
+              setSelectedSimComponentId(newId);
+            }
+          } catch { /* noop */ }
+
           animationFrameId = requestAnimationFrame(syncLoop);
         };
         syncLoop();
@@ -1033,16 +1065,91 @@ export function RoboticsWorkspace({
         setSelectedSimComponentId(null);
       }
 
-      // Escape = back to select tool
+      // Escape = back to select tool + close context menu
       if (e.key === 'Escape') {
         setCircuitTool('select');
         setSelectedSimComponentId(null);
+        setContextMenu(null);
+      }
+
+      // Ctrl+D = duplicate selected
+      if ((e.ctrlKey || e.metaKey) && e.key === 'd' && selectedSimComponentId) {
+        e.preventDefault();
+        const rt = simRuntimeRef.current;
+        if (rt) {
+          try {
+            const obj = rt.getWorkspaceObject?.(selectedSimComponentId);
+            if (obj) {
+              const newId = `${obj.objectType}_${++simObjectCounterRef.current}`;
+              rt.registerWorkspaceObjectModel({
+                objectId: newId,
+                objectType: obj.objectType,
+                positionX: obj.positionX + 30,
+                positionY: obj.positionY + 30,
+                rotation: obj.rotation,
+                scale: obj.scale,
+                selected: false,
+                locked: false,
+                metadata: {},
+              });
+              setStatus(`Duplicated → ${newId}`);
+            }
+          } catch { /* noop */ }
+        }
       }
     };
 
+    // Track spacebar for space+drag panning
+    const keyUp = (e: KeyboardEvent) => {
+      if (e.key === ' ') spacebarRef.current = false;
+    };
+    const keyDown2 = (e: KeyboardEvent) => {
+      if (e.key === ' ') spacebarRef.current = true;
+    };
+
     window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [activeTab, selectedSimComponentId, handleSimDeleteComponent]);
+    window.addEventListener('keydown', keyDown2);
+    window.addEventListener('keyup', keyUp);
+    return () => {
+      window.removeEventListener('keydown', handler);
+      window.removeEventListener('keydown', keyDown2);
+      window.removeEventListener('keyup', keyUp);
+    };
+  }, [activeTab, selectedSimComponentId, handleSimDeleteComponent, setContextMenu]);
+
+  /* ── Canvas pan handlers ──────────────────────────────────────────── */
+  const handleCanvasMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      // Middle-click, Pan tool + left-click, or spacebar + left-click
+      if (
+        e.button === 1 ||
+        (e.button === 0 && circuitTool === 'pan') ||
+        (e.button === 0 && spacebarRef.current)
+      ) {
+        panningRef.current = true;
+        lastMouseRef.current = { x: e.clientX, y: e.clientY };
+        e.preventDefault();
+      }
+    },
+    [circuitTool],
+  );
+
+  const handleCanvasMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!panningRef.current) return;
+    const dx = e.clientX - lastMouseRef.current.x;
+    const dy = e.clientY - lastMouseRef.current.y;
+    lastMouseRef.current = { x: e.clientX, y: e.clientY };
+
+    const adapter = simAdapterRef.current;
+    if (adapter?.app?.stage) {
+      const stage = adapter.app.stage;
+      stage.position.set(stage.position.x + dx, stage.position.y + dy);
+    }
+  }, []);
+
+  const handleCanvasMouseUp = useCallback(() => {
+    panningRef.current = false;
+  }, []);
 
   /* ── Phase 31A.1: Auto-place components from blocks when switching to simulator ── */
   useEffect(() => {
@@ -2037,11 +2144,17 @@ export function RoboticsWorkspace({
                 {/* Center: Pixi Canvas with overlays */}
                 <div className="flex-1 flex flex-col min-w-0 relative">
                   <div
-                    className="flex-1 bg-[#0F172A] relative overflow-hidden"
+                    className={`flex-1 bg-[#0F172A] relative overflow-hidden ${
+                      circuitTool === 'pan' || spacebarRef.current ? 'cursor-grab' : ''
+                    } ${panningRef.current ? 'cursor-grabbing' : ''}`}
                     ref={pixiContainerRef}
                     onDragOver={handleSimDragOver}
                     onDrop={handleSimDrop}
                     onContextMenu={(e) => e.preventDefault()}
+                    onMouseDown={handleCanvasMouseDown}
+                    onMouseMove={handleCanvasMouseMove}
+                    onMouseUp={handleCanvasMouseUp}
+                    onMouseLeave={handleCanvasMouseUp}
                   >
                     {/* Floating zoom indicator */}
                     {canvasZoom !== 1 && (
@@ -2053,6 +2166,58 @@ export function RoboticsWorkspace({
 
                     {/* Pin inspector tooltip */}
                     <PinInspector />
+
+                    {/* Context menu overlay */}
+                    <ContextMenu
+                      onDelete={(id) => handleSimDeleteComponent(id)}
+                      onDuplicate={(id) => {
+                        const rt = simRuntimeRef.current;
+                        if (!rt) return;
+                        try {
+                          const obj = rt.getWorkspaceObject?.(id);
+                          if (obj) {
+                            const newId = `${obj.objectType}_${++simObjectCounterRef.current}`;
+                            rt.registerWorkspaceObjectModel({
+                              objectId: newId,
+                              objectType: obj.objectType,
+                              positionX: obj.positionX + 30,
+                              positionY: obj.positionY + 30,
+                              rotation: obj.rotation,
+                              scale: obj.scale,
+                              selected: false,
+                              locked: false,
+                              metadata: {},
+                            });
+                            setStatus(`Duplicated → ${newId}`);
+                          }
+                        } catch { /* noop */ }
+                      }}
+                      onRotateCW={(id) => {
+                        const rt = simRuntimeRef.current;
+                        if (!rt) return;
+                        try {
+                          const obj = rt.getWorkspaceObject?.(id);
+                          if (obj) rt.updateWorkspaceObjectModel?.(id, { rotation: (obj.rotation || 0) + 90 });
+                        } catch { /* noop */ }
+                      }}
+                      onRotateCCW={(id) => {
+                        const rt = simRuntimeRef.current;
+                        if (!rt) return;
+                        try {
+                          const obj = rt.getWorkspaceObject?.(id);
+                          if (obj) rt.updateWorkspaceObjectModel?.(id, { rotation: (obj.rotation || 0) - 90 });
+                        } catch { /* noop */ }
+                      }}
+                      onDeleteWire={(wireId) => {
+                        const rt = simRuntimeRef.current;
+                        if (!rt) return;
+                        try { rt.removeWire?.(wireId); } catch { /* noop */ }
+                      }}
+                      onInspect={(id) => {
+                        setSelectedSimComponentId(id);
+                        setStatus(`Inspecting ${id}`);
+                      }}
+                    />
                   </div>
 
                   {/* Status bar */}
