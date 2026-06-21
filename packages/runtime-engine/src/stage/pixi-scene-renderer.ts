@@ -1477,56 +1477,99 @@ export class PixiSceneRenderer {
             if (distText) distText.visible = false;
           }
 
-          // ── LCD text display overlay ──────────────────────────────
+          // ── LCD text display overlay (hardware-accurate) ──────────
           if (obj.objectType.includes('lcd') || obj.objectType.includes('oled')) {
             const meta = obj.metadata || {};
-            const line1 = (meta as any).lcdLine1 || '';
-            const line2 = (meta as any).lcdLine2 || '';
-            const backlightOn = (meta as any).lcdBacklight || false;
+            const line1: string = (meta as any).lcdLine1 || '';
+            const line2: string = (meta as any).lcdLine2 || '';
+            const backlightOn: boolean = (meta as any).lcdBacklight || false;
 
-            // LCD line 1 text
-            let lcdText1 = (renderer.container as any).__lcdLine1 as Text | undefined;
-            if (!lcdText1) {
-              lcdText1 = new Text({
-                text: '',
-                style: { fontFamily: '"Courier New", monospace', fontSize: 13, fill: 0x76FF03, fontWeight: 'bold', letterSpacing: 3 },
-              });
-              (renderer.container as any).__lcdLine1 = lcdText1;
-              renderer.container.addChild(lcdText1);
-            }
-            lcdText1.text = line1;
-            // Position over the LCD screen area (relative to asset coords)
-            lcdText1.x = 65;
-            lcdText1.y = 52;
-            lcdText1.visible = line1.length > 0;
+            // SVG viewBox is 400×220, asset is 420×230
+            // Scale factors from SVG coords → asset (pixel) coords
+            const SX = (asset.imageWidth || 420) / 400;
+            const SY = (asset.imageHeight || 230) / 220;
 
-            // LCD line 2 text
-            let lcdText2 = (renderer.container as any).__lcdLine2 as Text | undefined;
-            if (!lcdText2) {
-              lcdText2 = new Text({
-                text: '',
-                style: { fontFamily: '"Courier New", monospace', fontSize: 13, fill: 0x76FF03, fontWeight: 'bold', letterSpacing: 3 },
-              });
-              (renderer.container as any).__lcdLine2 = lcdText2;
-              renderer.container.addChild(lcdText2);
-            }
-            lcdText2.text = line2;
-            lcdText2.x = 65;
-            lcdText2.y = 82;
-            lcdText2.visible = line2.length > 0;
+            // SVG character grid positions (from the SVG source):
+            // Row 1 cells: y=50, Row 2 cells: y=80, each cell: 14w × 18h, spacing 18px, starting x=60
+            const GRID_START_X = 60 * SX;       // ≈63
+            const ROW1_Y      = 50 * SY;        // ≈52.3
+            const ROW2_Y      = 80 * SY;        // ≈83.6
+            const CELL_W      = 14 * SX;        // ≈14.7
+            const CELL_H      = 18 * SY;        // ≈18.8
+            const CELL_PITCH  = 18 * SX;        // ≈18.9 (center-to-center)
+            const COLS        = 16;
+            const FONT_SIZE   = Math.round(CELL_H * 0.72); // fit character inside cell
 
-            // Backlight glow effect (green background rect)
+            // Display window area (for backlight fill)
+            const DISP_X = 50 * SX;
+            const DISP_Y = 40 * SY;
+            const DISP_W = 300 * SX;
+            const DISP_H = 85 * SY;
+
+            // ── Backlight background ──
             let lcdBg = (renderer.container as any).__lcdBg as Graphics | undefined;
             if (!lcdBg) {
               lcdBg = new Graphics();
               (renderer.container as any).__lcdBg = lcdBg;
-              // Insert BELOW the text layers
-              renderer.container.addChildAt(lcdBg, 0);
+              // Insert above sprite but below everything else
+              const insertIdx = renderer.container.children.length > 1 ? 1 : 0;
+              renderer.container.addChildAt(lcdBg, insertIdx);
             }
             lcdBg.clear();
             if (backlightOn) {
-              lcdBg.rect(52, 42, 296, 81);
-              lcdBg.fill({ color: 0x2E7D32, alpha: 0.85 });
+              // Bright green backlight fills the display window
+              lcdBg.rect(DISP_X, DISP_Y, DISP_W, DISP_H);
+              lcdBg.fill({ color: 0x4CAF50, alpha: 0.35 });
+            }
+
+            // ── Per-character cell container ──
+            let cellContainer = (renderer.container as any).__lcdCells as Container | undefined;
+            if (!cellContainer) {
+              cellContainer = new Container();
+              (renderer.container as any).__lcdCells = cellContainer;
+              renderer.container.addChild(cellContainer);
+            }
+
+            // Clear previous character cells
+            cellContainer.removeChildren();
+
+            // Helper: render one row of characters in their grid cells
+            const renderRow = (text: string, rowY: number) => {
+              for (let c = 0; c < COLS; c++) {
+                const char = c < text.length ? text[c] : '';
+                const cellX = GRID_START_X + c * CELL_PITCH;
+
+                if (backlightOn) {
+                  // Draw dark cell background (the "pixel off" squares)
+                  const cellBg = new Graphics();
+                  cellBg.roundRect(cellX, rowY, CELL_W, CELL_H, 1 * SX);
+                  cellBg.fill({ color: 0x1B5E20, alpha: 0.8 });
+                  cellContainer!.addChild(cellBg);
+                }
+
+                if (char && char !== ' ') {
+                  // Render character centered in the cell
+                  const charText = new Text({
+                    text: char,
+                    style: {
+                      fontFamily: '"Courier New", "Lucida Console", monospace',
+                      fontSize: FONT_SIZE,
+                      fill: 0x76FF03,
+                      fontWeight: 'bold',
+                    },
+                  });
+                  // Center character in cell
+                  charText.anchor.set(0.5, 0.5);
+                  charText.x = cellX + CELL_W / 2;
+                  charText.y = rowY + CELL_H / 2;
+                  cellContainer!.addChild(charText);
+                }
+              }
+            };
+
+            if (backlightOn || line1.length > 0 || line2.length > 0) {
+              renderRow(line1, ROW1_Y);
+              renderRow(line2, ROW2_Y);
             }
           }
         }
