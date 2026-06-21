@@ -258,9 +258,10 @@ export function RoboticsWorkspace({
         // Users will drag components from the palette — no hardcoded components
 
         const app = new Application();
+        const containerRect = container.getBoundingClientRect();
         await app.init({
-          width: 800,
-          height: 600,
+          width: containerRect.width || 800,
+          height: containerRect.height || 600,
           backgroundColor: 0xD4D4D4,
           antialias: true,
           resolution: window.devicePixelRatio || 1,
@@ -287,9 +288,66 @@ export function RoboticsWorkspace({
 
         if (adapter.app?.canvas && container) {
           container.appendChild(adapter.app.canvas);
+          // Make canvas fill its container
+          const c = adapter.app.canvas as HTMLCanvasElement;
+          c.style.width = '100%';
+          c.style.height = '100%';
+          c.style.display = 'block';
         } else if (adapter.app?.view && container) {
           container.appendChild(adapter.app.view);
+          const c = adapter.app.view as HTMLCanvasElement;
+          c.style.width = '100%';
+          c.style.height = '100%';
+          c.style.display = 'block';
         }
+
+        // ── ResizeObserver: keep renderer in sync with container size ──
+        let resizeTimer: ReturnType<typeof setTimeout> | null = null;
+        const ro = new ResizeObserver((entries) => {
+          for (const entry of entries) {
+            const { width, height } = entry.contentRect;
+            if (width > 0 && height > 0 && !destroyed) {
+              try {
+                adapter?.app?.renderer?.resize(width, height);
+              } catch { /* noop */ }
+
+              // Debounce camera re-fit after sidebar transition (300ms)
+              if (resizeTimer) clearTimeout(resizeTimer);
+              resizeTimer = setTimeout(() => {
+                if (destroyed || !runtime) return;
+                try {
+                  const allObjs = runtime.getWorkspaceObjectModels?.() ?? [];
+                  if (allObjs.length === 0) return;
+                  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                  for (const obj of allObjs) {
+                    const x = obj.positionX || 0;
+                    const y = obj.positionY || 0;
+                    const w = 200, h = 200;
+                    minX = Math.min(minX, x);
+                    minY = Math.min(minY, y);
+                    maxX = Math.max(maxX, x + w);
+                    maxY = Math.max(maxY, y + h);
+                  }
+                  const contentW = maxX - minX || 800;
+                  const contentH = maxY - minY || 600;
+                  const pad = 60;
+                  const zoom = Math.min((width - pad) / contentW, (height - pad) / contentH, 1.5);
+                  const cx = (width - contentW * zoom) / 2 - minX * zoom;
+                  const cy = (height - contentH * zoom) / 2 - minY * zoom;
+                  if (adapter?.app?.stage) {
+                    adapter.app.stage.scale.set(zoom);
+                    adapter.app.stage.position.set(cx, cy);
+                  }
+                  canvasZoomRef.current = zoom;
+                  setCanvasZoom(zoom);
+                } catch { /* noop */ }
+              }, 350);
+            }
+          }
+        });
+        ro.observe(container);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (container as any).__resizeObserver = ro;
 
         // ── Canvas zoom via mouse wheel ──────────────────────────────
         const handleWheel = (e: WheelEvent) => {
@@ -381,6 +439,14 @@ export function RoboticsWorkspace({
         (container as any).__wheelCleanup();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         delete (container as any).__wheelCleanup;
+      }
+      // Clean up ResizeObserver
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (container && (container as any).__resizeObserver) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (container as any).__resizeObserver.disconnect();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        delete (container as any).__resizeObserver;
       }
       if (adapter) {
         if (adapter.app?.canvas && container) {
