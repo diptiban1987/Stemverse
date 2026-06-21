@@ -376,21 +376,21 @@ export const LED_ASSET: ComponentAssetDefinition = {
   componentType: 'LED',
   displayName: '5mm Red LED',
   imageWidth: 80,
-  imageHeight: 140,
-  rotationCenter: { x: 40, y: 70 },
-  selectionBounds: { x: 0, y: 0, width: 80, height: 140 },
+  imageHeight: 150,
+  rotationCenter: { x: 40, y: 75 },
+  selectionBounds: { x: 0, y: 0, width: 80, height: 150 },
   defaultScale: 1.0,
   metadata: {
     colorHex: '#FF0000',
     flatEdgeSide: 'CATHODE',
   },
   pinCoordinates: [
-    { name: 'ANODE', number: 1, pixelX: 34, pixelY: 130, anchorX: 34, anchorY: 130, signalType: 'PASSIVE' },
-    { name: 'CATHODE', number: 2, pixelX: 46, pixelY: 130, anchorX: 46, anchorY: 130, signalType: 'PASSIVE' },
+    { name: 'ANODE', number: 1, pixelX: 30, pixelY: 148, anchorX: 30, anchorY: 148, signalType: 'PASSIVE' },
+    { name: 'CATHODE', number: 2, pixelX: 50, pixelY: 134, anchorX: 50, anchorY: 134, signalType: 'PASSIVE' },
   ],
   wireAnchorPoints: [
-    { anchorId: 'pin_ANODE', x: 34, y: 130 },
-    { anchorId: 'pin_CATHODE', x: 46, y: 130 },
+    { anchorId: 'pin_ANODE', x: 30, y: 148 },
+    { anchorId: 'pin_CATHODE', x: 50, y: 134 },
   ],
   textureSvgData: getComponentSvg('LED'),
 };

@@ -737,77 +737,107 @@ const SG90_SERVO_RAW = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 230
 </svg>`;
 
 // ── LED 5mm ─────────────────────────────────────────────────────────────────
-const LED_5MM_RAW = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 100">
+const LED_5MM_RAW = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 110">
   <defs>
-    <!-- 3D dome gradient: bright hot-spot center fading to deep red edges -->
-    <radialGradient id="led-dome" cx="40%" cy="30%" r="55%">
-      <stop offset="0%" stop-color="#FF8A80" stop-opacity="0.98"/>
-      <stop offset="25%" stop-color="#FF5252" stop-opacity="0.92"/>
-      <stop offset="55%" stop-color="#F44336" stop-opacity="0.82"/>
-      <stop offset="80%" stop-color="#D32F2F" stop-opacity="0.72"/>
-      <stop offset="100%" stop-color="#B71C1C" stop-opacity="0.60"/>
+    <!-- Dome: opaque 3D red epoxy with strong shading -->
+    <radialGradient id="led-dome" cx="38%" cy="28%" r="60%">
+      <stop offset="0%" stop-color="#FF6B6B"/>
+      <stop offset="30%" stop-color="#EF4444"/>
+      <stop offset="60%" stop-color="#DC2626"/>
+      <stop offset="85%" stop-color="#B91C1C"/>
+      <stop offset="100%" stop-color="#7F1D1D"/>
     </radialGradient>
-    <!-- Outer ambient glow -->
-    <radialGradient id="led-glow" cx="50%" cy="38%" r="55%">
-      <stop offset="0%" stop-color="#FFCDD2" stop-opacity="0.55"/>
-      <stop offset="60%" stop-color="#FF5252" stop-opacity="0.15"/>
-      <stop offset="100%" stop-color="#FF5252" stop-opacity="0"/>
-    </radialGradient>
-    <!-- Inner light refraction -->
-    <radialGradient id="led-inner" cx="50%" cy="55%" r="45%">
-      <stop offset="0%" stop-color="#FFCDD2" stop-opacity="0.25"/>
-      <stop offset="100%" stop-color="#F44336" stop-opacity="0"/>
-    </radialGradient>
-    <!-- Metallic rim gradient -->
+    <!-- Dome edge: subtle dark stroke gradient for depth -->
+    <linearGradient id="led-dome-edge" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#991B1B"/>
+      <stop offset="100%" stop-color="#450A0A"/>
+    </linearGradient>
+    <!-- Cylindrical body below dome -->
+    <linearGradient id="led-body" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#991B1B"/>
+      <stop offset="15%" stop-color="#DC2626"/>
+      <stop offset="40%" stop-color="#EF4444"/>
+      <stop offset="60%" stop-color="#DC2626"/>
+      <stop offset="85%" stop-color="#B91C1C"/>
+      <stop offset="100%" stop-color="#7F1D1D"/>
+    </linearGradient>
+    <!-- Internal die/chip anvil -->
+    <linearGradient id="led-die" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FCA5A5" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#EF4444" stop-opacity="0.2"/>
+    </linearGradient>
+    <!-- Metallic rim/flange -->
     <linearGradient id="led-rim" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#E8E8E8"/>
-      <stop offset="20%" stop-color="#D0D0D0"/>
-      <stop offset="50%" stop-color="#A8A8A8"/>
-      <stop offset="80%" stop-color="#C8C8C8"/>
-      <stop offset="100%" stop-color="#909090"/>
+      <stop offset="0%" stop-color="#E5E7EB"/>
+      <stop offset="20%" stop-color="#D1D5DB"/>
+      <stop offset="50%" stop-color="#9CA3AF"/>
+      <stop offset="80%" stop-color="#D1D5DB"/>
+      <stop offset="100%" stop-color="#6B7280"/>
     </linearGradient>
-    <!-- Lead metallic gradient -->
+    <!-- Wire lead metallic -->
     <linearGradient id="led-lead" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#B0B0B0"/>
-      <stop offset="30%" stop-color="#D0D0D0"/>
-      <stop offset="50%" stop-color="#C0C0C0"/>
-      <stop offset="100%" stop-color="#909090"/>
+      <stop offset="0%" stop-color="#9CA3AF"/>
+      <stop offset="30%" stop-color="#D1D5DB"/>
+      <stop offset="50%" stop-color="#E5E7EB"/>
+      <stop offset="70%" stop-color="#D1D5DB"/>
+      <stop offset="100%" stop-color="#6B7280"/>
     </linearGradient>
-    <filter id="led-shadow" x="-20%" y="-10%" width="140%" height="130%">
-      <feDropShadow dx="1.5" dy="2" stdDeviation="1.5" flood-color="#000" flood-opacity="0.28"/>
+    <filter id="led-shadow" x="-15%" y="-5%" width="130%" height="120%">
+      <feDropShadow dx="1" dy="1.5" stdDeviation="1.2" flood-color="#000" flood-opacity="0.25"/>
     </filter>
-    <filter id="led-highlight-blur">
-      <feGaussianBlur stdDeviation="0.6"/>
+    <filter id="led-inner-shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur stdDeviation="0.8"/>
     </filter>
+    <!-- Cathode flat edge clip -->
+    <clipPath id="led-flat-clip">
+      <rect x="0" y="0" width="45" height="110"/>
+    </clipPath>
   </defs>
-  <!-- Ambient glow halo -->
-  <circle cx="30" cy="26" r="28" fill="url(#led-glow)"/>
-  <!-- LED Dome body (epoxy lens) -->
-  <ellipse cx="30" cy="30" rx="16" ry="23" fill="url(#led-dome)" filter="url(#led-shadow)" stroke="#B71C1C" stroke-width="0.8"/>
-  <!-- Internal light refraction -->
-  <ellipse cx="30" cy="38" rx="10" ry="10" fill="url(#led-inner)"/>
-  <!-- Primary specular highlight (top-left) -->
-  <ellipse cx="23" cy="20" rx="5" ry="9" fill="#FFFFFF" opacity="0.45" transform="rotate(-20,23,20)"/>
-  <!-- Secondary smaller highlight -->
-  <ellipse cx="26" cy="17" rx="2.5" ry="4" fill="#FFFFFF" opacity="0.3" transform="rotate(-15,26,17)" filter="url(#led-highlight-blur)"/>
-  <!-- Edge rim highlight (right side reflection) -->
-  <ellipse cx="40" cy="32" rx="2" ry="12" fill="#FFFFFF" opacity="0.12" transform="rotate(8,40,32)"/>
-  <!-- Metallic rim / flange at base -->
-  <rect x="13" y="49" width="34" height="9" rx="2.5" fill="url(#led-rim)" stroke="#757575" stroke-width="0.8"/>
-  <!-- Rim bevel highlight -->
-  <rect x="14" y="49" width="32" height="3" rx="1.5" fill="#FFFFFF" opacity="0.18"/>
-  <!-- Flat cathode edge indicator on rim -->
-  <rect x="43" y="50" width="2.5" height="7" rx="0.5" fill="#808080" stroke="#666" stroke-width="0.4"/>
-  <!-- Anode leg (longer, left) -->
-  <line x1="24" y1="58" x2="24" y2="98" stroke="url(#led-lead)" stroke-width="2" stroke-linecap="round"/>
-  <!-- Cathode leg (shorter, right) -->
-  <line x1="36" y1="58" x2="36" y2="90" stroke="url(#led-lead)" stroke-width="2" stroke-linecap="round"/>
-  <!-- Leg end caps for 3D feel -->
-  <circle cx="24" cy="98" r="1" fill="#A0A0A0"/>
-  <circle cx="36" cy="90" r="1" fill="#A0A0A0"/>
-  <!-- Labels -->
-  <text x="18" y="96" font-family="monospace" font-size="6" fill="#666" font-weight="bold">+</text>
-  <text x="38" y="88" font-family="monospace" font-size="6" fill="#666" font-weight="bold">−</text>
+
+  <!-- === Wire Leads === -->
+  <!-- Anode lead (longer, left) -->
+  <line x1="22" y1="68" x2="22" y2="108" stroke="url(#led-lead)" stroke-width="1.8" stroke-linecap="round"/>
+  <!-- Cathode lead (shorter, right) -->
+  <line x1="38" y1="68" x2="38" y2="98" stroke="url(#led-lead)" stroke-width="1.8" stroke-linecap="round"/>
+  <!-- Lead end caps -->
+  <ellipse cx="22" cy="108" rx="1.2" ry="0.6" fill="#9CA3AF"/>
+  <ellipse cx="38" cy="98" rx="1.2" ry="0.6" fill="#9CA3AF"/>
+
+  <!-- === Metallic Rim/Flange === -->
+  <rect x="14" y="56" width="32" height="10" rx="2" fill="url(#led-rim)" stroke="#6B7280" stroke-width="0.6" filter="url(#led-shadow)"/>
+  <!-- Rim top bevel highlight -->
+  <rect x="15" y="56" width="30" height="2.5" rx="1.2" fill="white" opacity="0.2"/>
+  <!-- Rim bottom shadow -->
+  <rect x="15" y="63" width="30" height="1.5" rx="0.8" fill="#374151" opacity="0.15"/>
+
+  <!-- === Cylindrical body (below dome, above rim) === -->
+  <rect x="16" y="44" width="28" height="13" rx="1" fill="url(#led-body)" stroke="url(#led-dome-edge)" stroke-width="0.5"/>
+
+  <!-- === Dome (bullet shape — ellipse with flat bottom) === -->
+  <ellipse cx="30" cy="32" rx="14" ry="22" fill="url(#led-dome)" stroke="url(#led-dome-edge)" stroke-width="0.8" filter="url(#led-shadow)"/>
+
+  <!-- Cathode flat edge (right side, clipped) -->
+  <rect x="42" y="18" width="4" height="38" fill="url(#led-dome-edge)" opacity="0.5" rx="0.5"/>
+
+  <!-- === Internal die/anvil (visible through translucent epoxy) === -->
+  <rect x="24" y="36" width="12" height="8" rx="1.5" fill="url(#led-die)" stroke="#FCA5A5" stroke-width="0.3" stroke-opacity="0.4"/>
+  <!-- Bond wire from die to lead -->
+  <path d="M28 44 Q28 48 22 56" fill="none" stroke="#D1D5DB" stroke-width="0.4" opacity="0.35"/>
+  <path d="M32 44 Q32 48 38 56" fill="none" stroke="#D1D5DB" stroke-width="0.4" opacity="0.35"/>
+
+  <!-- === Specular highlights (3D glass effect) === -->
+  <!-- Primary highlight (top-left dome) -->
+  <ellipse cx="24" cy="20" rx="4.5" ry="10" fill="white" opacity="0.4" transform="rotate(-18,24,20)"/>
+  <!-- Sharp specular dot -->
+  <ellipse cx="25" cy="16" rx="2" ry="3.5" fill="white" opacity="0.55" transform="rotate(-12,25,16)"/>
+  <!-- Right edge reflection -->
+  <ellipse cx="39" cy="30" rx="1.5" ry="8" fill="white" opacity="0.08" transform="rotate(5,39,30)"/>
+  <!-- Bottom dome highlight -->
+  <ellipse cx="30" cy="48" rx="8" ry="2" fill="white" opacity="0.06"/>
+
+  <!-- === Pin polarity markers === -->
+  <text x="16" y="106" font-family="Inter,system-ui,sans-serif" font-size="5.5" fill="#6B7280" font-weight="600">+</text>
+  <text x="40" y="96" font-family="Inter,system-ui,sans-serif" font-size="5.5" fill="#6B7280" font-weight="600">−</text>
 </svg>`;
 
 // ── Resistor ────────────────────────────────────────────────────────────────
