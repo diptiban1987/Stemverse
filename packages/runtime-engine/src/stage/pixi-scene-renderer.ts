@@ -515,10 +515,10 @@ export class PixiSceneRenderer {
       if (cx >= minX && cx <= maxX && cy >= minY && cy <= maxY) {
         try {
           this.runtime.registerComponentSelectionModel({
-            id: `sel_${obj.objectId}`,
+            selectionId: `sel_${obj.objectId}`,
             componentId: obj.objectId,
             isSelected: true,
-            selectionOrder: Date.now(),
+            isHovered: false,
             futureSelectionHints: {},
           });
         } catch { /* already registered */ }
@@ -670,10 +670,10 @@ export class PixiSceneRenderer {
         }
         try {
           this.runtime.registerComponentSelectionModel({
-            id: `sel_${objectId}`,
+            selectionId: `sel_${objectId}`,
             componentId: objectId,
             isSelected: true,
-            selectionOrder: Date.now(),
+            isHovered: false,
             futureSelectionHints: {},
           });
         } catch { /* already registered */ }
@@ -969,10 +969,10 @@ export class PixiSceneRenderer {
         }
         try {
           this.runtime.registerComponentSelectionModel({
-            id: `sel_${objectId}`,
+            selectionId: `sel_${objectId}`,
             componentId: objectId,
             isSelected: true,
-            selectionOrder: Date.now(),
+            isHovered: false,
             futureSelectionHints: {},
           });
         } catch { /* already registered */ }
@@ -2034,10 +2034,10 @@ export class PixiSceneRenderer {
           futureObjectHints: {},
         });
         this.runtime.registerComponentSelectionModel({
-          id: `sel_${newId}`,
+          selectionId: `sel_${newId}`,
           componentId: newId,
           isSelected: true,
-          selectionOrder: Date.now(),
+          isHovered: false,
           futureSelectionHints: {},
         });
       } catch { /* noop */ }
@@ -2179,8 +2179,8 @@ export class PixiSceneRenderer {
           try {
             this.runtime.clearComponentSelectionModels();
             this.runtime.registerComponentSelectionModel({
-              id: `sel_${targetId}`, componentId: targetId,
-              isSelected: true, selectionOrder: Date.now(), futureSelectionHints: {},
+              selectionId: `sel_${targetId}`, componentId: targetId,
+              isSelected: true, isHovered: false, futureSelectionHints: {},
             });
           } catch { /* noop */ }
           this.zoomToSelection();
