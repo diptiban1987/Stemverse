@@ -1720,14 +1720,17 @@ export function RoboticsWorkspace({
         }
       }
 
-      // 3. Check if any components are on canvas but not wired at all
-      if (allAssignments.length === 0 && codeToSimulate.includes('lcd') || codeToSimulate.includes('LCD')) {
+      // 3. Check if any LCD/display components are on canvas but have zero pin assignments
+      if (codeToSimulate.includes('lcd') || codeToSimulate.includes('LCD') || codeToSimulate.includes('LiquidCrystal')) {
         const rt = simRuntimeRef.current;
         const objects = rt?.getWorkspaceObjectModels?.() ?? [];
-        const hasLcd = objects.some(o => (o.objectType as string).includes('lcd'));
-        if (hasLcd) {
-          pinErrors.push(`❌ LCD component is on canvas but has no pin assignments. Assign SDA and SCL pins in the Pin Assignment panel.`);
-          hasCriticalError = true;
+        const lcdObjects = objects.filter(o => (o.objectType as string).includes('lcd'));
+        for (const lcdObj of lcdObjects) {
+          // Only flag if this specific LCD has NO assignments at all
+          if (!componentGroups.has(lcdObj.objectId)) {
+            pinErrors.push(`❌ ${lcdObj.objectType}: on canvas but has no pin assignments. Assign SDA and SCL pins in the Pin Assignment panel.`);
+            hasCriticalError = true;
+          }
         }
       }
 
