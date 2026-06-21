@@ -54,10 +54,9 @@ import { PinInspector } from '@/features/simulator/pin-inspector';
 import { PinConnectionTable } from '@/features/simulator/pin-connection-table';
 import { ContextMenu } from '@/features/simulator/context-menu';
 import { useSimulatorStore } from '@/features/simulator/simulator-store';
-import { usePinAssignmentStore, BOARD_ASSET_IDS, COMPONENT_PIN_CATALOG } from '@/features/simulator/pin-assignment-store';
+import { usePinAssignmentStore, BOARD_ASSET_IDS, COMPONENT_PIN_CATALOG, type PinAssignment } from '@/features/simulator/pin-assignment-store';
 import { generateWireForAssignment, removeWire } from '@/features/simulator/auto-wire-generator';
 import { SmartPlacementEngine, ROBOTICS_BREADBOARD_LAYOUT, COMPONENT_DIMENSIONS } from '@/features/simulator/smart-placement';
-import type { PinAssignment } from '@/features/simulator/pin-assignment-store';
 import { detectComponentsFromCode } from '@/features/simulator/block-to-simulator-sync';
 import {
   ZoomIn, ZoomOut, Maximize2, Table2,
@@ -1523,6 +1522,143 @@ export function RoboticsWorkspace({
       }
 
       setSimulationErrors(simErrors);
+
+      // ── Pin assignment validation ──────────────────────────────
+      // Check that code-specified pins match actual wiring on canvas
+      const store = usePinAssignmentStore.getState();
+      const allAssignments = store.assignments;
+      const pinErrors: string[] = [];
+      let hasCriticalError = false;
+
+      // 1. Extract pin assignments from the code
+      //    Patterns: const int sdaPin = 16; / #define TRIG_PIN 5 / int ledPin = 13;
+      const codePinDefs: Array<{ varName: string; pinNum: number }> = [];
+      const pinDefRegex = /(?:const\s+int|int|#define)\s+(\w*(?:pin|Pin|PIN)\w*)\s*[=\s]+\s*(\d+)/gi;
+      let pinDefMatch;
+      while ((pinDefMatch = pinDefRegex.exec(codeToSimulate)) !== null) {
+        codePinDefs.push({ varName: pinDefMatch[1], pinNum: parseInt(pinDefMatch[2], 10) });
+      }
+
+      // Also check Wire.begin(sda, scl) pattern
+      const wireBeginMatch = /Wire\.begin\s*\(\s*(\w+)\s*,\s*(\w+)\s*\)/i.exec(codeToSimulate);
+      let codeSdaPin: number | null = null;
+      let codeSclPin: number | null = null;
+      if (wireBeginMatch) {
+        const sdaVar = wireBeginMatch[1];
+        const sclVar = wireBeginMatch[2];
+        // Resolve variable names to pin numbers
+        const sdaDef = codePinDefs.find(d => d.varName === sdaVar);
+        const sclDef = codePinDefs.find(d => d.varName === sclVar);
+        codeSdaPin = sdaDef ? sdaDef.pinNum : (isNaN(Number(sdaVar)) ? null : Number(sdaVar));
+        codeSclPin = sclDef ? sclDef.pinNum : (isNaN(Number(sclVar)) ? null : Number(sclVar));
+      }
+
+      // 2. Get component assignments and check wiring
+      const componentGroups = new Map<string, PinAssignment[]>();
+      for (const a of allAssignments) {
+        if (!componentGroups.has(a.componentObjectId)) {
+          componentGroups.set(a.componentObjectId, []);
+        }
+        componentGroups.get(a.componentObjectId)!.push(a);
+      }
+
+      for (const [compId, assignments] of componentGroups) {
+        const compName = assignments[0]?.componentDisplayName || compId;
+
+        // Check if all required pins have board assignments
+        for (const a of assignments) {
+          if (!a.boardPinName || a.boardPinName === '') {
+            pinErrors.push(`❌ ${compName}: Pin "${a.componentPinName}" is not wired to any board pin`);
+            hasCriticalError = true;
+          }
+        }
+
+        // Check I2C pin matching for LCD/OLED components
+        if (assignments[0]?.componentType?.includes('lcd') || assignments[0]?.componentType?.includes('oled')) {
+          const sdaAssignment = assignments.find(a => a.componentPinName === 'SDA');
+          const sclAssignment = assignments.find(a => a.componentPinName === 'SCL');
+
+          if (!sdaAssignment?.boardPinName) {
+            pinErrors.push(`❌ ${compName}: SDA pin is not connected — wire it to a GPIO pin`);
+            hasCriticalError = true;
+          }
+          if (!sclAssignment?.boardPinName) {
+            pinErrors.push(`❌ ${compName}: SCL pin is not connected — wire it to a GPIO pin`);
+            hasCriticalError = true;
+          }
+
+          // Validate code pin numbers match wired pins
+          if (codeSdaPin !== null && sdaAssignment?.boardPinName) {
+            const wiredGpio = parseInt(sdaAssignment.boardPinName.replace(/\D/g, ''), 10);
+            if (wiredGpio !== codeSdaPin) {
+              pinErrors.push(`❌ ${compName}: Code says SDA = GPIO${codeSdaPin}, but wired to ${sdaAssignment.boardPinName}. Change the dropdown to GPIO${codeSdaPin} or update your code.`);
+              hasCriticalError = true;
+            } else {
+              pinErrors.push(`✅ ${compName}: SDA correctly wired to GPIO${codeSdaPin}`);
+            }
+          }
+          if (codeSclPin !== null && sclAssignment?.boardPinName) {
+            const wiredGpio = parseInt(sclAssignment.boardPinName.replace(/\D/g, ''), 10);
+            if (wiredGpio !== codeSclPin) {
+              pinErrors.push(`❌ ${compName}: Code says SCL = GPIO${codeSclPin}, but wired to ${sclAssignment.boardPinName}. Change the dropdown to GPIO${codeSclPin} or update your code.`);
+              hasCriticalError = true;
+            } else {
+              pinErrors.push(`✅ ${compName}: SCL correctly wired to GPIO${codeSclPin}`);
+            }
+          }
+        }
+
+        // Check generic pin matching from code variables
+        for (const a of assignments) {
+          if (a.isAutoAssigned) continue; // Skip VCC/GND
+          const wiredGpio = parseInt(a.boardPinName?.replace(/\D/g, '') || '', 10);
+          if (isNaN(wiredGpio)) continue;
+
+          // Search for matching code pin def
+          const pinNameLower = a.componentPinName.toLowerCase();
+          const matchingCodeDef = codePinDefs.find(d => {
+            const varLower = d.varName.toLowerCase();
+            return varLower.includes(pinNameLower) ||
+                   (pinNameLower === 'trig' && varLower.includes('trig')) ||
+                   (pinNameLower === 'echo' && varLower.includes('echo')) ||
+                   (pinNameLower === 'data' && varLower.includes('data')) ||
+                   (pinNameLower === 'pwm' && varLower.includes('servo'));
+          });
+
+          if (matchingCodeDef && matchingCodeDef.pinNum !== wiredGpio) {
+            pinErrors.push(`❌ ${compName}: Code says ${a.componentPinName} = GPIO${matchingCodeDef.pinNum}, but wired to GPIO${wiredGpio}`);
+            hasCriticalError = true;
+          }
+        }
+      }
+
+      // 3. Check if any components are on canvas but not wired at all
+      if (allAssignments.length === 0 && codeToSimulate.includes('lcd') || codeToSimulate.includes('LCD')) {
+        const rt = simRuntimeRef.current;
+        const objects = rt?.getWorkspaceObjectModels?.() ?? [];
+        const hasLcd = objects.some(o => (o.objectType as string).includes('lcd'));
+        if (hasLcd) {
+          pinErrors.push(`❌ LCD component is on canvas but has no pin assignments. Assign SDA and SCL pins in the Pin Assignment panel.`);
+          hasCriticalError = true;
+        }
+      }
+
+      // Add pin validation results to log
+      if (pinErrors.length > 0) {
+        simErrors.push('── Pin Wiring Check ──');
+        simErrors.push(...pinErrors);
+      }
+
+      // Block simulation if critical errors found
+      if (hasCriticalError) {
+        simErrors.push('');
+        simErrors.push('🚫 SIMULATION BLOCKED — Fix the wiring errors above before running');
+        setSimulationErrors(simErrors);
+        setStatus('❌ Wiring errors — fix pin assignments to match your code');
+        return; // Don't start simulation
+      }
+
+      setSimulationErrors(simErrors);
       setSimRunning(true);
       setStatus('▶ Simulation running…');
 
@@ -2320,10 +2456,16 @@ export function RoboticsWorkspace({
                     <PinInspector />
 
                     {/* ── Simulation Log Panel ─────────────────── */}
-                    {simulationErrors.length > 0 && (
-                      <div className="absolute bottom-2 left-2 right-2 z-30 max-h-32 overflow-y-auto bg-[#0F172A]/95 backdrop-blur-sm border border-sky-500/30 rounded-lg p-2 shadow-lg">
+                    {simulationErrors.length > 0 && (() => {
+                      const hasBlockingError = simulationErrors.some(e => e.includes('SIMULATION BLOCKED'));
+                      return (
+                      <div className={`absolute bottom-2 left-2 right-2 z-30 max-h-44 overflow-y-auto bg-[#0F172A]/95 backdrop-blur-sm border rounded-lg p-2 shadow-lg ${
+                        hasBlockingError ? 'border-red-500/60 shadow-red-500/20' : 'border-sky-500/30'
+                      }`}>
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-[10px] font-bold text-sky-400 uppercase tracking-wider">Simulation Log</span>
+                          <span className={`text-[10px] font-bold uppercase tracking-wider ${
+                            hasBlockingError ? 'text-red-400' : 'text-sky-400'
+                          }`}>{hasBlockingError ? '⚠ Wiring Errors' : 'Simulation Log'}</span>
                           <button
                             type="button"
                             onClick={() => setSimulationErrors([])}
@@ -2334,8 +2476,11 @@ export function RoboticsWorkspace({
                         {simulationErrors.map((err, i) => (
                           <div key={i} className={`text-[10px] font-mono leading-relaxed ${
                             err.startsWith('✅') ? 'text-emerald-400' :
+                            err.startsWith('❌') ? 'text-red-400' :
+                            err.startsWith('🚫') ? 'text-red-500 font-bold' :
                             err.startsWith('⚠️') ? 'text-amber-400' :
                             err.startsWith('🖥️') ? 'text-violet-400' :
+                            err.startsWith('──') ? 'text-gray-500 mt-1' :
                             'text-sky-300'
                           }`}>
                             {err}
@@ -2352,7 +2497,8 @@ export function RoboticsWorkspace({
                           </div>
                         )}
                       </div>
-                    )}
+                      );
+                    })()}
 
                     {/* Context menu overlay */}
                     <ContextMenu
