@@ -476,7 +476,7 @@ export const OLED_SSD1306_ASSET: ComponentAssetDefinition = {
 };
 
 export const LCD1602_ASSET: ComponentAssetDefinition = {
-  assetId: 'lcd_1602',
+  assetId: 'lcd1602',
   componentType: 'LCD',
   displayName: 'LCD1602 I2C (16x2 Character Display)',
   imageWidth: 420,

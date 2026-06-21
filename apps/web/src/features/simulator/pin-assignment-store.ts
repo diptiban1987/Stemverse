@@ -102,7 +102,7 @@ export const COMPONENT_PIN_CATALOG: Record<string, ComponentPinInfo> = {
       { name: 'SDA', signalType: 'DIGITAL' },
     ],
   },
-  lcd_1602: {
+  lcd1602: {
     displayName: 'LCD1602 I2C',
     preferredVoltage: '5V',
     pins: [

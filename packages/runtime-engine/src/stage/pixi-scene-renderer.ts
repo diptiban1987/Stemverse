@@ -130,7 +130,7 @@ export const COMPONENT_SCALE_RATIOS: Record<string, number> = {
 
   /* ── Displays ────────────────────────────────────────── */
   'oled_ssd1306': 0.17,             // 27mm  → 0.17
-  'lcd_1602': 0.48,                 // 80mm  → 0.48
+  'lcd1602': 0.48,                  // 80mm  → 0.48
 
   /* ── Microcontrollers (additional) ──────────────────── */
   'raspberry_pi_pico': 0.13,        // 21mm  → 0.13

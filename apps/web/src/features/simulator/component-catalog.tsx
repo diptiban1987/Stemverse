@@ -41,7 +41,7 @@ const COMPONENT_DESCRIPTIONS: Record<string, string> = {
   mq2_gas_sensor: 'Smoke & gas detection',
   ir_sensor_module: 'Infrared obstacle detector',
   oled_ssd1306: '0.96″ 128×64 OLED I²C',
-  lcd1602: '16×2 character LCD display',
+  lcd1602: 'I2C 16×2 character LCD with PCF8574 backpack',
   sg90_servo: '180° micro servo motor',
   relay_module: '5V single-channel relay',
   buzzer_passive: 'Piezoelectric buzzer module',
@@ -166,7 +166,7 @@ const CATEGORIES: CategoryDef[] = [
     borderColor: 'border-violet-500/30',
     components: [
       { assetId: 'oled_ssd1306', displayName: 'OLED SSD1306', description: COMPONENT_DESCRIPTIONS.oled_ssd1306 },
-      { assetId: 'lcd1602', displayName: 'LCD 1602', description: COMPONENT_DESCRIPTIONS.lcd1602 },
+      { assetId: 'lcd1602', displayName: 'LCD 1602 I2C', description: COMPONENT_DESCRIPTIONS.lcd1602 },
     ],
   },
   {
