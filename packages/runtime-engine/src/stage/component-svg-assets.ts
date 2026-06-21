@@ -907,7 +907,7 @@ const RESISTOR_RAW = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 6
 </svg>`;
 
 // ── LCD1602 ─────────────────────────────────────────────────────────────────
-const LCD1602_RAW = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200">
+const LCD1602_RAW = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 220">
   <defs>
     <linearGradient id="lcd-pcb" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#2E7D32"/>
@@ -921,59 +921,85 @@ const LCD1602_RAW = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 20
       <stop offset="0%" stop-color="#1B5E20"/>
       <stop offset="100%" stop-color="#2E7D32"/>
     </linearGradient>
+    <linearGradient id="i2c-pcb" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1565C0"/>
+      <stop offset="100%" stop-color="#0D47A1"/>
+    </linearGradient>
     <filter id="lcd-shadow" x="-3%" y="-3%" width="106%" height="106%">
       <feDropShadow dx="2" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.25"/>
     </filter>
   </defs>
-  <!-- PCB -->
-  <rect x="10" y="10" width="380" height="180" rx="5" fill="url(#lcd-pcb)" filter="url(#lcd-shadow)" stroke="#1B5E20" stroke-width="1.5"/>
+  <!-- Main LCD PCB -->
+  <rect x="10" y="10" width="380" height="155" rx="5" fill="url(#lcd-pcb)" filter="url(#lcd-shadow)" stroke="#1B5E20" stroke-width="1.5"/>
   <!-- Mounting holes -->
   <circle cx="25" cy="25" r="5" fill="none" stroke="#A5D6A7" stroke-width="1"/>
   <circle cx="375" cy="25" r="5" fill="none" stroke="#A5D6A7" stroke-width="1"/>
-  <circle cx="25" cy="175" r="5" fill="none" stroke="#A5D6A7" stroke-width="1"/>
-  <circle cx="375" cy="175" r="5" fill="none" stroke="#A5D6A7" stroke-width="1"/>
+  <circle cx="25" cy="150" r="5" fill="none" stroke="#A5D6A7" stroke-width="1"/>
+  <circle cx="375" cy="150" r="5" fill="none" stroke="#A5D6A7" stroke-width="1"/>
   <!-- Metal Bezel -->
-  <rect x="30" y="30" width="340" height="120" rx="3" fill="url(#lcd-bezel)" stroke="#757575" stroke-width="1.5"/>
+  <rect x="30" y="28" width="340" height="110" rx="3" fill="url(#lcd-bezel)" stroke="#757575" stroke-width="1.5"/>
   <!-- Display Window -->
-  <rect x="50" y="45" width="300" height="85" rx="2" fill="url(#lcd-screen)" stroke="#1B5E20" stroke-width="1"/>
-  <!-- Character grid hint – Row 1 -->
+  <rect x="50" y="40" width="300" height="85" rx="2" fill="url(#lcd-screen)" stroke="#1B5E20" stroke-width="1"/>
+  <!-- Character grid – Row 1 -->
   ${Array.from({length: 16}, (_, i) => {
     const x = 60 + i * 18;
-    return `<rect x="${x}" y="55" width="14" height="18" rx="1" fill="#33691E" opacity="0.6"/>`;
+    return `<rect x="${x}" y="50" width="14" height="18" rx="1" fill="#33691E" opacity="0.6"/>`;
   }).join('\n  ')}
-  <!-- Character grid hint – Row 2 -->
+  <!-- Character grid – Row 2 -->
   ${Array.from({length: 16}, (_, i) => {
     const x = 60 + i * 18;
-    return `<rect x="${x}" y="85" width="14" height="18" rx="1" fill="#33691E" opacity="0.6"/>`;
+    return `<rect x="${x}" y="80" width="14" height="18" rx="1" fill="#33691E" opacity="0.6"/>`;
   }).join('\n  ')}
   <!-- Sample display text -->
-  <text x="70" y="70" font-family="monospace" font-size="12" fill="#76FF03" opacity="0.9">Hello, World!</text>
-  <text x="70" y="100" font-family="monospace" font-size="12" fill="#76FF03" opacity="0.9">LCD 16x2</text>
-  <!-- 16-pin Header -->
-  <rect x="40" y="168" width="260" height="14" rx="1.5" fill="#212121" stroke="#424242" stroke-width="0.5"/>
-  ${Array.from({length: 16}, (_, i) => {
-    const x = 46 + i * 16;
-    return `<rect x="${x}" y="165" width="7" height="18" rx="1" fill="#FFD54F" stroke="#F57F17" stroke-width="0.3"/>`;
+  <text x="70" y="65" font-family="monospace" font-size="12" fill="#76FF03" opacity="0.9">Hello, World!</text>
+  <text x="70" y="95" font-family="monospace" font-size="12" fill="#76FF03" opacity="0.9">I2C LCD 16x2</text>
+
+  <!-- ═══ I2C Backpack Board (soldered on bottom) ═══ -->
+  <rect x="60" y="168" width="280" height="42" rx="3" fill="url(#i2c-pcb)" stroke="#0D47A1" stroke-width="1"/>
+  <!-- PCF8574 IC chip -->
+  <rect x="140" y="176" width="50" height="14" rx="1" fill="#111827" stroke="#374151" stroke-width="0.5"/>
+  <text x="165" y="186" text-anchor="middle" font-family="monospace" font-size="5" fill="#9CA3AF">PCF8574</text>
+  <!-- IC pins (tiny legs) -->
+  ${Array.from({length: 8}, (_, i) => {
+    const x = 144 + i * 6;
+    return `<rect x="${x}" y="190" width="2" height="3" fill="#C0C0C0"/>`;
   }).join('\n  ')}
+  ${Array.from({length: 8}, (_, i) => {
+    const x = 144 + i * 6;
+    return `<rect x="${x}" y="173" width="2" height="3" fill="#C0C0C0"/>`;
+  }).join('\n  ')}
+  <!-- Blue contrast potentiometer -->
+  <circle cx="110" cy="185" r="8" fill="#1976D2" stroke="#0D47A1" stroke-width="0.8"/>
+  <line x1="110" y1="179" x2="110" y2="185" stroke="white" stroke-width="1" stroke-linecap="round"/>
+  <text x="110" y="198" text-anchor="middle" font-family="monospace" font-size="4" fill="#90CAF9">CONTRAST</text>
+  <!-- SMD capacitors and resistors -->
+  <rect x="210" y="178" width="8" height="4" rx="0.5" fill="#8D6E63" stroke="#5D4037" stroke-width="0.3"/>
+  <rect x="225" y="178" width="8" height="4" rx="0.5" fill="#8D6E63" stroke="#5D4037" stroke-width="0.3"/>
+  <rect x="210" y="186" width="8" height="4" rx="0.5" fill="#212121" stroke="#333" stroke-width="0.3"/>
+  <rect x="225" y="186" width="8" height="4" rx="0.5" fill="#212121" stroke="#333" stroke-width="0.3"/>
+  <!-- I2C Address jumpers -->
+  <rect x="260" y="176" width="20" height="14" rx="1" fill="#0D47A1" stroke="#1565C0" stroke-width="0.3"/>
+  <text x="270" y="181" text-anchor="middle" font-family="monospace" font-size="3.5" fill="#90CAF9">A0 A1 A2</text>
+  <rect x="263" y="183" width="4" height="5" rx="0.5" fill="#FFD54F"/>
+  <rect x="269" y="183" width="4" height="5" rx="0.5" fill="#FFD54F"/>
+  <rect x="275" y="183" width="4" height="5" rx="0.5" fill="#FFD54F"/>
+  <!-- Label -->
+  <text x="310" y="185" text-anchor="middle" font-family="Arial,sans-serif" font-size="6" fill="#90CAF9" font-weight="bold">I2C</text>
+  <text x="310" y="193" text-anchor="middle" font-family="Arial,sans-serif" font-size="5" fill="#64B5F6">0x27</text>
+
+  <!-- 4-Pin I2C Header -->
+  <rect x="120" y="202" width="100" height="12" rx="1.5" fill="#212121" stroke="#424242" stroke-width="0.5"/>
+  <rect x="132" y="200" width="8" height="18" rx="1" fill="#FFD54F" stroke="#F57F17" stroke-width="0.3"/>
+  <rect x="150" y="200" width="8" height="18" rx="1" fill="#FFD54F" stroke="#F57F17" stroke-width="0.3"/>
+  <rect x="168" y="200" width="8" height="18" rx="1" fill="#FFD54F" stroke="#F57F17" stroke-width="0.3"/>
+  <rect x="186" y="200" width="8" height="18" rx="1" fill="#FFD54F" stroke="#F57F17" stroke-width="0.3"/>
   <!-- Pin Labels -->
-  <text x="49" y="160" text-anchor="middle" font-family="monospace" font-size="4" fill="#A5D6A7">VSS</text>
-  <text x="65" y="160" text-anchor="middle" font-family="monospace" font-size="4" fill="#A5D6A7">VDD</text>
-  <text x="81" y="160" text-anchor="middle" font-family="monospace" font-size="4" fill="#A5D6A7">V0</text>
-  <text x="97" y="160" text-anchor="middle" font-family="monospace" font-size="4" fill="#A5D6A7">RS</text>
-  <text x="113" y="160" text-anchor="middle" font-family="monospace" font-size="4" fill="#A5D6A7">RW</text>
-  <text x="129" y="160" text-anchor="middle" font-family="monospace" font-size="4" fill="#A5D6A7">E</text>
-  <text x="145" y="160" text-anchor="middle" font-family="monospace" font-size="4" fill="#A5D6A7">D0</text>
-  <text x="161" y="160" text-anchor="middle" font-family="monospace" font-size="4" fill="#A5D6A7">D1</text>
-  <text x="177" y="160" text-anchor="middle" font-family="monospace" font-size="4" fill="#A5D6A7">D2</text>
-  <text x="193" y="160" text-anchor="middle" font-family="monospace" font-size="4" fill="#A5D6A7">D3</text>
-  <text x="209" y="160" text-anchor="middle" font-family="monospace" font-size="4" fill="#A5D6A7">D4</text>
-  <text x="225" y="160" text-anchor="middle" font-family="monospace" font-size="4" fill="#A5D6A7">D5</text>
-  <text x="241" y="160" text-anchor="middle" font-family="monospace" font-size="4" fill="#A5D6A7">D6</text>
-  <text x="257" y="160" text-anchor="middle" font-family="monospace" font-size="4" fill="#A5D6A7">D7</text>
-  <text x="273" y="160" text-anchor="middle" font-family="monospace" font-size="4" fill="#A5D6A7">A</text>
-  <text x="289" y="160" text-anchor="middle" font-family="monospace" font-size="4" fill="#A5D6A7">K</text>
+  <text x="136" y="196" text-anchor="middle" font-family="monospace" font-size="5" fill="#90CAF9" font-weight="bold">GND</text>
+  <text x="154" y="196" text-anchor="middle" font-family="monospace" font-size="5" fill="#FF5252" font-weight="bold">VCC</text>
+  <text x="172" y="196" text-anchor="middle" font-family="monospace" font-size="5" fill="#76FF03" font-weight="bold">SDA</text>
+  <text x="190" y="196" text-anchor="middle" font-family="monospace" font-size="5" fill="#FFEB3B" font-weight="bold">SCL</text>
   <!-- Board label -->
-  <text x="350" y="170" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" fill="#A5D6A7" font-weight="bold">LCD1602</text>
+  <text x="200" y="150" text-anchor="middle" font-family="Arial,sans-serif" font-size="8" fill="#A5D6A7" font-weight="bold">LCD1602 I2C</text>
 </svg>`;
 
 // ── OLED SSD1306 ────────────────────────────────────────────────────────────
