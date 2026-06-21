@@ -467,6 +467,7 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
         placementEngineRef.current = new SmartPlacementEngine(ROBOTICS_BREADBOARD_LAYOUT);
 
         /* ── Resize observer ────────────────────────────────────── */
+        let resizeTimer: ReturnType<typeof setTimeout> | null = null;
         const ro = new ResizeObserver((entries) => {
           for (const entry of entries) {
             const { width, height } = entry.contentRect;
@@ -474,6 +475,26 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
               try {
                 adapter.app?.renderer?.resize(width, height);
               } catch { /* noop */ }
+
+              // Debounce camera re-fit (sidebar transition fires many resize events)
+              if (resizeTimer) clearTimeout(resizeTimer);
+              resizeTimer = setTimeout(() => {
+                if (destroyed) return;
+                try {
+                  const cam = fitCameraToContent(
+                    runtime,
+                    componentAssetsRef.current,
+                    width,
+                    height,
+                    50,
+                  );
+                  cameraRef.current = cam;
+                  if (adapter?.app?.stage) {
+                    adapter.app.stage.scale.set(cam.zoom);
+                    adapter.app.stage.position.set(cam.x, cam.y);
+                  }
+                } catch { /* noop */ }
+              }, 350); // Wait for sidebar transition to finish (300ms)
             }
           }
         });
@@ -1444,7 +1465,7 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
 
   /* ── Render ─────────────────────────────────────────────────────── */
   return (
-    <div className="flex h-[calc(100vh-4rem)] flex-col bg-background">
+    <div className="flex h-full flex-col bg-background overflow-hidden">
       {/* Toolbar */}
       <WorkspaceToolbar
         onSave={handleSave}
