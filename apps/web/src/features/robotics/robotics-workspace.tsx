@@ -297,6 +297,42 @@ export function RoboticsWorkspace({
           adapter.sceneRenderer.onContextMenu = (data: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
             useSimulatorStore.getState().setContextMenu(data);
           };
+
+          // Regenerate wires after component drag ends
+          adapter.sceneRenderer.onComponentDragEnd = (movedObjectId: string) => {
+            const rt = simRuntimeRef.current;
+            if (!rt) return;
+            // Small delay to let position update propagate
+            setTimeout(() => {
+              const store = usePinAssignmentStore.getState();
+              // Find all assignments that involve the moved object (either as component or board)
+              const affectedAssignments = store.assignments.filter(
+                (a) => a.componentObjectId === movedObjectId || a.boardObjectId === movedObjectId,
+              );
+              for (let wi = 0; wi < affectedAssignments.length; wi++) {
+                const assignment = affectedAssignments[wi];
+                // Remove old wire if it exists
+                if (assignment.wireId) {
+                  removeWire(assignment.wireId, rt);
+                }
+                // Generate new wire at updated position
+                const newWireId = generateWireForAssignment(
+                  assignment,
+                  rt,
+                  componentAssetsRef.current,
+                  simAdapterRef.current?.sceneRenderer?.renderScaleMap,
+                  wi,
+                );
+                if (newWireId) {
+                  usePinAssignmentStore.getState().setWireId(
+                    assignment.componentObjectId,
+                    assignment.componentPinName,
+                    newWireId,
+                  );
+                }
+              }
+            }, 50);
+          };
         }
 
         if (destroyed) {
@@ -963,16 +999,22 @@ export function RoboticsWorkspace({
           pinAutoAssignPower(objectId);
 
           // ── Auto-wire VCC/GND after placement ───────────────────
-          // Small delay to ensure the runtime has the object registered
-          setTimeout(() => {
+          // Retry-based approach: some wires may fail if render scale
+          // or positions aren't ready yet. We retry up to 5 times.
+          const wireAutoAssignments = (attempt: number) => {
             const rt = simRuntimeRef.current;
             if (!rt) return;
             const store = usePinAssignmentStore.getState();
             const autoAssignments = store.assignments.filter(
               (a) => a.componentObjectId === objectId && a.isAutoAssigned,
             );
+
+            let allWired = true;
             for (let wi = 0; wi < autoAssignments.length; wi++) {
               const assignment = autoAssignments[wi];
+              // Skip if wire already exists
+              if (assignment.wireId) continue;
+
               const wireId = generateWireForAssignment(
                 assignment,
                 rt,
@@ -986,12 +1028,21 @@ export function RoboticsWorkspace({
                   assignment.componentPinName,
                   wireId,
                 );
+              } else {
+                allWired = false; // This wire failed — retry later
               }
             }
-            if (autoAssignments.length > 0) {
+
+            if (!allWired && attempt < 5) {
+              // Retry after another frame cycle
+              setTimeout(() => wireAutoAssignments(attempt + 1), 300);
+            } else if (autoAssignments.length > 0) {
               setStatus(`${catalog.displayName} placed — VCC/GND auto-wired. Assign GPIO pins →`);
             }
-          }, 150);
+          };
+
+          // First attempt after 200ms to allow render cycle to run
+          setTimeout(() => wireAutoAssignments(0), 200);
 
           setStatus(`${catalog.displayName} auto-placed — wiring power pins…`);
         }

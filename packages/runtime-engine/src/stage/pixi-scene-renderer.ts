@@ -156,6 +156,7 @@ export class PixiSceneRenderer {
 
   /** Phase 27B: Context menu callback — set by web layer to show right-click menu */
   public onContextMenu: ((data: { x: number; y: number; targetId: string; targetType: string } | null) => void) | null = null;
+  public onComponentDragEnd: ((objectId: string) => void) | null = null;
 
   /** Phase 27A: Live wire preview layer for showing wire-in-progress from start pin to cursor */
   private wirePreviewGraphics = new Graphics();
@@ -838,6 +839,10 @@ export class PixiSceneRenderer {
             positionX: state.targetX,
             positionY: state.targetY,
           });
+          // Notify workspace so it can regenerate wires for moved component
+          if (this.onComponentDragEnd) {
+            this.onComponentDragEnd(objectId);
+          }
         }
         // Phase 31A: Apply momentum with deceleration
         if (state.thresholdMet && (Math.abs(state.velocityX) > MOMENTUM_MIN_VELOCITY || Math.abs(state.velocityY) > MOMENTUM_MIN_VELOCITY)) {
@@ -1050,6 +1055,10 @@ export class PixiSceneRenderer {
     const endDrag = () => {
       const state = this.dragStates.get(objectId);
       if (state) {
+        // Notify workspace to regenerate wires after breadboard move
+        if (state.thresholdMet && this.onComponentDragEnd) {
+          this.onComponentDragEnd(objectId);
+        }
         state.isDragging = false;
         state.thresholdMet = false;
       }
