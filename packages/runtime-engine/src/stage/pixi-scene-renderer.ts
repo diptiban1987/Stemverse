@@ -1554,7 +1554,7 @@ export class PixiSceneRenderer {
                     style: {
                       fontFamily: '"Courier New", "Lucida Console", monospace',
                       fontSize: FONT_SIZE,
-                      fill: 0x76FF03,
+                      fill: 0x000000,
                       fontWeight: 'bold',
                     },
                   });
