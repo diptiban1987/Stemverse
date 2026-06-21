@@ -419,20 +419,19 @@ export function ComponentCatalog({ collapsed, onToggle }: ComponentCatalogProps)
 
   const [search, setSearch] = useState('');
   const [openCategories, setOpenCategories] = useState<Set<string>>(
-    () => new Set(CATEGORIES.map((c) => c.id)),
+    () => new Set<string>(),  // All categories start collapsed
   );
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  /* ── Toggle a single category ─────────────────────────────────── */
+  /* ── Toggle a single category (accordion: only one open at a time) ── */
   const toggleCategory = useCallback((catId: string) => {
     setOpenCategories((prev) => {
-      const next = new Set(prev);
-      if (next.has(catId)) {
-        next.delete(catId);
-      } else {
-        next.add(catId);
+      // If already open, close it
+      if (prev.has(catId)) {
+        return new Set<string>();
       }
-      return next;
+      // Otherwise, open ONLY this one (close all others)
+      return new Set([catId]);
     });
   }, []);
 
