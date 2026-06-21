@@ -8,6 +8,7 @@ import {
   registerExpansionBlockGenerators,
   EXPANSION_ARDUINO_GLOBALS,
   EXPANSION_ARDUINO_HELPERS,
+  EXPANSION_GLOBALS_MAP,
 } from './expansion-generators';
 import { HARDWARE_EXPANSION_BLOCK_TYPES } from '../blocks/hardware';
 import { registerVoiceBlockGenerators } from './voice-generators';
@@ -580,7 +581,13 @@ export function generateArduinoFromWorkspace(
     for (const g of ARDUINO_IOT_GLOBALS) globals.add(g);
   }
   if (allBlocks.some((b) => (HARDWARE_EXPANSION_BLOCK_TYPES as readonly string[]).includes(b.type))) {
+    // Only add globals for blocks actually used (conditional)
     for (const g of EXPANSION_ARDUINO_GLOBALS) globals.add(g);
+    for (const [prefix, globalDecl] of Object.entries(EXPANSION_GLOBALS_MAP)) {
+      if (allBlocks.some((b) => b.type.startsWith(prefix))) {
+        globals.add(globalDecl);
+      }
+    }
     helpers.add(EXPANSION_ARDUINO_HELPERS);
   }
   const includeBlock = formatIncludeStatements(libraries);

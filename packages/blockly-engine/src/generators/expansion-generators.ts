@@ -37,10 +37,15 @@ export function registerExpansionBlockGenerators(
 
 function registerArduinoExpansion(generator: CodeGenerator): void {
   generator.forBlock['stemverse_lcd_init'] = (b: Block) => {
-    const rs = b.getFieldValue('RS');
-    const e = b.getFieldValue('E');
+    const mode = b.getFieldValue('MODE') || 'I2C';
     const cols = b.getFieldValue('COLS');
     const rows = b.getFieldValue('ROWS');
+    if (mode === 'I2C') {
+      const sda = b.getFieldValue('SDA');
+      const scl = b.getFieldValue('SCL');
+      const addr = b.getFieldValue('ADDR') || 39;
+      return `Wire.begin(${sda}, ${scl});\nlcd.init();\nlcd.backlight();\n`;
+    }
     return `lcd.begin(${cols}, ${rows});\n`;
   };
 
@@ -287,13 +292,17 @@ function registerRtosPython(generator: CodeGenerator): void {
   };
 }
 
-export const EXPANSION_ARDUINO_GLOBALS = [
-  'LiquidCrystal lcd(12, 11, 5, 4, 3, 2);',
-  'Adafruit_SSD1306 display(128, 64, &Wire, -1);',
-  'Adafruit_ILI9341 tft = Adafruit_ILI9341(10, 9, 8);',
-  'QueueHandle_t stemverse_queue_queue1;',
-  'SemaphoreHandle_t stemverse_sem_sem1;',
-];
+/** Map of block type prefix → global declaration. Only included when the block is used. */
+export const EXPANSION_GLOBALS_MAP: Record<string, string> = {
+  stemverse_lcd: 'LiquidCrystal_I2C lcd(0x27, 16, 2);',
+  stemverse_oled: 'Adafruit_SSD1306 display(128, 64, &Wire, -1);',
+  stemverse_tft: 'Adafruit_ILI9341 tft = Adafruit_ILI9341(10, 9, 8);',
+  stemverse_rtos_queue: 'QueueHandle_t stemverse_queue_queue1;',
+  stemverse_rtos_semaphore: 'SemaphoreHandle_t stemverse_sem_sem1;',
+};
+
+/** @deprecated Use EXPANSION_GLOBALS_MAP instead */
+export const EXPANSION_ARDUINO_GLOBALS: string[] = [];
 
 export const EXPANSION_ARDUINO_HELPERS = `void stemverse_arm_set_joint(int joint, int angle) { (void)joint; (void)angle; }
 void stemverse_arm_gripper(bool close) { (void)close; }

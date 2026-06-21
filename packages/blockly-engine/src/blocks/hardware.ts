@@ -74,10 +74,16 @@ export function registerHardwareExpansionBlocks(): void {
   register('stemverse_lcd_init', function (this: Blockly.Block) {
     this.appendDummyInput()
       .appendField('LCD Init')
-      .appendField('RS')
-      .appendField(new Blockly.FieldNumber(12, 0, 53), 'RS')
-      .appendField('E')
-      .appendField(new Blockly.FieldNumber(11, 0, 53), 'E')
+      .appendField(new Blockly.FieldDropdown([
+        ['I2C', 'I2C'],
+        ['Parallel', 'PARALLEL'],
+      ]), 'MODE')
+      .appendField('SDA')
+      .appendField(new Blockly.FieldNumber(21, 0, 48), 'SDA')
+      .appendField('SCL')
+      .appendField(new Blockly.FieldNumber(22, 0, 48), 'SCL')
+      .appendField('Addr')
+      .appendField(new Blockly.FieldNumber(39, 0, 127), 'ADDR')
       .appendField('Cols')
       .appendField(new Blockly.FieldNumber(16, 8, 40), 'COLS')
       .appendField('Rows')
