@@ -1241,188 +1241,189 @@ export function RoboticsWorkspace({
     if (activeTab !== 'simulator') return;
     if (!generatedCode.trim()) return;
 
-    const runtime = simRuntimeRef.current;
-    if (!runtime) return;
+    // The runtime may not be initialized yet when switching tabs.
+    // Retry until it's available (up to 3 seconds).
+    let cancelled = false;
+    const trySync = (attempt: number) => {
+      if (cancelled || attempt > 6) return;
 
-    // Detect which components are needed from the block code
-    const detected = detectComponentsFromCode(generatedCode, boardId);
-
-    // Get existing auto-placed objects (prefixed with "auto_")
-    const existingObjects = runtime.getWorkspaceObjectModels?.() ?? [];
-    const autoPlacedObjects = existingObjects.filter(
-      (o: { objectId: string }) => o.objectId.startsWith('auto_')
-    );
-
-    // Build set of asset types currently needed
-    const neededAssetTypes = new Set(detected.map(c => c.assetId));
-
-    // ── Remove auto-placed components no longer needed by blocks ──
-    for (const obj of autoPlacedObjects) {
-      const objType = (obj as { objectType: string }).objectType;
-      // Keep if this asset type is still needed, or if it's a resistor for an LED
-      if (neededAssetTypes.has(objType)) continue;
-      if (objType === 'resistor_generic' && neededAssetTypes.has('led_generic')) continue;
-
-      const objId = (obj as { objectId: string }).objectId;
-      try {
-        runtime.removeWorkspaceObjectModel?.(objId);
-        pinRemoveComponent(objId);
-      } catch { /* object may already be removed */ }
-    }
-
-    // ── Place new components ──────────────────────────────────────
-    // Re-read after removals
-    const currentObjects = runtime.getWorkspaceObjectModels?.() ?? [];
-    const existingTypes = new Set(currentObjects.map((o: { objectType: string }) => o.objectType));
-
-    let placedCount = 0;
-    const placedDetails: string[] = [];
-
-    for (const comp of detected) {
-      // Skip if this component type is already on the canvas
-      if (existingTypes.has(comp.assetId)) continue;
-
-      const objectId = `auto_${comp.assetId}_pin${comp.pinNumber}_${Date.now()}_${placedCount}`;
-      const dims = COMPONENT_DIMENSIONS[comp.assetId];
-      const imgW = dims?.w ?? 80;
-      const imgH = dims?.h ?? 80;
-      const compScale = dims?.defaultScale ?? 1.0;
-
-      // Use smart placement engine for positioning
-      const engine = placementEngineRef.current;
-      let posX = 350 + placedCount * 120;
-      let posY = 400;
-      if (engine) {
-        const pos = engine.placeByType(objectId, comp.assetId, imgW, imgH, compScale);
-        posX = pos.x;
-        posY = pos.y;
+      const runtime = simRuntimeRef.current;
+      if (!runtime) {
+        setTimeout(() => trySync(attempt + 1), 500);
+        return;
       }
 
-      try {
-        // Register the component on the simulator canvas
-        runtime.registerWorkspaceObjectModel({
-          objectId,
-          objectType: comp.assetId,
-          positionX: Math.round(posX),
-          positionY: Math.round(posY),
-          rotation: 0,
-          scale: compScale,
-          selected: false,
-          locked: false,
-          metadata: {},
-        });
+      // Detect which components are needed from the block code
+      const detected = detectComponentsFromCode(generatedCode, boardId);
 
-        // Register in pin assignment store
-        const catalog = COMPONENT_PIN_CATALOG[comp.assetId];
-        if (catalog) {
-          pinAddComponent({
-            objectId,
-            objectType: comp.assetId,
-            displayName: catalog.displayName,
-            pins: catalog.pins,
-          });
-          pinAutoAssignPower(objectId);
+      // Get existing auto-placed objects (prefixed with "auto_")
+      const existingObjects = runtime.getWorkspaceObjectModels?.() ?? [];
+      const autoPlacedObjects = existingObjects.filter(
+        (o: { objectId: string }) => o.objectId.startsWith('auto_')
+      );
 
-          // Auto-assign the PRIMARY signal pin
-          const store = usePinAssignmentStore.getState();
-          if (comp.componentPin && comp.pinName) {
-            store.assignPin(objectId, comp.componentPin, comp.pinName);
-          }
+      // Build set of asset types currently needed
+      const neededAssetTypes = new Set(detected.map(c => c.assetId));
 
-          // Auto-assign EXTRA signal pins (e.g. SCL, ECHO)
-          if (comp.extraPins) {
-            for (const ep of comp.extraPins) {
-              store.assignPin(objectId, ep.componentPin, ep.pinName);
-            }
-          }
+      // ── Remove auto-placed components no longer needed by blocks ──
+      for (const obj of autoPlacedObjects) {
+        const objType = (obj as { objectType: string }).objectType;
+        if (neededAssetTypes.has(objType)) continue;
+        if (objType === 'resistor_generic' && neededAssetTypes.has('led_generic')) continue;
 
-          // Build description for status
-          const pinDesc = [
-            `${comp.componentPin}:${comp.pinName}`,
-            ...(comp.extraPins?.map(ep => `${ep.componentPin}:${ep.pinName}`) ?? []),
-          ].join(', ');
-          placedDetails.push(`${catalog.displayName} → ${pinDesc}`);
+        const objId = (obj as { objectId: string }).objectId;
+        try {
+          runtime.removeWorkspaceObjectModel?.(objId);
+          pinRemoveComponent(objId);
+        } catch { /* object may already be removed */ }
+      }
 
-          // Auto-wire with retry (up to 5 attempts, 300ms apart)
-          const wireRetry = (attempt: number) => {
-            if (attempt > 5) return;
-            setTimeout(() => {
-              const rt = simRuntimeRef.current;
-              if (!rt) return;
-              const currentStore = usePinAssignmentStore.getState();
-              const compAssignments = currentStore.assignments.filter(
-                (a) => a.componentObjectId === objectId,
-              );
-              let allWired = true;
-              for (const assignment of compAssignments) {
-                if (assignment.wireId) continue; // Already wired
-                const wireId = generateWireForAssignment(
-                  assignment,
-                  rt,
-                  componentAssetsRef.current,
-                  simAdapterRef.current?.sceneRenderer?.renderScaleMap,
-                );
-                if (wireId) {
-                  currentStore.setWireId(
-                    assignment.componentObjectId,
-                    assignment.componentPinName,
-                    wireId,
-                  );
-                } else {
-                  allWired = false;
-                }
-              }
-              if (!allWired) wireRetry(attempt + 1);
-            }, attempt * 300);
-          };
-          wireRetry(1);
+      if (detected.length === 0) return;
+
+      // ── Place new components ──
+      const currentObjects = runtime.getWorkspaceObjectModels?.() ?? [];
+      const existingTypes = new Set(currentObjects.map((o: { objectType: string }) => o.objectType));
+
+      let placedCount = 0;
+      const placedDetails: string[] = [];
+
+      for (const comp of detected) {
+        if (existingTypes.has(comp.assetId)) continue;
+
+        const objectId = `auto_${comp.assetId}_pin${comp.pinNumber}_${Date.now()}_${placedCount}`;
+        const dims = COMPONENT_DIMENSIONS[comp.assetId];
+        const imgW = dims?.w ?? 80;
+        const imgH = dims?.h ?? 80;
+        const compScale = dims?.defaultScale ?? 1.0;
+
+        const engine = placementEngineRef.current;
+        let posX = 350 + placedCount * 120;
+        let posY = 400;
+        if (engine) {
+          const pos = engine.placeByType(objectId, comp.assetId, imgW, imgH, compScale);
+          posX = pos.x;
+          posY = pos.y;
         }
 
-        // Also auto-place a resistor for LEDs
-        if (comp.needsResistor && !existingTypes.has('resistor_generic')) {
-          const resistorId = `auto_resistor_for_${comp.assetId}_${Date.now()}`;
-          const rDims = COMPONENT_DIMENSIONS['resistor_generic'];
-          const rScale = rDims?.defaultScale ?? 1.0;
-          let rPosX = posX + 60;
-          let rPosY = posY;
-          if (engine) {
-            const rPos = engine.placeByType(resistorId, 'resistor_generic', rDims?.w ?? 60, rDims?.h ?? 30, rScale);
-            rPosX = rPos.x;
-            rPosY = rPos.y;
-          }
+        try {
           runtime.registerWorkspaceObjectModel({
-            objectId: resistorId,
-            objectType: 'resistor_generic',
-            positionX: Math.round(rPosX),
-            positionY: Math.round(rPosY),
+            objectId,
+            objectType: comp.assetId,
+            positionX: Math.round(posX),
+            positionY: Math.round(posY),
             rotation: 0,
-            scale: rScale,
+            scale: compScale,
             selected: false,
             locked: false,
             metadata: {},
           });
-          const rCatalog = COMPONENT_PIN_CATALOG['resistor_generic'];
-          if (rCatalog) {
+
+          const catalog = COMPONENT_PIN_CATALOG[comp.assetId];
+          if (catalog) {
             pinAddComponent({
+              objectId,
+              objectType: comp.assetId,
+              displayName: catalog.displayName,
+              pins: catalog.pins,
+            });
+            pinAutoAssignPower(objectId);
+
+            const store = usePinAssignmentStore.getState();
+            if (comp.componentPin && comp.pinName) {
+              store.assignPin(objectId, comp.componentPin, comp.pinName);
+            }
+            if (comp.extraPins) {
+              for (const ep of comp.extraPins) {
+                store.assignPin(objectId, ep.componentPin, ep.pinName);
+              }
+            }
+
+            const pinDesc = [
+              `${comp.componentPin}:${comp.pinName}`,
+              ...(comp.extraPins?.map(ep => `${ep.componentPin}:${ep.pinName}`) ?? []),
+            ].join(', ');
+            placedDetails.push(`${catalog.displayName} → ${pinDesc}`);
+
+            // Auto-wire with retry
+            const wireRetry = (wireAttempt: number) => {
+              if (wireAttempt > 5 || cancelled) return;
+              setTimeout(() => {
+                const rt = simRuntimeRef.current;
+                if (!rt) return;
+                const cs = usePinAssignmentStore.getState();
+                const compAssignments = cs.assignments.filter(
+                  (a) => a.componentObjectId === objectId,
+                );
+                let allWired = true;
+                for (const assignment of compAssignments) {
+                  if (assignment.wireId) continue;
+                  const wireId = generateWireForAssignment(
+                    assignment,
+                    rt,
+                    componentAssetsRef.current,
+                    simAdapterRef.current?.sceneRenderer?.renderScaleMap,
+                  );
+                  if (wireId) {
+                    cs.setWireId(assignment.componentObjectId, assignment.componentPinName, wireId);
+                  } else {
+                    allWired = false;
+                  }
+                }
+                if (!allWired) wireRetry(wireAttempt + 1);
+              }, wireAttempt * 300);
+            };
+            wireRetry(1);
+          }
+
+          // Auto-place resistor for LEDs
+          if (comp.needsResistor && !existingTypes.has('resistor_generic')) {
+            const resistorId = `auto_resistor_for_${comp.assetId}_${Date.now()}`;
+            const rDims = COMPONENT_DIMENSIONS['resistor_generic'];
+            const rScale = rDims?.defaultScale ?? 1.0;
+            let rPosX = posX + 60;
+            let rPosY = posY;
+            if (engine) {
+              const rPos = engine.placeByType(resistorId, 'resistor_generic', rDims?.w ?? 60, rDims?.h ?? 30, rScale);
+              rPosX = rPos.x;
+              rPosY = rPos.y;
+            }
+            runtime.registerWorkspaceObjectModel({
               objectId: resistorId,
               objectType: 'resistor_generic',
-              displayName: rCatalog.displayName,
-              pins: rCatalog.pins,
+              positionX: Math.round(rPosX),
+              positionY: Math.round(rPosY),
+              rotation: 0,
+              scale: rScale,
+              selected: false,
+              locked: false,
+              metadata: {},
             });
+            const rCatalog = COMPONENT_PIN_CATALOG['resistor_generic'];
+            if (rCatalog) {
+              pinAddComponent({
+                objectId: resistorId,
+                objectType: 'resistor_generic',
+                displayName: rCatalog.displayName,
+                pins: rCatalog.pins,
+              });
+            }
+            existingTypes.add('resistor_generic');
           }
-          existingTypes.add('resistor_generic');
+
+          existingTypes.add(comp.assetId);
+          placedCount++;
+        } catch (err) {
+          console.warn('[BlockSync] Failed to auto-place component:', comp.assetId, err);
         }
-
-        existingTypes.add(comp.assetId);
-        placedCount++;
-      } catch (err) {
-        console.warn('[BlockSync] Failed to auto-place component:', comp.assetId, err);
       }
-    }
 
-    if (placedCount > 0) {
-      setStatus(`Auto-placed: ${placedDetails.join(' | ')}`);
-    }
+      if (placedCount > 0) {
+        setStatus(`Auto-placed: ${placedDetails.join(' | ')}`);
+      }
+    };
+
+    trySync(0);
+    return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, generatedCode]);
 
