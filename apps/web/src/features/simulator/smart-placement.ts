@@ -300,6 +300,10 @@ export const ROBOTICS_BREADBOARD_LAYOUT: BreadboardLayout = {
  * These match the imageWidth/imageHeight from component-asset-definitions.
  */
 export const COMPONENT_DIMENSIONS: Record<string, { w: number; h: number; defaultScale: number }> = {
+  // Breadboards
+  breadboard_830:  { w: 940, h: 340, defaultScale: 0.6 },
+  breadboard_400:  { w: 600, h: 340, defaultScale: 0.6 },
+  breadboard_mini: { w: 300, h: 200, defaultScale: 0.6 },
   // Boards
   esp32_devkit_v1: { w: 320, h: 640, defaultScale: 0.55 },
   arduino_uno_r3:  { w: 460, h: 360, defaultScale: 0.55 },

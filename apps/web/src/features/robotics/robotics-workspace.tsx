@@ -379,7 +379,9 @@ export function RoboticsWorkspace({
                   for (const obj of allObjs) {
                     const x = obj.positionX || 0;
                     const y = obj.positionY || 0;
-                    const w = 200, h = 200;
+                    const dims = COMPONENT_DIMENSIONS[obj.objectType as string];
+                    const w = dims ? dims.w * (dims.defaultScale || 1) : 200;
+                    const h = dims ? dims.h * (dims.defaultScale || 1) : 200;
                     minX = Math.min(minX, x);
                     minY = Math.min(minY, y);
                     maxX = Math.max(maxX, x + w);
@@ -387,7 +389,7 @@ export function RoboticsWorkspace({
                   }
                   const contentW = maxX - minX || 800;
                   const contentH = maxY - minY || 600;
-                  const pad = 60;
+                  const pad = 80;
                   const zoom = Math.min((width - pad) / contentW, (height - pad) / contentH, 1.5);
                   const cx = (width - contentW * zoom) / 2 - minX * zoom;
                   const cy = (height - contentH * zoom) / 2 - minY * zoom;
@@ -410,8 +412,9 @@ export function RoboticsWorkspace({
         const handleWheel = (e: WheelEvent) => {
           e.preventDefault();
           e.stopPropagation();
-          const rt = simRuntimeRef.current;
-          if (!rt) return;
+          const ad = simAdapterRef.current;
+          if (!ad?.app?.stage) return;
+          const stage = ad.app.stage;
 
           const delta = e.deltaY > 0 ? -ZOOM_STEP : ZOOM_STEP;
           const oldZoom = canvasZoomRef.current;
@@ -422,14 +425,13 @@ export function RoboticsWorkspace({
           const rect = container.getBoundingClientRect();
           const mouseX = e.clientX - rect.left;
           const mouseY = e.clientY - rect.top;
-          const cam = rt.getCameraState?.() || { x: 0, y: 0, zoom: 1 };
-          const worldX = (mouseX - cam.x) / oldZoom;
-          const worldY = (mouseY - cam.y) / oldZoom;
+          const worldX = (mouseX - stage.position.x) / oldZoom;
+          const worldY = (mouseY - stage.position.y) / oldZoom;
           const newCamX = mouseX - worldX * newZoom;
           const newCamY = mouseY - worldY * newZoom;
 
-          rt.setCameraZoom?.(newZoom);
-          rt.setCameraPosition?.(newCamX, newCamY);
+          stage.scale.set(newZoom);
+          stage.position.set(newCamX, newCamY);
           canvasZoomRef.current = newZoom;
           setCanvasZoom(newZoom);
         };
@@ -1379,21 +1381,21 @@ export function RoboticsWorkspace({
 
   /* ── Canvas zoom helpers ──────────────────────────────────────────── */
   const applyZoom = useCallback((newZoom: number, centerOnCanvas = true) => {
-    const rt = simRuntimeRef.current;
-    if (!rt) return;
+    const adapter = simAdapterRef.current;
+    if (!adapter?.app?.stage) return;
+    const stage = adapter.app.stage;
     const clamped = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, newZoom));
     if (centerOnCanvas) {
       // Keep the center of the canvas fixed when zooming via buttons
-      const cam = rt.getCameraState?.() || { x: 0, y: 0, zoom: 1 };
       const container = pixiContainerRef.current;
       const cx = container ? container.clientWidth / 2 : 400;
       const cy = container ? container.clientHeight / 2 : 300;
       const oldZoom = canvasZoomRef.current;
-      const worldX = (cx - cam.x) / oldZoom;
-      const worldY = (cy - cam.y) / oldZoom;
-      rt.setCameraPosition?.(cx - worldX * clamped, cy - worldY * clamped);
+      const worldX = (cx - stage.position.x) / oldZoom;
+      const worldY = (cy - stage.position.y) / oldZoom;
+      stage.position.set(cx - worldX * clamped, cy - worldY * clamped);
     }
-    rt.setCameraZoom?.(clamped);
+    stage.scale.set(clamped);
     canvasZoomRef.current = clamped;
     setCanvasZoom(clamped);
   }, []);
@@ -1401,18 +1403,53 @@ export function RoboticsWorkspace({
   const handleZoomIn = useCallback(() => applyZoom(canvasZoomRef.current + ZOOM_STEP), [applyZoom]);
   const handleZoomOut = useCallback(() => applyZoom(canvasZoomRef.current - ZOOM_STEP), [applyZoom]);
   const handleZoomReset = useCallback(() => {
-    const rt = simRuntimeRef.current;
-    if (rt) {
-      rt.setCameraPosition?.(0, 0);
+    const adapter = simAdapterRef.current;
+    if (adapter?.app?.stage) {
+      adapter.app.stage.position.set(0, 0);
     }
     applyZoom(1, false);
   }, [applyZoom]);
   const handleZoomFit = useCallback(() => {
+    const adapter = simAdapterRef.current;
     const rt = simRuntimeRef.current;
-    if (rt) {
-      rt.setCameraPosition?.(0, 0);
+    if (!adapter?.app?.stage || !rt) {
+      applyZoom(0.8, false);
+      return;
     }
-    applyZoom(0.8, false);
+    const stage = adapter.app.stage;
+    const container = pixiContainerRef.current;
+    const viewW = container?.clientWidth || 800;
+    const viewH = container?.clientHeight || 600;
+
+    // Calculate actual bounding box of all objects using real dimensions
+    const allObjs = rt.getWorkspaceObjectModels?.() ?? [];
+    if (allObjs.length === 0) {
+      applyZoom(0.8, false);
+      return;
+    }
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const obj of allObjs) {
+      const x = obj.positionX || 0;
+      const y = obj.positionY || 0;
+      const dims = COMPONENT_DIMENSIONS[obj.objectType as string];
+      const w = dims ? dims.w * (dims.defaultScale || 1) : 200;
+      const h = dims ? dims.h * (dims.defaultScale || 1) : 200;
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x + w);
+      maxY = Math.max(maxY, y + h);
+    }
+    const contentW = maxX - minX || 800;
+    const contentH = maxY - minY || 600;
+    const pad = 80;
+    const zoom = Math.min((viewW - pad) / contentW, (viewH - pad) / contentH, 1.5);
+    const clamped = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom));
+    const cx = (viewW - contentW * clamped) / 2 - minX * clamped;
+    const cy = (viewH - contentH * clamped) / 2 - minY * clamped;
+    stage.scale.set(clamped);
+    stage.position.set(cx, cy);
+    canvasZoomRef.current = clamped;
+    setCanvasZoom(clamped);
   }, [applyZoom]);
 
   /* ── Code format labels ────────────────────────────────────── */
