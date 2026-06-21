@@ -1221,7 +1221,7 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
       }
 
       try {
-        runtime.removeWorkspaceObject?.(id);
+        runtime.removeWorkspaceObjectModel?.(id);
       } catch { /* noop */ }
 
       // Remove from placement engine

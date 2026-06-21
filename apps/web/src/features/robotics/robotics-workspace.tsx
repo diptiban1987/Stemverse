@@ -993,7 +993,8 @@ export function RoboticsWorkspace({
       }
 
       try {
-        runtime.removeWorkspaceObject?.(id);
+        runtime.removeWorkspaceObjectModel?.(id);
+        runtime.clearComponentSelectionModels?.();
       } catch { /* noop */ }
 
       // Remove from placement engine
@@ -1078,7 +1079,7 @@ export function RoboticsWorkspace({
         const rt = simRuntimeRef.current;
         if (rt) {
           try {
-            const obj = rt.getWorkspaceObject?.(selectedSimComponentId);
+            const obj = rt.getWorkspaceObjectModel?.(selectedSimComponentId);
             if (obj) {
               const newId = `${obj.objectType}_${++simObjectCounterRef.current}`;
               rt.registerWorkspaceObjectModel({
@@ -2174,7 +2175,7 @@ export function RoboticsWorkspace({
                         const rt = simRuntimeRef.current;
                         if (!rt) return;
                         try {
-                          const obj = rt.getWorkspaceObject?.(id);
+                          const obj = rt.getWorkspaceObjectModel?.(id);
                           if (obj) {
                             const newId = `${obj.objectType}_${++simObjectCounterRef.current}`;
                             rt.registerWorkspaceObjectModel({
@@ -2196,7 +2197,7 @@ export function RoboticsWorkspace({
                         const rt = simRuntimeRef.current;
                         if (!rt) return;
                         try {
-                          const obj = rt.getWorkspaceObject?.(id);
+                          const obj = rt.getWorkspaceObjectModel?.(id);
                           if (obj) rt.updateWorkspaceObjectModel?.(id, { rotation: (obj.rotation || 0) + 90 });
                         } catch { /* noop */ }
                       }}
@@ -2204,7 +2205,7 @@ export function RoboticsWorkspace({
                         const rt = simRuntimeRef.current;
                         if (!rt) return;
                         try {
-                          const obj = rt.getWorkspaceObject?.(id);
+                          const obj = rt.getWorkspaceObjectModel?.(id);
                           if (obj) rt.updateWorkspaceObjectModel?.(id, { rotation: (obj.rotation || 0) - 90 });
                         } catch { /* noop */ }
                       }}
@@ -2253,7 +2254,7 @@ export function RoboticsWorkspace({
                       const rt = simRuntimeRef.current;
                       if (!rt) return;
                       try {
-                        const obj = rt.getWorkspaceObject?.(id);
+                        const obj = rt.getWorkspaceObjectModel?.(id);
                         if (obj) {
                           const newId = `${obj.objectType}_${++simObjectCounterRef.current}`;
                           rt.registerWorkspaceObjectModel({
@@ -2275,7 +2276,7 @@ export function RoboticsWorkspace({
                       const rt = simRuntimeRef.current;
                       if (!rt) return;
                       try {
-                        const obj = rt.getWorkspaceObject?.(id);
+                        const obj = rt.getWorkspaceObjectModel?.(id);
                         if (obj) {
                           rt.updateWorkspaceObjectModel?.(id, {
                             rotation: (obj.rotation || 0) + angle,
