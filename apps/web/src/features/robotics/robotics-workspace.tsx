@@ -949,12 +949,14 @@ export function RoboticsWorkspace({
             const autoAssignments = store.assignments.filter(
               (a) => a.componentObjectId === objectId && a.isAutoAssigned,
             );
-            for (const assignment of autoAssignments) {
+            for (let wi = 0; wi < autoAssignments.length; wi++) {
+              const assignment = autoAssignments[wi];
               const wireId = generateWireForAssignment(
                 assignment,
                 rt,
                 componentAssetsRef.current,
                 simAdapterRef.current?.sceneRenderer?.renderScaleMap,
+                wi,
               );
               if (wireId) {
                 usePinAssignmentStore.getState().setWireId(
@@ -1017,11 +1019,18 @@ export function RoboticsWorkspace({
         removeWire(assignment.wireId, runtime);
       }
 
+      // Count existing wires for this component to determine offset index
+      const store = usePinAssignmentStore.getState();
+      const existingWireCount = store.assignments.filter(
+        (a) => a.componentObjectId === assignment.componentObjectId && a.wireId,
+      ).length;
+
       const wireId = generateWireForAssignment(
         assignment,
         runtime,
         componentAssetsRef.current,
         simAdapterRef.current?.sceneRenderer?.renderScaleMap,
+        existingWireCount,
       );
       if (wireId) {
         usePinAssignmentStore.getState().setWireId(

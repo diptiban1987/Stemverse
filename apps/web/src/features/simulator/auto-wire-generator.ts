@@ -104,30 +104,48 @@ function resolvePinWorldPosition(
 
 /**
  * Calculate an orthogonal (right-angle) route between two points.
- * Returns path points for clean wire routing.
+ * Uses wireIndex to offset parallel wires so they don't overlap.
+ *
+ * @param start - The start endpoint
+ * @param end   - The end endpoint
+ * @param wireIndex - Index of this wire (0, 1, 2…) for offset calculation
  */
 function calculateOrthogonalRoute(
   start: WireEndpoint,
   end: WireEndpoint,
+  wireIndex: number = 0,
 ): WireEndpoint[] {
   const points: WireEndpoint[] = [start];
 
   const dx = end.x - start.x;
   const dy = end.y - start.y;
 
-  // Use midpoint for clean routing
+  // Offset so parallel wires fan out instead of overlapping
+  // Each wire gets an 8px channel offset from center
+  const CHANNEL_GAP = 8;
+  const offset = (wireIndex - 1) * CHANNEL_GAP; // center around 0 for wireIndex=1
+
   if (Math.abs(dx) > 10 && Math.abs(dy) > 10) {
-    const midX = start.x + dx / 2;
-    points.push({ x: midX, y: start.y });
-    points.push({ x: midX, y: end.y });
+    // General case: L-shaped or Z-shaped route with offset
+    // Drop down from start pin first, then route horizontally, then to target
+    const dropY = 15 * Math.sign(dy);  // small vertical drop from pin
+    const midX = start.x + dx * 0.5 + offset;
+
+    points.push({ x: start.x, y: start.y + dropY });   // vertical drop
+    points.push({ x: midX, y: start.y + dropY });       // horizontal to channel
+    points.push({ x: midX, y: end.y - dropY });         // vertical in channel
+    points.push({ x: end.x, y: end.y - dropY });        // horizontal to target
   } else if (Math.abs(dy) > 10) {
-    // Mostly vertical
+    // Mostly vertical — offset horizontally
     const midY = start.y + dy / 2;
-    points.push({ x: start.x, y: midY });
-    points.push({ x: end.x, y: midY });
+    points.push({ x: start.x + offset, y: start.y });
+    points.push({ x: start.x + offset, y: midY });
+    points.push({ x: end.x + offset, y: midY });
+    points.push({ x: end.x, y: end.y });
   } else {
-    // Mostly horizontal — single bend
-    points.push({ x: end.x, y: start.y });
+    // Mostly horizontal — single bend with offset
+    points.push({ x: start.x, y: start.y + offset });
+    points.push({ x: end.x, y: start.y + offset });
   }
 
   points.push(end);
@@ -164,6 +182,7 @@ export function generateWireForAssignment(
     pinCoordinates?: Array<{ name: string; pixelX: number; pixelY: number }>;
   }>,
   renderScaleMap?: Map<string, number>,
+  wireIndex: number = 0,
 ): string | null {
   const compPos = resolvePinWorldPosition(
     assignment.componentObjectId,
@@ -187,8 +206,8 @@ export function generateWireForAssignment(
     return null;
   }
 
-  // Calculate route
-  const routePoints = calculateOrthogonalRoute(compPos, boardPos);
+  // Calculate route with wire index for offset
+  const routePoints = calculateOrthogonalRoute(compPos, boardPos, wireIndex);
 
   // Build segments from route points
   const segments = [];
@@ -256,13 +275,14 @@ export function generateAllWires(
 ): Map<string, string> {
   const wireMap = new Map<string, string>();
 
-  for (const assignment of assignments) {
+  for (let i = 0; i < assignments.length; i++) {
+    const assignment = assignments[i];
     // Remove old wire if exists
     if (assignment.wireId) {
       removeWire(assignment.wireId, runtime);
     }
 
-    const wireId = generateWireForAssignment(assignment, runtime, componentAssets, renderScaleMap);
+    const wireId = generateWireForAssignment(assignment, runtime, componentAssets, renderScaleMap, i);
     if (wireId) {
       const key = `${assignment.componentObjectId}_${assignment.componentPinName}`;
       wireMap.set(key, wireId);
