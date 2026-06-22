@@ -100,7 +100,7 @@
 | 6.1 | Blockly workspace integration | IDE Blueprint, Implementation Bible v1 | ✅ | `@stemverse/blockly-engine` + Robotics Studio UI |
 | 6.2 | Block JSON schema system | JSON Schema Architecture | ✅ | Component registry + 32+ block types with metadata |
 | 6.3 | Workspace JSON schema | JSON Schema Architecture | ✅ | `WorkspaceDocument` + Blockly serialization |
-| 6.4 | Category system (14 main categories) | IDE Blueprint | ✅ | 16 toolbox categories: Project, Pin Config, Digital I/O, Analog I/O, PWM, Interrupts, Timers, Sensors, Actuators, Communication, Wireless, Cloud IoT, Displays, Robotics, File System, RTOS |
+| 6.4 | Category system (14 main categories) | IDE Blueprint | ✅ | 24 toolbox categories: Project, Pin Config, Digital I/O, Analog I/O, PWM, Interrupts, Timers, Sensors, Actuators, Communication, Wireless, Cloud IoT, Displays, Robotics, File System, RTOS, Voice & Audio, Debugging |
 | 6.5 | Intermediate Representation (IR) layer | JSON Schema Architecture, System Design | ⬜ | |
 | 6.6 | Arduino C++ code generator | JSON Schema Architecture, Implementation Bible v1 | ✅ | Production generator: includes, globals, helpers, setup/loop, ESP32/Arduino |
 | 6.7 | ESP-IDF code generator | JSON Schema Architecture | ✅ | `espIdfGenerator`, auto-includes, ESP32/ESP32-S3 routing via `resolveCodegenTarget()` |
@@ -117,30 +117,30 @@
 
 | # | Task | Source Doc | Status | Notes |
 |---|------|-----------|--------|-------|
-| 7.1 | **Project blocks** (Start Program, Setup, Loop, Function, Variable, Constant, Array, Structure, Enum, Comment, Include Library) | Block Workspace Master List | 🔶 | 9 of 11 MVP blocks (missing Array, Structure, Enum) |
+| 7.1 | **Project blocks** (Start Program, Setup, Loop, Function, Variable, Constant, Array, Structure, Enum, Comment, Include Library) | Block Workspace Master List | 🔶 | 9 of 11 MVP blocks + array create/set/get blocks added; Structure/Enum pending |
 | 7.2 | **Board Configuration blocks** (Board Selection, Board Settings) | Block Workspace Master List | ✅ | Board Manager UI — 10 boards, CPU/flash/PSRAM/upload settings |
 | 7.3 | **Pin Configuration block** (Configure Pin with 7 modes) | IDE Blueprint, Block Workspace Master List | ✅ | Configure Pin with INPUT/OUTPUT/PULLUP/PULLDOWN/ANALOG/PWM/TOUCH |
 | 7.4 | **Digital I/O blocks** (Write, Read, Toggle) | Block Workspace Master List | ✅ | 3 blocks |
 | 7.5 | **Analog I/O blocks** (Read, Write, DAC Output) | Block Workspace Master List | ✅ | 3 blocks |
 | 7.6 | **PWM blocks** (Setup, Write) | Block Workspace Master List | ✅ | 2 blocks |
 | 7.7 | **Interrupt blocks** (Attach, Detach) | Block Workspace Master List | ✅ | RISING/FALLING/CHANGE modes |
-| 7.8 | **Timer blocks** (Create, Start, Stop, Reset, Delay, DelayMicros, Millis, Micros) | Block Workspace Master List | 🔶 | Delay, DelayMicros, Millis, Micros + Serial Begin (5/8 timer blocks) |
-| 7.9 | **Communication blocks** (UART 5, I2C 4, SPI 4) | Block Workspace Master List | 🔶 | UART Begin/Print/Read, I2C Begin/Read/Write, SPI Begin/Transfer (8/13 blocks) |
-| 7.10 | **Wireless blocks** (WiFi 5, Bluetooth 3, BLE 5) | Block Workspace Master List | 🔶 | WiFi Begin/Status/Disconnect/RSSI, Bluetooth Begin, BLE Begin (6/13 blocks) |
-| 7.11 | **Cloud IoT blocks** (MQTT 4, HTTP 4, WebSocket 3, Firebase 3, Blynk 3) | Block Workspace Master List | 🔶 | MQTT Connect/Publish/Subscribe, HTTP GET/POST, Firebase Read/Write (7/17 blocks) |
+| 7.8 | **Timer blocks** (Create, Start, Stop, Reset, Delay, DelayMicros, Millis, Micros) | Block Workspace Master List | ✅ | All 8 timer blocks: Delay, DelayMicros, Millis, Micros, Serial Begin, Timer Create/Start/Stop/Reset |
+| 7.9 | **Communication blocks** (UART 5, I2C 4, SPI 4) | Block Workspace Master List | 🔶 | 11/13 blocks: UART Begin/Print/Read, I2C Begin/Read/Write/Scan, SPI Begin/Transfer/BeginTransaction/EndTransaction |
+| 7.10 | **Wireless blocks** (WiFi 5, Bluetooth 3, BLE 5) | Block Workspace Master List | ✅ | 13/13 blocks: WiFi Begin/Status/Disconnect/RSSI/Scan/IP, BT Begin/Serial Begin/Send/Receive, BLE Begin/Advertise/Notify |
+| 7.11 | **Cloud IoT blocks** (MQTT 4, HTTP 4, WebSocket 3, Firebase 3, Blynk 3) | Block Workspace Master List | ✅ | 15/17 blocks: MQTT Connect/Publish/Subscribe/Receive, HTTP GET/POST/PUT/DELETE, Firebase Read/Write, WebSocket Connect/Send, Blynk Begin/Write/Read |
 | 7.12 | **Display blocks** (LCD 16x2: 4, OLED: 6, TFT: 4) | Block Workspace Master List | ✅ | 14 blocks — LCD/OLED/TFT toolbox + registry displays |
-| 7.13 | **Sensor blocks** (Generic + 13 sub-categories: Environment, Distance, Motion, Light, Gas, Fire, Sound, Water, Soil, Touch, IMU, GPS, Compass) | Block Workspace Master List, Ultimate Taxonomy | 🔶 | 11 sensors: DHT11/22, HC-SR04, PIR, MQ2, MQ135, LDR, DS18B20, BMP280, BME280, MPU6050 |
-| 7.14 | **Actuator blocks** (LED 4, Relay 3, Buzzer 3, Servo 3, Stepper 4, DC Motor 5) | Block Workspace Master List | 🔶 | 6 actuator blocks: Servo, Relay, Buzzer, RGB LED, Stepper, DC Motor |
+| 7.13 | **Sensor blocks** (Generic + 13 sub-categories: Environment, Distance, Motion, Light, Gas, Fire, Sound, Water, Soil, Touch, IMU, GPS, Compass) | Block Workspace Master List, Ultimate Taxonomy | ✅ | 11 sensor blocks: Generic sensor_read + GPS, IMU, Compass, Soil, Water, Sound, Flame, Touch, Gas, Color sensor |
+| 7.14 | **Actuator blocks** (LED 4, Relay 3, Buzzer 3, Servo 3, Stepper 4, DC Motor 5) | Block Workspace Master List | ✅ | 16 actuator blocks: Servo, Relay Write/Read, Buzzer Play/Stop, RGB LED, Stepper Move/Speed, DC Motor/Stop, LED Control/Brightness/Blink, NeoPixel Init/Set/Show |
 | 7.15 | **Robotics blocks** (Differential Drive 5, Line Follower 2, Obstacle Avoidance 2, Robotic Arm 4) | Block Workspace Master List, IDE Blueprint | ✅ | 13 blocks — diff drive, line follower, obstacle, arm |
 | 7.16 | **AI & Computer Vision blocks** (12 blocks: Load Model, Predict, Classification, Detection, Recognition, Capture, Record, Face, Object, QR, Barcode) | Block Workspace Master List | ⬜ | |
-| 7.17 | **Logic blocks** (If, Else, Else If, Switch, Compare, AND, OR, XOR, NOT) | Block Workspace Master List | 🔶 | 6 blocks + generators (Arduino, ESP-IDF, MicroPython, CircuitPython); Switch/XOR not in toolbox |
+| 7.17 | **Logic blocks** (If, Else, Else If, Switch, Compare, AND, OR, XOR, NOT) | Block Workspace Master List | ✅ | 9 blocks: If, Else, ElseIf, Switch, Compare, AND/OR, XOR, NOT, Ternary + generators (Arduino, ESP-IDF, MicroPython, CircuitPython) |
 | 7.18 | **Loop blocks** (Repeat, For, While, For Each, Break, Continue) | Block Workspace Master List | 🔶 | 6 blocks + core generators on all 4 codegen targets (Phase A) |
-| 7.19 | **Math blocks** (11 blocks) | Block Workspace Master List | 🔶 | 7 blocks + core generators; spec extras (e.g. trig) not implemented |
-| 7.20 | **Variable blocks** (6 types) | Block Workspace Master List | 🔶 | Set/Constant/get variable blocks; get_variable generator wired; typed/array variables not implemented |
+| 7.19 | **Math blocks** (11 blocks) | Block Workspace Master List | ✅ | 12 blocks: Number, Arithmetic, Modulo, Random, Min/Max, Map, Constrain, Trig, Pow, Sqrt, Abs, Round + generators |
+| 7.20 | **Variable blocks** (6 types) | Block Workspace Master List | ✅ | 7 blocks: Set/Get/Constant/Typed Variable, Array Create/Set/Get + generators on all 4 targets |
 | 7.21 | **String blocks** (8 blocks) | Block Workspace Master List | 🔶 | 8 blocks + core generators on all 4 codegen targets (Phase A) |
 | 7.22 | **File System blocks** (5 blocks, SPIFFS/LittleFS/SD) | Block Workspace Master List | ✅ | 5 blocks — SPIFFS/LittleFS/SD dropdown |
 | 7.23 | **RTOS blocks** (Task create/delete/suspend/resume, Queue, Semaphore) | Block Workspace Master List | ✅ | 7 blocks — FreeRTOS tasks, queues, semaphores |
-| 7.24 | **Debugging blocks** (6 blocks) | Block Workspace Master List | ⬜ | |
+| 7.24 | **Debugging blocks** (6 blocks) | Block Workspace Master List | ✅ | 6 blocks: Serial Print Value, Breakpoint, Assert, Log Level, Memory Usage, Execution Timer + Debugging toolbox category |
 | 7.25 | **Advanced Robotics blocks** (Ackermann, Mecanum, Omni, Tank, Legged/Humanoid, Kinematics, Trajectory, Path Planning) | Ultimate Taxonomy | ⬜ | |
 | 7.26 | **Industrial Automation blocks** (PLC, Ladder Logic, Modbus, CAN Bus, RS232/485, OPC UA, SCADA) | Ultimate Taxonomy | ⬜ | |
 | 7.27 | **ROS/ROS2 blocks** (Nodes, Topics, Publishers, Subscribers, Services, Actions, TF, Navigation, SLAM, MoveIt, Gazebo) | Ultimate Taxonomy | ⬜ | |
@@ -628,6 +628,7 @@ Based on V3 Enterprise Spec quarterly breakdown:
 | 2026-06-12 | 8 | Phase 21A — Virtual ESP32 Execution Runtime Foundation: Implemented VirtualESP32Model, VirtualGPIOPinModel, VirtualPWMChannelModel, VirtualTimerModel, VirtualInterruptModel with VirtualExecutionSynchronizer, 10 simulation helpers (applyPinMode, applyDigitalWrite, readDigitalPin, togglePin, shouldTriggerInterrupt, applyLedcAttachPin, applyLedcWrite, computeNormalizedDuty, advanceClock, tickTimers), 9 high-level runtime APIs, BaseRuntime CRUD registries, lifecycle hooks, snapshot sync, export/import serialization, and 9,879 unit test assertions. | Antigravity |
 | 2026-06-16 | 9 | Phase 28A — Tinkercad Circuit Editor Completion: Upgraded Robotics Studio's simulator tab from basic ComponentPalette to premium ComponentCatalog (10 categories, search, favorites, SVG thumbnails), added PropertyPanel (transform/pins/wires inspector), PinInspector (hover tooltip), circuit editor toolbar with 5 tool buttons (Select/Wire/Pan/Rotate/Delete), keyboard shortcuts (V/W/H/R/X/Del/Esc), status bar with tool indicator and zoom info, 3-column responsive layout, context menu prevention, right-side panel with PropertyPanel + PinAssignmentPanel, 3D SVG upgrades for LED/Resistor/Button/Pot/Buzzer, scale calibration to real-world proportions, breadboard hole highlighting system, wire click-to-select interactivity, and E2E test suite. | Antigravity |
 | 2026-06-22 | 2, 4 | Phase A — Design System & Auth Completion: Added 14 spacing scale CSS vars, 12 typography scale vars, complete dark theme overrides (all 11 colors + ring vars), darkMode: 'class' in Tailwind, fontSize/spacing/keyframes extensions. Created 6 new UI components (Modal, Drawer, Tabs, Select/Dropdown, Slider, Switch). Added @Roles() decorator + RolesGuard for RBAC. Created OAuthService foundation for Google/GitHub. Google + GitHub OAuth buttons on login + register pages with divider. New /profile page (view/edit display name). Enhanced /settings page (theme toggle, notifications, danger zone). PATCH /users/me API. Sidebar Profile link. | Antigravity |
+| 2026-06-22 | 7 | Phase B — Missing Block Implementations: Added ~50 new blocks across all categories. Core: Switch, XOR, Ternary (logic), Trig/Pow/Sqrt/Abs/Round (math), Typed Variable/Array Create/Set/Get (variables), Timer Create/Start/Stop/Reset. IoT: I2C Scan, SPI Begin/End Transaction, WiFi Scan/IP, BT Serial Begin/Send/Receive, BLE Advertise/Notify, MQTT Receive, HTTP PUT/DELETE, WebSocket Connect/Send, Blynk Begin/Write/Read. Sensors: GPS, IMU, Compass, Soil, Water, Sound, Flame, Touch, Gas, Color. Actuators: LED Control/Brightness/Blink, Relay Read, Buzzer Stop, Stepper Speed, DC Motor Stop, NeoPixel Init/Set/Show. New debugging.ts file with 6 blocks. All with Arduino + Python generators. Toolbox expanded to 24 categories. | Antigravity |
 
 ---
 
