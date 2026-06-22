@@ -409,3 +409,13 @@ export {
 export type { QuotaMetric, QuotaLimit, QuotaUsageEvent, QuotaAlert } from './quota-runtime';
 export * from './billing-runtime';
 export * from './customer-success-runtime';
+
+// Phase 39B: Gamification, Engagement & Community
+export * from './achievement-runtime';
+export {
+  getLevelTable, calculateLevel, getBaseXp, awardXp,
+  createUserLevel, addXpToUser, applyBonusMultiplier,
+  XpSynchronizer,
+} from './xp-runtime';
+export type { XpSource, XpEvent, UserLevel, LevelDefinition } from './xp-runtime';
+export * from './gamification-runtime';
