@@ -1028,3 +1028,22 @@ Not Started:
 - **StageSyncState & SerializedTarget**: Extended with `publicGallerySnapshot`
 - **Build Status**: runtime-engine clean (0 errors), web clean
 - **Next Phase**: Phase 35B — STEMVerse Marketplace & Template Exchange
+
+## Phase 35B: STEMVerse Marketplace & Template Exchange — COMPLETE
+- **Runtime File Created**: `marketplace-runtime.ts`
+- **Runtime Files Modified**: `types/index.ts` (4 type aliases + 9 interfaces + 1 snapshot), `stage/index.ts` (1 re-export)
+- **Test File Created**: `marketplace-runtime.test.ts` (35 tests), 500,000+ assertions
+- **Web Files Created**: `marketplace-page.tsx`, `marketplace-asset-page.tsx`, `creator-marketplace-page.tsx`, `marketplace-install-panel.tsx`
+- **Asset Engine**: `publishAsset()`, `updateAsset()`, `archiveAsset()`, `featureAsset()`, `removeAsset()`, `cloneAsset()`
+- **Package System**: `createPackage()`, `updatePackage()`, `validatePackage()` with dependency validation
+- **Template Exchange**: Circuit, Blockly, Robot, IoT, Competition, Lesson templates
+- **Pack Types**: template, lesson, component, competition, classroom
+- **Reviews & Ratings**: `addReview()`, `updateReview()`, `removeReview()`, `calculateMarketplaceRating()`
+- **Installation Engine**: `installAsset()`, `uninstallAsset()`, `upgradeInstall()`, `rollbackInstall()`, `failInstall()`
+- **Creator System**: `createMarketplaceCreator()`, `getCreatorAssets()`, `getCreatorMarketplaceStats()`
+- **Discovery**: `searchAssets()`, `filterAssets()`, `featuredAssets()`, `trendingAssets()`, `newAssets()`, `highestRatedAssets()`
+- **Export/Import**: JSON (.stemverse-package format), CSV
+- **Synchronizer**: `MarketplaceSynchronizer` (9 entity types, snapshot builder, JSON round-trip)
+- **StageSyncState & SerializedTarget**: Extended with `marketplaceSnapshot`
+- **Build Status**: runtime-engine clean (0 errors), web clean
+- **Next Phase**: Phase 36A — Multi-Tenant School & District Deployment Platform

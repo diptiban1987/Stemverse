@@ -786,6 +786,9 @@ export interface StageSyncState {
 
   // Phase 35A: Cloud Platform & Public Project Gallery
   publicGallerySnapshot?: PublicGallerySnapshot;
+
+  // Phase 35B: Marketplace & Template Exchange
+  marketplaceSnapshot?: MarketplaceSnapshot;
 }
 
 
@@ -1642,6 +1645,9 @@ export interface SerializedTarget {
 
   // Phase 35A: Cloud Platform & Public Project Gallery
   publicGallerySnapshot?: PublicGallerySnapshot;
+
+  // Phase 35B: Marketplace & Template Exchange
+  marketplaceSnapshot?: MarketplaceSnapshot;
 }
 
 
@@ -8445,4 +8451,172 @@ export interface PublicGallerySnapshot {
   totalPublicProjects: number;
   totalCreators: number;
   totalCollections: number;
+}
+
+// ─── Phase 35B: Marketplace & Template Exchange ──
+
+/** Phase 35B: Asset type */
+export type MarketplaceAssetType =
+  | 'circuit_template'
+  | 'blockly_template'
+  | 'robot_template'
+  | 'iot_template'
+  | 'competition_template'
+  | 'lesson_template';
+
+/** Phase 35B: Package type */
+export type MarketplacePackageType =
+  | 'template'
+  | 'lesson'
+  | 'component'
+  | 'competition'
+  | 'classroom';
+
+/** Phase 35B: Asset status */
+export type MarketplaceAssetStatus =
+  | 'draft'
+  | 'published'
+  | 'featured'
+  | 'archived'
+  | 'removed';
+
+/** Phase 35B: Install status */
+export type MarketplaceInstallStatus =
+  | 'installed'
+  | 'uninstalled'
+  | 'pending'
+  | 'failed';
+
+/** Phase 35B: Marketplace asset */
+export interface MarketplaceAssetModel {
+  assetId: string;
+  creatorId: string;
+  creatorName: string;
+  title: string;
+  description: string;
+  assetType: MarketplaceAssetType;
+  status: MarketplaceAssetStatus;
+  version: string;
+  tags: string[];
+  thumbnailUrl: string;
+  downloadCount: number;
+  installCount: number;
+  favoriteCount: number;
+  ratingCount: number;
+  averageRating: number;
+  publishedAt: number;
+  updatedAt: number;
+  deleted: boolean;
+}
+
+/** Phase 35B: Marketplace package */
+export interface MarketplacePackageModel {
+  packageId: string;
+  assetId: string;
+  packageType: MarketplacePackageType;
+  version: string;
+  dependencies: string[];
+  fileSize: number;
+  checksum: string;
+  createdAt: number;
+}
+
+/** Phase 35B: Template */
+export interface MarketplaceTemplateModel {
+  templateId: string;
+  assetId: string;
+  templateType: MarketplaceAssetType;
+  componentCount: number;
+  wireCount: number;
+  blockCount: number;
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  estimatedTime: number;
+  previewData: string;
+}
+
+/** Phase 35B: Lesson pack */
+export interface MarketplaceLessonPackModel {
+  lessonPackId: string;
+  assetId: string;
+  lessonCount: number;
+  gradeLevel: string;
+  subject: string;
+  objectives: string[];
+  prerequisites: string[];
+}
+
+/** Phase 35B: Component pack */
+export interface MarketplaceComponentPackModel {
+  componentPackId: string;
+  assetId: string;
+  componentTypes: string[];
+  componentCount: number;
+  compatibility: string[];
+}
+
+/** Phase 35B: Competition pack */
+export interface MarketplaceCompetitionPackModel {
+  competitionPackId: string;
+  assetId: string;
+  categoryCount: number;
+  judgeCount: number;
+  maxParticipants: number;
+  duration: number;
+  rules: string[];
+}
+
+/** Phase 35B: Review */
+export interface MarketplaceReviewModel {
+  reviewId: string;
+  assetId: string;
+  userId: string;
+  userName: string;
+  stars: number;
+  title: string;
+  content: string;
+  helpful: number;
+  createdAt: number;
+  updatedAt: number | null;
+}
+
+/** Phase 35B: Install record */
+export interface MarketplaceInstallModel {
+  installId: string;
+  assetId: string;
+  userId: string;
+  version: string;
+  status: MarketplaceInstallStatus;
+  installedAt: number;
+  uninstalledAt: number | null;
+  previousVersion: string | null;
+}
+
+/** Phase 35B: Marketplace creator */
+export interface MarketplaceCreatorModel {
+  marketplaceCreatorId: string;
+  userId: string;
+  displayName: string;
+  bio: string;
+  assetCount: number;
+  totalDownloads: number;
+  totalInstalls: number;
+  followerCount: number;
+  averageRating: number;
+  joinedAt: number;
+}
+
+/** Phase 35B: Marketplace snapshot */
+export interface MarketplaceSnapshot {
+  assets: MarketplaceAssetModel[];
+  packages: MarketplacePackageModel[];
+  templates: MarketplaceTemplateModel[];
+  lessonPacks: MarketplaceLessonPackModel[];
+  componentPacks: MarketplaceComponentPackModel[];
+  competitionPacks: MarketplaceCompetitionPackModel[];
+  reviews: MarketplaceReviewModel[];
+  installs: MarketplaceInstallModel[];
+  creators: MarketplaceCreatorModel[];
+  totalAssets: number;
+  totalInstalls: number;
+  totalCreators: number;
 }
