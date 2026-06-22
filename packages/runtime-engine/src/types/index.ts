@@ -792,6 +792,7 @@ export interface StageSyncState {
 
   // Phase 36A: Multi-Tenant Deployment
   deploymentSnapshot?: DeploymentSnapshot;
+  authSnapshot?: AuthSnapshot;
 }
 
 
@@ -1654,6 +1655,7 @@ export interface SerializedTarget {
 
   // Phase 36A: Multi-Tenant Deployment
   deploymentSnapshot?: DeploymentSnapshot;
+  authSnapshot?: AuthSnapshot;
 }
 
 
@@ -8803,4 +8805,101 @@ export interface DeploymentSnapshot {
   totalTenants: number;
   totalOrganizations: number;
   totalMembers: number;
+}
+
+// ─── Phase 36C: Platform Integration & Authentication ────────
+
+/** Phase 36C: Auth provider */
+export type AuthProvider = 'email' | 'google' | 'github' | 'microsoft';
+
+/** Phase 36C: Session status */
+export type SessionStatus = 'active' | 'expired' | 'revoked';
+
+/** Phase 36C: API method */
+export type ApiMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+
+/** Phase 36C: Auth user */
+export interface AuthUserModel {
+  userId: string;
+  email: string;
+  displayName: string;
+  provider: AuthProvider;
+  emailVerified: boolean;
+  role: OrganizationRoleType;
+  tenantId: string | null;
+  organizationId: string | null;
+  avatarUrl: string;
+  createdAt: number;
+  lastLoginAt: number;
+}
+
+/** Phase 36C: Auth session */
+export interface AuthSessionModel {
+  sessionId: string;
+  userId: string;
+  accessToken: string;
+  refreshToken: string;
+  status: SessionStatus;
+  deviceInfo: string;
+  ipAddress: string;
+  createdAt: number;
+  expiresAt: number;
+  revokedAt: number | null;
+}
+
+/** Phase 36C: Auth token */
+export interface AuthTokenModel {
+  tokenId: string;
+  userId: string;
+  type: 'access' | 'refresh' | 'reset' | 'verify';
+  token: string;
+  expiresAt: number;
+  used: boolean;
+}
+
+/** Phase 36C: API route */
+export interface ApiRouteModel {
+  routeId: string;
+  path: string;
+  method: ApiMethod;
+  requiresAuth: boolean;
+  requiredRole: OrganizationRoleType | null;
+  rateLimitPerMinute: number;
+  description: string;
+}
+
+/** Phase 36C: API request log */
+export interface ApiRequestLogModel {
+  logId: string;
+  routeId: string;
+  userId: string | null;
+  method: ApiMethod;
+  path: string;
+  statusCode: number;
+  durationMs: number;
+  timestamp: number;
+}
+
+/** Phase 36C: WebSocket connection */
+export interface WebSocketConnectionModel {
+  connectionId: string;
+  userId: string;
+  sessionId: string;
+  channel: string;
+  connectedAt: number;
+  lastPingAt: number;
+  active: boolean;
+}
+
+/** Phase 36C: Auth snapshot */
+export interface AuthSnapshot {
+  users: AuthUserModel[];
+  sessions: AuthSessionModel[];
+  tokens: AuthTokenModel[];
+  apiRoutes: ApiRouteModel[];
+  requestLogs: ApiRequestLogModel[];
+  wsConnections: WebSocketConnectionModel[];
+  totalUsers: number;
+  totalActiveSessions: number;
+  totalApiRoutes: number;
 }

@@ -265,3 +265,16 @@ export {
   // Synchronizer
   SimulatorUXSynchronizer,
 } from './simulator-ux-runtime';
+
+// Phase 36C: Platform Integration & Authentication
+export {
+  signup, signin, signout, refreshToken, forgotPassword,
+  resetPassword, verifyEmail,
+  canAccess, canModify, canPublish, canGrade, canJudge,
+  createSession as createAuthSession,
+  revokeSession, revokeAllSessions, getActiveSessions, isSessionValid,
+  createToken, validateToken,
+  createDefaultAuthSnapshot,
+  AuthSynchronizer,
+} from './auth-runtime';
+export * from './api-layer-runtime';
