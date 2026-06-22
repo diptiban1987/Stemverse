@@ -49,6 +49,36 @@ const COMPONENT_DESCRIPTIONS: Record<string, string> = {
   resistor_generic: 'Through-hole resistor',
   push_button_tactile: 'Momentary tactile switch',
   potentiometer_10k: '10kΩ rotary potentiometer',
+  // ── Environment Sensors ──
+  bmp280: 'Temp, pressure & altitude',
+  bme280: 'Temp, pressure, humidity & alt',
+  ds18b20: 'Waterproof temperature probe',
+  soil_moisture: 'Capacitive soil moisture',
+  water_level: 'Analog water level detection',
+  // ── Motion & Position ──
+  mpu6050: '6-axis accelerometer & gyro',
+  gps_neo6m: 'UART GPS receiver module',
+  compass_hmc: '3-axis digital compass',
+  // ── Light & Color ──
+  ldr: 'Analog light-dependent resistor',
+  color_sensor_tcs: 'RGB color sensor I²C',
+  // ── Safety & Gas ──
+  gas_sensor_mq: 'MQ-series gas detector',
+  flame_sensor: 'IR flame detection module',
+  sound_sensor: 'Analog sound level sensor',
+  // ── Input & Touch ──
+  pir: 'Passive infrared motion detect',
+  touch_sensor: 'Capacitive touch input',
+  // ── Actuators ──
+  relay: '5V single-channel relay',
+  dc_motor: 'Brushed DC motor w/ driver',
+  stepper_motor: '4-phase stepper motor',
+  rgb_led: 'Common-cathode RGB LED',
+  neopixel: 'WS2812B addressable strip',
+  // ── Displays ──
+  lcd_i2c: '16×2 character LCD I²C',
+  oled_ssd1306_new: '0.96″ 128×64 OLED I²C',
+  tft_ili9341: '2.4″ 320×240 TFT SPI',
 };
 
 /* ------------------------------------------------------------------ */
@@ -72,6 +102,30 @@ const ASSET_TO_SVG_KEY: Record<string, string> = {
   resistor_generic: 'RESISTOR',
   push_button_tactile: 'PUSH_BUTTON',
   potentiometer_10k: 'POTENTIOMETER',
+  // ── New component SVG keys ──
+  bmp280: 'BMP280',
+  bme280: 'BME280',
+  ds18b20: 'DS18B20',
+  soil_moisture: 'SOIL_MOISTURE',
+  water_level: 'WATER_LEVEL',
+  mpu6050: 'MPU6050',
+  gps_neo6m: 'GPS_NEO6M',
+  compass_hmc: 'COMPASS_HMC',
+  ldr: 'LDR',
+  color_sensor_tcs: 'COLOR_SENSOR_TCS',
+  gas_sensor_mq: 'GAS_SENSOR_MQ',
+  flame_sensor: 'FLAME_SENSOR',
+  sound_sensor: 'SOUND_SENSOR',
+  pir: 'PIR',
+  touch_sensor: 'TOUCH_SENSOR',
+  relay: 'RELAY_NEW',
+  dc_motor: 'DC_MOTOR',
+  stepper_motor: 'STEPPER_MOTOR',
+  rgb_led: 'RGB_LED',
+  neopixel: 'NEOPIXEL',
+  lcd_i2c: 'LCD_I2C',
+  oled_ssd1306_new: 'OLED_SSD1306',
+  tft_ili9341: 'TFT_ILI9341',
 };
 
 const BREADBOARD_IDS = new Set(['breadboard_830', 'breadboard_400', 'breadboard_mini']);
@@ -157,6 +211,63 @@ const CATEGORIES: CategoryDef[] = [
     ],
   },
   {
+    id: 'environment',
+    label: 'Environment',
+    emoji: '🌡️',
+    color: 'text-teal-400',
+    glowColor: 'shadow-teal-500/20',
+    bgColor: 'bg-teal-500/10',
+    borderColor: 'border-teal-500/30',
+    components: [
+      { assetId: 'bmp280', displayName: 'BMP280 Barometer', description: COMPONENT_DESCRIPTIONS.bmp280 },
+      { assetId: 'bme280', displayName: 'BME280 Environmental', description: COMPONENT_DESCRIPTIONS.bme280 },
+      { assetId: 'ds18b20', displayName: 'DS18B20 Temperature', description: COMPONENT_DESCRIPTIONS.ds18b20 },
+      { assetId: 'soil_moisture', displayName: 'Soil Moisture Sensor', description: COMPONENT_DESCRIPTIONS.soil_moisture },
+      { assetId: 'water_level', displayName: 'Water Level Sensor', description: COMPONENT_DESCRIPTIONS.water_level },
+    ],
+  },
+  {
+    id: 'motion',
+    label: 'Motion & Position',
+    emoji: '🧭',
+    color: 'text-indigo-400',
+    glowColor: 'shadow-indigo-500/20',
+    bgColor: 'bg-indigo-500/10',
+    borderColor: 'border-indigo-500/30',
+    components: [
+      { assetId: 'mpu6050', displayName: 'MPU6050 IMU', description: COMPONENT_DESCRIPTIONS.mpu6050 },
+      { assetId: 'gps_neo6m', displayName: 'GPS NEO-6M', description: COMPONENT_DESCRIPTIONS.gps_neo6m },
+      { assetId: 'compass_hmc', displayName: 'HMC5883L Compass', description: COMPONENT_DESCRIPTIONS.compass_hmc },
+    ],
+  },
+  {
+    id: 'light',
+    label: 'Light & Color',
+    emoji: '💡',
+    color: 'text-yellow-300',
+    glowColor: 'shadow-yellow-400/20',
+    bgColor: 'bg-yellow-400/10',
+    borderColor: 'border-yellow-400/30',
+    components: [
+      { assetId: 'ldr', displayName: 'LDR Light Sensor', description: COMPONENT_DESCRIPTIONS.ldr },
+      { assetId: 'color_sensor_tcs', displayName: 'TCS34725 Color Sensor', description: COMPONENT_DESCRIPTIONS.color_sensor_tcs },
+    ],
+  },
+  {
+    id: 'safety',
+    label: 'Safety & Gas',
+    emoji: '🔥',
+    color: 'text-orange-400',
+    glowColor: 'shadow-orange-500/20',
+    bgColor: 'bg-orange-500/10',
+    borderColor: 'border-orange-500/30',
+    components: [
+      { assetId: 'gas_sensor_mq', displayName: 'MQ Gas Sensor', description: COMPONENT_DESCRIPTIONS.gas_sensor_mq },
+      { assetId: 'flame_sensor', displayName: 'Flame Sensor', description: COMPONENT_DESCRIPTIONS.flame_sensor },
+      { assetId: 'sound_sensor', displayName: 'Sound Sensor', description: COMPONENT_DESCRIPTIONS.sound_sensor },
+    ],
+  },
+  {
     id: 'displays',
     label: 'Displays',
     emoji: '🖥️',
@@ -167,6 +278,9 @@ const CATEGORIES: CategoryDef[] = [
     components: [
       { assetId: 'oled_ssd1306', displayName: 'OLED SSD1306', description: COMPONENT_DESCRIPTIONS.oled_ssd1306 },
       { assetId: 'lcd1602', displayName: 'LCD 1602 I2C', description: COMPONENT_DESCRIPTIONS.lcd1602 },
+      { assetId: 'lcd_i2c', displayName: 'LCD 16×2 I2C', description: COMPONENT_DESCRIPTIONS.lcd_i2c },
+      { assetId: 'oled_ssd1306_new', displayName: 'OLED SSD1306', description: COMPONENT_DESCRIPTIONS.oled_ssd1306_new },
+      { assetId: 'tft_ili9341', displayName: 'TFT ILI9341', description: COMPONENT_DESCRIPTIONS.tft_ili9341 },
     ],
   },
   {
@@ -181,6 +295,11 @@ const CATEGORIES: CategoryDef[] = [
       { assetId: 'sg90_servo', displayName: 'SG90 Servo', description: COMPONENT_DESCRIPTIONS.sg90_servo },
       { assetId: 'relay_module', displayName: 'Relay Module', description: COMPONENT_DESCRIPTIONS.relay_module },
       { assetId: 'buzzer_passive', displayName: 'Buzzer', description: COMPONENT_DESCRIPTIONS.buzzer_passive },
+      { assetId: 'relay', displayName: 'Relay Module', description: COMPONENT_DESCRIPTIONS.relay },
+      { assetId: 'dc_motor', displayName: 'DC Motor', description: COMPONENT_DESCRIPTIONS.dc_motor },
+      { assetId: 'stepper_motor', displayName: 'Stepper Motor', description: COMPONENT_DESCRIPTIONS.stepper_motor },
+      { assetId: 'rgb_led', displayName: 'RGB LED', description: COMPONENT_DESCRIPTIONS.rgb_led },
+      { assetId: 'neopixel', displayName: 'NeoPixel Strip', description: COMPONENT_DESCRIPTIONS.neopixel },
     ],
   },
   {
@@ -198,7 +317,7 @@ const CATEGORIES: CategoryDef[] = [
   },
   {
     id: 'input',
-    label: 'Input',
+    label: 'Input & Touch',
     emoji: '🎛️',
     color: 'text-cyan-400',
     glowColor: 'shadow-cyan-500/20',
@@ -207,6 +326,8 @@ const CATEGORIES: CategoryDef[] = [
     components: [
       { assetId: 'push_button_tactile', displayName: 'Push Button', description: COMPONENT_DESCRIPTIONS.push_button_tactile },
       { assetId: 'potentiometer_10k', displayName: 'Potentiometer', description: COMPONENT_DESCRIPTIONS.potentiometer_10k },
+      { assetId: 'pir', displayName: 'PIR Motion Sensor', description: COMPONENT_DESCRIPTIONS.pir },
+      { assetId: 'touch_sensor', displayName: 'Touch Sensor', description: COMPONENT_DESCRIPTIONS.touch_sensor },
     ],
   },
 ];
