@@ -17,14 +17,14 @@ import {
   generateSnapshotHash,
   createDefaultPersistenceState,
   createSyncQueueEntry,
-} from './workspace-persistence-runtime';
+} from '../src/stage/workspace-persistence-runtime';
 import type {
   SerializedProject,
   WorkspacePersistenceSnapshot,
   LocalProjectVersion,
   OfflineSyncQueueEntry,
   PersistenceEngineSnapshot,
-} from '../types';
+} from '../src/types';
 
 // ─── Test Helpers ───────────────────────────────────────────
 
