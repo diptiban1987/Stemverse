@@ -62,6 +62,15 @@ interface SimulatorState {
 
   // Context menu
   contextMenu: { x: number; y: number; targetId: string; targetType: string } | null;
+
+  // Phase 31B: Persistence state
+  activeProjectId: string | null;
+  isDirty: boolean;
+  isSaving: boolean;
+  lastSavedAt: number | null;
+  autoSaveEnabled: boolean;
+  isOffline: boolean;
+  pendingSyncCount: number;
 }
 
 /* ------------------------------------------------------------------ */
@@ -99,6 +108,15 @@ interface SimulatorActions {
 
   // Context menu
   setContextMenu: (menu: { x: number; y: number; targetId: string; targetType: string } | null) => void;
+
+  // Phase 31B: Persistence actions
+  setActiveProject: (id: string | null) => void;
+  markDirty: () => void;
+  markClean: (timestamp: number) => void;
+  setSaving: (saving: boolean) => void;
+  setAutoSaveEnabled: (enabled: boolean) => void;
+  setOfflineStatus: (offline: boolean) => void;
+  setPendingSyncCount: (count: number) => void;
 }
 
 /* ------------------------------------------------------------------ */
@@ -120,6 +138,15 @@ export const useSimulatorStore = create<SimulatorState & SimulatorActions>()((se
   connectionWarnings: [],
   simulationState: 'idle',
   contextMenu: null,
+
+  // Phase 31B: Persistence defaults
+  activeProjectId: null,
+  isDirty: false,
+  isSaving: false,
+  lastSavedAt: null,
+  autoSaveEnabled: true,
+  isOffline: false,
+  pendingSyncCount: 0,
 
   // ── actions ───────────────────────────────────────────────────────
   setTool: (tool) => set({ activeTool: tool }),
@@ -161,4 +188,13 @@ export const useSimulatorStore = create<SimulatorState & SimulatorActions>()((se
   setSimulationState: (state) => set({ simulationState: state }),
 
   setContextMenu: (menu) => set({ contextMenu: menu }),
+
+  // Phase 31B: Persistence actions
+  setActiveProject: (id) => set({ activeProjectId: id }),
+  markDirty: () => set({ isDirty: true }),
+  markClean: (timestamp) => set({ isDirty: false, lastSavedAt: timestamp }),
+  setSaving: (saving) => set({ isSaving: saving }),
+  setAutoSaveEnabled: (enabled) => set({ autoSaveEnabled: enabled }),
+  setOfflineStatus: (offline) => set({ isOffline: offline }),
+  setPendingSyncCount: (count) => set({ pendingSyncCount: count }),
 }));

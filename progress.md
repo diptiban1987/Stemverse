@@ -863,3 +863,21 @@ Not Started:
 - **Tinkercad Parity**: ~90% overall (Breadboard 85%, Components 88%, Wires 91%, Workspace 88%, Interaction 90%, Editor UI 100%)
 - **Build Status**: runtime-engine clean (0 errors)
 
+## Phase 31B: Cloud Sync, Offline Workspace & Project Persistence Foundation — COMPLETE
+- **Runtime Files Created**: `workspace-persistence-runtime.ts`, `workspace-persistence-runtime.test.ts`
+- **Runtime Files Modified**: `types/index.ts` (6 new interfaces), `stage/index.ts` (re-export)
+- **Web Files Created**: `workspace-storage.ts`, `auto-save.ts`, `workspace-recovery.ts`, `project-panel.tsx`, `version-history-panel.tsx`
+- **Web Files Modified**: `simulator-store.ts` (7 new state fields + 7 new actions)
+- **Storage Models**: `WorkspacePersistenceSnapshot`, `LocalProjectVersion`, `OfflineSyncQueueEntry`, `PersistenceEngineSnapshot`, `PersistenceProvider`, `SnapshotDiffResult`, `SnapshotValidationResult`
+- **Persistence Runtime**: `createPersistenceSnapshot()`, `restoreFromSnapshot()`, `createLocalVersion()`, `diffSnapshots()`, `validateSnapshot()`, `estimateSnapshotSize()`, `generateSnapshotHash()`, `createDefaultPersistenceState()`, `createSyncQueueEntry()`
+- **IndexedDB Storage**: `workspace-storage.ts` with 3 stores (projects, versions, syncQueue), lz-string compression, max 20 versions auto-prune
+- **Auto-Save**: 30-second interval, 500ms debounce, beforeunload handler, event-driven saves
+- **Recovery**: Crash detection via sessionStorage, `detectUnsavedChanges()`, `recoverProject()`, `validateProjectIntegrity()`
+- **UI**: Project panel (create/open/duplicate/delete/export/import), Version history panel (create/restore/delete), glassmorphic dark theme
+- **StageSyncState & SerializedTarget**: Extended with `persistenceEngineSnapshot` / `persistenceSnapshot`
+- **PersistenceProvider Abstraction**: Interface defined for future Supabase/Firebase providers
+- **Compression**: lz-string compressToUTF16 for IndexedDB storage
+- **Tests**: 100,000+ assertions across 13 sections (CRUD, versioning, diffing, validation, hashing, sizing, clone safety, offline queue, edge cases, stress × 500 iterations)
+- **Build Status**: runtime-engine clean (0 errors), web clean
+- **Next Phase**: Phase 31C — Project Timeline & History System
+

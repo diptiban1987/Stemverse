@@ -762,6 +762,9 @@ export interface StageSyncState {
 
   // Phase 31A: Professional Simulator UX/UI Completion
   simulatorUXSnapshot?: SimulatorUXSnapshot;
+
+  // Phase 31B: Cloud Sync, Offline Workspace & Project Persistence
+  persistenceEngineSnapshot?: PersistenceEngineSnapshot;
 }
 
 
@@ -1594,6 +1597,9 @@ export interface SerializedTarget {
   workspaceTools?: WorkspaceToolModel[];
   pinInspectors?: PinInspectorModel[];
   connectionWarnings?: ConnectionWarningModel[];
+
+  // Phase 31B: Cloud Sync, Offline Workspace & Project Persistence
+  persistenceSnapshot?: PersistenceEngineSnapshot;
 }
 
 
@@ -7042,4 +7048,95 @@ export interface SimulatorUXSnapshot {
   paletteFilterModels: PaletteFilterModel[];
   performanceMetrics: PerformanceMetricsModel[];
   workspaceThemeConfigs: WorkspaceThemeConfigModel[];
+}
+
+
+// ─── Phase 31B: Cloud Sync, Offline Workspace & Project Persistence ──────────
+
+/** Phase 31B: Full workspace persistence snapshot for IndexedDB storage */
+export interface WorkspacePersistenceSnapshot {
+  projectId: string;
+  name: string;
+  description: string;
+  boardId: string;
+  createdAt: number;
+  updatedAt: number;
+  componentCount: number;
+  wireCount: number;
+  thumbnailDataUrl?: string;
+  serializedProject: SerializedProject;
+  /** Compressed serialized project (lz-string). If present, serializedProject may be empty placeholder. */
+  compressedProject?: string;
+  blocklyXml?: string;
+  sensorValues?: Record<string, Record<string, number>>;
+  cameraState?: { x: number; y: number; zoom: number };
+  activeTool?: string;
+  selectedObjectIds?: string[];
+}
+
+/** Phase 31B: Local version entry stored in IndexedDB */
+export interface LocalProjectVersion {
+  versionId: string;
+  projectId: string;
+  label: string;
+  createdAt: number;
+  sizeBytes: number;
+  componentCount: number;
+  wireCount: number;
+  serializedProject: SerializedProject;
+  compressedProject?: string;
+}
+
+/** Phase 31B: Offline sync queue entry for future cloud sync */
+export interface OfflineSyncQueueEntry {
+  queueId: string;
+  projectId: string;
+  operation: 'create' | 'update' | 'delete';
+  timestamp: number;
+  payload?: SerializedProject;
+  synced: boolean;
+  retryCount: number;
+}
+
+/** Phase 31B: Persistence engine state for snapshot integration */
+export interface PersistenceEngineSnapshot {
+  activeProjectId: string | null;
+  isDirty: boolean;
+  lastSavedAt: number | null;
+  autoSaveEnabled: boolean;
+  autoSaveIntervalMs: number;
+  offlineQueueLength: number;
+}
+
+/** Phase 31B: Abstracted persistence provider interface */
+export interface PersistenceProvider {
+  save(snapshot: WorkspacePersistenceSnapshot): Promise<void>;
+  load(projectId: string): Promise<WorkspacePersistenceSnapshot | null>;
+  delete(projectId: string): Promise<void>;
+  list(): Promise<WorkspacePersistenceSnapshot[]>;
+  saveVersion(version: LocalProjectVersion): Promise<void>;
+  loadVersions(projectId: string): Promise<LocalProjectVersion[]>;
+  deleteVersion(versionId: string): Promise<void>;
+  enqueueSync(entry: OfflineSyncQueueEntry): Promise<void>;
+  getPendingSync(): Promise<OfflineSyncQueueEntry[]>;
+  markSynced(queueId: string): Promise<void>;
+}
+
+/** Phase 31B: Snapshot diff result */
+export interface SnapshotDiffResult {
+  componentsAdded: string[];
+  componentsRemoved: string[];
+  componentsModified: string[];
+  wiresAdded: string[];
+  wiresRemoved: string[];
+  wiresModified: string[];
+  variablesChanged: string[];
+  summary: string;
+}
+
+/** Phase 31B: Snapshot validation result */
+export interface SnapshotValidationResult {
+  valid: boolean;
+  errors: string[];
+  warnings: string[];
 }
