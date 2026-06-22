@@ -460,3 +460,69 @@ export * from './canvas-runtime';
 export * from './teams-education-runtime';
 export * from './school-erp-runtime';
 export * from './certificate-delivery-runtime';
+
+// Phase 42: Scratch Production Platform
+export {
+  createEditor, setZoom, zoomIn, zoomOut, resetZoom, pan,
+  selectBlock, multiSelectBlock, deselectAll, duplicateSelected,
+  pushAction,
+  undo as scratchUndo, redo as scratchRedo,
+  canUndo as scratchCanUndo, canRedo as scratchCanRedo,
+  addToBackpack, removeFromBackpack, clearBackpack,
+  addComment as addScratchComment, updateComment as updateScratchComment,
+  deleteComment as deleteScratchComment, toggleCommentMinimize,
+  createProcedure, deleteProcedure, getProcedure,
+  startPlaying, stopPlaying, setEditorMode, getToolboxCategories, addExtensionCategory,
+} from './scratch-editor-runtime';
+export type {
+  BlockCategory, EditorMode, ZoomLevel, EditorState, EditorAction,
+  BackpackItem, BlockComment, CustomProcedure, ProcedureArg, ToolboxCategory,
+} from './scratch-editor-runtime';
+export * from './scratch-asset-runtime';
+export * from './sb3-importer-runtime';
+export {
+  createExportManifest, buildExport, completeExport, failExport,
+  createSB3Json, createPackageBundle, addFileToBundle, getExportFormats,
+} from './sb3-exporter-runtime';
+export type {
+  ExportFormat as SB3ExportFormat, ExportStatus, ExportManifest,
+  ExportTarget, ExportMetadata, PackageBundle, PackageFile,
+} from './sb3-exporter-runtime';
+export {
+  getBlockMappings, findMappingByScratchType, findMappingByBlocklyType, getMappingsByCategory,
+  startSyncSession, convertBlock, completeSyncSession, getSyncStats, getSupportedCategories,
+} from './scratch-blockly-sync-runtime';
+export type {
+  SyncDirection as ScratchSyncDirection, BlockMappingCategory, BlockMapping,
+  SyncSession as ScratchSyncSession, ConversionResult,
+} from './scratch-blockly-sync-runtime';
+export {
+  getBoardConfig, getSupportedBoards, createPinConfig, setPinValue,
+  createHardwareSetup, addPinToSetup, addComponentToSetup, createRoboticsBlock,
+  getDigitalWriteBlock, getDigitalReadBlock, getAnalogReadBlock, getPWMBlock,
+  getServoBlock, getUltrasonicBlock, getMotorDriverBlock, getLCDBlock, getOLEDBlock,
+  getRelayBlock, getRoboticsCategories,
+} from './scratch-robotics-extension-runtime';
+export type {
+  BoardType, PinMode as RoboticsPinMode, RoboticsBlockCategory,
+  BoardConfig, PinConfig, RoboticsBlock, HardwareSetup, ConnectedComponent,
+} from './scratch-robotics-extension-runtime';
+export * from './scratch-ai-extension-runtime';
+export * from './scratch-iot-extension-runtime';
+export {
+  createScratchClassroom, createScratchAssignment, publishAssignment, closeAssignment,
+  addGradingCriteria, enableAutoGrade, createSubmission,
+  submitAssignment as submitScratchAssignment, gradeSubmission, autoGradeSubmission,
+  returnSubmission as returnScratchSubmission,
+  enrollStudent as enrollScratchStudent, removeStudent as removeScratchStudent,
+  shareProject, likeProject, viewProject, remixProject,
+  createStudentPortfolio, addProjectToPortfolio,
+  generateClassDashboard, addDashboardActivity as addScratchDashboardActivity,
+} from './scratch-classroom-runtime';
+export type {
+  AssignmentStatus as ScratchAssignmentStatus, SubmissionStatus as ScratchSubmissionStatus,
+  ScratchClassroom, ScratchAssignment,
+  GradingCriteria, StudentSubmission as ScratchStudentSubmission, AutoGradeResult,
+  SharedProject, StudentPortfolio, PortfolioProject,
+  ClassDashboard, DashboardActivity as ScratchDashboardActivity,
+} from './scratch-classroom-runtime';

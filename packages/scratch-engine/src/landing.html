@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TechyGuide — Visual ESP32 Programming Platform</title>
+    <meta name="description" content="Build IoT projects without writing code. Drag-and-drop block programming for ESP32 with Arduino C++ and MicroPython code generation, one-click upload, and real-time serial monitoring.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        /* ── RESET & VARIABLES ─────────────────────────────── */
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        :root{
+            --bg:#ffffff;--surface:#f8fafc;--surface-2:#f1f5f9;--surface-3:#e2e8f0;
+            --border:#e2e8f0;--border-light:#f1f5f9;
+            --text:#0f172a;--text-secondary:#475569;--muted:#94a3b8;
+            /* ── 🌈 Rainbow Palette ── */
+            --red:#ef4444;--red-light:#fef2f2;--red-mid:#fca5a5;
+            --orange:#f97316;--orange-light:#fff7ed;--orange-mid:#fdba74;
+            --yellow:#eab308;--yellow-light:#fefce8;--yellow-mid:#fde047;
+            --green:#22c55e;--green-light:#f0fdf4;--green-mid:#86efac;
+            --blue:#3b82f6;--blue-light:#eff6ff;--blue-mid:#93c5fd;
+            --indigo:#6366f1;--indigo-light:#eef2ff;--indigo-mid:#a5b4fc;
+            --violet:#8b5cf6;--violet-light:#f5f3ff;--violet-mid:#c4b5fd;
+            --rainbow:linear-gradient(135deg,var(--red),var(--orange),var(--yellow),var(--green),var(--blue),var(--indigo),var(--violet));
+            --rainbow-90:linear-gradient(90deg,var(--red),var(--orange),var(--yellow),var(--green),var(--blue),var(--indigo),var(--violet));
+            --font:'Inter',system-ui,-apple-system,sans-serif;--mono:'JetBrains Mono',monospace;
+            --radius:1rem;--max-w:1200px;
+            --shadow-sm:0 1px 3px rgba(0,0,0,.06);
+            --shadow-md:0 4px 20px rgba(0,0,0,.06);
+            --shadow-lg:0 12px 40px rgba(0,0,0,.08);
+            --shadow-xl:0 20px 60px rgba(0,0,0,.1);
+        }
+        html{scroll-behavior:smooth;scrollbar-width:thin;scrollbar-color:var(--surface-3) var(--bg)}
+        body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.7;overflow-x:hidden}
+
+        /* ── ANIMATIONS ────────────────────────────────────── */
+        @keyframes fadeUp{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+        @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+        @keyframes blink{0%,100%{border-color:var(--blue)}50%{border-color:transparent}}
+        @keyframes rainbow-shift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+        @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+        @keyframes spin-slow{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+        @keyframes pulse-ring{0%{transform:scale(.8);opacity:1}100%{transform:scale(2.4);opacity:0}}
+        .reveal{opacity:0;transform:translateY(40px);transition:all .8s cubic-bezier(.16,1,.3,1)}.reveal.visible{opacity:1;transform:translateY(0)}
+
+        /* ── RAINBOW UTILITIES ──────────────────────────────── */
+        .rainbow-text{background:var(--rainbow);background-size:300% 300%;animation:rainbow-shift 6s ease infinite;-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .rainbow-bar{height:4px;background:var(--rainbow-90);background-size:200% 100%;animation:rainbow-shift 4s linear infinite;border-radius:2px}
+        .rainbow-border{border-image:var(--rainbow-90) 1;border-image-slice:1}
+
+        /* ── NAVBAR ─────────────────────────────────────────── */
+        .navbar{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:.875rem 3rem;background:rgba(255,255,255,.85);backdrop-filter:blur(24px) saturate(180%);border-bottom:1px solid var(--border);z-index:100;transition:all .3s ease}
+        .navbar.scrolled{background:rgba(255,255,255,.97);box-shadow:var(--shadow-md)}
+        .navbar::after{content:'';position:absolute;bottom:-1px;left:0;right:0;height:3px;background:var(--rainbow-90);background-size:200% 100%;animation:rainbow-shift 4s linear infinite;opacity:.7}
+        .nav-logo{display:flex;align-items:center;gap:.75rem;text-decoration:none}
+        .nav-logo img{height:36px;border-radius:8px}
+        .nav-logo span{font-weight:800;font-size:1.15rem;color:var(--text);letter-spacing:-.02em}
+        .nav-links{display:flex;gap:2.25rem;list-style:none}
+        .nav-links a{color:var(--text-secondary);text-decoration:none;font-weight:500;font-size:.875rem;transition:color .3s;position:relative}
+        .nav-links a:hover{color:var(--text)}
+        .nav-links a::after{content:'';position:absolute;bottom:-4px;left:0;width:0;height:2px;background:var(--rainbow);background-size:200% 200%;animation:rainbow-shift 3s linear infinite;border-radius:1px;transition:width .3s}
+        .nav-links a:hover::after{width:100%}
+        .nav-cta{padding:.5rem 1.5rem;background:var(--rainbow);background-size:200% 200%;animation:rainbow-shift 4s linear infinite;color:#fff;border-radius:.625rem;text-decoration:none;font-weight:700;font-size:.85rem;transition:all .3s;border:none;cursor:pointer}
+        .nav-cta:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(99,102,241,.3)}
+
+        /* ── HERO ───────────────────────────────────────────── */
+        .hero{position:relative;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:8rem 2rem 4rem;overflow:hidden;background:linear-gradient(180deg,#f8fafc 0%,#ffffff 30%,#fefce8 60%,#f0fdf4 80%,#eff6ff 100%)}
+        /* Hero rainbow orb */
+        .hero-orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:.25;pointer-events:none;z-index:0}
+        .hero-orb.o1{width:500px;height:500px;top:-10%;left:-10%;background:radial-gradient(circle,var(--red-mid),var(--orange-mid),transparent 70%)}
+        .hero-orb.o2{width:600px;height:600px;bottom:-15%;right:-15%;background:radial-gradient(circle,var(--blue-mid),var(--violet-mid),transparent 70%)}
+        .hero-orb.o3{width:400px;height:400px;top:30%;right:10%;background:radial-gradient(circle,var(--green-mid),var(--yellow-mid),transparent 70%)}
+        .hero-particles{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+        .particle{position:absolute;border-radius:50%;opacity:.5;animation:float 6s ease-in-out infinite}
+        .particle:nth-child(1){width:10px;height:10px;top:20%;left:12%;background:var(--red);animation-delay:0s;animation-duration:7s}
+        .particle:nth-child(2){width:8px;height:8px;top:60%;left:82%;background:var(--orange);animation-delay:1s;animation-duration:5s}
+        .particle:nth-child(3){width:6px;height:6px;top:40%;left:28%;background:var(--yellow);animation-delay:2s;animation-duration:8s}
+        .particle:nth-child(4){width:9px;height:9px;top:75%;left:55%;background:var(--green);animation-delay:3s;animation-duration:6s}
+        .particle:nth-child(5){width:7px;height:7px;top:15%;left:72%;background:var(--blue);animation-delay:4s;animation-duration:9s}
+        .particle:nth-child(6){width:8px;height:8px;top:50%;left:5%;background:var(--indigo);animation-delay:1.5s;animation-duration:7s}
+        .particle:nth-child(7){width:11px;height:11px;top:85%;left:35%;background:var(--violet);animation-delay:2.5s;animation-duration:6.5s}
+        .hero>*:not(.hero-orb):not(.hero-particles):not(.hero-video-wrap){position:relative;z-index:2}
+        .hero-video-wrap{position:absolute;inset:0;z-index:0}
+        .hero-video{position:absolute;top:50%;left:50%;min-width:100%;min-height:100%;width:auto;height:auto;transform:translate(-50%,-50%);object-fit:cover;opacity:.12;filter:grayscale(.3)}
+        .hero-overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(248,250,252,.85) 0%,rgba(255,255,255,.6) 40%,rgba(255,255,255,.9) 100%);z-index:1}
+        .hero-badge{display:inline-flex;align-items:center;gap:.5rem;padding:.5rem 1.25rem;background:#fff;border:1px solid var(--border);border-radius:2rem;font-size:.75rem;font-weight:700;color:var(--indigo);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2rem;animation:fadeUp .8s ease .2s both;box-shadow:var(--shadow-sm)}
+        .hero-badge::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green)}
+        .hero h1{font-size:clamp(2.8rem,6vw,5rem);font-weight:900;line-height:1.05;margin-bottom:1.5rem;color:var(--text);animation:fadeUp 1s ease .4s both;letter-spacing:-.04em}
+        .hero-sub{font-size:clamp(1rem,2vw,1.15rem);color:var(--text-secondary);max-width:640px;margin:0 auto 1rem;animation:fadeUp 1s ease .6s both;line-height:1.8}
+        .typewriter{max-width:640px;width:100%;margin:0 auto 2.5rem;animation:fadeIn .8s ease .8s both;background:#fff;border-radius:.75rem;border:1px solid var(--border);box-shadow:var(--shadow-md);text-align:left;overflow:hidden}
+        .tw-header{display:flex;align-items:center;gap:.5rem;padding:.5rem 1rem;background:var(--surface);border-bottom:1px solid var(--border);font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+        .tw-header .tw-dot{width:8px;height:8px;border-radius:50%}
+        .tw-header .tw-dot:nth-child(1){background:var(--red)}
+        .tw-header .tw-dot:nth-child(2){background:var(--yellow)}
+        .tw-header .tw-dot:nth-child(3){background:var(--green)}
+        .tw-header .tw-label{margin-left:auto;padding:.15rem .6rem;border-radius:2rem;font-size:.6rem;font-weight:700;transition:all .4s}
+        .tw-body{padding:.875rem 1.25rem;font-family:var(--mono);font-size:clamp(.75rem,1.2vw,.85rem);color:var(--text-secondary);line-height:1.9;min-height:5.5em;white-space:pre-wrap;word-break:break-all}
+        .tw-body .cursor{display:inline-block;width:2px;height:1.1em;background:var(--indigo);vertical-align:text-bottom;animation:blink .7s step-end infinite;margin-left:1px}
+        .hero-buttons{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;animation:fadeUp 1s ease 1s both}
+        .btn-primary{padding:1rem 2.25rem;background:var(--rainbow);background-size:300% 300%;animation:rainbow-shift 5s linear infinite;color:#fff;font-weight:700;border-radius:.75rem;text-decoration:none;transition:all .3s ease;display:inline-flex;align-items:center;gap:.5rem;border:none;cursor:pointer;font-size:1rem;box-shadow:0 4px 20px rgba(99,102,241,.3)}
+        .btn-primary:hover{transform:translateY(-3px);box-shadow:0 12px 35px rgba(99,102,241,.4)}
+        .btn-secondary{padding:1rem 2.25rem;background:#fff;color:var(--text);border:2px solid var(--border);border-radius:.75rem;text-decoration:none;transition:all .3s ease;font-weight:600}
+        .btn-secondary:hover{border-color:var(--indigo);color:var(--indigo);box-shadow:var(--shadow-md)}
+        .scroll-down{position:absolute;bottom:2rem;left:50%;transform:translateX(-50%);animation:fadeIn 1s ease 1.5s both,float 3s ease-in-out infinite;color:var(--muted)}
+
+        /* ── STATS BAR ──────────────────────────────────────── */
+        .stats{display:flex;justify-content:center;gap:0;flex-wrap:wrap;background:#fff;border-top:1px solid var(--border);border-bottom:1px solid var(--border);position:relative;z-index:1}
+        .stats::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--rainbow-90);background-size:200% 100%;animation:rainbow-shift 4s linear infinite}
+        .stat{text-align:center;padding:2.5rem 3rem;flex:1;min-width:150px;border-right:1px solid var(--border);transition:background .3s}
+        .stat:last-child{border-right:none}
+        .stat:hover{background:var(--surface)}
+        .stat-num{font-size:2.75rem;font-weight:800;line-height:1.1}
+        .stat:nth-child(1) .stat-num{color:var(--red)}
+        .stat:nth-child(2) .stat-num{color:var(--orange)}
+        .stat:nth-child(3) .stat-num{color:var(--green)}
+        .stat:nth-child(4) .stat-num{color:var(--blue)}
+        .stat:nth-child(5) .stat-num{color:var(--violet)}
+        .stat-label{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;margin-top:.375rem;font-weight:600}
+
+        /* ── SHARED SECTION STYLES ──────────────────────────── */
+        .section{padding:6rem 2rem;position:relative;z-index:1;max-width:var(--max-w);margin:0 auto}
+        .section-wide{padding:6rem 2rem;position:relative;z-index:1}
+        .section-title{font-size:clamp(2rem,4vw,2.75rem);font-weight:800;text-align:center;margin-bottom:1rem;letter-spacing:-.03em;color:var(--text)}
+        .section-subtitle{text-align:center;color:var(--text-secondary);max-width:600px;margin:0 auto 3.5rem;font-size:1.05rem}
+        .section-tag{display:inline-flex;align-items:center;gap:.5rem;padding:.375rem 1rem;border-radius:2rem;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:1.25rem}
+        /* Each section tag gets a rainbow color */
+        .tag-red{background:var(--red-light);color:var(--red);border:1px solid var(--red-mid)}
+        .tag-orange{background:var(--orange-light);color:var(--orange);border:1px solid var(--orange-mid)}
+        .tag-yellow{background:var(--yellow-light);color:var(--yellow);border:1px solid var(--yellow-mid)}
+        .tag-green{background:var(--green-light);color:var(--green);border:1px solid var(--green-mid)}
+        .tag-blue{background:var(--blue-light);color:var(--blue);border:1px solid var(--blue-mid)}
+        .tag-indigo{background:var(--indigo-light);color:var(--indigo);border:1px solid var(--indigo-mid)}
+        .tag-violet{background:var(--violet-light);color:var(--violet);border:1px solid var(--violet-mid)}
+
+        /* ── FEATURES GRID ──────────────────────────────────── */
+        .features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;max-width:var(--max-w);margin:0 auto}
+        .feature-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:2rem;transition:all .4s cubic-bezier(.16,1,.3,1);position:relative;overflow:hidden}
+        .feature-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--radius) var(--radius) 0 0;opacity:0;transition:opacity .4s}
+        .feature-card:hover{transform:translateY(-6px);box-shadow:var(--shadow-xl);border-color:transparent}
+        .feature-card:hover::before{opacity:1}
+        .feature-card:nth-child(1)::before{background:var(--red)}
+        .feature-card:nth-child(2)::before{background:var(--orange)}
+        .feature-card:nth-child(3)::before{background:var(--yellow)}
+        .feature-card:nth-child(4)::before{background:var(--green)}
+        .feature-card:nth-child(5)::before{background:var(--blue)}
+        .feature-card:nth-child(6)::before{background:var(--violet)}
+        .feature-icon{width:52px;height:52px;margin-bottom:1.25rem;display:flex;align-items:center;justify-content:center;border-radius:.875rem;font-size:1.5rem}
+        .fi-red{background:var(--red-light);color:var(--red)}
+        .fi-orange{background:var(--orange-light);color:var(--orange)}
+        .fi-yellow{background:var(--yellow-light);color:var(--yellow)}
+        .fi-green{background:var(--green-light);color:var(--green)}
+        .fi-blue{background:var(--blue-light);color:var(--blue)}
+        .fi-indigo{background:var(--indigo-light);color:var(--indigo)}
+        .fi-violet{background:var(--violet-light);color:var(--violet)}
+        .feature-card h3{font-size:1.1rem;font-weight:700;margin-bottom:.625rem;letter-spacing:-.01em}
+        .feature-card p{color:var(--text-secondary);font-size:.9rem;line-height:1.7}
+
+        /* ── DUAL-LANGUAGE CODE SECTION ─────────────────────── */
+        .code-section{background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+        .code-layout{display:grid;grid-template-columns:1fr 1fr;gap:3rem;max-width:var(--max-w);margin:0 auto;align-items:center}
+        .code-info h3{font-size:1.75rem;font-weight:800;margin-bottom:1rem;letter-spacing:-.02em}
+        .code-info p{color:var(--text-secondary);margin-bottom:1.5rem;line-height:1.8}
+        .code-info .tag-row{display:flex;gap:.5rem;flex-wrap:wrap}
+        .lang-tag{padding:.25rem .75rem;border-radius:2rem;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+        .lang-tag.arduino{background:var(--blue-light);color:var(--blue);border:1px solid var(--blue-mid)}
+        .lang-tag.python{background:var(--yellow-light);color:#b45309;border:1px solid var(--yellow-mid)}
+        .code-block{background:#fff;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-md)}
+        .code-tabs{display:flex;border-bottom:1px solid var(--border);background:var(--surface)}
+        .code-tab{padding:.625rem 1.25rem;font-size:.8rem;font-weight:600;color:var(--muted);cursor:pointer;border:none;background:none;transition:all .3s;font-family:var(--font);border-bottom:2px solid transparent}
+        .code-tab.active{color:var(--indigo);border-bottom-color:var(--indigo);background:#fff}
+        .code-content{padding:1.25rem;font-family:var(--mono);font-size:.8rem;line-height:1.8;color:var(--text-secondary);white-space:pre;overflow-x:auto;max-height:380px;background:#fff}
+        .code-content .kw{color:var(--violet)}
+        .code-content .fn{color:var(--blue)}
+        .code-content .str{color:var(--green)}
+        .code-content .cm{color:var(--muted);font-style:italic}
+        .code-content .num{color:var(--orange)}
+
+        /* ── HOW IT WORKS TIMELINE ──────────────────────────── */
+        .timeline{position:relative;max-width:800px;margin:0 auto}
+        .timeline::before{content:'';position:absolute;left:32px;top:0;bottom:0;width:3px;background:var(--rainbow);background-size:100% 300%;animation:rainbow-shift 4s linear infinite;border-radius:2px}
+        .step{display:flex;gap:2rem;margin-bottom:3rem;position:relative}
+        .step-num{flex-shrink:0;width:64px;height:64px;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:1.25rem;font-weight:800;color:#fff;position:relative;z-index:1;box-shadow:var(--shadow-md)}
+        .step-1 .step-num{background:var(--red)}
+        .step-2 .step-num{background:var(--green)}
+        .step-3 .step-num{background:var(--blue)}
+        .step-content{padding-top:.75rem}
+        .step-content h3{font-size:1.25rem;font-weight:700;margin-bottom:.5rem}
+        .step-content p{color:var(--text-secondary);font-size:.95rem;line-height:1.8}
+
+        /* ── SENSOR SHOWCASE ───────────────────────────────── */
+        .sensor-section{background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+        .sensor-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.75rem;max-width:var(--max-w);margin:0 auto}
+        .sensor-chip{display:flex;align-items:center;gap:.5rem;padding:.625rem 1rem;background:#fff;border:1px solid var(--border);border-radius:.625rem;font-size:.8rem;font-weight:500;color:var(--text-secondary);transition:all .3s;cursor:default;box-shadow:var(--shadow-sm)}
+        .sensor-chip:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg);color:var(--text)}
+        /* Rainbow color rotation on hover */
+        .sensor-chip:nth-child(7n+1):hover{border-color:var(--red);background:var(--red-light)}
+        .sensor-chip:nth-child(7n+2):hover{border-color:var(--orange);background:var(--orange-light)}
+        .sensor-chip:nth-child(7n+3):hover{border-color:var(--yellow);background:var(--yellow-light)}
+        .sensor-chip:nth-child(7n+4):hover{border-color:var(--green);background:var(--green-light)}
+        .sensor-chip:nth-child(7n+5):hover{border-color:var(--blue);background:var(--blue-light)}
+        .sensor-chip:nth-child(7n+6):hover{border-color:var(--indigo);background:var(--indigo-light)}
+        .sensor-chip:nth-child(7n+7):hover{border-color:var(--violet);background:var(--violet-light)}
+        .sensor-chip .emoji{font-size:1.1rem}
+
+        /* ── IOT PLATFORM CARDS ─────────────────────────────── */
+        .iot-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;max-width:var(--max-w);margin:0 auto}
+        .iot-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:2rem;text-align:center;transition:all .4s;position:relative;overflow:hidden;box-shadow:var(--shadow-sm)}
+        .iot-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:4px;border-radius:0 0 var(--radius) var(--radius)}
+        .iot-card:hover{transform:translateY(-6px);box-shadow:var(--shadow-xl)}
+        .iot-card.blynk{border-top:3px solid var(--blue)}.iot-card.blynk::after{background:var(--blue)}
+        .iot-card.thingspeak{border-top:3px solid var(--green)}.iot-card.thingspeak::after{background:var(--green)}
+        .iot-card.mqtt{border-top:3px solid var(--violet)}.iot-card.mqtt::after{background:var(--violet)}
+        .iot-icon{font-size:2.5rem;margin-bottom:1rem}
+        .iot-card h3{font-size:1.15rem;font-weight:700;margin-bottom:.5rem}
+        .iot-card p{color:var(--text-secondary);font-size:.85rem;line-height:1.7}
+        .iot-features{list-style:none;margin-top:1rem;text-align:left}
+        .iot-features li{padding:.25rem 0;font-size:.8rem;color:var(--text-secondary);display:flex;align-items:center;gap:.5rem}
+        .iot-card.blynk .iot-features li::before{content:'✓';color:var(--blue);font-weight:700;font-size:.7rem}
+        .iot-card.thingspeak .iot-features li::before{content:'✓';color:var(--green);font-weight:700;font-size:.7rem}
+        .iot-card.mqtt .iot-features li::before{content:'✓';color:var(--violet);font-weight:700;font-size:.7rem}
+
+        /* ── MODES SECTION ──────────────────────────────────── */
+        .modes-layout{display:grid;grid-template-columns:1fr 1fr;gap:2rem;max-width:var(--max-w);margin:0 auto}
+        .mode-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:2.5rem;transition:all .4s;position:relative;overflow:hidden;box-shadow:var(--shadow-sm)}
+        .mode-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-xl)}
+        .mode-card .mode-badge{display:inline-block;padding:.25rem .75rem;border-radius:2rem;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:1rem}
+        .mode-card.esp{border-top:3px solid var(--green)}.mode-card.esp .mode-badge{background:var(--green-light);color:var(--green);border:1px solid var(--green-mid)}
+        .mode-card.scratch{border-top:3px solid var(--orange)}.mode-card.scratch .mode-badge{background:var(--orange-light);color:var(--orange);border:1px solid var(--orange-mid)}
+        .mode-card h3{font-size:1.35rem;font-weight:800;margin-bottom:.75rem}
+        .mode-card p{color:var(--text-secondary);font-size:.9rem;line-height:1.8;margin-bottom:1rem}
+        .mode-list{list-style:none}
+        .mode-list li{padding:.3rem 0;font-size:.85rem;color:var(--text-secondary);display:flex;align-items:center;gap:.5rem}
+        .mode-card.esp .mode-list li::before{content:'→';color:var(--green);font-weight:700}
+        .mode-card.scratch .mode-list li::before{content:'→';color:var(--orange);font-weight:700}
+
+        /* ── TECH STACK BADGES ──────────────────────────────── */
+        .tech-row{display:flex;justify-content:center;gap:1rem;flex-wrap:wrap;max-width:var(--max-w);margin:0 auto}
+        .tech-badge{display:flex;align-items:center;gap:.5rem;padding:.5rem 1.25rem;background:#fff;border:1px solid var(--border);border-radius:2rem;font-size:.8rem;font-weight:500;color:var(--text-secondary);transition:all .3s;box-shadow:var(--shadow-sm)}
+        .tech-badge:hover{box-shadow:var(--shadow-md);color:var(--text);transform:translateY(-2px)}
+        .tech-badge:nth-child(7n+1):hover{border-color:var(--red)}
+        .tech-badge:nth-child(7n+2):hover{border-color:var(--orange)}
+        .tech-badge:nth-child(7n+3):hover{border-color:var(--yellow)}
+        .tech-badge:nth-child(7n+4):hover{border-color:var(--green)}
+        .tech-badge:nth-child(7n+5):hover{border-color:var(--blue)}
+        .tech-badge:nth-child(7n+6):hover{border-color:var(--indigo)}
+        .tech-badge:nth-child(7n+7):hover{border-color:var(--violet)}
+        .tech-badge .emoji{font-size:1rem}
+
+        /* ── FAQ ────────────────────────────────────────────── */
+        .faq-list{max-width:750px;margin:0 auto}
+        .faq-item{border:1px solid var(--border);border-radius:var(--radius);margin-bottom:.75rem;overflow:hidden;background:#fff;transition:border-color .3s,box-shadow .3s}
+        .faq-item:hover{border-color:var(--indigo-mid);box-shadow:var(--shadow-md)}
+        .faq-q{padding:1.25rem 1.5rem;font-weight:600;font-size:.95rem;cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:color .3s;user-select:none;color:var(--text)}
+        .faq-q:hover{color:var(--indigo)}
+        .faq-q::after{content:'+';font-size:1.25rem;color:var(--muted);transition:transform .3s,color .3s;font-weight:300}
+        .faq-item.open .faq-q::after{transform:rotate(45deg);color:var(--indigo)}
+        .faq-item.open{border-color:var(--indigo-mid)}
+        .faq-a{max-height:0;overflow:hidden;transition:max-height .4s ease,padding .3s}
+        .faq-item.open .faq-a{max-height:300px;padding:0 1.5rem 1.25rem}
+        .faq-a p{color:var(--text-secondary);font-size:.9rem;line-height:1.8}
+
+        /* ── CTA ────────────────────────────────────────────── */
+        .cta-section{text-align:center;padding:8rem 2rem;position:relative;overflow:hidden;background:linear-gradient(180deg,#fff 0%,var(--indigo-light) 100%)}
+        .cta-section::before{content:'';position:absolute;top:50%;left:50%;width:800px;height:800px;background:radial-gradient(circle,rgba(99,102,241,.08),rgba(139,92,246,.06),transparent 70%);transform:translate(-50%,-50%);pointer-events:none}
+        .cta-section h2{font-size:clamp(2.5rem,5vw,3.75rem);font-weight:900;margin-bottom:1.25rem;letter-spacing:-.03em;position:relative;color:var(--text)}
+        .cta-section p{color:var(--text-secondary);font-size:1.15rem;max-width:520px;margin:0 auto 2.5rem;position:relative}
+        .cta-btn{padding:1.125rem 3rem;background:var(--rainbow);background-size:300% 300%;animation:rainbow-shift 5s linear infinite;color:#fff;font-weight:700;font-size:1.05rem;border-radius:.875rem;text-decoration:none;transition:all .3s ease;display:inline-flex;align-items:center;gap:.5rem;position:relative;box-shadow:0 4px 25px rgba(99,102,241,.3)}
+        .cta-btn:hover{transform:translateY(-3px);box-shadow:0 12px 40px rgba(99,102,241,.4)}
+
+        /* ── FOOTER ─────────────────────────────────────────── */
+        footer{border-top:1px solid var(--border);background:var(--surface);position:relative}
+        footer::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--rainbow-90);background-size:200% 100%;animation:rainbow-shift 4s linear infinite}
+        .footer-inner{max-width:var(--max-w);margin:0 auto;padding:4rem 2rem 2rem;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:3rem}
+        .footer-brand p{color:var(--text-secondary);font-size:.85rem;line-height:1.8;margin-top:.75rem}
+        .footer-col h4{font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:1rem}
+        .footer-col a{display:block;color:var(--text-secondary);font-size:.85rem;text-decoration:none;padding:.25rem 0;transition:color .3s}
+        .footer-col a:hover{color:var(--indigo)}
+        .footer-bottom{border-top:1px solid var(--border);padding:1.5rem 2rem;text-align:center;color:var(--muted);font-size:.8rem}
+        .footer-bottom a{color:var(--indigo);text-decoration:none}
+
+        /* ── RESPONSIVE ─────────────────────────────────────── */
+        @media(max-width:1024px){.features-grid,.iot-grid{grid-template-columns:repeat(2,1fr)}.code-layout,.modes-layout{grid-template-columns:1fr}.footer-inner{grid-template-columns:1fr 1fr}}
+        @media(max-width:768px){.navbar{padding:.75rem 1.25rem}.nav-links{display:none}.hero h1{font-size:2.4rem}.stats{flex-direction:column}.stat{border-right:none;border-bottom:1px solid var(--border);padding:1.5rem}.stat:last-child{border-bottom:none}.features-grid,.iot-grid{grid-template-columns:1fr}.step{flex-direction:column;text-align:center;align-items:center}.timeline::before{display:none}.sensor-grid{grid-template-columns:repeat(2,1fr)}.footer-inner{grid-template-columns:1fr}.code-layout{gap:2rem}}
+    </style>
+</head>
+<body>
+    <!-- ══ NAVBAR ══════════════════════════════════════ -->
+    <nav class="navbar" id="navbar">
+        <a href="#" class="nav-logo">
+            <img src="https://techyguide.in/TG-Square-Logo-3.png" alt="TechyGuide Logo">
+            <span>TechyGuide</span>
+        </a>
+        <ul class="nav-links">
+            <li><a href="#features">Features</a></li>
+            <li><a href="#languages">Languages</a></li>
+            <li><a href="#sensors">Sensors</a></li>
+            <li><a href="#iot">IoT</a></li>
+            <li><a href="#how">How It Works</a></li>
+            <li><a href="#faq">FAQ</a></li>
+        </ul>
+        <a href="app.html" class="nav-cta">Launch Editor →</a>
+    </nav>
+
+    <!-- ══ HERO ════════════════════════════════════════ -->
+    <section class="hero">
+        <div class="hero-video-wrap">
+            <video class="hero-video" autoplay muted loop playsinline preload="auto">
+                <source src="https://videos.pexels.com/video-files/6963744/6963744-hd_1920_1080_30fps.mp4" type="video/mp4">
+                <source src="https://videos.pexels.com/video-files/3129671/3129671-hd_1920_1080_30fps.mp4" type="video/mp4">
+            </video>
+            <div class="hero-overlay"></div>
+        </div>
+        <div class="hero-orb o1"></div>
+        <div class="hero-orb o2"></div>
+        <div class="hero-orb o3"></div>
+        <div class="hero-particles">
+            <div class="particle"></div><div class="particle"></div><div class="particle"></div>
+            <div class="particle"></div><div class="particle"></div><div class="particle"></div>
+            <div class="particle"></div>
+        </div>
+
+        <div class="hero-badge"><span></span> Open-Source ESP32 Platform</div>
+        <h1>Program Hardware<br><span class="rainbow-text">Without Writing Code.</span></h1>
+        <p class="hero-sub">Visual block-based IDE for ESP32 — drag, connect, and deploy IoT projects with Arduino C++ and MicroPython code generation.</p>
+        <div class="typewriter" id="typewriterBox">
+            <div class="tw-header">
+                <span class="tw-dot"></span><span class="tw-dot"></span><span class="tw-dot"></span>
+                <span class="tw-label" id="twLabel">Arduino C++</span>
+            </div>
+            <div class="tw-body"><span id="typer"></span><span class="cursor"></span></div>
+        </div>
+        <div class="hero-buttons">
+            <a href="app.html" class="btn-primary">Start Building →</a>
+            <a href="#features" class="btn-secondary">Explore Features</a>
+        </div>
+        <div class="scroll-down">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+        </div>
+    </section>
+
+    <!-- ══ STATS ═══════════════════════════════════════ -->
+    <div class="stats">
+        <div class="stat"><div class="stat-num" data-target="150">0</div><div class="stat-label">Blocks Available</div></div>
+        <div class="stat"><div class="stat-num" data-target="30">0</div><div class="stat-label">Sensors Supported</div></div>
+        <div class="stat"><div class="stat-num" data-target="2">0</div><div class="stat-label">Languages</div></div>
+        <div class="stat"><div class="stat-num" data-target="3">0</div><div class="stat-label">IoT Platforms</div></div>
+        <div class="stat"><div class="stat-num" data-target="1">0</div><div class="stat-label">Click Upload</div></div>
+    </div>
+
+    <!-- ══ FEATURES ════════════════════════════════════ -->
+    <section class="section" id="features">
+        <div style="text-align:center"><span class="section-tag tag-red">✦ Core Features</span></div>
+        <h2 class="section-title">Everything You Need to <span class="rainbow-text">Build & Deploy</span></h2>
+        <p class="section-subtitle">From drag-and-drop blocks to live hardware upload — a complete embedded development workflow in your browser.</p>
+        <div class="features-grid">
+            <div class="feature-card reveal">
+                <div class="feature-icon fi-red">🧩</div>
+                <h3>Visual Block Programming</h3>
+                <p>150+ intuitive blocks for sensors, actuators, displays, motors, and logic. Snap them together like LEGO to build complex programs.</p>
+            </div>
+            <div class="feature-card reveal">
+                <div class="feature-icon fi-orange">⚡</div>
+                <h3>Dual Code Generation</h3>
+                <p>Instantly generate production-ready Arduino C++ or MicroPython code. Switch between languages with a single click.</p>
+            </div>
+            <div class="feature-card reveal">
+                <div class="feature-icon fi-yellow">📡</div>
+                <h3>One-Click Upload</h3>
+                <p>Compile and flash directly to your ESP32 via USB — no Arduino IDE needed. Built-in error detection and library management.</p>
+            </div>
+            <div class="feature-card reveal">
+                <div class="feature-icon fi-green">📟</div>
+                <h3>Real-Time Serial Monitor</h3>
+                <p>Built-in serial console with high-speed buffering. See sensor values, debug output, and system messages live at 115200 baud.</p>
+            </div>
+            <div class="feature-card reveal">
+                <div class="feature-icon fi-blue">☁️</div>
+                <h3>IoT Platform Integration</h3>
+                <p>Built-in blocks for Blynk IoT, ThingSpeak, and MQTT. Push sensor data to the cloud with zero networking knowledge.</p>
+            </div>
+            <div class="feature-card reveal">
+                <div class="feature-icon fi-violet">🎮</div>
+                <h3>Scratch Mode</h3>
+                <p>Full Scratch-compatible visual programming with sprite animation, motion, looks, sound, and event blocks for learning.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ══ DUAL LANGUAGE ═══════════════════════════════ -->
+    <section class="section-wide code-section" id="languages">
+        <div class="section" style="padding-bottom:0">
+            <div style="text-align:center"><span class="section-tag tag-orange">⟨/⟩ Dual Language</span></div>
+            <h2 class="section-title">One Project, <span class="rainbow-text">Two Languages</span></h2>
+            <p class="section-subtitle">Build once with blocks, export to Arduino C++ or MicroPython. Both generators produce clean, commented, production-ready code.</p>
+        </div>
+        <div class="code-layout section">
+            <div class="code-info reveal">
+                <h3>Professional Code Output</h3>
+                <p>Every block generates optimized, human-readable code with proper includes, pin initialization, and loop structure. Code you'd be proud to ship.</p>
+                <div class="tag-row">
+                    <span class="lang-tag arduino">Arduino C++</span>
+                    <span class="lang-tag python">MicroPython</span>
+                </div>
+            </div>
+            <div class="code-block reveal">
+                <div class="code-tabs">
+                    <button class="code-tab active" onclick="showTab(this,'arduino')">Arduino C++</button>
+                    <button class="code-tab" onclick="showTab(this,'python')">MicroPython</button>
+                </div>
+                <div class="code-content" id="arduino"><span class="cm">// Auto-generated by TechyGuide</span>
+<span class="kw">#include</span> <span class="str">&lt;DHT.h&gt;</span>
+<span class="kw">#include</span> <span class="str">&lt;BlynkSimpleEsp32.h&gt;</span>
+
+<span class="kw">#define</span> DHTPIN <span class="num">4</span>
+DHT <span class="fn">dht</span>(DHTPIN, DHT11);
+BlynkTimer timer;
+
+<span class="kw">void</span> <span class="fn">sendSensor</span>() {
+  <span class="kw">float</span> t = <span class="fn">dht.readTemperature</span>();
+  <span class="kw">float</span> h = <span class="fn">dht.readHumidity</span>();
+  <span class="fn">Blynk.virtualWrite</span>(V0, t);
+  <span class="fn">Blynk.virtualWrite</span>(V1, h);
+}
+
+<span class="kw">void</span> <span class="fn">setup</span>() {
+  <span class="fn">Serial.begin</span>(<span class="num">115200</span>);
+  <span class="fn">Blynk.begin</span>(<span class="str">"auth"</span>, <span class="str">"ssid"</span>, <span class="str">"pass"</span>);
+  <span class="fn">dht.begin</span>();
+  timer.<span class="fn">setInterval</span>(<span class="num">2000</span>L, sendSensor);
+}
+
+<span class="kw">void</span> <span class="fn">loop</span>() {
+  <span class="fn">Blynk.run</span>();
+  timer.<span class="fn">run</span>();
+}</div>
+                <div class="code-content" id="python" style="display:none"><span class="cm"># Auto-generated by TechyGuide</span>
+<span class="kw">import</span> BlynkLib
+<span class="kw">from</span> machine <span class="kw">import</span> Pin
+<span class="kw">import</span> dht, time
+
+sensor = <span class="fn">dht.DHT11</span>(<span class="fn">Pin</span>(<span class="num">4</span>))
+blynk = <span class="fn">BlynkLib.Blynk</span>(<span class="str">'auth_token'</span>)
+
+<span class="kw">while</span> <span class="num">True</span>:
+    sensor.<span class="fn">measure</span>()
+    temp = sensor.<span class="fn">temperature</span>()
+    hum = sensor.<span class="fn">humidity</span>()
+
+    blynk.<span class="fn">virtual_write</span>(<span class="num">0</span>, temp)
+    blynk.<span class="fn">virtual_write</span>(<span class="num">1</span>, hum)
+
+    <span class="fn">print</span>(<span class="str">f"Temp: {temp}°C  Humidity: {hum}%"</span>)
+    blynk.<span class="fn">run</span>()
+    time.<span class="fn">sleep</span>(<span class="num">2</span>)</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ══ SENSORS ═════════════════════════════════════ -->
+    <section class="section-wide sensor-section" id="sensors">
+        <div class="section">
+            <div style="text-align:center"><span class="section-tag tag-green">📡 Hardware Support</span></div>
+            <h2 class="section-title"><span class="rainbow-text">30+ Sensors</span> & Components</h2>
+            <p class="section-subtitle">Comprehensive block support for the most popular sensors, actuators, displays, and communication modules.</p>
+            <div class="sensor-grid">
+                <div class="sensor-chip reveal"><span class="emoji">🌡️</span> DHT11/22</div>
+                <div class="sensor-chip reveal"><span class="emoji">🌡️</span> DS18B20</div>
+                <div class="sensor-chip reveal"><span class="emoji">🌦️</span> BMP280</div>
+                <div class="sensor-chip reveal"><span class="emoji">📏</span> Ultrasonic</div>
+                <div class="sensor-chip reveal"><span class="emoji">👁️</span> PIR Motion</div>
+                <div class="sensor-chip reveal"><span class="emoji">📡</span> RFID RC522</div>
+                <div class="sensor-chip reveal"><span class="emoji">📺</span> IR Remote</div>
+                <div class="sensor-chip reveal"><span class="emoji">☀️</span> LDR Light</div>
+                <div class="sensor-chip reveal"><span class="emoji">🌧️</span> Rain Sensor</div>
+                <div class="sensor-chip reveal"><span class="emoji">🔥</span> Flame Sensor</div>
+                <div class="sensor-chip reveal"><span class="emoji">💨</span> Gas / MQ</div>
+                <div class="sensor-chip reveal"><span class="emoji">🌱</span> Soil Moisture</div>
+                <div class="sensor-chip reveal"><span class="emoji">🔊</span> Sound Sensor</div>
+                <div class="sensor-chip reveal"><span class="emoji">🤚</span> Touch Sensor</div>
+                <div class="sensor-chip reveal"><span class="emoji">📐</span> MPU6050</div>
+                <div class="sensor-chip reveal"><span class="emoji">❤️</span> Heart Rate</div>
+                <div class="sensor-chip reveal"><span class="emoji">🧲</span> Hall Effect</div>
+                <div class="sensor-chip reveal"><span class="emoji">📳</span> Vibration</div>
+                <div class="sensor-chip reveal"><span class="emoji">🎛️</span> Potentiometer</div>
+                <div class="sensor-chip reveal"><span class="emoji">⚙️</span> Servo Motor</div>
+                <div class="sensor-chip reveal"><span class="emoji">🔌</span> Relay Module</div>
+                <div class="sensor-chip reveal"><span class="emoji">💡</span> LED / NeoPixel</div>
+                <div class="sensor-chip reveal"><span class="emoji">🔔</span> Buzzer</div>
+                <div class="sensor-chip reveal"><span class="emoji">🖥️</span> LCD I2C</div>
+                <div class="sensor-chip reveal"><span class="emoji">🖥️</span> OLED SSD1306</div>
+                <div class="sensor-chip reveal"><span class="emoji">🏎️</span> L298N Motor</div>
+                <div class="sensor-chip reveal"><span class="emoji">📷</span> ESP32-CAM</div>
+                <div class="sensor-chip reveal"><span class="emoji">💧</span> Water Pump</div>
+                <div class="sensor-chip reveal"><span class="emoji">🔵</span> Bluetooth</div>
+                <div class="sensor-chip reveal"><span class="emoji">📶</span> WiFi</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ══ IOT PLATFORMS ═══════════════════════════════ -->
+    <section class="section" id="iot">
+        <div style="text-align:center"><span class="section-tag tag-blue">☁️ Cloud Integration</span></div>
+        <h2 class="section-title">Connect to <span class="rainbow-text">IoT Platforms</span></h2>
+        <p class="section-subtitle">Push sensor data to the cloud with drag-and-drop blocks. Monitor your devices from anywhere in the world.</p>
+        <div class="iot-grid">
+            <div class="iot-card blynk reveal">
+                <div class="iot-icon">📱</div>
+                <h3>Blynk IoT</h3>
+                <p>Full Blynk integration with virtual pins, push notifications, LCD widgets, and timed data reporting.</p>
+                <ul class="iot-features">
+                    <li>Virtual Pin Read/Write (V0-V255)</li>
+                    <li>Push Notifications &amp; Email</li>
+                    <li>LCD Widget Control</li>
+                    <li>BlynkTimer for Scheduled Sends</li>
+                    <li>Widget Property Control</li>
+                </ul>
+            </div>
+            <div class="iot-card thingspeak reveal">
+                <div class="iot-icon">📊</div>
+                <h3>ThingSpeak</h3>
+                <p>Publish sensor data to ThingSpeak channels for analytics, graphing, and MATLAB integration.</p>
+                <ul class="iot-features">
+                    <li>8-Field Data Channels</li>
+                    <li>Write API Integration</li>
+                    <li>Read Last Value</li>
+                    <li>Auto 15s Rate Limiting</li>
+                    <li>Free Cloud Dashboard</li>
+                </ul>
+            </div>
+            <div class="iot-card mqtt reveal">
+                <div class="iot-icon">🔗</div>
+                <h3>MQTT Protocol</h3>
+                <p>Full MQTT client with publish, subscribe, and real-time messaging for any broker.</p>
+                <ul class="iot-features">
+                    <li>Publish to Any Topic</li>
+                    <li>Subscribe &amp; Receive</li>
+                    <li>Connection Status Check</li>
+                    <li>Custom Broker Support</li>
+                    <li>Last Message Retrieval</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ══ MODES ═══════════════════════════════════════ -->
+    <section class="section" id="modes">
+        <div style="text-align:center"><span class="section-tag tag-indigo">🔀 Dual Mode</span></div>
+        <h2 class="section-title">Two Modes, <span class="rainbow-text">One Platform</span></h2>
+        <p class="section-subtitle">Switch between ESP32 hardware programming and Scratch-style animation — all in the same editor.</p>
+        <div class="modes-layout">
+            <div class="mode-card esp reveal">
+                <span class="mode-badge">Hardware</span>
+                <h3>ESP32 Mode</h3>
+                <p>Full-featured embedded programming with 150+ hardware blocks, dual code generation, and one-click upload.</p>
+                <ul class="mode-list">
+                    <li>30+ sensor &amp; actuator blocks</li>
+                    <li>Arduino C++ &amp; MicroPython output</li>
+                    <li>USB compile &amp; flash</li>
+                    <li>WiFi, Bluetooth, MQTT, Blynk, ThingSpeak</li>
+                    <li>Real-time serial monitor</li>
+                </ul>
+            </div>
+            <div class="mode-card scratch reveal">
+                <span class="mode-badge">Learning</span>
+                <h3>Scratch Mode</h3>
+                <p>Classic Scratch-compatible visual programming with sprite animation, stage rendering, and event-driven logic.</p>
+                <ul class="mode-list">
+                    <li>Motion, Looks, Sound, Events, Control</li>
+                    <li>Sprite library with costumes</li>
+                    <li>Backdrop chooser &amp; stage canvas</li>
+                    <li>Sensing &amp; Operator blocks</li>
+                    <li>Perfect for beginners &amp; classrooms</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ══ HOW IT WORKS ════════════════════════════════ -->
+    <section class="section" id="how">
+        <div style="text-align:center"><span class="section-tag tag-yellow">🚀 Workflow</span></div>
+        <h2 class="section-title">From Idea to <span class="rainbow-text">Running Hardware</span></h2>
+        <p class="section-subtitle">Three steps. Zero boilerplate. No setup required.</p>
+        <div class="timeline">
+            <div class="step step-1 reveal">
+                <div class="step-num">1</div>
+                <div class="step-content">
+                    <h3>Drag &amp; Build</h3>
+                    <p>Choose from 8 block categories — sensors, actuators, displays, motors, IoT, and more. Snap blocks together to define your program logic with zero syntax errors.</p>
+                </div>
+            </div>
+            <div class="step step-2 reveal">
+                <div class="step-num">2</div>
+                <div class="step-content">
+                    <h3>Generate Code</h3>
+                    <p>Hit the code button and watch your blocks transform into clean Arduino C++ or MicroPython. The generator handles includes, pin setup, loop structure, and timing.</p>
+                </div>
+            </div>
+            <div class="step step-3 reveal">
+                <div class="step-num">3</div>
+                <div class="step-content">
+                    <h3>Upload &amp; Monitor</h3>
+                    <p>Connect your ESP32 via USB, select the port, and click Upload. The serial monitor shows live sensor data and debug output in real-time.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ══ TECH STACK ══════════════════════════════════ -->
+    <section class="section">
+        <div style="text-align:center"><span class="section-tag tag-violet">🛠️ Built With</span></div>
+        <h2 class="section-title">Powered by <span class="rainbow-text">Modern Tech</span></h2>
+        <p class="section-subtitle">Industry-standard tools and frameworks under the hood.</p>
+        <div class="tech-row">
+            <div class="tech-badge reveal"><span class="emoji">🧩</span> Google Blockly</div>
+            <div class="tech-badge reveal"><span class="emoji">📦</span> Webpack 5</div>
+            <div class="tech-badge reveal"><span class="emoji">🎮</span> PixiJS</div>
+            <div class="tech-badge reveal"><span class="emoji">⚡</span> Arduino CLI</div>
+            <div class="tech-badge reveal"><span class="emoji">🐍</span> MicroPython</div>
+            <div class="tech-badge reveal"><span class="emoji">🔌</span> Web Serial API</div>
+            <div class="tech-badge reveal"><span class="emoji">💅</span> Lucide Icons</div>
+        </div>
+    </section>
+
+    <!-- ══ FAQ ══════════════════════════════════════════ -->
+    <section class="section" id="faq">
+        <div style="text-align:center"><span class="section-tag tag-green">❓ FAQ</span></div>
+        <h2 class="section-title">Frequently <span class="rainbow-text">Asked Questions</span></h2>
+        <p class="section-subtitle">Everything you need to know to get started.</p>
+        <div class="faq-list">
+            <div class="faq-item">
+                <div class="faq-q">What hardware do I need?</div>
+                <div class="faq-a"><p>Any ESP32 development board (ESP32-WROOM, ESP32-S3, NodeMCU-32S, etc.) connected via USB. The platform auto-detects connected boards.</p></div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-q">Do I need to install Arduino IDE?</div>
+                <div class="faq-a"><p>No! TechyGuide includes a built-in Arduino CLI backend. It automatically downloads board packages, manages libraries, and compiles code — all from the browser.</p></div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-q">Which sensors are supported?</div>
+                <div class="faq-a"><p>30+ sensors including DHT11/22, BMP280, DS18B20, Ultrasonic HC-SR04, PIR, RFID RC522, IR receiver, LDR, soil moisture, gas sensors, MPU6050, heart rate sensor, and more.</p></div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-q">Can I see the generated code?</div>
+                <div class="faq-a"><p>Absolutely! The code panel shows real-time Arduino C++ or MicroPython as you build. You can copy, edit, and learn from the generated code.</p></div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-q">How do I send data to my phone?</div>
+                <div class="faq-a"><p>Use the Blynk IoT blocks! Set up your auth token and WiFi, then use virtual write blocks to send sensor values to the Blynk mobile app dashboard.</p></div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-q">Is it free to use?</div>
+                <div class="faq-a"><p>TechyGuide is free and open-source. No account required, no subscription needed. Just open the editor and start building.</p></div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-q">What's the difference between ESP32 mode and Scratch mode?</div>
+                <div class="faq-a"><p>ESP32 mode programs real hardware — sensors, motors, LEDs connected to your ESP32 board. Scratch mode is for learning programming with animated sprites, similar to MIT Scratch.</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ══ CTA ═════════════════════════════════════════ -->
+    <section class="cta-section" id="cta">
+        <h2 class="reveal">Ready to <span class="rainbow-text">Build?</span></h2>
+        <p class="reveal">Start your first ESP32 IoT project today. Zero setup, zero installation — just open and build.</p>
+        <a href="app.html" class="cta-btn reveal">Launch Editor →</a>
+    </section>
+
+    <!-- ══ FOOTER ══════════════════════════════════════ -->
+    <footer>
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <a href="#" class="nav-logo" style="margin-bottom:.5rem">
+                    <img src="https://techyguide.in/TG-Square-Logo-3.png" alt="TechyGuide" style="height:32px;border-radius:6px">
+                    <span style="font-weight:800;font-size:1.1rem">TechyGuide</span>
+                </a>
+                <p>Visual block-based programming platform for ESP32 microcontrollers. Build IoT projects without writing code.</p>
+            </div>
+            <div class="footer-col">
+                <h4>Platform</h4>
+                <a href="app.html">Block Editor</a>
+                <a href="#features">Features</a>
+                <a href="#sensors">Sensors</a>
+                <a href="#iot">IoT Platforms</a>
+            </div>
+            <div class="footer-col">
+                <h4>Resources</h4>
+                <a href="#how">Getting Started</a>
+                <a href="#faq">FAQ</a>
+                <a href="#languages">Code Examples</a>
+                <a href="#">Documentation</a>
+            </div>
+            <div class="footer-col">
+                <h4>Connect</h4>
+                <a href="https://techyguide.in" target="_blank">Website</a>
+                <a href="#">YouTube</a>
+                <a href="#">GitHub</a>
+                <a href="#">Contact</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2025 <a href="https://techyguide.in">TechyGuide</a>. Built with ❤️ for makers, students, and developers.</p>
+        </div>
+    </footer>
+
+    <!-- ══ SCRIPTS ═════════════════════════════════════ -->
+    <script>
+        // ── Typewriter — infinite cycling platforms ────
+        (function(){
+            var snippets = [
+                { label:'Arduino C++', color:'var(--blue)', bg:'var(--blue-light)', lines:[
+                    '#include <DHT.h>',
+                    'DHT dht(4, DHT11);',
+                    'void setup() {',
+                    '  Serial.begin(115200);',
+                    '  dht.begin();',
+                    '}'
+                ]},
+                { label:'Blynk IoT', color:'var(--indigo)', bg:'var(--indigo-light)', lines:[
+                    '#include <BlynkSimpleEsp32.h>',
+                    'void sendData() {',
+                    '  float t = dht.readTemperature();',
+                    '  Blynk.virtualWrite(V0, t);',
+                    '}'
+                ]},
+                { label:'ThingSpeak', color:'var(--green)', bg:'var(--green-light)', lines:[
+                    '#include <ThingSpeak.h>',
+                    'WiFiClient client;',
+                    'ThingSpeak.begin(client);',
+                    'ThingSpeak.setField(1, temp);',
+                    'ThingSpeak.writeFields(chId, apiKey);'
+                ]},
+                { label:'MQTT', color:'var(--violet)', bg:'var(--violet-light)', lines:[
+                    '#include <PubSubClient.h>',
+                    'client.connect("ESP32");',
+                    'client.subscribe("home/temp");',
+                    'client.publish("home/temp",',
+                    '  String(temp).c_str());'
+                ]},
+                { label:'MicroPython', color:'var(--orange)', bg:'var(--orange-light)', lines:[
+                    'import dht, machine',
+                    'sensor = dht.DHT11(Pin(4))',
+                    'sensor.measure()',
+                    'temp = sensor.temperature()',
+                    'print(f"Temp: {temp}°C")'
+                ]},
+                { label:'Serial Monitor', color:'var(--red)', bg:'var(--red-light)', lines:[
+                    'Serial.begin(115200);',
+                    'Serial.print("Temperature: ");',
+                    'Serial.print(temp);',
+                    'Serial.println(" °C");'
+                ]}
+            ];
+            var el = document.getElementById('typer');
+            var labelEl = document.getElementById('twLabel');
+            var si = 0, li = 0, ci = 0;
+            function setLabel(s){
+                labelEl.textContent = s.label;
+                labelEl.style.color = s.color;
+                labelEl.style.background = s.bg;
+            }
+            function typeChar(){
+                var s = snippets[si];
+                if(li >= s.lines.length){ setTimeout(eraseAll, 2000); return; }
+                if(ci < s.lines[li].length){
+                    el.textContent += s.lines[li].charAt(ci);
+                    ci++;
+                    setTimeout(typeChar, 30 + Math.random()*20);
+                } else {
+                    li++; ci = 0;
+                    if(li < s.lines.length){ el.textContent += '\n'; setTimeout(typeChar, 300); }
+                    else { setTimeout(eraseAll, 2200); }
+                }
+            }
+            function eraseAll(){
+                var txt = el.textContent;
+                if(txt.length > 0){
+                    el.textContent = txt.slice(0, -1);
+                    setTimeout(eraseAll, 12);
+                } else {
+                    si = (si + 1) % snippets.length;
+                    li = 0; ci = 0;
+                    setLabel(snippets[si]);
+                    setTimeout(typeChar, 600);
+                }
+            }
+            setLabel(snippets[0]);
+            setTimeout(typeChar, 1200);
+        })();
+
+        // ── Scroll reveal ───────────────────────────────
+        var reveals = document.querySelectorAll('.reveal');
+        var observer = new IntersectionObserver(function(entries){
+            entries.forEach(function(e){
+                if(e.isIntersecting){ e.target.classList.add('visible'); }
+            });
+        }, {threshold:0.12, rootMargin:'0px 0px -40px 0px'});
+        reveals.forEach(function(el){ observer.observe(el); });
+
+        // ── Navbar scroll effect ────────────────────────
+        window.addEventListener('scroll', function(){
+            document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 50);
+        });
+
+        // ── Counter animation ───────────────────────────
+        var counted = false;
+        var statsObs = new IntersectionObserver(function(entries){
+            if(entries[0].isIntersecting && !counted){
+                counted = true;
+                document.querySelectorAll('.stat-num[data-target]').forEach(function(el){
+                    var target = parseInt(el.dataset.target);
+                    var duration = 1500;
+                    var start = performance.now();
+                    function tick(now){
+                        var p = Math.min((now-start)/duration, 1);
+                        var ease = 1 - Math.pow(1-p, 3);
+                        el.textContent = Math.round(target * ease) + (target > 10 ? '+' : '');
+                        if(p < 1) requestAnimationFrame(tick);
+                    }
+                    requestAnimationFrame(tick);
+                });
+            }
+        }, {threshold:0.5});
+        statsObs.observe(document.querySelector('.stats'));
+
+        // ── FAQ accordion ───────────────────────────────
+        document.querySelectorAll('.faq-q').forEach(function(q){
+            q.addEventListener('click', function(){
+                var item = this.parentElement;
+                var wasOpen = item.classList.contains('open');
+                document.querySelectorAll('.faq-item.open').forEach(function(i){ i.classList.remove('open'); });
+                if(!wasOpen) item.classList.add('open');
+            });
+        });
+
+        // ── Code tab switcher ───────────────────────────
+        function showTab(btn, lang){
+            btn.parentElement.querySelectorAll('.code-tab').forEach(function(t){ t.classList.remove('active'); });
+            btn.classList.add('active');
+            var block = btn.closest('.code-block');
+            block.querySelectorAll('.code-content').forEach(function(c){ c.style.display = 'none'; });
+            block.querySelector('#' + lang).style.display = 'block';
+        }
+    </script>
+</body>
+</html>
