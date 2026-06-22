@@ -57,7 +57,7 @@ export default function DashboardPage() {
         <Link href="/scratch">
           <Button>
             <Plus className="h-4 w-4" />
-            New Scratch project
+            New Studio project
           </Button>
         </Link>
       </div>
@@ -75,7 +75,7 @@ export default function DashboardPage() {
                 <p className="mt-2 text-sm text-muted">No projects yet</p>
                 <Link href="/scratch" className="mt-4 inline-block">
                   <Button size="sm" variant="secondary">
-                    Open Scratch Studio
+                    Open STEMVerse Studio
                   </Button>
                 </Link>
               </div>

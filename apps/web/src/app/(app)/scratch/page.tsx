@@ -17,7 +17,7 @@ export default function ScratchIndexPage() {
     setCreating(true);
     try {
       const project = await projectApi.create(token, {
-        name: `Scratch Project ${new Date().toLocaleDateString()}`,
+        name: `Studio Project ${new Date().toLocaleDateString()}`,
       });
       router.push(`/scratch/${project.id}`);
     } finally {
@@ -28,9 +28,9 @@ export default function ScratchIndexPage() {
   return (
     <div className="flex h-full flex-col">
       <div className="border-b border-border bg-card px-6 py-4">
-        <h1 className="font-display text-2xl font-bold">Scratch Studio</h1>
+        <h1 className="font-display text-2xl font-bold">STEMVerse Studio</h1>
         <p className="text-sm text-muted">
-          Create interactive stories, games, and animations with the Scratch VM.
+          Build interactive projects with visual programming, robotics, IoT, and AI.
         </p>
         <Button className="mt-4" onClick={createProject} loading={creating}>
           Create new project

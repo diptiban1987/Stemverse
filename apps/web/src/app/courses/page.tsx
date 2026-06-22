@@ -4,12 +4,12 @@ import { buildPageMetadata } from '@/lib/seo';
 
 export const metadata = buildPageMetadata({
   title: 'Courses',
-  description: 'Explore STEMVerse learning tracks from Scratch Explorer to Robotics Engineer.',
+  description: 'Explore STEMVerse learning tracks from Studio Explorer to Robotics Engineer.',
   path: '/courses',
 });
 
 const tracks = [
-  { title: 'Scratch Explorer', level: 'Beginner', href: '/academy' },
+  { title: 'Studio Explorer', level: 'Beginner', href: '/academy' },
   { title: 'Robotics Maker', level: 'Beginner', href: '/academy' },
   { title: 'IoT Developer', level: 'Intermediate', href: '/academy' },
   { title: 'AI Builder', level: 'Intermediate', href: '/academy' },

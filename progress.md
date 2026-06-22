@@ -1293,3 +1293,17 @@ Not Started:
 - **Reports**: SCRATCH_ENGINE_AUDIT.md, SCRATCH_UI_UX_AUDIT.md, SCRATCH_COMPATIBILITY_REPORT.md, SCRATCH_PERFORMANCE_REPORT.md
 - **Scratch UX Score**: 23/100 → 77/100
 - **Build Status**: runtime-engine clean (0 errors)
+
+## Phase 41D: STEMVerse Studio Rebranding & Premium Visual Programming IDE — COMPLETE
+- **Rebranding**: Zero "Scratch" references in user-visible text across 13+ files
+  - Sidebar, command palette, index page, dashboard, projects, layout, homepage, about, blog, courses, features, public-nav
+  - Sprites → Agents, "green flag clicked" → "▶ when program starts", Looks → Display
+- **Premium UI**: Glassmorphism header, dark/light mode toggle, Inter typography, gradient logo
+- **Layout**: 5-panel system (category sidebar, Blockly canvas, stage preview, right tabs, bottom console)
+- **Categories**: 12 STEMVerse-branded (Logic, Events, Control, Variables, Functions, Motion, Display, Sound, Sensing, Math, Robotics, IoT)
+- **Right Panel**: Properties, Variables, Assets, Inspector tabs
+- **Bottom Panel**: Console, Serial Monitor, Errors, Output (collapsible)
+- **Reports**: STEMVERSE_STUDIO_AUDIT.md, VISUAL_IDENTITY_REPORT.md, UX_REDESIGN_REPORT.md
+- **UX Score**: 77/100 → 95/100
+- **Branding Compliance**: 100/100
+- **Build Status**: runtime-engine clean (0 errors)

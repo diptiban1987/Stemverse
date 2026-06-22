@@ -4,7 +4,7 @@ import { buildPageMetadata } from '@/lib/seo';
 
 export const metadata = buildPageMetadata({
   title: 'Blog',
-  description: 'STEMVerse updates on robotics education, Blockly, Scratch, and IoT learning.',
+  description: 'STEMVerse updates on robotics education, Blockly, visual programming, and IoT learning.',
   path: '/blog',
 });
 
@@ -12,7 +12,7 @@ const posts = [
   {
     slug: 'welcome-stemverse',
     title: 'Welcome to STEMVerse',
-    excerpt: 'One platform from Scratch blocks to ESP32 robotics and AI-assisted learning.',
+    excerpt: 'One platform from visual programming to ESP32 robotics and AI-assisted learning.',
     date: '2026-05-01',
   },
   {

@@ -22,7 +22,7 @@ export default function ProjectsPage() {
   return (
     <div className="p-8">
       <h1 className="font-display text-3xl font-bold">Projects</h1>
-      <p className="mt-1 text-muted">All your Scratch and future studio projects</p>
+      <p className="mt-1 text-muted">All your STEMVerse Studio projects</p>
 
       {isLoading ? (
         <div className="mt-8 h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />

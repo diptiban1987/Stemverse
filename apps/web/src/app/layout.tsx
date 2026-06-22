@@ -20,9 +20,9 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'STEMVerse — Scratch to Industrial Automation',
+  title: 'STEMVerse — Visual Programming to Industrial Automation',
   description:
-    'Learn and build with Scratch Studio, robotics, IoT, AI, and more in one unified STEM platform.',
+    'Learn and build with STEMVerse Studio, robotics, IoT, AI, and more in one unified STEM platform.',
 };
 
 export default function RootLayout({

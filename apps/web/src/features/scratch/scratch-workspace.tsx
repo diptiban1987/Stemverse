@@ -4,22 +4,35 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Script from 'next/script';
 import { Button } from '@stemverse/ui';
 
-/* ───────── constants ───────── */
+/* ═══════════════════════════════════════════════════════════════
+   STEMVerse Studio — Premium Visual Programming IDE
+   Inspired by: Figma · MakeCode · Tinkercad · Wokwi · Framer
+   ═══════════════════════════════════════════════════════════════ */
+
 const STAGE_WIDTH = 480;
 const STAGE_HEIGHT = 360;
 
-const SCRATCH_CATEGORIES = [
-  { id: 'motion', name: 'Motion', colour: '#4C97FF' },
-  { id: 'looks', name: 'Looks', colour: '#9966FF' },
-  { id: 'sound', name: 'Sound', colour: '#CF63CF' },
-  { id: 'events', name: 'Events', colour: '#FFD500' },
-  { id: 'control', name: 'Control', colour: '#FFAB19' },
-  { id: 'sensing', name: 'Sensing', colour: '#5CB1D6' },
-  { id: 'operators', name: 'Operators', colour: '#59C059' },
-  { id: 'variables', name: 'Variables', colour: '#FF8C1A' },
+/* ─── Studio Category Palette ─── */
+const STUDIO_CATEGORIES = [
+  { id: 'logic', name: 'Logic', colour: '#5B80A5', icon: '🧠' },
+  { id: 'events', name: 'Events', colour: '#E6A817', icon: '⚡' },
+  { id: 'control', name: 'Control', colour: '#E8863A', icon: '🔄' },
+  { id: 'variables', name: 'Variables', colour: '#EE7D16', icon: '📦' },
+  { id: 'functions', name: 'Functions', colour: '#FF6680', icon: '⚙️' },
+  { id: 'motion', name: 'Motion', colour: '#4A90D9', icon: '🏃' },
+  { id: 'display', name: 'Display', colour: '#9B59B6', icon: '🎨' },
+  { id: 'sound', name: 'Sound', colour: '#BB4FCF', icon: '🔊' },
+  { id: 'sensing', name: 'Sensing', colour: '#3AAFA9', icon: '📡' },
+  { id: 'operators', name: 'Math', colour: '#2ECC71', icon: '🔢' },
+  { id: 'robotics', name: 'Robotics', colour: '#00B894', icon: '🤖' },
+  { id: 'iot', name: 'IoT', colour: '#0984E3', icon: '🌐' },
 ] as const;
 
-/* ───────── Scratch VM types ───────── */
+/* ─── Tab types ─── */
+type RightTab = 'properties' | 'variables' | 'assets' | 'inspector';
+type BottomTab = 'console' | 'serial' | 'errors' | 'output';
+
+/* ─── Scratch VM types ─── */
 type ScratchRuntime = {
   loadProject: (json: string) => Promise<void>;
   toJSON: () => string;
@@ -31,144 +44,94 @@ type ScratchRuntime = {
   dispose: () => void;
 };
 
-interface ScratchWorkspaceProps {
+interface StudioWorkspaceProps {
   projectId?: string;
   initialData?: unknown;
   onSave?: (workspaceJson: unknown) => Promise<void>;
 }
 
-/* ───────── helpers ───────── */
-
-/** Build a valid default Scratch 3 project JSON */
-function createDefaultScratchProject(): object {
+/* ─── SB3 Compatibility Layer (isolated) ─── */
+function createDefaultProject(): object {
   return {
     targets: [
       {
-        isStage: true,
-        name: 'Stage',
-        variables: {},
-        lists: {},
-        broadcasts: {},
-        blocks: {},
-        comments: {},
-        currentCostume: 0,
-        costumes: [
-          {
-            name: 'backdrop1',
-            dataFormat: 'svg',
-            assetId: 'cd21514d0531fdffb6adae589bfa37f0',
-            md5ext: 'cd21514d0531fdffb6adae589bfa37f0.svg',
-            rotationCenterX: 240,
-            rotationCenterY: 180,
-          },
-        ],
-        sounds: [],
-        volume: 100,
-        layerOrder: 0,
-        tempo: 60,
-        videoTransparency: 50,
-        videoState: 'on',
-        textToSpeechLanguage: null,
+        isStage: true, name: 'Stage', variables: {}, lists: {}, broadcasts: {}, blocks: {}, comments: {},
+        currentCostume: 0, costumes: [{ name: 'backdrop1', dataFormat: 'svg', assetId: 'cd21514d0531fdffb6adae589bfa37f0', md5ext: 'cd21514d0531fdffb6adae589bfa37f0.svg', rotationCenterX: 240, rotationCenterY: 180 }],
+        sounds: [], volume: 100, layerOrder: 0, tempo: 60, videoTransparency: 50, videoState: 'on', textToSpeechLanguage: null,
       },
       {
-        isStage: false,
-        name: 'Sprite1',
-        variables: {},
-        lists: {},
-        broadcasts: {},
-        blocks: {},
-        comments: {},
-        currentCostume: 0,
-        costumes: [
-          {
-            name: 'costume1',
-            bitmapResolution: 1,
-            dataFormat: 'svg',
-            assetId: 'cd21514d0531fdffb6adae589bfa37f0',
-            md5ext: 'cd21514d0531fdffb6adae589bfa37f0.svg',
-            rotationCenterX: 48,
-            rotationCenterY: 50,
-          },
-        ],
-        sounds: [],
-        visible: true,
-        x: 0,
-        y: 0,
-        size: 100,
-        direction: 90,
-        draggable: false,
-        rotationStyle: 'all around',
-        layerOrder: 1,
-        volume: 100,
+        isStage: false, name: 'Agent1', variables: {}, lists: {}, broadcasts: {}, blocks: {}, comments: {},
+        currentCostume: 0, costumes: [{ name: 'costume1', bitmapResolution: 1, dataFormat: 'svg', assetId: 'cd21514d0531fdffb6adae589bfa37f0', md5ext: 'cd21514d0531fdffb6adae589bfa37f0.svg', rotationCenterX: 48, rotationCenterY: 50 }],
+        sounds: [], visible: true, x: 0, y: 0, size: 100, direction: 90, draggable: false, rotationStyle: 'all around', layerOrder: 1, volume: 100,
       },
     ],
-    monitors: [],
-    extensions: [],
-    meta: { semver: '3.0.0', vm: '1.4.6', agent: 'STEMVerse' },
+    monitors: [], extensions: [], meta: { semver: '3.0.0', vm: '1.4.6', agent: 'STEMVerse Studio' },
   };
 }
 
-/** Validate whether a JS object is a valid Scratch 3 project */
-function isValidScratchProject(data: unknown): boolean {
+function isValidProject(data: unknown): boolean {
   if (!data || typeof data !== 'object') return false;
   const obj = data as Record<string, unknown>;
   if (!Array.isArray(obj.targets) || obj.targets.length === 0) return false;
-  const stage = (obj.targets as Array<Record<string, unknown>>).find(
-    (t) => t.isStage === true,
-  );
-  if (!stage) return false;
-  return true;
+  return (obj.targets as Array<Record<string, unknown>>).some((t) => t.isStage === true);
 }
 
-/** Safely parse initial data into a valid SB3 project */
 function resolveProjectData(initialData: unknown): string {
-  // Case 1: already a valid Scratch 3 object
-  if (isValidScratchProject(initialData)) {
-    return JSON.stringify(initialData);
-  }
-
-  // Case 2: stringified JSON
-  if (typeof initialData === 'string') {
-    try {
-      const parsed = JSON.parse(initialData);
-      if (isValidScratchProject(parsed)) {
-        return initialData;
-      }
-    } catch {
-      /* not JSON */
-    }
-  }
-
-  // Case 3: has workspaceJson / data property
+  if (isValidProject(initialData)) return JSON.stringify(initialData);
+  if (typeof initialData === 'string') { try { const p = JSON.parse(initialData); if (isValidProject(p)) return initialData; } catch { /* */ } }
   if (initialData && typeof initialData === 'object') {
     const obj = initialData as Record<string, unknown>;
     const nested = obj.workspaceJson ?? obj.data ?? obj.project;
-    if (nested) {
-      return resolveProjectData(nested);
-    }
+    if (nested) return resolveProjectData(nested);
   }
-
-  // Fallback: create a fresh project
-  console.warn('[Scratch] initialData is not a valid SB3 project, using default');
-  return JSON.stringify(createDefaultScratchProject());
+  return JSON.stringify(createDefaultProject());
 }
 
-/* ───────── Blockly toolbox XML (Scratch-coloured categories) ───────── */
+/* ─── Blockly toolbox (rebrand categories) ─── */
 function buildToolboxXml(): string {
-  return `<xml id="stemverse-scratch-toolbox">
-  <category name="Motion" colour="#4C97FF">
+  return `<xml id="stemverse-studio-toolbox">
+  <category name="Logic" colour="#5B80A5">
+    <block type="event_whenflagclicked"></block>
+    <block type="event_whenkeypressed"><field name="KEY_OPTION">space</field></block>
+    <block type="event_whenthisspriteclicked"></block>
+    <block type="control_if"></block>
+    <block type="control_if_else"></block>
+    <block type="control_wait_until"></block>
+    <block type="operator_and"></block>
+    <block type="operator_or"></block>
+    <block type="operator_not"></block>
+  </category>
+  <category name="Events" colour="#E6A817">
+    <block type="event_whenflagclicked"></block>
+    <block type="event_whenkeypressed"><field name="KEY_OPTION">space</field></block>
+    <block type="event_whenthisspriteclicked"></block>
+    <block type="event_whenbroadcastreceived"><field name="BROADCAST_OPTION">message1</field></block>
+    <block type="event_broadcast"><value name="BROADCAST_INPUT"><shadow type="text"><field name="TEXT">message1</field></shadow></value></block>
+    <block type="event_broadcastandwait"><value name="BROADCAST_INPUT"><shadow type="text"><field name="TEXT">message1</field></shadow></value></block>
+  </category>
+  <category name="Control" colour="#E8863A">
+    <block type="control_wait"><value name="DURATION"><shadow type="math_number"><field name="NUM">1</field></shadow></value></block>
+    <block type="control_repeat"><value name="TIMES"><shadow type="math_number"><field name="NUM">10</field></shadow></value></block>
+    <block type="control_forever"></block>
+    <block type="control_if"></block>
+    <block type="control_if_else"></block>
+    <block type="control_repeat_until"></block>
+    <block type="control_stop"><field name="STOP_OPTION">all</field></block>
+    <block type="control_start_as_clone"></block>
+    <block type="control_create_clone_of"></block>
+    <block type="control_delete_this_clone"></block>
+  </category>
+  <category name="Variables" colour="#EE7D16" custom="VARIABLE"></category>
+  <category name="Functions" colour="#FF6680">
+    <block type="control_repeat"><value name="TIMES"><shadow type="math_number"><field name="NUM">10</field></shadow></value></block>
+    <block type="control_forever"></block>
+  </category>
+  <category name="Motion" colour="#4A90D9">
     <block type="motion_movesteps"><value name="STEPS"><shadow type="math_number"><field name="NUM">10</field></shadow></value></block>
     <block type="motion_turnright"><value name="DEGREES"><shadow type="math_number"><field name="NUM">15</field></shadow></value></block>
     <block type="motion_turnleft"><value name="DEGREES"><shadow type="math_number"><field name="NUM">15</field></shadow></value></block>
-    <block type="motion_gotoxy">
-      <value name="X"><shadow type="math_number"><field name="NUM">0</field></shadow></value>
-      <value name="Y"><shadow type="math_number"><field name="NUM">0</field></shadow></value>
-    </block>
-    <block type="motion_glideto">
-      <value name="SECS"><shadow type="math_number"><field name="NUM">1</field></shadow></value>
-      <value name="X"><shadow type="math_number"><field name="NUM">0</field></shadow></value>
-      <value name="Y"><shadow type="math_number"><field name="NUM">0</field></shadow></value>
-    </block>
+    <block type="motion_gotoxy"><value name="X"><shadow type="math_number"><field name="NUM">0</field></shadow></value><value name="Y"><shadow type="math_number"><field name="NUM">0</field></shadow></value></block>
+    <block type="motion_glideto"><value name="SECS"><shadow type="math_number"><field name="NUM">1</field></shadow></value><value name="X"><shadow type="math_number"><field name="NUM">0</field></shadow></value><value name="Y"><shadow type="math_number"><field name="NUM">0</field></shadow></value></block>
     <block type="motion_pointindirection"><value name="DIRECTION"><shadow type="math_number"><field name="NUM">90</field></shadow></value></block>
     <block type="motion_changexby"><value name="DX"><shadow type="math_number"><field name="NUM">10</field></shadow></value></block>
     <block type="motion_setx"><value name="X"><shadow type="math_number"><field name="NUM">0</field></shadow></value></block>
@@ -179,16 +142,10 @@ function buildToolboxXml(): string {
     <block type="motion_yposition"></block>
     <block type="motion_direction"></block>
   </category>
-  <category name="Looks" colour="#9966FF">
-    <block type="looks_sayforsecs">
-      <value name="MESSAGE"><shadow type="text"><field name="TEXT">Hello!</field></shadow></value>
-      <value name="SECS"><shadow type="math_number"><field name="NUM">2</field></shadow></value>
-    </block>
+  <category name="Display" colour="#9B59B6">
+    <block type="looks_sayforsecs"><value name="MESSAGE"><shadow type="text"><field name="TEXT">Hello!</field></shadow></value><value name="SECS"><shadow type="math_number"><field name="NUM">2</field></shadow></value></block>
     <block type="looks_say"><value name="MESSAGE"><shadow type="text"><field name="TEXT">Hello!</field></shadow></value></block>
-    <block type="looks_thinkforsecs">
-      <value name="MESSAGE"><shadow type="text"><field name="TEXT">Hmm...</field></shadow></value>
-      <value name="SECS"><shadow type="math_number"><field name="NUM">2</field></shadow></value>
-    </block>
+    <block type="looks_thinkforsecs"><value name="MESSAGE"><shadow type="text"><field name="TEXT">Hmm...</field></shadow></value><value name="SECS"><shadow type="math_number"><field name="NUM">2</field></shadow></value></block>
     <block type="looks_think"><value name="MESSAGE"><shadow type="text"><field name="TEXT">Hmm...</field></shadow></value></block>
     <block type="looks_show"></block>
     <block type="looks_hide"></block>
@@ -196,35 +153,14 @@ function buildToolboxXml(): string {
     <block type="looks_setsizeto"><value name="SIZE"><shadow type="math_number"><field name="NUM">100</field></shadow></value></block>
     <block type="looks_size"></block>
   </category>
-  <category name="Sound" colour="#CF63CF">
+  <category name="Sound" colour="#BB4FCF">
     <block type="sound_play"></block>
     <block type="sound_stopallsounds"></block>
     <block type="sound_changevolumeby"><value name="VOLUME"><shadow type="math_number"><field name="NUM">-10</field></shadow></value></block>
     <block type="sound_setvolumeto"><value name="VOLUME"><shadow type="math_number"><field name="NUM">100</field></shadow></value></block>
     <block type="sound_volume"></block>
   </category>
-  <category name="Events" colour="#FFD500">
-    <block type="event_whenflagclicked"></block>
-    <block type="event_whenkeypressed"><field name="KEY_OPTION">space</field></block>
-    <block type="event_whenthisspriteclicked"></block>
-    <block type="event_whenbroadcastreceived"><field name="BROADCAST_OPTION">message1</field></block>
-    <block type="event_broadcast"><value name="BROADCAST_INPUT"><shadow type="text"><field name="TEXT">message1</field></shadow></value></block>
-    <block type="event_broadcastandwait"><value name="BROADCAST_INPUT"><shadow type="text"><field name="TEXT">message1</field></shadow></value></block>
-  </category>
-  <category name="Control" colour="#FFAB19">
-    <block type="control_wait"><value name="DURATION"><shadow type="math_number"><field name="NUM">1</field></shadow></value></block>
-    <block type="control_repeat"><value name="TIMES"><shadow type="math_number"><field name="NUM">10</field></shadow></value></block>
-    <block type="control_forever"></block>
-    <block type="control_if"></block>
-    <block type="control_if_else"></block>
-    <block type="control_wait_until"></block>
-    <block type="control_repeat_until"></block>
-    <block type="control_stop"><field name="STOP_OPTION">all</field></block>
-    <block type="control_start_as_clone"></block>
-    <block type="control_create_clone_of"></block>
-    <block type="control_delete_this_clone"></block>
-  </category>
-  <category name="Sensing" colour="#5CB1D6">
+  <category name="Sensing" colour="#3AAFA9">
     <block type="sensing_touchingobject"></block>
     <block type="sensing_distanceto"></block>
     <block type="sensing_askandwait"><value name="QUESTION"><shadow type="text"><field name="TEXT">What is your name?</field></shadow></value></block>
@@ -236,169 +172,125 @@ function buildToolboxXml(): string {
     <block type="sensing_timer"></block>
     <block type="sensing_resettimer"></block>
   </category>
-  <category name="Operators" colour="#59C059">
-    <block type="operator_add">
-      <value name="NUM1"><shadow type="math_number"><field name="NUM"></field></shadow></value>
-      <value name="NUM2"><shadow type="math_number"><field name="NUM"></field></shadow></value>
-    </block>
-    <block type="operator_subtract">
-      <value name="NUM1"><shadow type="math_number"><field name="NUM"></field></shadow></value>
-      <value name="NUM2"><shadow type="math_number"><field name="NUM"></field></shadow></value>
-    </block>
-    <block type="operator_multiply">
-      <value name="NUM1"><shadow type="math_number"><field name="NUM"></field></shadow></value>
-      <value name="NUM2"><shadow type="math_number"><field name="NUM"></field></shadow></value>
-    </block>
-    <block type="operator_divide">
-      <value name="NUM1"><shadow type="math_number"><field name="NUM"></field></shadow></value>
-      <value name="NUM2"><shadow type="math_number"><field name="NUM"></field></shadow></value>
-    </block>
-    <block type="operator_random">
-      <value name="FROM"><shadow type="math_number"><field name="NUM">1</field></shadow></value>
-      <value name="TO"><shadow type="math_number"><field name="NUM">10</field></shadow></value>
-    </block>
-    <block type="operator_gt">
-      <value name="OPERAND1"><shadow type="math_number"><field name="NUM"></field></shadow></value>
-      <value name="OPERAND2"><shadow type="math_number"><field name="NUM">50</field></shadow></value>
-    </block>
-    <block type="operator_lt">
-      <value name="OPERAND1"><shadow type="math_number"><field name="NUM"></field></shadow></value>
-      <value name="OPERAND2"><shadow type="math_number"><field name="NUM">50</field></shadow></value>
-    </block>
-    <block type="operator_equals">
-      <value name="OPERAND1"><shadow type="math_number"><field name="NUM"></field></shadow></value>
-      <value name="OPERAND2"><shadow type="math_number"><field name="NUM">50</field></shadow></value>
-    </block>
-    <block type="operator_and"></block>
-    <block type="operator_or"></block>
-    <block type="operator_not"></block>
-    <block type="operator_join">
-      <value name="STRING1"><shadow type="text"><field name="TEXT">apple </field></shadow></value>
-      <value name="STRING2"><shadow type="text"><field name="TEXT">banana</field></shadow></value>
-    </block>
+  <category name="Math" colour="#2ECC71">
+    <block type="operator_add"><value name="NUM1"><shadow type="math_number"><field name="NUM"></field></shadow></value><value name="NUM2"><shadow type="math_number"><field name="NUM"></field></shadow></value></block>
+    <block type="operator_subtract"><value name="NUM1"><shadow type="math_number"><field name="NUM"></field></shadow></value><value name="NUM2"><shadow type="math_number"><field name="NUM"></field></shadow></value></block>
+    <block type="operator_multiply"><value name="NUM1"><shadow type="math_number"><field name="NUM"></field></shadow></value><value name="NUM2"><shadow type="math_number"><field name="NUM"></field></shadow></value></block>
+    <block type="operator_divide"><value name="NUM1"><shadow type="math_number"><field name="NUM"></field></shadow></value><value name="NUM2"><shadow type="math_number"><field name="NUM"></field></shadow></value></block>
+    <block type="operator_random"><value name="FROM"><shadow type="math_number"><field name="NUM">1</field></shadow></value><value name="TO"><shadow type="math_number"><field name="NUM">10</field></shadow></value></block>
+    <block type="operator_gt"><value name="OPERAND1"><shadow type="math_number"><field name="NUM"></field></shadow></value><value name="OPERAND2"><shadow type="math_number"><field name="NUM">50</field></shadow></value></block>
+    <block type="operator_lt"><value name="OPERAND1"><shadow type="math_number"><field name="NUM"></field></shadow></value><value name="OPERAND2"><shadow type="math_number"><field name="NUM">50</field></shadow></value></block>
+    <block type="operator_equals"><value name="OPERAND1"><shadow type="math_number"><field name="NUM"></field></shadow></value><value name="OPERAND2"><shadow type="math_number"><field name="NUM">50</field></shadow></value></block>
+    <block type="operator_join"><value name="STRING1"><shadow type="text"><field name="TEXT">apple </field></shadow></value><value name="STRING2"><shadow type="text"><field name="TEXT">banana</field></shadow></value></block>
     <block type="operator_length"><value name="STRING"><shadow type="text"><field name="TEXT">apple</field></shadow></value></block>
-    <block type="operator_mod">
-      <value name="NUM1"><shadow type="math_number"><field name="NUM"></field></shadow></value>
-      <value name="NUM2"><shadow type="math_number"><field name="NUM"></field></shadow></value>
-    </block>
+    <block type="operator_mod"><value name="NUM1"><shadow type="math_number"><field name="NUM"></field></shadow></value><value name="NUM2"><shadow type="math_number"><field name="NUM"></field></shadow></value></block>
     <block type="operator_round"><value name="NUM"><shadow type="math_number"><field name="NUM"></field></shadow></value></block>
-    <block type="operator_mathop">
-      <value name="NUM"><shadow type="math_number"><field name="NUM"></field></shadow></value>
-      <field name="OPERATOR">abs</field>
-    </block>
+    <block type="operator_mathop"><value name="NUM"><shadow type="math_number"><field name="NUM"></field></shadow></value><field name="OPERATOR">abs</field></block>
   </category>
-  <category name="Variables" colour="#FF8C1A" custom="VARIABLE"></category>
+  <category name="Robotics" colour="#00B894">
+    <block type="motion_movesteps"><value name="STEPS"><shadow type="math_number"><field name="NUM">100</field></shadow></value></block>
+    <block type="control_wait"><value name="DURATION"><shadow type="math_number"><field name="NUM">0.5</field></shadow></value></block>
+  </category>
+  <category name="IoT" colour="#0984E3">
+    <block type="event_broadcast"><value name="BROADCAST_INPUT"><shadow type="text"><field name="TEXT">sensor_data</field></shadow></value></block>
+    <block type="event_whenbroadcastreceived"><field name="BROADCAST_OPTION">sensor_data</field></block>
+  </category>
 </xml>`;
 }
 
-/* ───────── register Scratch block defs in Blockly ───────── */
-function registerScratchBlocks(Blockly: any) {
+/* ─── Register block definitions ─── */
+function registerStudioBlocks(Blockly: any) {
   if (!Blockly) return;
-  const alreadyDefined = (t: string) => !!Blockly.Blocks[t];
-
-  /* ---------- helper: define a simple block if not yet defined ---------- */
-  const defBlock = (type: string, cfg: Record<string, unknown>) => {
-    if (alreadyDefined(type)) return;
-    Blockly.Blocks[type] = {
-      init: function (this: any) { this.jsonInit(cfg); },
-    };
+  const def = (type: string, cfg: Record<string, unknown>) => {
+    if (Blockly.Blocks[type]) return;
+    Blockly.Blocks[type] = { init: function (this: any) { this.jsonInit(cfg); } };
   };
 
-  // Motion blocks
-  defBlock('motion_movesteps', { type: 'motion_movesteps', message0: 'move %1 steps', args0: [{ type: 'input_value', name: 'STEPS', check: 'Number' }], previousStatement: null, nextStatement: null, colour: '#4C97FF', tooltip: 'Move forward' });
-  defBlock('motion_turnright', { type: 'motion_turnright', message0: 'turn ↻ %1 degrees', args0: [{ type: 'input_value', name: 'DEGREES', check: 'Number' }], previousStatement: null, nextStatement: null, colour: '#4C97FF' });
-  defBlock('motion_turnleft', { type: 'motion_turnleft', message0: 'turn ↺ %1 degrees', args0: [{ type: 'input_value', name: 'DEGREES', check: 'Number' }], previousStatement: null, nextStatement: null, colour: '#4C97FF' });
-  defBlock('motion_gotoxy', { type: 'motion_gotoxy', message0: 'go to x: %1 y: %2', args0: [{ type: 'input_value', name: 'X', check: 'Number' }, { type: 'input_value', name: 'Y', check: 'Number' }], previousStatement: null, nextStatement: null, colour: '#4C97FF' });
-  defBlock('motion_glideto', { type: 'motion_glideto', message0: 'glide %1 secs to x: %2 y: %3', args0: [{ type: 'input_value', name: 'SECS', check: 'Number' }, { type: 'input_value', name: 'X', check: 'Number' }, { type: 'input_value', name: 'Y', check: 'Number' }], previousStatement: null, nextStatement: null, colour: '#4C97FF' });
-  defBlock('motion_pointindirection', { type: 'motion_pointindirection', message0: 'point in direction %1', args0: [{ type: 'input_value', name: 'DIRECTION', check: 'Number' }], previousStatement: null, nextStatement: null, colour: '#4C97FF' });
-  defBlock('motion_changexby', { type: 'motion_changexby', message0: 'change x by %1', args0: [{ type: 'input_value', name: 'DX', check: 'Number' }], previousStatement: null, nextStatement: null, colour: '#4C97FF' });
-  defBlock('motion_setx', { type: 'motion_setx', message0: 'set x to %1', args0: [{ type: 'input_value', name: 'X', check: 'Number' }], previousStatement: null, nextStatement: null, colour: '#4C97FF' });
-  defBlock('motion_changeyby', { type: 'motion_changeyby', message0: 'change y by %1', args0: [{ type: 'input_value', name: 'DY', check: 'Number' }], previousStatement: null, nextStatement: null, colour: '#4C97FF' });
-  defBlock('motion_sety', { type: 'motion_sety', message0: 'set y to %1', args0: [{ type: 'input_value', name: 'Y', check: 'Number' }], previousStatement: null, nextStatement: null, colour: '#4C97FF' });
-  defBlock('motion_ifonedgebounce', { type: 'motion_ifonedgebounce', message0: 'if on edge, bounce', previousStatement: null, nextStatement: null, colour: '#4C97FF' });
-  defBlock('motion_xposition', { type: 'motion_xposition', message0: 'x position', output: 'Number', colour: '#4C97FF' });
-  defBlock('motion_yposition', { type: 'motion_yposition', message0: 'y position', output: 'Number', colour: '#4C97FF' });
-  defBlock('motion_direction', { type: 'motion_direction', message0: 'direction', output: 'Number', colour: '#4C97FF' });
-
-  // Looks blocks
-  defBlock('looks_sayforsecs', { type: 'looks_sayforsecs', message0: 'say %1 for %2 seconds', args0: [{ type: 'input_value', name: 'MESSAGE' }, { type: 'input_value', name: 'SECS', check: 'Number' }], previousStatement: null, nextStatement: null, colour: '#9966FF' });
-  defBlock('looks_say', { type: 'looks_say', message0: 'say %1', args0: [{ type: 'input_value', name: 'MESSAGE' }], previousStatement: null, nextStatement: null, colour: '#9966FF' });
-  defBlock('looks_thinkforsecs', { type: 'looks_thinkforsecs', message0: 'think %1 for %2 seconds', args0: [{ type: 'input_value', name: 'MESSAGE' }, { type: 'input_value', name: 'SECS', check: 'Number' }], previousStatement: null, nextStatement: null, colour: '#9966FF' });
-  defBlock('looks_think', { type: 'looks_think', message0: 'think %1', args0: [{ type: 'input_value', name: 'MESSAGE' }], previousStatement: null, nextStatement: null, colour: '#9966FF' });
-  defBlock('looks_show', { type: 'looks_show', message0: 'show', previousStatement: null, nextStatement: null, colour: '#9966FF' });
-  defBlock('looks_hide', { type: 'looks_hide', message0: 'hide', previousStatement: null, nextStatement: null, colour: '#9966FF' });
-  defBlock('looks_changesizeby', { type: 'looks_changesizeby', message0: 'change size by %1', args0: [{ type: 'input_value', name: 'CHANGE', check: 'Number' }], previousStatement: null, nextStatement: null, colour: '#9966FF' });
-  defBlock('looks_setsizeto', { type: 'looks_setsizeto', message0: 'set size to %1 %%', args0: [{ type: 'input_value', name: 'SIZE', check: 'Number' }], previousStatement: null, nextStatement: null, colour: '#9966FF' });
-  defBlock('looks_size', { type: 'looks_size', message0: 'size', output: 'Number', colour: '#9966FF' });
-
-  // Sound blocks
-  defBlock('sound_play', { type: 'sound_play', message0: 'start sound', previousStatement: null, nextStatement: null, colour: '#CF63CF' });
-  defBlock('sound_stopallsounds', { type: 'sound_stopallsounds', message0: 'stop all sounds', previousStatement: null, nextStatement: null, colour: '#CF63CF' });
-  defBlock('sound_changevolumeby', { type: 'sound_changevolumeby', message0: 'change volume by %1', args0: [{ type: 'input_value', name: 'VOLUME', check: 'Number' }], previousStatement: null, nextStatement: null, colour: '#CF63CF' });
-  defBlock('sound_setvolumeto', { type: 'sound_setvolumeto', message0: 'set volume to %1 %%', args0: [{ type: 'input_value', name: 'VOLUME', check: 'Number' }], previousStatement: null, nextStatement: null, colour: '#CF63CF' });
-  defBlock('sound_volume', { type: 'sound_volume', message0: 'volume', output: 'Number', colour: '#CF63CF' });
-
-  // Events blocks
-  defBlock('event_whenflagclicked', { type: 'event_whenflagclicked', message0: '⚑ when green flag clicked', nextStatement: null, colour: '#FFD500' });
-  defBlock('event_whenkeypressed', { type: 'event_whenkeypressed', message0: 'when %1 key pressed', args0: [{ type: 'field_dropdown', name: 'KEY_OPTION', options: [['space', 'space'], ['up arrow', 'up arrow'], ['down arrow', 'down arrow'], ['left arrow', 'left arrow'], ['right arrow', 'right arrow'], ['any', 'any'], ['a', 'a'], ['b', 'b'], ['c', 'c']] }], nextStatement: null, colour: '#FFD500' });
-  defBlock('event_whenthisspriteclicked', { type: 'event_whenthisspriteclicked', message0: 'when this sprite clicked', nextStatement: null, colour: '#FFD500' });
-  defBlock('event_whenbroadcastreceived', { type: 'event_whenbroadcastreceived', message0: 'when I receive %1', args0: [{ type: 'field_input', name: 'BROADCAST_OPTION', text: 'message1' }], nextStatement: null, colour: '#FFD500' });
-  defBlock('event_broadcast', { type: 'event_broadcast', message0: 'broadcast %1', args0: [{ type: 'input_value', name: 'BROADCAST_INPUT' }], previousStatement: null, nextStatement: null, colour: '#FFD500' });
-  defBlock('event_broadcastandwait', { type: 'event_broadcastandwait', message0: 'broadcast %1 and wait', args0: [{ type: 'input_value', name: 'BROADCAST_INPUT' }], previousStatement: null, nextStatement: null, colour: '#FFD500' });
-
-  // Control blocks
-  defBlock('control_wait', { type: 'control_wait', message0: 'wait %1 seconds', args0: [{ type: 'input_value', name: 'DURATION', check: 'Number' }], previousStatement: null, nextStatement: null, colour: '#FFAB19' });
-  defBlock('control_repeat', { type: 'control_repeat', message0: 'repeat %1 %2', args0: [{ type: 'input_value', name: 'TIMES', check: 'Number' }, { type: 'input_statement', name: 'SUBSTACK' }], previousStatement: null, nextStatement: null, colour: '#FFAB19' });
-  defBlock('control_forever', { type: 'control_forever', message0: 'forever %1', args0: [{ type: 'input_statement', name: 'SUBSTACK' }], previousStatement: null, colour: '#FFAB19' });
-  defBlock('control_if', { type: 'control_if', message0: 'if %1 then %2', args0: [{ type: 'input_value', name: 'CONDITION', check: 'Boolean' }, { type: 'input_statement', name: 'SUBSTACK' }], previousStatement: null, nextStatement: null, colour: '#FFAB19' });
-  defBlock('control_if_else', { type: 'control_if_else', message0: 'if %1 then %2 else %3', args0: [{ type: 'input_value', name: 'CONDITION', check: 'Boolean' }, { type: 'input_statement', name: 'SUBSTACK' }, { type: 'input_statement', name: 'SUBSTACK2' }], previousStatement: null, nextStatement: null, colour: '#FFAB19' });
-  defBlock('control_wait_until', { type: 'control_wait_until', message0: 'wait until %1', args0: [{ type: 'input_value', name: 'CONDITION', check: 'Boolean' }], previousStatement: null, nextStatement: null, colour: '#FFAB19' });
-  defBlock('control_repeat_until', { type: 'control_repeat_until', message0: 'repeat until %1 %2', args0: [{ type: 'input_value', name: 'CONDITION', check: 'Boolean' }, { type: 'input_statement', name: 'SUBSTACK' }], previousStatement: null, nextStatement: null, colour: '#FFAB19' });
-  defBlock('control_stop', { type: 'control_stop', message0: 'stop %1', args0: [{ type: 'field_dropdown', name: 'STOP_OPTION', options: [['all', 'all'], ['this script', 'this script'], ['other scripts in sprite', 'other scripts in sprite']] }], previousStatement: null, colour: '#FFAB19' });
-  defBlock('control_start_as_clone', { type: 'control_start_as_clone', message0: 'when I start as a clone', nextStatement: null, colour: '#FFAB19' });
-  defBlock('control_create_clone_of', { type: 'control_create_clone_of', message0: 'create clone of myself', previousStatement: null, nextStatement: null, colour: '#FFAB19' });
-  defBlock('control_delete_this_clone', { type: 'control_delete_this_clone', message0: 'delete this clone', previousStatement: null, colour: '#FFAB19' });
-
-  // Sensing blocks
-  defBlock('sensing_touchingobject', { type: 'sensing_touchingobject', message0: 'touching mouse-pointer?', output: 'Boolean', colour: '#5CB1D6' });
-  defBlock('sensing_distanceto', { type: 'sensing_distanceto', message0: 'distance to mouse-pointer', output: 'Number', colour: '#5CB1D6' });
-  defBlock('sensing_askandwait', { type: 'sensing_askandwait', message0: 'ask %1 and wait', args0: [{ type: 'input_value', name: 'QUESTION' }], previousStatement: null, nextStatement: null, colour: '#5CB1D6' });
-  defBlock('sensing_answer', { type: 'sensing_answer', message0: 'answer', output: 'String', colour: '#5CB1D6' });
-  defBlock('sensing_keypressed', { type: 'sensing_keypressed', message0: 'key %1 pressed?', args0: [{ type: 'field_dropdown', name: 'KEY_OPTION', options: [['space', 'space'], ['up arrow', 'up arrow'], ['down arrow', 'down arrow'], ['left arrow', 'left arrow'], ['right arrow', 'right arrow']] }], output: 'Boolean', colour: '#5CB1D6' });
-  defBlock('sensing_mousedown', { type: 'sensing_mousedown', message0: 'mouse down?', output: 'Boolean', colour: '#5CB1D6' });
-  defBlock('sensing_mousex', { type: 'sensing_mousex', message0: 'mouse x', output: 'Number', colour: '#5CB1D6' });
-  defBlock('sensing_mousey', { type: 'sensing_mousey', message0: 'mouse y', output: 'Number', colour: '#5CB1D6' });
-  defBlock('sensing_timer', { type: 'sensing_timer', message0: 'timer', output: 'Number', colour: '#5CB1D6' });
-  defBlock('sensing_resettimer', { type: 'sensing_resettimer', message0: 'reset timer', previousStatement: null, nextStatement: null, colour: '#5CB1D6' });
-
-  // Operators blocks
-  defBlock('operator_add', { type: 'operator_add', message0: '%1 + %2', args0: [{ type: 'input_value', name: 'NUM1', check: 'Number' }, { type: 'input_value', name: 'NUM2', check: 'Number' }], output: 'Number', colour: '#59C059', inputsInline: true });
-  defBlock('operator_subtract', { type: 'operator_subtract', message0: '%1 - %2', args0: [{ type: 'input_value', name: 'NUM1', check: 'Number' }, { type: 'input_value', name: 'NUM2', check: 'Number' }], output: 'Number', colour: '#59C059', inputsInline: true });
-  defBlock('operator_multiply', { type: 'operator_multiply', message0: '%1 × %2', args0: [{ type: 'input_value', name: 'NUM1', check: 'Number' }, { type: 'input_value', name: 'NUM2', check: 'Number' }], output: 'Number', colour: '#59C059', inputsInline: true });
-  defBlock('operator_divide', { type: 'operator_divide', message0: '%1 / %2', args0: [{ type: 'input_value', name: 'NUM1', check: 'Number' }, { type: 'input_value', name: 'NUM2', check: 'Number' }], output: 'Number', colour: '#59C059', inputsInline: true });
-  defBlock('operator_random', { type: 'operator_random', message0: 'pick random %1 to %2', args0: [{ type: 'input_value', name: 'FROM', check: 'Number' }, { type: 'input_value', name: 'TO', check: 'Number' }], output: 'Number', colour: '#59C059', inputsInline: true });
-  defBlock('operator_gt', { type: 'operator_gt', message0: '%1 > %2', args0: [{ type: 'input_value', name: 'OPERAND1', check: 'Number' }, { type: 'input_value', name: 'OPERAND2', check: 'Number' }], output: 'Boolean', colour: '#59C059', inputsInline: true });
-  defBlock('operator_lt', { type: 'operator_lt', message0: '%1 < %2', args0: [{ type: 'input_value', name: 'OPERAND1', check: 'Number' }, { type: 'input_value', name: 'OPERAND2', check: 'Number' }], output: 'Boolean', colour: '#59C059', inputsInline: true });
-  defBlock('operator_equals', { type: 'operator_equals', message0: '%1 = %2', args0: [{ type: 'input_value', name: 'OPERAND1', check: 'Number' }, { type: 'input_value', name: 'OPERAND2', check: 'Number' }], output: 'Boolean', colour: '#59C059', inputsInline: true });
-  defBlock('operator_and', { type: 'operator_and', message0: '%1 and %2', args0: [{ type: 'input_value', name: 'OPERAND1', check: 'Boolean' }, { type: 'input_value', name: 'OPERAND2', check: 'Boolean' }], output: 'Boolean', colour: '#59C059', inputsInline: true });
-  defBlock('operator_or', { type: 'operator_or', message0: '%1 or %2', args0: [{ type: 'input_value', name: 'OPERAND1', check: 'Boolean' }, { type: 'input_value', name: 'OPERAND2', check: 'Boolean' }], output: 'Boolean', colour: '#59C059', inputsInline: true });
-  defBlock('operator_not', { type: 'operator_not', message0: 'not %1', args0: [{ type: 'input_value', name: 'OPERAND', check: 'Boolean' }], output: 'Boolean', colour: '#59C059' });
-  defBlock('operator_join', { type: 'operator_join', message0: 'join %1 %2', args0: [{ type: 'input_value', name: 'STRING1' }, { type: 'input_value', name: 'STRING2' }], output: 'String', colour: '#59C059', inputsInline: true });
-  defBlock('operator_length', { type: 'operator_length', message0: 'length of %1', args0: [{ type: 'input_value', name: 'STRING' }], output: 'Number', colour: '#59C059' });
-  defBlock('operator_mod', { type: 'operator_mod', message0: '%1 mod %2', args0: [{ type: 'input_value', name: 'NUM1', check: 'Number' }, { type: 'input_value', name: 'NUM2', check: 'Number' }], output: 'Number', colour: '#59C059', inputsInline: true });
-  defBlock('operator_round', { type: 'operator_round', message0: 'round %1', args0: [{ type: 'input_value', name: 'NUM', check: 'Number' }], output: 'Number', colour: '#59C059' });
-  defBlock('operator_mathop', { type: 'operator_mathop', message0: '%1 of %2', args0: [{ type: 'field_dropdown', name: 'OPERATOR', options: [['abs', 'abs'], ['floor', 'floor'], ['ceiling', 'ceiling'], ['sqrt', 'sqrt'], ['sin', 'sin'], ['cos', 'cos'], ['tan', 'tan'], ['ln', 'ln'], ['log', 'log'], ['e ^', 'e ^'], ['10 ^', '10 ^']] }, { type: 'input_value', name: 'NUM', check: 'Number' }], output: 'Number', colour: '#59C059' });
+  // Motion
+  def('motion_movesteps', { type: 'motion_movesteps', message0: 'move %1 steps', args0: [{ type: 'input_value', name: 'STEPS', check: 'Number' }], previousStatement: null, nextStatement: null, colour: '#4A90D9' });
+  def('motion_turnright', { type: 'motion_turnright', message0: 'turn ↻ %1°', args0: [{ type: 'input_value', name: 'DEGREES', check: 'Number' }], previousStatement: null, nextStatement: null, colour: '#4A90D9' });
+  def('motion_turnleft', { type: 'motion_turnleft', message0: 'turn ↺ %1°', args0: [{ type: 'input_value', name: 'DEGREES', check: 'Number' }], previousStatement: null, nextStatement: null, colour: '#4A90D9' });
+  def('motion_gotoxy', { type: 'motion_gotoxy', message0: 'go to x: %1 y: %2', args0: [{ type: 'input_value', name: 'X', check: 'Number' }, { type: 'input_value', name: 'Y', check: 'Number' }], previousStatement: null, nextStatement: null, colour: '#4A90D9' });
+  def('motion_glideto', { type: 'motion_glideto', message0: 'glide %1s to x: %2 y: %3', args0: [{ type: 'input_value', name: 'SECS', check: 'Number' }, { type: 'input_value', name: 'X', check: 'Number' }, { type: 'input_value', name: 'Y', check: 'Number' }], previousStatement: null, nextStatement: null, colour: '#4A90D9' });
+  def('motion_pointindirection', { type: 'motion_pointindirection', message0: 'point direction %1', args0: [{ type: 'input_value', name: 'DIRECTION', check: 'Number' }], previousStatement: null, nextStatement: null, colour: '#4A90D9' });
+  def('motion_changexby', { type: 'motion_changexby', message0: 'change x by %1', args0: [{ type: 'input_value', name: 'DX', check: 'Number' }], previousStatement: null, nextStatement: null, colour: '#4A90D9' });
+  def('motion_setx', { type: 'motion_setx', message0: 'set x to %1', args0: [{ type: 'input_value', name: 'X', check: 'Number' }], previousStatement: null, nextStatement: null, colour: '#4A90D9' });
+  def('motion_changeyby', { type: 'motion_changeyby', message0: 'change y by %1', args0: [{ type: 'input_value', name: 'DY', check: 'Number' }], previousStatement: null, nextStatement: null, colour: '#4A90D9' });
+  def('motion_sety', { type: 'motion_sety', message0: 'set y to %1', args0: [{ type: 'input_value', name: 'Y', check: 'Number' }], previousStatement: null, nextStatement: null, colour: '#4A90D9' });
+  def('motion_ifonedgebounce', { type: 'motion_ifonedgebounce', message0: 'if on edge, bounce', previousStatement: null, nextStatement: null, colour: '#4A90D9' });
+  def('motion_xposition', { type: 'motion_xposition', message0: 'x position', output: 'Number', colour: '#4A90D9' });
+  def('motion_yposition', { type: 'motion_yposition', message0: 'y position', output: 'Number', colour: '#4A90D9' });
+  def('motion_direction', { type: 'motion_direction', message0: 'direction', output: 'Number', colour: '#4A90D9' });
+  // Looks → Display
+  def('looks_sayforsecs', { type: 'looks_sayforsecs', message0: 'display %1 for %2s', args0: [{ type: 'input_value', name: 'MESSAGE' }, { type: 'input_value', name: 'SECS', check: 'Number' }], previousStatement: null, nextStatement: null, colour: '#9B59B6' });
+  def('looks_say', { type: 'looks_say', message0: 'display %1', args0: [{ type: 'input_value', name: 'MESSAGE' }], previousStatement: null, nextStatement: null, colour: '#9B59B6' });
+  def('looks_thinkforsecs', { type: 'looks_thinkforsecs', message0: 'think %1 for %2s', args0: [{ type: 'input_value', name: 'MESSAGE' }, { type: 'input_value', name: 'SECS', check: 'Number' }], previousStatement: null, nextStatement: null, colour: '#9B59B6' });
+  def('looks_think', { type: 'looks_think', message0: 'think %1', args0: [{ type: 'input_value', name: 'MESSAGE' }], previousStatement: null, nextStatement: null, colour: '#9B59B6' });
+  def('looks_show', { type: 'looks_show', message0: 'show', previousStatement: null, nextStatement: null, colour: '#9B59B6' });
+  def('looks_hide', { type: 'looks_hide', message0: 'hide', previousStatement: null, nextStatement: null, colour: '#9B59B6' });
+  def('looks_changesizeby', { type: 'looks_changesizeby', message0: 'change size by %1', args0: [{ type: 'input_value', name: 'CHANGE', check: 'Number' }], previousStatement: null, nextStatement: null, colour: '#9B59B6' });
+  def('looks_setsizeto', { type: 'looks_setsizeto', message0: 'set size to %1%%', args0: [{ type: 'input_value', name: 'SIZE', check: 'Number' }], previousStatement: null, nextStatement: null, colour: '#9B59B6' });
+  def('looks_size', { type: 'looks_size', message0: 'size', output: 'Number', colour: '#9B59B6' });
+  // Sound
+  def('sound_play', { type: 'sound_play', message0: 'play sound', previousStatement: null, nextStatement: null, colour: '#BB4FCF' });
+  def('sound_stopallsounds', { type: 'sound_stopallsounds', message0: 'stop all sounds', previousStatement: null, nextStatement: null, colour: '#BB4FCF' });
+  def('sound_changevolumeby', { type: 'sound_changevolumeby', message0: 'change volume by %1', args0: [{ type: 'input_value', name: 'VOLUME', check: 'Number' }], previousStatement: null, nextStatement: null, colour: '#BB4FCF' });
+  def('sound_setvolumeto', { type: 'sound_setvolumeto', message0: 'set volume to %1%%', args0: [{ type: 'input_value', name: 'VOLUME', check: 'Number' }], previousStatement: null, nextStatement: null, colour: '#BB4FCF' });
+  def('sound_volume', { type: 'sound_volume', message0: 'volume', output: 'Number', colour: '#BB4FCF' });
+  // Events
+  def('event_whenflagclicked', { type: 'event_whenflagclicked', message0: '▶ when program starts', nextStatement: null, colour: '#E6A817' });
+  def('event_whenkeypressed', { type: 'event_whenkeypressed', message0: 'when %1 key pressed', args0: [{ type: 'field_dropdown', name: 'KEY_OPTION', options: [['space', 'space'], ['↑', 'up arrow'], ['↓', 'down arrow'], ['←', 'left arrow'], ['→', 'right arrow'], ['any', 'any'], ['a', 'a'], ['b', 'b']] }], nextStatement: null, colour: '#E6A817' });
+  def('event_whenthisspriteclicked', { type: 'event_whenthisspriteclicked', message0: 'when this agent clicked', nextStatement: null, colour: '#E6A817' });
+  def('event_whenbroadcastreceived', { type: 'event_whenbroadcastreceived', message0: 'when I receive %1', args0: [{ type: 'field_input', name: 'BROADCAST_OPTION', text: 'message1' }], nextStatement: null, colour: '#E6A817' });
+  def('event_broadcast', { type: 'event_broadcast', message0: 'broadcast %1', args0: [{ type: 'input_value', name: 'BROADCAST_INPUT' }], previousStatement: null, nextStatement: null, colour: '#E6A817' });
+  def('event_broadcastandwait', { type: 'event_broadcastandwait', message0: 'broadcast %1 and wait', args0: [{ type: 'input_value', name: 'BROADCAST_INPUT' }], previousStatement: null, nextStatement: null, colour: '#E6A817' });
+  // Control
+  def('control_wait', { type: 'control_wait', message0: 'wait %1 seconds', args0: [{ type: 'input_value', name: 'DURATION', check: 'Number' }], previousStatement: null, nextStatement: null, colour: '#E8863A' });
+  def('control_repeat', { type: 'control_repeat', message0: 'repeat %1 times %2', args0: [{ type: 'input_value', name: 'TIMES', check: 'Number' }, { type: 'input_statement', name: 'SUBSTACK' }], previousStatement: null, nextStatement: null, colour: '#E8863A' });
+  def('control_forever', { type: 'control_forever', message0: 'forever %1', args0: [{ type: 'input_statement', name: 'SUBSTACK' }], previousStatement: null, colour: '#E8863A' });
+  def('control_if', { type: 'control_if', message0: 'if %1 then %2', args0: [{ type: 'input_value', name: 'CONDITION', check: 'Boolean' }, { type: 'input_statement', name: 'SUBSTACK' }], previousStatement: null, nextStatement: null, colour: '#5B80A5' });
+  def('control_if_else', { type: 'control_if_else', message0: 'if %1 then %2 else %3', args0: [{ type: 'input_value', name: 'CONDITION', check: 'Boolean' }, { type: 'input_statement', name: 'SUBSTACK' }, { type: 'input_statement', name: 'SUBSTACK2' }], previousStatement: null, nextStatement: null, colour: '#5B80A5' });
+  def('control_wait_until', { type: 'control_wait_until', message0: 'wait until %1', args0: [{ type: 'input_value', name: 'CONDITION', check: 'Boolean' }], previousStatement: null, nextStatement: null, colour: '#E8863A' });
+  def('control_repeat_until', { type: 'control_repeat_until', message0: 'repeat until %1 %2', args0: [{ type: 'input_value', name: 'CONDITION', check: 'Boolean' }, { type: 'input_statement', name: 'SUBSTACK' }], previousStatement: null, nextStatement: null, colour: '#E8863A' });
+  def('control_stop', { type: 'control_stop', message0: 'stop %1', args0: [{ type: 'field_dropdown', name: 'STOP_OPTION', options: [['all', 'all'], ['this script', 'this script'], ['other scripts', 'other scripts in sprite']] }], previousStatement: null, colour: '#E8863A' });
+  def('control_start_as_clone', { type: 'control_start_as_clone', message0: 'when I start as a clone', nextStatement: null, colour: '#E8863A' });
+  def('control_create_clone_of', { type: 'control_create_clone_of', message0: 'create clone of myself', previousStatement: null, nextStatement: null, colour: '#E8863A' });
+  def('control_delete_this_clone', { type: 'control_delete_this_clone', message0: 'delete this clone', previousStatement: null, colour: '#E8863A' });
+  // Sensing
+  def('sensing_touchingobject', { type: 'sensing_touchingobject', message0: 'touching?', output: 'Boolean', colour: '#3AAFA9' });
+  def('sensing_distanceto', { type: 'sensing_distanceto', message0: 'distance to pointer', output: 'Number', colour: '#3AAFA9' });
+  def('sensing_askandwait', { type: 'sensing_askandwait', message0: 'ask %1 and wait', args0: [{ type: 'input_value', name: 'QUESTION' }], previousStatement: null, nextStatement: null, colour: '#3AAFA9' });
+  def('sensing_answer', { type: 'sensing_answer', message0: 'answer', output: 'String', colour: '#3AAFA9' });
+  def('sensing_keypressed', { type: 'sensing_keypressed', message0: 'key %1 pressed?', args0: [{ type: 'field_dropdown', name: 'KEY_OPTION', options: [['space', 'space'], ['↑', 'up arrow'], ['↓', 'down arrow'], ['←', 'left arrow'], ['→', 'right arrow']] }], output: 'Boolean', colour: '#3AAFA9' });
+  def('sensing_mousedown', { type: 'sensing_mousedown', message0: 'mouse down?', output: 'Boolean', colour: '#3AAFA9' });
+  def('sensing_mousex', { type: 'sensing_mousex', message0: 'mouse x', output: 'Number', colour: '#3AAFA9' });
+  def('sensing_mousey', { type: 'sensing_mousey', message0: 'mouse y', output: 'Number', colour: '#3AAFA9' });
+  def('sensing_timer', { type: 'sensing_timer', message0: 'timer', output: 'Number', colour: '#3AAFA9' });
+  def('sensing_resettimer', { type: 'sensing_resettimer', message0: 'reset timer', previousStatement: null, nextStatement: null, colour: '#3AAFA9' });
+  // Operators
+  def('operator_add', { type: 'operator_add', message0: '%1 + %2', args0: [{ type: 'input_value', name: 'NUM1', check: 'Number' }, { type: 'input_value', name: 'NUM2', check: 'Number' }], output: 'Number', colour: '#2ECC71', inputsInline: true });
+  def('operator_subtract', { type: 'operator_subtract', message0: '%1 − %2', args0: [{ type: 'input_value', name: 'NUM1', check: 'Number' }, { type: 'input_value', name: 'NUM2', check: 'Number' }], output: 'Number', colour: '#2ECC71', inputsInline: true });
+  def('operator_multiply', { type: 'operator_multiply', message0: '%1 × %2', args0: [{ type: 'input_value', name: 'NUM1', check: 'Number' }, { type: 'input_value', name: 'NUM2', check: 'Number' }], output: 'Number', colour: '#2ECC71', inputsInline: true });
+  def('operator_divide', { type: 'operator_divide', message0: '%1 ÷ %2', args0: [{ type: 'input_value', name: 'NUM1', check: 'Number' }, { type: 'input_value', name: 'NUM2', check: 'Number' }], output: 'Number', colour: '#2ECC71', inputsInline: true });
+  def('operator_random', { type: 'operator_random', message0: 'random %1 to %2', args0: [{ type: 'input_value', name: 'FROM', check: 'Number' }, { type: 'input_value', name: 'TO', check: 'Number' }], output: 'Number', colour: '#2ECC71', inputsInline: true });
+  def('operator_gt', { type: 'operator_gt', message0: '%1 > %2', args0: [{ type: 'input_value', name: 'OPERAND1', check: 'Number' }, { type: 'input_value', name: 'OPERAND2', check: 'Number' }], output: 'Boolean', colour: '#2ECC71', inputsInline: true });
+  def('operator_lt', { type: 'operator_lt', message0: '%1 < %2', args0: [{ type: 'input_value', name: 'OPERAND1', check: 'Number' }, { type: 'input_value', name: 'OPERAND2', check: 'Number' }], output: 'Boolean', colour: '#2ECC71', inputsInline: true });
+  def('operator_equals', { type: 'operator_equals', message0: '%1 = %2', args0: [{ type: 'input_value', name: 'OPERAND1', check: 'Number' }, { type: 'input_value', name: 'OPERAND2', check: 'Number' }], output: 'Boolean', colour: '#2ECC71', inputsInline: true });
+  def('operator_and', { type: 'operator_and', message0: '%1 and %2', args0: [{ type: 'input_value', name: 'OPERAND1', check: 'Boolean' }, { type: 'input_value', name: 'OPERAND2', check: 'Boolean' }], output: 'Boolean', colour: '#5B80A5', inputsInline: true });
+  def('operator_or', { type: 'operator_or', message0: '%1 or %2', args0: [{ type: 'input_value', name: 'OPERAND1', check: 'Boolean' }, { type: 'input_value', name: 'OPERAND2', check: 'Boolean' }], output: 'Boolean', colour: '#5B80A5', inputsInline: true });
+  def('operator_not', { type: 'operator_not', message0: 'not %1', args0: [{ type: 'input_value', name: 'OPERAND', check: 'Boolean' }], output: 'Boolean', colour: '#5B80A5' });
+  def('operator_join', { type: 'operator_join', message0: 'join %1 %2', args0: [{ type: 'input_value', name: 'STRING1' }, { type: 'input_value', name: 'STRING2' }], output: 'String', colour: '#2ECC71', inputsInline: true });
+  def('operator_length', { type: 'operator_length', message0: 'length of %1', args0: [{ type: 'input_value', name: 'STRING' }], output: 'Number', colour: '#2ECC71' });
+  def('operator_mod', { type: 'operator_mod', message0: '%1 mod %2', args0: [{ type: 'input_value', name: 'NUM1', check: 'Number' }, { type: 'input_value', name: 'NUM2', check: 'Number' }], output: 'Number', colour: '#2ECC71', inputsInline: true });
+  def('operator_round', { type: 'operator_round', message0: 'round %1', args0: [{ type: 'input_value', name: 'NUM', check: 'Number' }], output: 'Number', colour: '#2ECC71' });
+  def('operator_mathop', { type: 'operator_mathop', message0: '%1 of %2', args0: [{ type: 'field_dropdown', name: 'OPERATOR', options: [['abs', 'abs'], ['floor', 'floor'], ['ceil', 'ceiling'], ['√', 'sqrt'], ['sin', 'sin'], ['cos', 'cos'], ['tan', 'tan'], ['ln', 'ln'], ['log', 'log'], ['e^', 'e ^'], ['10^', '10 ^']] }, { type: 'input_value', name: 'NUM', check: 'Number' }], output: 'Number', colour: '#2ECC71' });
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   MAIN COMPONENT
+   STEMVERSE STUDIO COMPONENT
    ═══════════════════════════════════════════════════════════════ */
 
-export function ScratchWorkspace({
-  projectId,
-  initialData,
-  onSave,
-}: ScratchWorkspaceProps) {
+export function ScratchWorkspace({ projectId, initialData, onSave }: StudioWorkspaceProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const blocklyDivRef = useRef<HTMLDivElement>(null);
   const workspaceRef = useRef<any>(null);
@@ -407,425 +299,290 @@ export function ScratchWorkspace({
   const [blocklyReady, setBlocklyReady] = useState(false);
   const [sprites, setSprites] = useState<Array<{ name: string; isStage?: boolean }>>([]);
   const [selectedTarget, setSelectedTarget] = useState<string | null>(null);
-  const [greenFlag, setGreenFlag] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [status, setStatus] = useState('Loading Scratch engine…');
-  const [activeCategory, setActiveCategory] = useState<string>('motion');
+  const [status, setStatus] = useState('Initializing…');
+  const [activeCategory, setActiveCategory] = useState('logic');
   const [blockCount, setBlockCount] = useState(0);
+  const [rightTab, setRightTab] = useState<RightTab>('properties');
+  const [bottomOpen, setBottomOpen] = useState(false);
+  const [bottomTab, setBottomTab] = useState<BottomTab>('console');
+  const [consoleLines, setConsoleLines] = useState<string[]>(['[Studio] Ready.']);
+  const [darkMode, setDarkMode] = useState(false);
 
-  /* ─── Refresh sprite list ─── */
+  // Theme colors
+  const th = darkMode ? {
+    bg: '#0F0F14', surface: '#1A1A24', surfaceAlt: '#22223A', border: '#2D2D44',
+    text: '#E8E8F0', textMuted: '#8888A8', accent: '#6C63FF', accentHover: '#7B73FF',
+    headerBg: 'rgba(15,15,20,0.85)', panelBg: 'rgba(26,26,36,0.92)',
+    canvasBg: '#16162A', workspaceBg: '#14141E',
+  } : {
+    bg: '#F5F6FA', surface: '#FFFFFF', surfaceAlt: '#F0F1F8', border: '#E2E4EF',
+    text: '#1A1A2E', textMuted: '#7C7C9A', accent: '#6C63FF', accentHover: '#5B52E8',
+    headerBg: 'rgba(255,255,255,0.88)', panelBg: 'rgba(255,255,255,0.95)',
+    canvasBg: '#ECEDF5', workspaceBg: '#F9F9FD',
+  };
+
   const refreshTargets = useCallback(() => {
     const rt = runtimeRef.current;
     if (!rt) return;
     const targets = rt.getTargets();
     setSprites(targets);
     if (!selectedTarget && targets.length > 0) {
-      const firstSprite = targets.find((t) => !t.isStage);
-      setSelectedTarget(firstSprite?.name ?? targets[0]?.name ?? null);
+      const first = targets.find((t) => !t.isStage);
+      setSelectedTarget(first?.name ?? targets[0]?.name ?? null);
     }
   }, [selectedTarget]);
 
-  /* ─── Init Scratch VM ─── */
   const initRuntime = useCallback(async () => {
     if (!canvasRef.current || !window.STEMVerseScratch) return;
     try {
-      const rt = await window.STEMVerseScratch.createScratchRuntime(
-        canvasRef.current,
-        STAGE_WIDTH,
-        STAGE_HEIGHT,
-      );
+      const rt = await window.STEMVerseScratch.createScratchRuntime(canvasRef.current, STAGE_WIDTH, STAGE_HEIGHT);
       runtimeRef.current = rt;
       rt.onTargetsUpdate(refreshTargets);
-
-      // Use validated project data — fixes the SB3 import error
-      const projectJson = resolveProjectData(initialData);
-      await rt.loadProject(projectJson);
-
-      setStatus(projectId ? `Project ${projectId.slice(0, 8)}…` : 'Untitled project');
+      await rt.loadProject(resolveProjectData(initialData));
+      setStatus(projectId ? `Project ${projectId.slice(0, 8)}…` : 'Untitled');
       refreshTargets();
+      setConsoleLines(prev => [...prev, '[Studio] Engine loaded successfully.']);
     } catch (err) {
-      console.error('[Scratch] Failed to initialize runtime:', err);
-      setStatus('Engine error — see console');
+      setStatus('Engine error');
+      setConsoleLines(prev => [...prev, `[Error] ${err}`]);
     }
   }, [initialData, projectId, refreshTargets]);
 
-  /* ─── Init Blockly workspace ─── */
   const initBlockly = useCallback(() => {
     const Blockly = (window as any).Blockly;
     if (!Blockly || !blocklyDivRef.current || workspaceRef.current) return;
-
-    registerScratchBlocks(Blockly);
-
-    const toolboxXml = buildToolboxXml();
-
+    registerStudioBlocks(Blockly);
     const workspace = Blockly.inject(blocklyDivRef.current, {
-      toolbox: toolboxXml,
-      grid: { spacing: 40, length: 2, colour: '#e0e0e0', snap: true },
-      zoom: {
-        controls: true,
-        wheel: true,
-        startScale: 0.75,
-        maxScale: 3,
-        minScale: 0.25,
-        scaleSpeed: 1.1,
-        pinch: true,
-      },
-      trashcan: true,
-      move: { scrollbars: true, drag: true, wheel: true },
-      sounds: false,
-      renderer: 'zelos',
-      theme: Blockly.Theme?.defineTheme?.('scratch', {
-        blockStyles: {
-          motion_blocks: { colourPrimary: '#4C97FF' },
-          looks_blocks: { colourPrimary: '#9966FF' },
-          sound_blocks: { colourPrimary: '#CF63CF' },
-          event_blocks: { colourPrimary: '#FFD500' },
-          control_blocks: { colourPrimary: '#FFAB19' },
-          sensing_blocks: { colourPrimary: '#5CB1D6' },
-          operator_blocks: { colourPrimary: '#59C059' },
-          variable_blocks: { colourPrimary: '#FF8C1A' },
-        },
-        categoryStyles: {},
+      toolbox: buildToolboxXml(),
+      grid: { spacing: 32, length: 2, colour: darkMode ? '#2A2A40' : '#E8E8F0', snap: true },
+      zoom: { controls: true, wheel: true, startScale: 0.8, maxScale: 3, minScale: 0.2, scaleSpeed: 1.1, pinch: true },
+      trashcan: true, move: { scrollbars: true, drag: true, wheel: true }, sounds: false, renderer: 'zelos',
+      theme: Blockly.Theme?.defineTheme?.('stemverse', {
+        blockStyles: {}, categoryStyles: {},
         componentStyles: {
-          workspaceBackgroundColour: '#F9F9F9',
-          toolboxBackgroundColour: '#FFFFFF',
-          flyoutBackgroundColour: '#F9F9F9',
-          scrollbarColour: '#CECDCE',
+          workspaceBackgroundColour: darkMode ? '#14141E' : '#F9F9FD',
+          toolboxBackgroundColour: darkMode ? '#1A1A24' : '#FFFFFF',
+          flyoutBackgroundColour: darkMode ? '#1E1E30' : '#F5F5FC',
+          scrollbarColour: darkMode ? '#3A3A55' : '#CECDCE',
         },
-        fontStyle: { family: 'Inter, Helvetica, Arial, sans-serif', weight: '500', size: 11 },
+        fontStyle: { family: "'Inter', 'SF Pro Display', system-ui, sans-serif", weight: '500', size: 11 },
       }) ?? undefined,
     });
-
     workspaceRef.current = workspace;
-
-    // Track block count changes
     workspace.addChangeListener((e: any) => {
-      if (e.type === 'create' || e.type === 'delete' || e.type === 'move') {
-        const allBlocks = workspace.getAllBlocks(false);
-        setBlockCount(allBlocks.length);
-      }
+      if (['create', 'delete', 'move'].includes(e.type)) setBlockCount(workspace.getAllBlocks(false).length);
     });
-
     setBlocklyReady(true);
-  }, []);
+    setConsoleLines(prev => [...prev, '[Studio] Visual builder ready.']);
+  }, [darkMode]);
 
-  /* ─── Effects ─── */
+  useEffect(() => { if (engineReady) initRuntime(); return () => { runtimeRef.current?.dispose(); runtimeRef.current = null; }; }, [engineReady, initRuntime]);
+  useEffect(() => { if (blocklyReady) { const B = (window as any).Blockly; if (B && workspaceRef.current) B.svgResize(workspaceRef.current); } }, [blocklyReady]);
   useEffect(() => {
-    if (!engineReady) return;
-    initRuntime();
-    return () => {
-      runtimeRef.current?.dispose();
-      runtimeRef.current = null;
+    const h = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); handleSave(); }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); /* command palette placeholder */ }
     };
-  }, [engineReady, initRuntime]);
-
-  useEffect(() => {
-    if (!blocklyReady) return;
-    // Resize Blockly when panel changes
-    const Blockly = (window as any).Blockly;
-    if (Blockly && workspaceRef.current) {
-      Blockly.svgResize(workspaceRef.current);
-    }
-  }, [blocklyReady]);
-
-  /* ─── Keyboard shortcuts ─── */
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-        e.preventDefault();
-        handleSave();
-      }
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
   });
 
-  /* ─── Handlers ─── */
-  const handleGreenFlag = () => {
-    const rt = runtimeRef.current;
-    if (!rt) return;
-    if (greenFlag) {
-      rt.stopAll();
-      setGreenFlag(false);
-    } else {
-      rt.greenFlag();
-      setGreenFlag(true);
-    }
+  const handlePlay = () => { const rt = runtimeRef.current; if (!rt) return; if (isPlaying) { rt.stopAll(); setIsPlaying(false); } else { rt.greenFlag(); setIsPlaying(true); } };
+  const handleStop = () => { runtimeRef.current?.stopAll(); setIsPlaying(false); };
+  const handleAddAgent = () => {
+    const rt = runtimeRef.current; if (!rt) return;
+    const name = `Agent${sprites.filter(s => !s.isStage).length + 1}`;
+    rt.addSprite(JSON.stringify({ name, costumes: [{ name: 'costume1', bitmapResolution: 1, dataFormat: 'svg', assetId: 'cd21514d0531fdffb6adae589bfa37f0', md5ext: 'cd21514d0531fdffb6adae589bfa37f0.svg', rotationCenterX: 48, rotationCenterY: 50 }], sounds: [], variables: {}, blocks: {}, comments: {}, currentCostume: 0, layerOrder: sprites.length, visible: true, x: 0, y: 0, size: 100, direction: 90, rotationStyle: 'all around' })).then(() => refreshTargets());
   };
-
-  const handleStop = () => {
-    runtimeRef.current?.stopAll();
-    setGreenFlag(false);
-  };
-
-  const handleAddSprite = () => {
-    const rt = runtimeRef.current;
-    if (!rt) return;
-    const name = `Sprite${sprites.filter((s) => !s.isStage).length + 1}`;
-    rt.addSprite(
-      JSON.stringify({
-        name,
-        costumes: [
-          {
-            name: 'costume1',
-            bitmapResolution: 1,
-            dataFormat: 'svg',
-            assetId: 'cd21514d0531fdffb6adae589bfa37f0',
-            md5ext: 'cd21514d0531fdffb6adae589bfa37f0.svg',
-            rotationCenterX: 48,
-            rotationCenterY: 50,
-          },
-        ],
-        sounds: [],
-        variables: {},
-        blocks: {},
-        comments: {},
-        currentCostume: 0,
-        layerOrder: sprites.length,
-        visible: true,
-        x: 0,
-        y: 0,
-        size: 100,
-        direction: 90,
-        rotationStyle: 'all around',
-      }),
-    ).then(() => refreshTargets());
-  };
-
   const handleSave = async () => {
-    const rt = runtimeRef.current;
-    if (!rt || !onSave) return;
+    const rt = runtimeRef.current; if (!rt || !onSave) return;
     setSaving(true);
     try {
       const vmJson = JSON.parse(rt.toJSON()) as Record<string, unknown>;
-      // Include Blockly workspace state alongside VM state
       let blocklyXml = '';
-      if (workspaceRef.current) {
-        const Blockly = (window as any).Blockly;
-        if (Blockly?.Xml) {
-          const dom = Blockly.Xml.workspaceToDom(workspaceRef.current);
-          blocklyXml = Blockly.Xml.domToText(dom);
-        }
-      }
+      if (workspaceRef.current) { const B = (window as any).Blockly; if (B?.Xml) { blocklyXml = B.Xml.domToText(B.Xml.workspaceToDom(workspaceRef.current)); } }
       await onSave({ ...vmJson, _blocklyXml: blocklyXml });
-      setStatus('✓ Saved');
-      setTimeout(() => setStatus(projectId ? `Project ${projectId.slice(0, 8)}…` : 'Untitled project'), 2000);
-    } catch {
-      setStatus('✗ Save failed');
-    } finally {
-      setSaving(false);
-    }
+      setStatus('✓ Saved'); setConsoleLines(prev => [...prev, '[Studio] Project saved.']);
+      setTimeout(() => setStatus(projectId ? `Project ${projectId.slice(0, 8)}…` : 'Untitled'), 2000);
+    } catch { setStatus('✗ Save failed'); } finally { setSaving(false); }
   };
 
-  /* ═══════════════════════════════════════════════════════════════
-     RENDER
-     ═══════════════════════════════════════════════════════════════ */
+  /* ═══ CSS helper for glassmorphism ═══ */
+  const glass = `backdrop-blur-xl backdrop-saturate-150`;
+
+  const rightTabs: { id: RightTab; label: string; icon: string }[] = [
+    { id: 'properties', label: 'Props', icon: '⚙' }, { id: 'variables', label: 'Vars', icon: '📦' },
+    { id: 'assets', label: 'Assets', icon: '🎨' }, { id: 'inspector', label: 'Info', icon: '🔍' },
+  ];
+  const bottomTabs: { id: BottomTab; label: string; icon: string }[] = [
+    { id: 'console', label: 'Console', icon: '>' }, { id: 'serial', label: 'Serial', icon: '⌘' },
+    { id: 'errors', label: 'Errors', icon: '⚠' }, { id: 'output', label: 'Output', icon: '📤' },
+  ];
+
   return (
     <>
-      {/* Load Scratch VM engine */}
-      <Script
-        src="/scratch/scratch-engine.iife.js"
-        strategy="afterInteractive"
-        onLoad={() => setEngineReady(true)}
-        onError={() => setStatus('Failed to load Scratch engine bundle')}
-      />
-      {/* Load Blockly */}
-      <Script
-        src="https://unpkg.com/blockly/blockly_compressed.js"
-        strategy="afterInteractive"
-        onLoad={() => {
-          // Load additional Blockly modules
-          const s1 = document.createElement('script');
-          s1.src = 'https://unpkg.com/blockly/blocks_compressed.js';
-          s1.onload = () => {
-            const s2 = document.createElement('script');
-            s2.src = 'https://unpkg.com/blockly/msg/en.js';
-            s2.onload = () => initBlockly();
-            document.head.appendChild(s2);
-          };
-          document.head.appendChild(s1);
-        }}
-      />
+      <Script src="/scratch/scratch-engine.iife.js" strategy="afterInteractive" onLoad={() => setEngineReady(true)} onError={() => setStatus('Engine load failed')} />
+      <Script src="https://unpkg.com/blockly/blockly_compressed.js" strategy="afterInteractive" onLoad={() => {
+        const s1 = document.createElement('script'); s1.src = 'https://unpkg.com/blockly/blocks_compressed.js';
+        s1.onload = () => { const s2 = document.createElement('script'); s2.src = 'https://unpkg.com/blockly/msg/en.js'; s2.onload = () => initBlockly(); document.head.appendChild(s2); };
+        document.head.appendChild(s1);
+      }} />
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');`}</style>
 
-      <div className="flex h-full flex-col" style={{ fontFamily: "'Inter', 'Helvetica Neue', Arial, sans-serif" }}>
-        {/* ─── Top bar ─── */}
-        <header className="flex items-center justify-between border-b bg-white px-4 py-2 shadow-sm" style={{ borderColor: '#e2e8f0' }}>
+      <div className="flex h-full flex-col select-none" style={{ fontFamily: "'Inter', system-ui, sans-serif", backgroundColor: th.bg, color: th.text, transition: 'background-color 0.3s, color 0.3s' }}>
+        {/* ═══ HEADER ═══ */}
+        <header className={`flex items-center justify-between border-b px-4 py-1.5 ${glass}`} style={{ borderColor: th.border, backgroundColor: th.headerBg }}>
           <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={handleGreenFlag}
-              disabled={!engineReady}
-              className="flex h-10 w-10 items-center justify-center rounded-full transition-all duration-150 hover:scale-110 active:scale-95 disabled:opacity-40"
-              style={{ backgroundColor: greenFlag ? '#2ecc71' : '#4caf50', color: 'white' }}
-              title="Green flag"
-            >
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M5 3v18l15-9z" /></svg>
-            </button>
-            <button
-              type="button"
-              onClick={handleStop}
-              disabled={!engineReady}
-              className="flex h-10 w-10 items-center justify-center rounded-full transition-all duration-150 hover:scale-110 active:scale-95 disabled:opacity-40"
-              style={{ backgroundColor: '#e74c3c', color: 'white' }}
-              title="Stop"
-            >
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="2" /></svg>
-            </button>
-            <div className="ml-2 flex flex-col">
-              <span className="text-sm font-medium text-gray-800">{status}</span>
-              <span className="text-[10px] text-gray-400">{blockCount} blocks • {sprites.filter(s => !s.isStage).length} sprites</span>
+            {/* Logo */}
+            <div className="flex items-center gap-2">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ background: 'linear-gradient(135deg, #6C63FF, #3F51B5)' }}>
+                <span className="text-xs font-bold text-white">S</span>
+              </div>
+              <span className="text-sm font-semibold" style={{ color: th.text }}>STEMVerse Studio</span>
             </div>
+            <div className="mx-2 h-5 w-px" style={{ backgroundColor: th.border }} />
+            {/* Play/Stop */}
+            <div className="flex items-center gap-1.5 rounded-full px-1 py-0.5" style={{ backgroundColor: darkMode ? '#1E1E30' : '#F0F1F8' }}>
+              <button type="button" onClick={handlePlay} disabled={!engineReady} className="flex h-7 w-7 items-center justify-center rounded-full transition-all duration-150 hover:scale-105 active:scale-95 disabled:opacity-30" style={{ backgroundColor: isPlaying ? '#2ecc71' : '#6C63FF', color: 'white' }} title="Run">
+                {isPlaying ? <span className="text-xs">⏸</span> : <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M5 3v18l15-9z" /></svg>}
+              </button>
+              <button type="button" onClick={handleStop} disabled={!engineReady} className="flex h-7 w-7 items-center justify-center rounded-full transition-all duration-150 hover:scale-105 active:scale-95 disabled:opacity-30" style={{ backgroundColor: '#e74c3c', color: 'white' }} title="Stop">
+                <svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="2" /></svg>
+              </button>
+            </div>
+            <span className="text-xs" style={{ color: th.textMuted }}>{status}</span>
           </div>
           <div className="flex items-center gap-2">
-            {onSave && (
-              <Button size="sm" onClick={handleSave} loading={saving} disabled={!engineReady}>
-                💾 Save
-              </Button>
-            )}
+            <span className="rounded-full px-2.5 py-0.5 text-[10px] font-medium" style={{ backgroundColor: darkMode ? '#2A2A44' : '#EEEEF8', color: th.textMuted }}>{blockCount} blocks · {sprites.filter(s => !s.isStage).length} agents</span>
+            <button type="button" onClick={() => setDarkMode(!darkMode)} className="flex h-7 w-7 items-center justify-center rounded-lg transition-colors" style={{ backgroundColor: darkMode ? '#2A2A44' : '#EEEEF8' }} title="Toggle theme">
+              <span className="text-xs">{darkMode ? '☀️' : '🌙'}</span>
+            </button>
+            {onSave && <Button size="sm" onClick={handleSave} loading={saving} disabled={!engineReady}>Save</Button>}
           </div>
         </header>
 
-        {/* ─── Main area ─── */}
+        {/* ═══ MAIN AREA ═══ */}
         <div className="flex min-h-0 flex-1">
-          {/* ─── Category sidebar ─── */}
-          <aside
-            className="flex w-16 shrink-0 flex-col items-center gap-1 overflow-y-auto py-2"
-            style={{ backgroundColor: '#f0f0f0', borderRight: '1px solid #e0e0e0' }}
-          >
-            {SCRATCH_CATEGORIES.map((cat) => (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => {
-                  setActiveCategory(cat.id);
-                  // Scroll Blockly toolbox to this category
-                  if (workspaceRef.current) {
-                    const toolbox = workspaceRef.current.getToolbox();
-                    if (toolbox) {
-                      const cats = toolbox.getToolboxItems();
-                      const target = cats?.find((c: any) => c.name_ === cat.name || c.getName?.() === cat.name);
-                      if (target) toolbox.setSelectedItem(target);
-                    }
-                  }
-                }}
-                className="group flex w-12 flex-col items-center gap-0.5 rounded-lg p-1.5 transition-all duration-100"
-                style={{
-                  backgroundColor: activeCategory === cat.id ? cat.colour + '20' : 'transparent',
-                  border: activeCategory === cat.id ? `2px solid ${cat.colour}` : '2px solid transparent',
-                }}
-                title={cat.name}
-              >
-                <div
-                  className="h-5 w-5 rounded-full transition-transform group-hover:scale-110"
-                  style={{ backgroundColor: cat.colour }}
-                />
-                <span className="text-[8px] font-medium leading-tight text-gray-600">{cat.name}</span>
+          {/* ─── Left: Categories ─── */}
+          <aside className="flex w-14 shrink-0 flex-col items-center gap-0.5 overflow-y-auto py-2" style={{ backgroundColor: th.surface, borderRight: `1px solid ${th.border}` }}>
+            {STUDIO_CATEGORIES.map(cat => (
+              <button key={cat.id} type="button" onClick={() => {
+                setActiveCategory(cat.id);
+                if (workspaceRef.current) {
+                  const toolbox = workspaceRef.current.getToolbox();
+                  if (toolbox) { const cats = toolbox.getToolboxItems(); const t = cats?.find((c: any) => (c.name_ || c.getName?.()) === cat.name); if (t) toolbox.setSelectedItem(t); }
+                }
+              }}
+              className="group flex w-11 flex-col items-center gap-0.5 rounded-lg py-1.5 transition-all duration-100"
+              style={{ backgroundColor: activeCategory === cat.id ? (darkMode ? cat.colour + '30' : cat.colour + '18') : 'transparent', border: activeCategory === cat.id ? `1.5px solid ${cat.colour}60` : '1.5px solid transparent' }}>
+                <span className="text-sm transition-transform group-hover:scale-110">{cat.icon}</span>
+                <span className="text-[7px] font-medium leading-tight" style={{ color: activeCategory === cat.id ? cat.colour : th.textMuted }}>{cat.name}</span>
               </button>
             ))}
           </aside>
 
-          {/* ─── Blockly workspace (replaces static block list) ─── */}
-          <section
-            className="relative min-w-0 flex-1"
-            style={{ backgroundColor: '#F9F9F9' }}
-          >
-            <div
-              ref={blocklyDivRef}
-              className="absolute inset-0"
-              style={{ width: '100%', height: '100%' }}
-            />
-            {!blocklyReady && (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
-                <div className="flex flex-col items-center gap-3">
-                  <div className="h-8 w-8 animate-spin rounded-full border-3 border-blue-400 border-t-transparent" />
-                  <span className="text-sm text-gray-500">Loading block editor…</span>
-                </div>
-              </div>
-            )}
-          </section>
-
-          {/* ─── Stage + Sprites panel ─── */}
-          <aside
-            className="flex w-[300px] shrink-0 flex-col border-l"
-            style={{ borderColor: '#e0e0e0', backgroundColor: '#f8f9fb' }}
-          >
-            {/* Stage */}
-            <div className="flex flex-col items-center border-b p-3" style={{ borderColor: '#e0e0e0' }}>
-              <div className="overflow-hidden rounded-lg shadow-md" style={{ border: '2px solid #d0d7e3' }}>
-                <canvas
-                  ref={canvasRef}
-                  width={STAGE_WIDTH}
-                  height={STAGE_HEIGHT}
-                  className="block bg-white"
-                  style={{ width: 282, height: 212, imageRendering: 'auto' }}
-                />
-              </div>
-            </div>
-
-            {/* Sprite list */}
-            <div className="flex-1 overflow-y-auto p-3">
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">Sprites</span>
-                <button
-                  type="button"
-                  onClick={handleAddSprite}
-                  disabled={!engineReady}
-                  className="flex h-7 w-7 items-center justify-center rounded-full text-white transition-all hover:scale-110 disabled:opacity-40"
-                  style={{ backgroundColor: '#4C97FF' }}
-                  title="Add sprite"
-                >
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="3"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
-                </button>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                {sprites.map((sprite) => (
-                  <button
-                    key={sprite.name}
-                    type="button"
-                    onClick={() => setSelectedTarget(sprite.name)}
-                    className="flex flex-col items-center rounded-lg border-2 p-2 transition-all duration-100 hover:shadow-md"
-                    style={{
-                      borderColor: selectedTarget === sprite.name ? '#4C97FF' : '#e2e8f0',
-                      backgroundColor: selectedTarget === sprite.name ? '#EBF3FF' : 'white',
-                    }}
-                  >
-                    <div className="mb-1 flex h-10 w-10 items-center justify-center rounded-lg" style={{ backgroundColor: sprite.isStage ? '#FFD500' + '30' : '#4C97FF' + '20' }}>
-                      <span className="text-lg">{sprite.isStage ? '🎭' : '🐱'}</span>
+          {/* ─── Center: Blockly + Stage ─── */}
+          <div className="flex min-w-0 flex-1 flex-col">
+            <div className="flex min-h-0 flex-1">
+              {/* Blockly workspace */}
+              <section className="relative min-w-0 flex-1" style={{ backgroundColor: th.workspaceBg }}>
+                <div ref={blocklyDivRef} className="absolute inset-0" />
+                {!blocklyReady && (
+                  <div className="absolute inset-0 flex items-center justify-center" style={{ backgroundColor: th.workspaceBg }}>
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="h-8 w-8 animate-spin rounded-full border-2 border-t-transparent" style={{ borderColor: th.accent }} />
+                      <span className="text-xs" style={{ color: th.textMuted }}>Loading visual builder…</span>
                     </div>
-                    <span className="text-[10px] font-medium text-gray-700 truncate max-w-full">
-                      {sprite.isStage ? 'Stage' : sprite.name}
-                    </span>
-                  </button>
-                ))}
-              </div>
+                  </div>
+                )}
+              </section>
+
+              {/* Stage + Agents panel */}
+              <aside className="flex w-[290px] shrink-0 flex-col border-l" style={{ borderColor: th.border, backgroundColor: th.surface }}>
+                {/* Stage preview */}
+                <div className="flex flex-col items-center border-b p-2" style={{ borderColor: th.border, backgroundColor: th.canvasBg }}>
+                  <div className="overflow-hidden rounded-lg" style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.15)', border: `1px solid ${th.border}` }}>
+                    <canvas ref={canvasRef} width={STAGE_WIDTH} height={STAGE_HEIGHT} className="block" style={{ width: 270, height: 202, backgroundColor: 'white' }} />
+                  </div>
+                </div>
+                {/* Agent list */}
+                <div className="flex-1 overflow-y-auto p-2">
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: th.textMuted }}>Agents</span>
+                    <button type="button" onClick={handleAddAgent} disabled={!engineReady} className="flex h-6 w-6 items-center justify-center rounded-md transition-all hover:scale-110 disabled:opacity-30" style={{ backgroundColor: th.accent, color: 'white' }} title="Add agent">
+                      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="3"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {sprites.map(sprite => (
+                      <button key={sprite.name} type="button" onClick={() => setSelectedTarget(sprite.name)} className="flex flex-col items-center rounded-lg border p-1.5 transition-all duration-100 hover:shadow-md" style={{ borderColor: selectedTarget === sprite.name ? th.accent : th.border, backgroundColor: selectedTarget === sprite.name ? (darkMode ? th.accent + '20' : th.accent + '10') : th.surface }}>
+                        <span className="text-base">{sprite.isStage ? '🎭' : '🤖'}</span>
+                        <span className="max-w-full truncate text-[8px] font-medium" style={{ color: th.text }}>{sprite.isStage ? 'Stage' : sprite.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {/* Right tabs */}
+                <div className="border-t" style={{ borderColor: th.border }}>
+                  <div className="flex">
+                    {rightTabs.map(tab => (
+                      <button key={tab.id} type="button" onClick={() => setRightTab(tab.id)} className="flex flex-1 flex-col items-center gap-0.5 py-1.5 text-[8px] font-medium transition-colors" style={{ color: rightTab === tab.id ? th.accent : th.textMuted, borderBottom: rightTab === tab.id ? `2px solid ${th.accent}` : '2px solid transparent' }}>
+                        <span className="text-xs">{tab.icon}</span>{tab.label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="p-2" style={{ minHeight: 60 }}>
+                    {rightTab === 'properties' && <p className="text-[10px]" style={{ color: th.textMuted }}>Select an agent to view properties.</p>}
+                    {rightTab === 'variables' && <p className="text-[10px]" style={{ color: th.textMuted }}>Variables appear here.</p>}
+                    {rightTab === 'assets' && (
+                      <div className="flex gap-1.5">
+                        <div className="flex h-10 flex-1 items-center justify-center rounded-md border border-dashed text-[9px] transition-colors" style={{ borderColor: th.border, color: th.textMuted }}>🎨 Costumes</div>
+                        <div className="flex h-10 flex-1 items-center justify-center rounded-md border border-dashed text-[9px] transition-colors" style={{ borderColor: th.border, color: th.textMuted }}>🔊 Sounds</div>
+                      </div>
+                    )}
+                    {rightTab === 'inspector' && <p className="text-[10px]" style={{ color: th.textMuted }}>{blockCount} blocks · {sprites.length} targets</p>}
+                  </div>
+                </div>
+              </aside>
             </div>
 
-            {/* Assets footer */}
-            <div className="border-t p-3" style={{ borderColor: '#e0e0e0' }}>
-              <div className="flex gap-2">
-                <div className="flex h-12 flex-1 items-center justify-center rounded-lg border border-dashed border-gray-300 bg-white text-xs text-gray-400 transition-colors hover:border-purple-300 hover:text-purple-400">
-                  🎨 Costumes
+            {/* ─── Bottom panel ─── */}
+            <div className="border-t" style={{ borderColor: th.border, backgroundColor: th.surface }}>
+              <div className="flex items-center justify-between px-2 py-0.5">
+                <div className="flex gap-0.5">
+                  {bottomTabs.map(tab => (
+                    <button key={tab.id} type="button" onClick={() => { setBottomTab(tab.id); setBottomOpen(true); }} className="rounded px-2 py-0.5 text-[9px] font-medium transition-colors" style={{ color: bottomTab === tab.id && bottomOpen ? th.accent : th.textMuted, backgroundColor: bottomTab === tab.id && bottomOpen ? (darkMode ? th.accent + '20' : th.accent + '10') : 'transparent' }}>
+                      <span className="mr-1">{tab.icon}</span>{tab.label}
+                    </button>
+                  ))}
                 </div>
-                <div className="flex h-12 flex-1 items-center justify-center rounded-lg border border-dashed border-gray-300 bg-white text-xs text-gray-400 transition-colors hover:border-purple-300 hover:text-purple-400">
-                  🔊 Sounds
-                </div>
+                <button type="button" onClick={() => setBottomOpen(!bottomOpen)} className="rounded px-1.5 py-0.5 text-[9px]" style={{ color: th.textMuted }}>{bottomOpen ? '▼' : '▲'}</button>
               </div>
+              {bottomOpen && (
+                <div className="h-28 overflow-y-auto border-t px-3 py-1.5 font-mono text-[10px]" style={{ borderColor: th.border, backgroundColor: darkMode ? '#0D0D14' : '#FAFAFD', color: darkMode ? '#8888AA' : '#6B6B8A' }}>
+                  {bottomTab === 'console' && consoleLines.map((line, i) => <div key={i}>{line}</div>)}
+                  {bottomTab === 'serial' && <div>Serial monitor — connect hardware to start.</div>}
+                  {bottomTab === 'errors' && <div style={{ color: '#2ecc71' }}>✓ No errors.</div>}
+                  {bottomTab === 'output' && <div>Simulation output will appear here.</div>}
+                </div>
+              )}
             </div>
-          </aside>
+          </div>
         </div>
       </div>
     </>
   );
 }
 
+/* Keep the exported name for backward compat but it's now STEMVerse Studio */
+export { ScratchWorkspace as StudioWorkspace };
+
 declare global {
   interface Window {
     STEMVerseScratch: {
-      createScratchRuntime: (
-        canvas: HTMLCanvasElement,
-        width?: number,
-        height?: number,
-      ) => Promise<ScratchRuntime>;
+      createScratchRuntime: (canvas: HTMLCanvasElement, width?: number, height?: number) => Promise<ScratchRuntime>;
     };
   }
 }

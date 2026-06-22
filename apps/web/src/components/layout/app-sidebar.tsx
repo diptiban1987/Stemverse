@@ -27,7 +27,7 @@ import { ThemeToggle } from '@/components/theme-toggle';
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/projects', label: 'Projects', icon: FolderKanban },
-  { href: '/scratch', label: 'Scratch Studio', icon: Blocks },
+  { href: '/scratch', label: 'STEMVerse Studio', icon: Blocks },
   { href: '/robotics', label: 'Robotics Studio', icon: Cpu },
   { href: '/ai-studio', label: 'AI Studio', icon: Sparkles },
   { href: '/simulator', label: 'Simulator', icon: Box },

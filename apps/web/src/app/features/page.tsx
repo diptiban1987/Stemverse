@@ -9,7 +9,7 @@ export default function FeaturesPage() {
         <h1 className="font-display text-4xl font-bold">Features</h1>
         <p className="mt-4 text-lg text-muted">Everything you need from first code to industrial robotics.</p>
         <ul className="mt-10 space-y-6">
-          {['Scratch & Blockly studios', 'Virtual simulator with Three.js', 'AI Copilot & Auto Fix', 'OpenRouter model routing', 'LMS with certificates', 'Marketplace & plugins', 'Realtime collaboration', 'Public project sharing'].map((f) => (
+          {['STEMVerse & Blockly studios', 'Virtual simulator with Three.js', 'AI Copilot & Auto Fix', 'OpenRouter model routing', 'LMS with certificates', 'Marketplace & plugins', 'Realtime collaboration', 'Public project sharing'].map((f) => (
             <li key={f} className="rounded-lg border border-border bg-card px-6 py-4">{f}</li>
           ))}
         </ul>

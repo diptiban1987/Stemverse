@@ -35,7 +35,7 @@ export function PublicFooter() {
       <div className="mx-auto grid max-w-6xl gap-8 px-6 md:grid-cols-4">
         <div>
           <p className="font-display font-bold text-primary">STEMVerse</p>
-          <p className="mt-2 text-sm text-muted">Scratch to industrial automation — one platform.</p>
+          <p className="mt-2 text-sm text-muted">Visual programming to industrial automation — one platform.</p>
         </div>
         <div>
           <p className="text-sm font-semibold">Product</p>

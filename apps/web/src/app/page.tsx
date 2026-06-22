@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 
 const modules = [
-  { icon: Blocks, title: 'Scratch Studio', desc: 'Creative coding with sprites, games, and stories.' },
+  { icon: Blocks, title: 'STEMVerse Studio', desc: 'Creative coding with sprites, games, and stories.' },
   { icon: Cpu, title: 'Robotics Studio', desc: 'Blockly IDE with ESP32, Arduino, and 100+ blocks.' },
   { icon: Box, title: 'Simulator', desc: 'Three.js virtual boards with live sensor simulation.' },
   { icon: Sparkles, title: 'AI Studio', desc: 'Copilot, auto-fix, and OpenRouter model routing.' },
@@ -22,7 +22,7 @@ const modules = [
 ];
 
 const testimonials = [
-  { name: 'Maria T.', role: 'STEM Teacher', quote: 'My students go from Scratch to ESP32 without leaving STEMVerse.' },
+  { name: 'Maria T.', role: 'STEM Teacher', quote: 'My students go from visual programming to ESP32 without leaving STEMVerse.' },
   { name: 'James K.', role: 'Robotics Club', quote: 'The simulator and AI copilot cut our prototype time in half.' },
   { name: 'Priya S.', role: 'IoT Developer', quote: 'Public sharing and forking made our hackathon submissions effortless.' },
 ];
@@ -40,7 +40,7 @@ export default function HomePage() {
             <TypingHero />
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-muted">
-            The complete learning ecosystem — Scratch to robotics, IoT, AI, and industrial automation in one polished platform.
+            The complete learning ecosystem — Visual programming to robotics, IoT, AI, and industrial automation in one polished platform.
           </p>
           <div className="mt-10 flex flex-wrap justify-center gap-4">
             <Link href="/register"><Button size="lg">Start free</Button></Link>

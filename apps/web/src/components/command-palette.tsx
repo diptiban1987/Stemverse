@@ -20,7 +20,7 @@ const COMMANDS: Command[] = [
   { id: 'robotics', label: 'Robotics Studio', href: '/robotics', icon: Cpu, group: 'Navigate' },
   { id: 'simulator', label: 'Simulator', href: '/simulator', icon: Box, group: 'Navigate' },
   { id: 'ai-studio', label: 'AI Studio', href: '/ai-studio', icon: Sparkles, group: 'Navigate' },
-  { id: 'scratch', label: 'Scratch Studio', href: '/scratch', icon: Blocks, group: 'Navigate' },
+  { id: 'scratch', label: 'STEMVerse Studio', href: '/scratch', icon: Blocks, group: 'Navigate' },
   { id: 'academy', label: 'Academy', href: '/academy', icon: GraduationCap, group: 'Navigate' },
   { id: 'marketplace', label: 'Marketplace', href: '/marketplace', icon: Store, group: 'Navigate' },
   { id: 'community', label: 'Community', href: '/community', icon: Search, group: 'Navigate' },
