@@ -765,6 +765,9 @@ export interface StageSyncState {
 
   // Phase 31B: Cloud Sync, Offline Workspace & Project Persistence
   persistenceEngineSnapshot?: PersistenceEngineSnapshot;
+
+  // Phase 32A: Real ESP32 Device Upload Pipeline
+  deviceSnapshot?: DeviceSnapshot;
 }
 
 
@@ -1600,6 +1603,9 @@ export interface SerializedTarget {
 
   // Phase 31B: Cloud Sync, Offline Workspace & Project Persistence
   persistenceSnapshot?: PersistenceEngineSnapshot;
+
+  // Phase 32A: Real ESP32 Device Upload Pipeline
+  deviceSnapshot?: DeviceSnapshot;
 }
 
 
@@ -7243,4 +7249,135 @@ export interface WorkspaceHistorySnapshot {
   recoveryBinCount: number;
   oldestEntryTimestamp: number | null;
   newestEntryTimestamp: number | null;
+}
+
+// ─── Phase 32A: Real ESP32 Device Upload Pipeline ──────────
+
+/** Phase 32A: Supported ESP32 chip types */
+export type ESP32ChipType =
+  | 'esp32'
+  | 'esp32-s3'
+  | 'esp32-cam'
+  | 'esp32-c6'
+  | 'esp32-c3'
+  | 'unknown';
+
+/** Phase 32A: Device connection status */
+export type DeviceConnectionStatus =
+  | 'disconnected'
+  | 'connecting'
+  | 'connected'
+  | 'error'
+  | 'permission_denied'
+  | 'not_supported';
+
+/** Phase 32A: Upload job status */
+export type UploadJobStatus =
+  | 'pending'
+  | 'compiling'
+  | 'uploading'
+  | 'verifying'
+  | 'completed'
+  | 'failed'
+  | 'cancelled';
+
+/** Phase 32A: Code generator type */
+export type GeneratorType = 'arduino' | 'esp-idf' | 'micropython';
+
+/** Phase 32A: Connected device model */
+export interface ConnectedDeviceModel {
+  deviceId: string;
+  portName: string;
+  vendorId: number;
+  productId: number;
+  chipType: ESP32ChipType;
+  connectionStatus: DeviceConnectionStatus;
+  connectedAt: number;
+  lastActivityAt: number;
+  firmwareVersion: string;
+  boardName: string;
+  serialNumber: string;
+  deleted: boolean;
+}
+
+/** Phase 32A: Device serial port model */
+export interface DevicePortModel {
+  portId: string;
+  portName: string;
+  vendorId: number;
+  productId: number;
+  baudRate: number;
+  dataBits: number;
+  stopBits: number;
+  parity: 'none' | 'even' | 'odd';
+  flowControl: 'none' | 'hardware';
+  isOpen: boolean;
+  lastUsedAt: number;
+  deleted: boolean;
+}
+
+/** Phase 32A: Upload job model */
+export interface UploadJobModel {
+  jobId: string;
+  deviceId: string;
+  projectId: string;
+  generatedCode: string;
+  generatorType: GeneratorType;
+  generatedAt: number;
+  status: UploadJobStatus;
+  progress: number;
+  currentStage: string;
+  startedAt: number;
+  completedAt: number | null;
+  logs: string[];
+  errors: string[];
+  retryCount: number;
+  maxRetries: number;
+  deleted: boolean;
+}
+
+/** Phase 32A: Upload result model */
+export interface UploadResultModel {
+  resultId: string;
+  jobId: string;
+  deviceId: string;
+  success: boolean;
+  uploadDurationMs: number;
+  compileDurationMs: number;
+  binarySize: number;
+  flashUsage: number;
+  ramUsage: number;
+  completedAt: number;
+  errorMessage: string | null;
+  warnings: string[];
+}
+
+/** Phase 32A: Device capabilities model */
+export interface DeviceCapabilitiesModel {
+  capabilityId: string;
+  deviceId: string;
+  chipType: ESP32ChipType;
+  flashSizeKB: number;
+  ramSizeKB: number;
+  cpuFrequencyMHz: number;
+  gpioCount: number;
+  hasWifi: boolean;
+  hasBluetooth: boolean;
+  hasBluetoothLE: boolean;
+  hasCamera: boolean;
+  hasSDCard: boolean;
+  supportedBaudRates: number[];
+  supportedGenerators: GeneratorType[];
+}
+
+/** Phase 32A: Full device state snapshot */
+export interface DeviceSnapshot {
+  connectedDevices: ConnectedDeviceModel[];
+  ports: DevicePortModel[];
+  activeJobs: UploadJobModel[];
+  completedResults: UploadResultModel[];
+  capabilities: DeviceCapabilitiesModel[];
+  connectedDeviceCount: number;
+  openPortCount: number;
+  activeJobCount: number;
 }

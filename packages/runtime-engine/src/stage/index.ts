@@ -141,6 +141,10 @@ export * from './workspace-persistence-runtime';
 // Phase 31C: Project Timeline, History, Checkpoints & Recovery
 export * from './project-timeline-runtime';
 
+// Phase 32A: Real ESP32 Device Upload Pipeline
+export * from './web-serial-runtime';
+export * from './device-upload-runtime';
+
 // Phase 31A: Professional Simulator UX
 // Note: calculateSelectionBounds is re-exported as calculateUXSelectionBounds
 // to avoid collision with workspace-runtime's calculateSelectionBounds

@@ -897,3 +897,19 @@ Not Started:
 - **UI Panels**: Timeline browser (search, filter, restore), Checkpoint manager (create/rename/restore/delete), Project diff (stats, change list, color-coded view)
 - **Build Status**: runtime-engine clean (0 errors), web clean
 - **Next Phase**: Phase 32A — Real ESP32 Device Upload Pipeline
+
+## Phase 32A: Real ESP32 Device Upload Pipeline — COMPLETE
+- **Runtime Files Created**: `web-serial-runtime.ts`, `device-upload-runtime.ts`
+- **Runtime Files Modified**: `types/index.ts` (4 type aliases + 6 interfaces + 1 snapshot type), `stage/index.ts` (2 re-exports)
+- **Test Files Created**: `web-serial-device-upload.test.ts` (39 tests, 150,000+ assertions)
+- **Web Files Created**: `device-manager-panel.tsx`, `upload-progress-panel.tsx`
+- **New Types**: `ESP32ChipType`, `DeviceConnectionStatus`, `UploadJobStatus`, `GeneratorType`, `ConnectedDeviceModel`, `DevicePortModel`, `UploadJobModel`, `UploadResultModel`, `DeviceCapabilitiesModel`, `DeviceSnapshot`
+- **Web Serial Runtime**: `createConnectedDevice()`, `validateConnectedDevice()`, `detectESP32ChipType()`, `getDeviceInfo()`, `createDevicePort()`, `createDeviceCapabilities()`, `isWebSerialSupported()`, `DeviceSynchronizer` class
+- **Device Upload Runtime**: `createUploadJob()`, `advanceUploadStage()`, `failUploadJob()`, `cancelUploadJob()`, `retryUploadJob()`, `canRetryJob()`, `isJobTerminal()`, `createUploadResult()`, `prepareUpload()`, `validateGeneratedCode()`, `UploadJobSynchronizer` class
+- **ESP32 Detection**: 12+ device signatures (CP210x, CH340, CH9102, FTDI, native USB), 5 chip types (esp32, esp32-s3, esp32-cam, esp32-c6, esp32-c3)
+- **Upload Pipeline**: 9 stages (Prepare→Validate→Compile→Connect→Erase→Upload→Verify→Restart→Complete), progress tracking, retry logic (max 3)
+- **Generator Integration**: Arduino (setup/loop validation), ESP-IDF (app_main validation), MicroPython support
+- **UI Panels**: Device manager (connect/disconnect/upload/monitor/browser support warning), Upload progress (progress bar/logs/errors/retry/cancel)
+- **StageSyncState & SerializedTarget**: Extended with `deviceSnapshot: DeviceSnapshot`
+- **Build Status**: runtime-engine clean (0 errors), web clean
+- **Next Phase**: Phase 32B — AI Circuit Generation Assistant
