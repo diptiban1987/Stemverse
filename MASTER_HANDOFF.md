@@ -11,8 +11,10 @@ Repository maturity is HIGH.
 This repository contains:
 
 * 571,000+ passing tests
-* 140 passing test files
+* 141 passing test files
+* 12 E2E workflow tests
 * Clean build
+* Version: v1.0.0-beta
 
 You are NOT designing a new architecture.
 
