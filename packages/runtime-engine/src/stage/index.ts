@@ -299,3 +299,32 @@ export type {
   OfflineLesson, OfflineAssignment, OfflineTemplate,
   OfflineCompetitionPack, OfflineCompletionTracker,
 } from './offline-learning-runtime';
+
+// Phase 37B: Production Deployment Pipeline
+export * from './ci-cd-runtime';
+export * from './observability-runtime';
+export * from './security-hardening-runtime';
+export {
+  createBackup, completeBackup, failBackup, isBackupExpired,
+  evictExpiredBackups, createRestore, completeRestore,
+  failRestore as failRestoreJob,
+  createRetentionPolicy, getDefaultRetentionPolicies,
+  createBackupSchedule, getDefaultSchedules as getDefaultBackupSchedules,
+  BackupSynchronizer,
+} from './backup-runtime';
+export type {
+  BackupType, BackupStatus, BackupTarget, BackupJob,
+  RestoreJob, RetentionPolicy, BackupSchedule,
+} from './backup-runtime';
+export {
+  createRelease, promoteRelease, compareVersions,
+  getLatestByChannel, createFeatureFlag, enableFeatureFlag,
+  disableFeatureFlag, setFeatureFlagPercentage, isFeatureEnabled,
+  getDefaultFeatureFlags, createMigration, applyMigration,
+  rollbackMigration, getPendingMigrations, validateMigrationOrder,
+  ReleaseManagementSynchronizer,
+} from './release-management-runtime';
+export type {
+  ReleaseChannel, FeatureFlagStatus, ReleaseVersion,
+  FeatureFlag, MigrationStep,
+} from './release-management-runtime';
