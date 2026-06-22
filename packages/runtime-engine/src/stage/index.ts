@@ -281,3 +281,21 @@ export * from './api-layer-runtime';
 
 // Phase 36D: Runtime Integration Wiring
 export * from './integration-wiring-runtime';
+
+// Phase 37A: Mobile, PWA & Offline Learning
+export * from './pwa-runtime';
+export * from './mobile-workspace-runtime';
+export {
+  downloadLesson, advanceLessonStep, isLessonComplete, getLessonProgress,
+  downloadAssignment, submitOfflineAssignment, isAssignmentOverdue, gradeOfflineAssignment,
+  downloadTemplate, getTemplatesByCategory as getOfflineTemplatesByCategory,
+  getTotalTemplateSize,
+  downloadCompetitionPack, submitCompetitionEntry, isCompetitionDeadlinePassed,
+  createCompletionTracker, markLessonCompleted, markAssignmentSubmitted,
+  markTemplateCached, syncTracker, getTrackerSummary,
+  OfflineLearningSynchronizer,
+} from './offline-learning-runtime';
+export type {
+  OfflineLesson, OfflineAssignment, OfflineTemplate,
+  OfflineCompetitionPack, OfflineCompletionTracker,
+} from './offline-learning-runtime';

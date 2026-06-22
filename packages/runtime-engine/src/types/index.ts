@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Core type definitions for the STEMVerse Scratch-inspired Runtime Engine.
  * Establish the data schemas and TypeScript-first types for sprites, stage, 
  * blocks, variables, and thread execution.
@@ -8896,10 +8896,113 @@ export interface AuthSnapshot {
   users: AuthUserModel[];
   sessions: AuthSessionModel[];
   tokens: AuthTokenModel[];
+
   apiRoutes: ApiRouteModel[];
   requestLogs: ApiRequestLogModel[];
   wsConnections: WebSocketConnectionModel[];
   totalUsers: number;
   totalActiveSessions: number;
   totalApiRoutes: number;
+}
+// ─── Phase 37A: Mobile, PWA & Offline Learning ──────────────
+
+/** Phase 37A: Cache strategy */
+export type CacheStrategy = 'cache-first' | 'network-first' | 'stale-while-revalidate' | 'cache-only' | 'network-only';
+
+/** Phase 37A: Sync status */
+export type SyncStatus = 'synced' | 'pending' | 'syncing' | 'conflict' | 'failed';
+
+/** Phase 37A: Device type */
+export type DeviceType = 'phone' | 'tablet' | 'desktop' | 'chromebook';
+
+/** Phase 37A: Touch gesture */
+export type TouchGestureType = 'tap' | 'double_tap' | 'long_press' | 'pinch' | 'pan' | 'swipe' | 'rotate';
+
+/** Phase 37A: Offline asset */
+export interface OfflineAssetModel {
+  assetId: string;
+  type: 'project' | 'lesson' | 'assignment' | 'template' | 'competition_pack';
+  name: string;
+  sizeBytes: number;
+  cachedAt: number;
+  expiresAt: number;
+  syncStatus: SyncStatus;
+  version: string;
+  data: string;
+}
+
+/** Phase 37A: Service worker config */
+export interface ServiceWorkerConfig {
+  version: string;
+  cacheName: string;
+  precacheUrls: string[];
+  runtimeCachePatterns: string[];
+  strategy: CacheStrategy;
+  maxCacheSize: number;
+  maxAge: number;
+}
+
+/** Phase 37A: PWA install state */
+export interface PwaInstallState {
+  isInstalled: boolean;
+  isInstallable: boolean;
+  isUpdateAvailable: boolean;
+  currentVersion: string;
+  latestVersion: string;
+  installPromptDeferred: boolean;
+  lastChecked: number;
+}
+
+/** Phase 37A: Offline sync queue entry */
+export interface OfflineSyncEntry {
+  entryId: string;
+  action: 'create' | 'update' | 'delete' | 'publish';
+  entityType: string;
+  entityId: string;
+  payload: string;
+  createdAt: number;
+  retryCount: number;
+  status: SyncStatus;
+}
+
+/** Phase 37A: Touch gesture */
+export interface TouchGestureModel {
+  gestureId: string;
+  type: TouchGestureType;
+  startX: number;
+  startY: number;
+  endX: number;
+  endY: number;
+  scale: number;
+  rotation: number;
+  velocity: number;
+  duration: number;
+  fingers: number;
+  timestamp: number;
+}
+
+/** Phase 37A: Mobile layout config */
+export interface MobileLayoutConfig {
+  deviceType: DeviceType;
+  screenWidth: number;
+  screenHeight: number;
+  pixelRatio: number;
+  orientation: 'portrait' | 'landscape';
+  safeAreaTop: number;
+  safeAreaBottom: number;
+  touchTargetSize: number;
+  fontSize: number;
+  compactMode: boolean;
+}
+
+/** Phase 37A: PWA snapshot */
+export interface PwaSnapshot {
+  offlineAssets: OfflineAssetModel[];
+  syncQueue: OfflineSyncEntry[];
+  installState: PwaInstallState;
+  cacheSize: number;
+  storageUsed: number;
+  storageQuota: number;
+  isOnline: boolean;
+  lastSync: number;
 }
