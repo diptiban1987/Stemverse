@@ -771,6 +771,9 @@ export interface StageSyncState {
 
   // Phase 32B: AI Circuit Generation Assistant
   aiGenerationSnapshot?: AIGenerationSnapshot;
+
+  // Phase 33A: Real Device Programming Studio & Debug Console
+  debugConsoleSnapshot?: DebugConsoleSnapshot;
 }
 
 
@@ -1612,6 +1615,9 @@ export interface SerializedTarget {
 
   // Phase 32B: AI Circuit Generation Assistant
   aiGenerationSnapshot?: AIGenerationSnapshot;
+
+  // Phase 33A: Real Device Programming Studio & Debug Console
+  debugConsoleSnapshot?: DebugConsoleSnapshot;
 }
 
 
@@ -7497,4 +7503,162 @@ export interface AIGenerationSnapshot {
   requestCount: number;
   templateCount: number;
   generationCount: number;
+}
+
+// ─── Phase 33A: Real Device Programming Studio & Debug Console ──
+
+/** Phase 33A: Debug session status */
+export type DebugSessionStatus =
+  | 'idle'
+  | 'starting'
+  | 'running'
+  | 'paused'
+  | 'stopped'
+  | 'error';
+
+/** Phase 33A: Debug GPIO pin mode (extends Phase 21A with ANALOG_INPUT, PWM, DISABLED) */
+export type DebugGPIOPinMode =
+  | 'INPUT'
+  | 'OUTPUT'
+  | 'INPUT_PULLUP'
+  | 'INPUT_PULLDOWN'
+  | 'ANALOG_INPUT'
+  | 'PWM'
+  | 'DISABLED';
+
+/** Phase 33A: Debug GPIO signal level */
+export type DebugGPIOSignalLevel = 'HIGH' | 'LOW' | 'FLOATING';
+
+/** Phase 33A: Sensor type for debug monitor */
+export type DebugSensorType =
+  | 'HC-SR04'
+  | 'DHT11'
+  | 'DHT22'
+  | 'MQ-2'
+  | 'IR'
+  | 'LDR'
+  | 'Servo'
+  | 'PIR'
+  | 'Flame'
+  | 'SoilMoisture'
+  | 'BMP280'
+  | 'MPU6050'
+  | 'Custom';
+
+/** Phase 33A: WiFi connection state */
+export type WiFiConnectionState =
+  | 'disconnected'
+  | 'connecting'
+  | 'connected'
+  | 'ap_mode'
+  | 'error';
+
+/** Phase 33A: Data export format */
+export type DebugExportFormat = 'csv' | 'json';
+
+/** Phase 33A: Debug session model */
+export interface DeviceDebugSessionModel {
+  sessionId: string;
+  deviceId: string;
+  status: DebugSessionStatus;
+  startedAt: number;
+  stoppedAt: number | null;
+  loopCount: number;
+  uptimeMs: number;
+  executionFrequencyHz: number;
+  lastMillis: number;
+  breakpoints: number[];
+  logEntries: string[];
+  logPaused: boolean;
+  logFilter: string;
+  deleted: boolean;
+}
+
+/** Phase 33A: Device sensor snapshot */
+export interface DeviceSensorSnapshotModel {
+  snapshotId: string;
+  sessionId: string;
+  sensorType: DebugSensorType;
+  sensorName: string;
+  gpioPin: number;
+  rawValue: number;
+  calibratedValue: number;
+  unit: string;
+  minValue: number;
+  maxValue: number;
+  timestamp: number;
+  history: Array<{ value: number; timestamp: number }>;
+}
+
+/** Phase 33A: Device GPIO state */
+export interface DeviceGPIOStateModel {
+  stateId: string;
+  sessionId: string;
+  pin: number;
+  mode: DebugGPIOPinMode;
+  level: DebugGPIOSignalLevel;
+  pwmDuty: number;
+  pwmFrequency: number;
+  analogValue: number;
+  lastChangedAt: number;
+  changeCount: number;
+}
+
+/** Phase 33A: Device memory snapshot */
+export interface DeviceMemorySnapshotModel {
+  snapshotId: string;
+  sessionId: string;
+  freeHeapBytes: number;
+  totalHeapBytes: number;
+  heapUsagePercent: number;
+  freeStackBytes: number;
+  totalStackBytes: number;
+  stackUsagePercent: number;
+  flashUsedBytes: number;
+  flashTotalBytes: number;
+  timestamp: number;
+}
+
+/** Phase 33A: Device WiFi state */
+export interface DeviceWiFiStateModel {
+  stateId: string;
+  sessionId: string;
+  connectionState: WiFiConnectionState;
+  ssid: string;
+  ipAddress: string;
+  macAddress: string;
+  rssi: number;
+  channel: number;
+  connectedAt: number | null;
+  bytesSent: number;
+  bytesReceived: number;
+}
+
+/** Phase 33A: Device execution snapshot */
+export interface DeviceExecutionSnapshotModel {
+  snapshotId: string;
+  sessionId: string;
+  loopCount: number;
+  currentMillis: number;
+  uptimeMs: number;
+  executionFrequencyHz: number;
+  cpuUsagePercent: number;
+  activeTaskCount: number;
+  taskStates: Array<{ taskName: string; status: string; priority: number }>;
+  watchdogTriggered: boolean;
+  lastResetReason: string;
+  timestamp: number;
+}
+
+/** Phase 33A: Full debug console snapshot */
+export interface DebugConsoleSnapshot {
+  sessions: DeviceDebugSessionModel[];
+  sensorSnapshots: DeviceSensorSnapshotModel[];
+  gpioStates: DeviceGPIOStateModel[];
+  memorySnapshots: DeviceMemorySnapshotModel[];
+  wifiStates: DeviceWiFiStateModel[];
+  executionSnapshots: DeviceExecutionSnapshotModel[];
+  activeSessionCount: number;
+  totalGPIOPins: number;
+  totalSensors: number;
 }

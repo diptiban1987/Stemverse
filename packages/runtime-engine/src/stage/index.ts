@@ -150,6 +150,9 @@ export * from './ai-circuit-runtime';
 export * from './circuit-template-runtime';
 export * from './prompt-library';
 
+// Phase 33A: Real Device Programming Studio & Debug Console
+export * from './device-debug-runtime';
+
 // Phase 31A: Professional Simulator UX
 // Note: calculateSelectionBounds is re-exported as calculateUXSelectionBounds
 // to avoid collision with workspace-runtime's calculateSelectionBounds
