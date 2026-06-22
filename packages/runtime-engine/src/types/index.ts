@@ -774,6 +774,9 @@ export interface StageSyncState {
 
   // Phase 33A: Real Device Programming Studio & Debug Console
   debugConsoleSnapshot?: DebugConsoleSnapshot;
+
+  // Phase 33B: Real-Time Multiuser Collaboration & Shared Editing
+  realtimeCollaborationSnapshot?: RealtimeCollaborationSnapshot;
 }
 
 
@@ -1618,6 +1621,9 @@ export interface SerializedTarget {
 
   // Phase 33A: Real Device Programming Studio & Debug Console
   debugConsoleSnapshot?: DebugConsoleSnapshot;
+
+  // Phase 33B: Real-Time Multiuser Collaboration & Shared Editing
+  realtimeCollaborationSnapshot?: RealtimeCollaborationSnapshot;
 }
 
 
@@ -7661,4 +7667,140 @@ export interface DebugConsoleSnapshot {
   activeSessionCount: number;
   totalGPIOPins: number;
   totalSensors: number;
+}
+
+// ─── Phase 33B: Real-Time Multiuser Collaboration & Shared Editing ──
+
+/** Phase 33B: Participant status */
+export type RealtimeParticipantStatus =
+  | 'online'
+  | 'idle'
+  | 'editing'
+  | 'viewing'
+  | 'offline';
+
+/** Phase 33B: Collaboration session status */
+export type RealtimeSessionStatus =
+  | 'creating'
+  | 'active'
+  | 'paused'
+  | 'closed'
+  | 'expired';
+
+/** Phase 33B: Activity event type */
+export type ActivityEventType =
+  | 'component_added'
+  | 'component_removed'
+  | 'component_moved'
+  | 'wire_created'
+  | 'wire_deleted'
+  | 'blockly_modified'
+  | 'project_saved'
+  | 'ai_generation'
+  | 'device_upload'
+  | 'participant_joined'
+  | 'participant_left'
+  | 'selection_changed'
+  | 'cursor_moved';
+
+/** Phase 33B: Conflict resolution strategy */
+export type ConflictStrategy =
+  | 'last_write_wins'
+  | 'soft_lock'
+  | 'merge_safe'
+  | 'manual';
+
+/** Phase 33B: Realtime collaboration session */
+export interface RealtimeCollaborationSessionModel {
+  sessionId: string;
+  projectId: string;
+  hostUserId: string;
+  status: RealtimeSessionStatus;
+  inviteCode: string;
+  maxParticipants: number;
+  conflictStrategy: ConflictStrategy;
+  createdAt: number;
+  expiresAt: number;
+  lastActivityAt: number;
+  deleted: boolean;
+}
+
+/** Phase 33B: Participant presence */
+export interface ParticipantPresenceModel {
+  presenceId: string;
+  sessionId: string;
+  userId: string;
+  displayName: string;
+  avatarColor: string;
+  status: RealtimeParticipantStatus;
+  cursorX: number;
+  cursorY: number;
+  activeTool: string;
+  lastActivityAt: number;
+  joinedAt: number;
+}
+
+/** Phase 33B: Shared cursor state */
+export interface SharedCursorModel {
+  cursorId: string;
+  sessionId: string;
+  userId: string;
+  x: number;
+  y: number;
+  targetType: 'canvas' | 'blockly' | 'code' | 'simulator';
+  targetId: string;
+  color: string;
+  timestamp: number;
+}
+
+/** Phase 33B: Shared selection state */
+export interface SharedSelectionModel {
+  selectionId: string;
+  sessionId: string;
+  userId: string;
+  selectedComponentIds: string[];
+  selectedWireIds: string[];
+  selectedBlockIds: string[];
+  lockedIds: string[];
+  color: string;
+  timestamp: number;
+}
+
+/** Phase 33B: Project activity event */
+export interface ProjectActivityModel {
+  activityId: string;
+  sessionId: string;
+  userId: string;
+  displayName: string;
+  eventType: ActivityEventType;
+  targetId: string;
+  targetName: string;
+  description: string;
+  timestamp: number;
+}
+
+/** Phase 33B: Conflict resolution record */
+export interface ConflictResolutionModel {
+  conflictId: string;
+  sessionId: string;
+  sourceUserId: string;
+  targetUserId: string;
+  strategy: ConflictStrategy;
+  targetObjectId: string;
+  resolution: 'accepted' | 'rejected' | 'merged' | 'pending';
+  description: string;
+  resolvedAt: number;
+}
+
+/** Phase 33B: Full realtime collaboration snapshot */
+export interface RealtimeCollaborationSnapshot {
+  sessions: RealtimeCollaborationSessionModel[];
+  participants: ParticipantPresenceModel[];
+  cursors: SharedCursorModel[];
+  selections: SharedSelectionModel[];
+  activities: ProjectActivityModel[];
+  conflicts: ConflictResolutionModel[];
+  activeSessionCount: number;
+  onlineParticipantCount: number;
+  totalActivityCount: number;
 }
