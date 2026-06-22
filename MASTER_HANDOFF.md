@@ -11,9 +11,10 @@ Repository maturity is HIGH.
 This repository contains:
 
 * 571,000+ passing tests
-* 144 passing test files
+* 149 passing test files
 * 12 E2E workflow tests
 * 43 AI/Coach tests
+* 36 Integration tests
 * Clean build
 * Version: v1.0.0-beta
 

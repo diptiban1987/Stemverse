@@ -451,3 +451,12 @@ export type {
   CoachProfile, PracticeRoadmap, ChallengeRecommendation,
   PerformanceAnalysis, ProjectRecommendation,
 } from './robothrone-coach-runtime';
+
+// Phase 41B: Enterprise SSO, LMS & Education Ecosystem Integration
+export * from './sso-runtime';
+export * from './google-classroom-runtime';
+export * from './moodle-runtime';
+export * from './canvas-runtime';
+export * from './teams-education-runtime';
+export * from './school-erp-runtime';
+export * from './certificate-delivery-runtime';
