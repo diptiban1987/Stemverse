@@ -16,6 +16,7 @@ import type { WorkspacePersistenceSnapshot } from '@stemverse/runtime-engine';
 /* ------------------------------------------------------------------ */
 
 export interface AutoSaveOptions {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   runtimeRef: React.RefObject<any>;
   projectId: string | null;
   enabled: boolean;

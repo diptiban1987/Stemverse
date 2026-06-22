@@ -7140,3 +7140,107 @@ export interface SnapshotValidationResult {
   errors: string[];
   warnings: string[];
 }
+
+// ─── Phase 31C: Project Timeline, History, Checkpoints & Recovery ──────────
+
+/** Phase 31C: Timeline action types */
+export type TimelineActionType =
+  | 'component_added'
+  | 'component_removed'
+  | 'component_moved'
+  | 'wire_created'
+  | 'wire_deleted'
+  | 'import_performed'
+  | 'export_performed'
+  | 'ai_auto_wiring'
+  | 'blockly_changed'
+  | 'project_restored'
+  | 'checkpoint_created'
+  | 'checkpoint_restored'
+  | 'version_created'
+  | 'project_saved'
+  | 'project_loaded'
+  | 'workspace_cleared'
+  | 'manual_entry';
+
+/** Phase 31C: A single entry in the project timeline */
+export interface ProjectTimelineEntryModel {
+  entryId: string;
+  projectId: string;
+  timestamp: number;
+  action: TimelineActionType;
+  description: string;
+  componentCount: number;
+  wireCount: number;
+  snapshotHash: string;
+  projectSize: number;
+  metadata?: Record<string, unknown>;
+  /** Soft-delete flag */
+  deleted?: boolean;
+}
+
+/** Phase 31C: A named checkpoint (user-created save point) */
+export interface ProjectCheckpointModel {
+  checkpointId: string;
+  projectId: string;
+  name: string;
+  description: string;
+  createdAt: number;
+  updatedAt: number;
+  componentCount: number;
+  wireCount: number;
+  snapshotHash: string;
+  projectSize: number;
+  serializedProject: SerializedProject;
+  /** Soft-delete flag */
+  deleted?: boolean;
+}
+
+/** Phase 31C: Diff result between two project states */
+export interface ProjectDiffModel {
+  diffId: string;
+  sourceLabel: string;
+  targetLabel: string;
+  timestamp: number;
+  componentsAdded: string[];
+  componentsRemoved: string[];
+  componentsMoved: string[];
+  wiresAdded: string[];
+  wiresRemoved: string[];
+  blocklyChanged: boolean;
+  workspaceChanged: boolean;
+  runtimeChanged: boolean;
+  statistics: {
+    totalChanges: number;
+    addedCount: number;
+    removedCount: number;
+    modifiedCount: number;
+  };
+  summary: string;
+  changeList: string[];
+}
+
+/** Phase 31C: Recovery bin entry for soft-deleted items */
+export interface ProjectRecoveryEntryModel {
+  recoveryId: string;
+  originalId: string;
+  recoveryType: 'project' | 'version' | 'checkpoint' | 'timeline_entry';
+  projectId: string;
+  deletedAt: number;
+  expiresAt: number;
+  label: string;
+  sizeBytes: number;
+  data: unknown;
+}
+
+/** Phase 31C: Full workspace history state for snapshot integration */
+export interface WorkspaceHistorySnapshot {
+  timelineEntries: ProjectTimelineEntryModel[];
+  checkpoints: ProjectCheckpointModel[];
+  recoveryBin: ProjectRecoveryEntryModel[];
+  timelineCount: number;
+  checkpointCount: number;
+  recoveryBinCount: number;
+  oldestEntryTimestamp: number | null;
+  newestEntryTimestamp: number | null;
+}

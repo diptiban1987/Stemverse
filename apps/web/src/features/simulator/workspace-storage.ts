@@ -11,6 +11,9 @@ import type {
   LocalProjectVersion,
   OfflineSyncQueueEntry,
   SerializedProject,
+  ProjectTimelineEntryModel,
+  ProjectCheckpointModel,
+  ProjectRecoveryEntryModel,
 } from '@stemverse/runtime-engine';
 
 /* ------------------------------------------------------------------ */
@@ -46,7 +49,7 @@ async function getLz(): Promise<any> {
   if (_lzLoadAttempted) return null;
   _lzLoadAttempted = true;
   try {
-    // @ts-ignore — lz-string may not be installed yet; dynamic import with fallback
+    // @ts-expect-error — lz-string may not be installed yet; dynamic import with fallback
     _lzModule = await import(/* webpackIgnore: true */ 'lz-string');
     return _lzModule;
   } catch {
@@ -91,19 +94,22 @@ export function getCompressionStats(): {
 /* ------------------------------------------------------------------ */
 
 const DB_NAME = 'stemverse-persistence';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let dbPromise: any = null;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getDb(): Promise<any> {
   if (dbPromise) return dbPromise;
 
   dbPromise = (async () => {
     try {
-      // @ts-ignore — idb may not be installed yet; dynamic import with fallback
+      // @ts-expect-error — idb may not be installed yet; dynamic import with fallback
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { openDB } = await import(/* webpackIgnore: true */ 'idb') as any;
       return openDB(DB_NAME, DB_VERSION, {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         upgrade(db: any) {
           if (!db.objectStoreNames.contains('projects')) {
             db.createObjectStore('projects', { keyPath: 'projectId' });
@@ -115,6 +121,21 @@ function getDb(): Promise<any> {
           if (!db.objectStoreNames.contains('syncQueue')) {
             const sStore = db.createObjectStore('syncQueue', { keyPath: 'queueId' });
             sStore.createIndex('projectId', 'projectId', { unique: false });
+          }
+          // Phase 31C: Timeline, Checkpoints, Recovery stores
+          if (!db.objectStoreNames.contains('timelineEntries')) {
+            const tStore = db.createObjectStore('timelineEntries', { keyPath: 'entryId' });
+            tStore.createIndex('projectId', 'projectId', { unique: false });
+            tStore.createIndex('timestamp', 'timestamp', { unique: false });
+          }
+          if (!db.objectStoreNames.contains('checkpoints')) {
+            const cpStore = db.createObjectStore('checkpoints', { keyPath: 'checkpointId' });
+            cpStore.createIndex('projectId', 'projectId', { unique: false });
+          }
+          if (!db.objectStoreNames.contains('recoveryBin')) {
+            const rbStore = db.createObjectStore('recoveryBin', { keyPath: 'recoveryId' });
+            rbStore.createIndex('projectId', 'projectId', { unique: false });
+            rbStore.createIndex('expiresAt', 'expiresAt', { unique: false });
           }
         },
       });
@@ -487,5 +508,213 @@ export async function markSynced(queueId: string): Promise<void> {
   } catch (e) {
     console.error('[Phase 31B] markSynced failed:', e);
     throw e;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Phase 31C: Timeline Entry Storage                                  */
+/* ------------------------------------------------------------------ */
+
+export async function saveTimelineEntry(
+  entry: ProjectTimelineEntryModel,
+): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    await db.put('timelineEntries', JSON.parse(JSON.stringify(entry)));
+  } catch (e) {
+    console.error('[Phase 31C] saveTimelineEntry failed:', e);
+  }
+}
+
+export async function listTimelineEntries(
+  projectId: string,
+): Promise<ProjectTimelineEntryModel[]> {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    const all: ProjectTimelineEntryModel[] = await db.getAllFromIndex(
+      'timelineEntries',
+      'projectId',
+      projectId,
+    );
+    return all
+      .filter((e) => !e.deleted)
+      .sort((a, b) => b.timestamp - a.timestamp);
+  } catch (e) {
+    console.error('[Phase 31C] listTimelineEntries failed:', e);
+    return [];
+  }
+}
+
+export async function deleteTimelineEntry(
+  entryId: string,
+): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    const entry: ProjectTimelineEntryModel | undefined = await db.get(
+      'timelineEntries',
+      entryId,
+    );
+    if (entry) {
+      entry.deleted = true;
+      await db.put('timelineEntries', entry);
+    }
+  } catch (e) {
+    console.error('[Phase 31C] deleteTimelineEntry failed:', e);
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Phase 31C: Checkpoint Storage                                      */
+/* ------------------------------------------------------------------ */
+
+export async function saveCheckpoint(
+  checkpoint: ProjectCheckpointModel,
+): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    const record = JSON.parse(JSON.stringify(checkpoint));
+    if (record.serializedProject) {
+      const raw = JSON.stringify(record.serializedProject);
+      record.compressedProject = await compress(raw);
+      record.serializedProject = { version: record.serializedProject.version } as SerializedProject;
+    }
+    await db.put('checkpoints', record);
+  } catch (e) {
+    console.error('[Phase 31C] saveCheckpoint failed:', e);
+  }
+}
+
+export async function loadCheckpoint(
+  checkpointId: string,
+): Promise<ProjectCheckpointModel | null> {
+  const db = await getDb();
+  if (!db) return null;
+  try {
+    const record = await db.get('checkpoints', checkpointId);
+    if (!record) return null;
+    if (record.compressedProject) {
+      const raw = await decompress(record.compressedProject);
+      record.serializedProject = JSON.parse(raw);
+      delete record.compressedProject;
+    }
+    return record;
+  } catch (e) {
+    console.error('[Phase 31C] loadCheckpoint failed:', e);
+    return null;
+  }
+}
+
+export async function listCheckpoints(
+  projectId: string,
+): Promise<ProjectCheckpointModel[]> {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    const all = await db.getAllFromIndex('checkpoints', 'projectId', projectId);
+    return all
+      .filter((c: ProjectCheckpointModel & { deleted?: boolean }) => !c.deleted)
+      .sort((a: ProjectCheckpointModel, b: ProjectCheckpointModel) => b.createdAt - a.createdAt);
+  } catch (e) {
+    console.error('[Phase 31C] listCheckpoints failed:', e);
+    return [];
+  }
+}
+
+export async function deleteCheckpoint(
+  checkpointId: string,
+): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    const record = await db.get('checkpoints', checkpointId);
+    if (record) {
+      record.deleted = true;
+      await db.put('checkpoints', record);
+    }
+  } catch (e) {
+    console.error('[Phase 31C] deleteCheckpoint failed:', e);
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Phase 31C: Recovery Bin Storage                                     */
+/* ------------------------------------------------------------------ */
+
+export async function saveRecoveryEntry(
+  entry: ProjectRecoveryEntryModel,
+): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    await db.put('recoveryBin', JSON.parse(JSON.stringify(entry)));
+  } catch (e) {
+    console.error('[Phase 31C] saveRecoveryEntry failed:', e);
+  }
+}
+
+export async function listRecoveryEntries(
+  projectId?: string,
+): Promise<ProjectRecoveryEntryModel[]> {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    let all: ProjectRecoveryEntryModel[];
+    if (projectId) {
+      all = await db.getAllFromIndex('recoveryBin', 'projectId', projectId);
+    } else {
+      all = await db.getAll('recoveryBin');
+    }
+    const now = Date.now();
+    return all
+      .filter((e) => e.expiresAt > now)
+      .sort((a, b) => b.deletedAt - a.deletedAt);
+  } catch (e) {
+    console.error('[Phase 31C] listRecoveryEntries failed:', e);
+    return [];
+  }
+}
+
+export async function restoreRecoveryEntry(
+  recoveryId: string,
+): Promise<ProjectRecoveryEntryModel | null> {
+  const db = await getDb();
+  if (!db) return null;
+  try {
+    const entry: ProjectRecoveryEntryModel | undefined = await db.get(
+      'recoveryBin',
+      recoveryId,
+    );
+    if (entry) {
+      await db.delete('recoveryBin', recoveryId);
+      return entry;
+    }
+    return null;
+  } catch (e) {
+    console.error('[Phase 31C] restoreRecoveryEntry failed:', e);
+    return null;
+  }
+}
+
+export async function purgeExpiredRecovery(): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  try {
+    const all: ProjectRecoveryEntryModel[] = await db.getAll('recoveryBin');
+    const now = Date.now();
+    let purgedCount = 0;
+    for (const entry of all) {
+      if (entry.expiresAt <= now) {
+        await db.delete('recoveryBin', entry.recoveryId);
+        purgedCount++;
+      }
+    }
+    return purgedCount;
+  } catch (e) {
+    console.error('[Phase 31C] purgeExpiredRecovery failed:', e);
+    return 0;
   }
 }

@@ -138,6 +138,9 @@ export * from './collaboration-runtime';
 // Phase 31B: Cloud Sync, Offline Workspace & Project Persistence
 export * from './workspace-persistence-runtime';
 
+// Phase 31C: Project Timeline, History, Checkpoints & Recovery
+export * from './project-timeline-runtime';
+
 // Phase 31A: Professional Simulator UX
 // Note: calculateSelectionBounds is re-exported as calculateUXSelectionBounds
 // to avoid collision with workspace-runtime's calculateSelectionBounds

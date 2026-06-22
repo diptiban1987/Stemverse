@@ -881,3 +881,19 @@ Not Started:
 - **Build Status**: runtime-engine clean (0 errors), web clean
 - **Next Phase**: Phase 31C — Project Timeline & History System
 
+## Phase 31C: Project Timeline, History, Checkpoints & Recovery System — COMPLETE
+- **Runtime Files Created**: `project-timeline-runtime.ts`
+- **Runtime Files Modified**: `types/index.ts` (6 new interfaces + 1 type alias), `stage/index.ts` (re-export)
+- **Test Files Created**: `project-timeline-runtime.test.ts` (43 tests, 150,000+ assertions)
+- **Web Files Created**: `timeline-panel.tsx`, `checkpoint-panel.tsx`, `project-diff-panel.tsx`
+- **Web Files Modified**: `workspace-storage.ts` (3 new IndexedDB stores, DB version 2, 12 new functions)
+- **New Types**: `TimelineActionType`, `ProjectTimelineEntryModel`, `ProjectCheckpointModel`, `ProjectDiffModel`, `ProjectRecoveryEntryModel`, `WorkspaceHistorySnapshot`
+- **Timeline Engine**: `createTimelineEntry()`, `validateTimelineEntry()`, `validateDuplicateTimelineEntryIds()`, 17 action types, auto-timeline support
+- **Checkpoint System**: `createCheckpoint()`, `renameCheckpoint()`, `validateCheckpoint()`, `validateDuplicateCheckpointIds()`
+- **Diff Engine**: `compareProjects()` — detects components added/removed/moved, wires added/removed, blockly changes, runtime changes
+- **Recovery System**: `createRecoveryEntry()`, `validateRecoveryEntry()`, `isRecoveryEntryExpired()`, soft-delete with configurable retention
+- **ProjectTimelineSynchronizer**: Registry-based class with Map + deterministic ordering, CRUD for entries/checkpoints/recovery, search/filter/purge, toJSON/fromJSON, clone
+- **IndexedDB Stores**: `timelineEntries` (entryId, projectId+timestamp indexes), `checkpoints` (checkpointId, projectId index), `recoveryBin` (recoveryId, projectId+expiresAt indexes)
+- **UI Panels**: Timeline browser (search, filter, restore), Checkpoint manager (create/rename/restore/delete), Project diff (stats, change list, color-coded view)
+- **Build Status**: runtime-engine clean (0 errors), web clean
+- **Next Phase**: Phase 32A — Real ESP32 Device Upload Pipeline
