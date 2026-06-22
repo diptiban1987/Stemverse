@@ -375,3 +375,37 @@ export type {
   TranslationCoverage, BundleValidation, LocalizationProject, TranslationExport,
 } from './localization-runtime';
 export * from './translation-audit-runtime';
+
+// Phase 39A: Enterprise, White-Label, Licensing & Subscription
+export {
+  createLicense, activateLicense, suspendLicense, renewLicense,
+  upgradeLicense, downgradeLicense, expireLicense, transferLicense,
+  addSeat, removeSeat, isLicenseValid, hasFeature,
+  trackUsage as trackLicenseUsage, isOverQuota as isLicenseOverQuota,
+  getLicenseDefaults, LicensingSynchronizer,
+} from './licensing-runtime';
+export type {
+  LicenseType, LicenseStatus, License, LicenseUsageRecord,
+} from './licensing-runtime';
+export {
+  PLAN_CATALOG, getPlanDefinition, getAllPlans,
+  createSubscription, renewSubscription, cancelSubscription,
+  pauseSubscription, upgradeSubscription, convertTrial, isTrialExpired,
+  createInvoice, markInvoicePaid, markInvoiceOverdue, createLineItem,
+  SubscriptionSynchronizer,
+} from './subscription-runtime';
+export type {
+  SubscriptionPlan, BillingCycle,
+  SubscriptionStatus as SubStatus,
+  PlanDefinition, Subscription, Invoice, InvoiceLineItem,
+} from './subscription-runtime';
+export * from './white-label-runtime';
+export {
+  createQuota, consumeQuota, resetQuota, isQuotaExceeded,
+  getQuotaPercent, checkQuotaAlert, increaseQuotaLimit,
+  trackQuotaUsage, getDefaultQuotas as getDefaultPlanQuotas,
+  QuotaSynchronizer,
+} from './quota-runtime';
+export type { QuotaMetric, QuotaLimit, QuotaUsageEvent, QuotaAlert } from './quota-runtime';
+export * from './billing-runtime';
+export * from './customer-success-runtime';
