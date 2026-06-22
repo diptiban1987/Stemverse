@@ -361,3 +361,17 @@ export type {
   RollupEntry, TrendPoint, AggregationPipeline,
 } from './data-warehouse-runtime';
 export * from './learning-analytics-runtime';
+
+// Phase 38B: Internationalization, Localization & Accessibility
+export * from './i18n-runtime';
+export * from './accessibility-runtime';
+export {
+  calculateCoverage, getOverallCoverage, detectMissingTranslations,
+  getAllMissingKeys, validateBundle, validateConsistency,
+  exportBundleAsJSON, exportBundleAsCSV, importFromJSON,
+  createLocalizationProject, LocalizationSynchronizer,
+} from './localization-runtime';
+export type {
+  TranslationCoverage, BundleValidation, LocalizationProject, TranslationExport,
+} from './localization-runtime';
+export * from './translation-audit-runtime';
