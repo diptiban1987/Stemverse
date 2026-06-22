@@ -183,7 +183,8 @@ export const useSensorValueStore = create<SensorValueState>()((set, get) => ({
 
   removeComponent: (objectId) =>
     set((s) => {
-      const { [objectId]: _, ...rest } = s.values;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { [objectId]: _removed, ...rest } = s.values;
       return { values: rest };
     }),
 }));

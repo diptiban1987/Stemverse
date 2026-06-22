@@ -144,6 +144,7 @@ export class SmartPlacementEngine {
     assetType: string,
     imageWidth: number,
     imageHeight: number,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _scale: number,
   ): { x: number; y: number } {
     const rendered = getRenderedSize(assetType, imageWidth, imageHeight, this.refBBWidth);
@@ -168,7 +169,8 @@ export class SmartPlacementEngine {
    * Place a board (ESP32/Arduino) to the RIGHT of the breadboard, top-aligned.
    * Multiple boards stack horizontally.
    */
-  private placeBoard(w: number, h: number): { x: number; y: number } {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  private placeBoard(_w: number, _h: number): { x: number; y: number } {
     const existing = this.slots.filter(s => s.zone === 'board');
 
     // Position right of the breadboard, aligned to the top
@@ -198,7 +200,8 @@ export class SmartPlacementEngine {
    * Place a component to the RIGHT of the breadboard, BELOW the board(s).
    * Components fill left-to-right in rows, wrapping downward.
    */
-  private placeComponent(w: number, h: number): { x: number; y: number } {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  private placeComponent(w: number, _h: number): { x: number; y: number } {
     const existing = this.slots.filter(s => s.zone === 'component');
     const startX = this.bbRight + this.zoneGap;
     const startY = this.boardZoneBottom;

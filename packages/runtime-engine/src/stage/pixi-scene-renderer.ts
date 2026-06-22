@@ -104,36 +104,83 @@ const SELECTION_HANDLE_SIZE = 7;
  * This ensures all components render at realistic relative sizes.
  */
 export const COMPONENT_SCALE_RATIOS: Record<string, number> = {
+  // ═══════════════════════════════════════════════════════════════
+  // Phase 31A.5: Recalibrated to real-world proportions
+  // Reference: MB-102 breadboard = 165mm actual width = 940px
+  // Scale factor: 940 / 165 = 5.7 px/mm
+  // Ratio = (real_width_mm × 5.7) / SVG_viewBox_width
+  // Some small components enlarged for minimum visibility (min 0.06)
+  // ═══════════════════════════════════════════════════════════════
+
   /* ── Boards ──────────────────────── real width → ratio ── */
-  'arduino_uno_r3': 0.41,           // 68mm  → 0.41
-  'esp32_devkit_v1': 0.17,          // 28mm  → 0.17
-  'arduino_nano': 0.11,             // 18mm  → 0.11
+  'arduino_uno_r3': 0.42,           // 68.6mm  → 391px / 300vb = 1.30 → capped 0.42
+  'esp32_devkit_v1': 0.18,          // 28.5mm  → 162px / 300vb = 0.54 → tuned 0.18
+  'arduino_nano': 0.11,             // 18.0mm  → 103px / 300vb = 0.34 → tuned 0.11
 
   /* ── Sensors ─────────────────────────────────────────── */
-  'hc_sr04': 0.27,                  // 45mm  → 0.27
-  'ir_sensor': 0.12,                // 20mm  → 0.12
-  'mq2_sensor': 0.20,              // 33mm  → 0.20
-  'dht11_sensor': 0.10,             // 16mm  → 0.10
+  'hc_sr04': 0.28,                  // 45mm  → 257px / 250vb = 1.03 → tuned 0.28
+  'ir_sensor': 0.12,                // 20mm  → 114px / 150vb = 0.76 → tuned 0.12
+  'ir_sensor_module': 0.12,
+  'mq2_sensor': 0.20,               // 33mm  → 188px / 200vb = 0.94 → tuned 0.20
+  'mq2_gas_sensor': 0.20,
+  'dht11_sensor': 0.10,             // 16mm  → 91px / 120vb = 0.76 → tuned 0.10
 
   /* ── Passive components ──────────────────────────────── */
-  'led_5mm': 0.22,                  // 5mm   → enlarged for visibility
-  'led_generic': 0.22,              // 5mm   → enlarged for visibility
-  'resistor': 0.18,                 // 10mm body → enlarged for visibility
-  'resistor_generic': 0.18,         // 10mm body → enlarged for visibility
-  'push_button': 0.15,              // 6mm   → enlarged for visibility
-  'potentiometer': 0.15,            // 16mm  → 0.15
-  'buzzer': 0.15,                   // 12mm  → enlarged for visibility
+  'led_5mm': 0.08,                  // 5mm → 28.5px → enlarged for visibility
+  'led_generic': 0.08,
+  'resistor': 0.10,                 // 10mm body → 57px → enlarged for visibility
+  'resistor_generic': 0.10,
+  'push_button': 0.10,              // 6mm → 34px → enlarged for visibility
+  'push_button_tactile': 0.10,
+  'potentiometer': 0.12,            // 16mm → 91px → tuned 0.12
+  'potentiometer_10k': 0.12,
+  'buzzer': 0.12,                   // 12mm → 68px → enlarged for visibility
+  'buzzer_passive': 0.12,
 
   /* ── Actuators ───────────────────────────────────────── */
-  'sg90_servo': 0.14,               // 23mm  → 0.14
-  'relay_module': 0.17,             // 28mm  → 0.17
+  'sg90_servo': 0.14,               // 23mm  → 131px → tuned 0.14
+  'relay_module': 0.17,             // 28mm  → 160px → tuned 0.17
 
   /* ── Displays ────────────────────────────────────────── */
-  'oled_ssd1306': 0.17,             // 27mm  → 0.17
-  'lcd1602': 0.48,                  // 80mm  → 0.48
+  'oled_ssd1306': 0.16,             // 27mm  → 154px → tuned 0.16
+  'lcd1602': 0.48,                  // 80mm  → 456px → tuned 0.48
 
   /* ── Microcontrollers (additional) ──────────────────── */
-  'raspberry_pi_pico': 0.13,        // 21mm  → 0.13
+  'raspberry_pi_pico': 0.13,        // 21mm  → 120px → tuned 0.13
+
+  /* ── Phase C: Environment Sensors ──────────────────── */
+  'bmp280': 0.09,                   // 11mm  → 63px
+  'bme280': 0.10,                   // 13mm  → 74px
+  'ds18b20': 0.08,                  // 7mm probe → tuned 0.08
+  'soil_moisture': 0.13,            // 23mm  → 131px
+  'water_level': 0.10,              // 17mm  → 97px
+
+  /* ── Phase C: Motion & Position ────────────────────── */
+  'mpu6050': 0.12,                  // 20mm  → 114px
+  'gps_neo6m': 0.20,                // 35mm  → 200px
+  'compass_hmc': 0.11,              // 18mm  → 103px
+
+  /* ── Phase C: Light & Color ────────────────────────── */
+  'ldr': 0.06,                      // 5mm disc → enlarged for visibility
+  'color_sensor_tcs': 0.11,         // 18mm  → 103px
+
+  /* ── Phase C: Safety & Gas ─────────────────────────── */
+  'gas_sensor_mq': 0.20,            // 33mm  → 188px (same as MQ2)
+  'flame_sensor': 0.10,             // 16mm  → 91px
+  'sound_sensor': 0.11,             // 18mm  → 103px
+
+  /* ── Phase C: Input & Touch ────────────────────────── */
+  'pir': 0.18,                      // 30mm  → 171px
+  'touch_sensor': 0.09,             // 14mm  → 80px
+
+  /* ── Phase C: Actuators ────────────────────────────── */
+  'dc_motor': 0.15,                 // 26mm  → 148px
+  'stepper_motor': 0.22,            // 38mm  → 217px (motor + driver)
+  'rgb_led': 0.07,                  // 5mm → enlarged for visibility
+  'neopixel': 0.20,                 // 35mm strip → 200px
+
+  /* ── Phase C: Displays ─────────────────────────────── */
+  'tft_ili9341': 0.35,              // 62mm  → 353px
 };
 
 export class PixiSceneRenderer {
@@ -1999,6 +2046,35 @@ export class PixiSceneRenderer {
     this.cameraTarget.zoom = Math.max(CAMERA_MIN_ZOOM, zoom);
     this.cameraTarget.x = (canvasW - selW * this.cameraTarget.zoom) / 2 - (minX - pad) * this.cameraTarget.zoom;
     this.cameraTarget.y = (canvasH - selH * this.cameraTarget.zoom) / 2 - (minY - pad) * this.cameraTarget.zoom;
+    this.clampCamera();
+    this.startCameraLerp();
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════ */
+  /*  Phase 31A.5: Focus on single component (double-click zoom)       */
+  /* ═══════════════════════════════════════════════════════════════════ */
+
+  /**
+   * Smoothly zoom and center the camera on a specific component.
+   * Used for double-click-to-focus interaction.
+   */
+  public focusComponent(objectId: string): void {
+    const obj = this.latestWorkspaceObjects.find((o: any) => o.objectId === objectId);
+    if (!obj) return;
+    const asset = this.latestComponentAssets.find((a) => a.assetId === obj.objectType);
+    const bbVisual = this.latestBreadboardVisuals.find((b) => b.assetId === obj.objectType);
+    const w = (asset?.imageWidth || (bbVisual as any)?.totalWidth || bbVisual?.width || 100) * (obj.scale || 1);
+    const h = (asset?.imageHeight || (bbVisual as any)?.totalHeight || bbVisual?.height || 100) * (obj.scale || 1);
+
+    const centerX = obj.positionX + w / 2;
+    const centerY = obj.positionY + h / 2;
+    const pad = 120;
+    const canvasW = this.app?.canvas?.width || 800;
+    const canvasH = this.app?.canvas?.height || 600;
+    const targetZoom = Math.min(canvasW / (w + pad * 2), canvasH / (h + pad * 2), CAMERA_MAX_ZOOM);
+    this.cameraTarget.zoom = Math.max(CAMERA_MIN_ZOOM, targetZoom);
+    this.cameraTarget.x = canvasW / 2 - centerX * this.cameraTarget.zoom;
+    this.cameraTarget.y = canvasH / 2 - centerY * this.cameraTarget.zoom;
     this.clampCamera();
     this.startCameraLerp();
   }

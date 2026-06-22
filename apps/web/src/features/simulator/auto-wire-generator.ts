@@ -51,6 +51,7 @@ interface WireRuntime {
     objectType: string;
     positionX: number;
     positionY: number;
+    rotation?: number;
     scale?: number;
   }>;
 }

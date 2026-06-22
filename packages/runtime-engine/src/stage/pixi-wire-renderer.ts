@@ -27,64 +27,117 @@ export class PixiWireRenderer {
       ? route.pathPoints
       : [];
 
-    // Draw selection halo
-    if (isSelected || isHovered) {
+    // ── Wire shadow (rendered first, behind everything) ──────────────────────
+    if (points.length >= 2) {
+      this.drawSmoothPath(points, this.graphics, 2, 2);
+      this.graphics.stroke({ width: 3.5, color: 0x000000, alpha: 0.08, cap: 'round', join: 'round' });
+    } else {
+      for (const seg of geometry.segments) {
+        this.graphics.moveTo(seg.startX + 2, seg.startY + 2);
+        this.graphics.lineTo(seg.endX + 2, seg.endY + 2);
+      }
+      this.graphics.stroke({ width: 3.5, color: 0x000000, alpha: 0.08, cap: 'round', join: 'round' });
+    }
+
+    // ── Selection halo (behind wire, on top of shadow) ───────────────────────
+    if (isSelected) {
       if (points.length >= 2) {
-        this.graphics.moveTo(points[0].x, points[0].y);
-        for (let i = 1; i < points.length; i++) {
-          this.graphics.lineTo(points[i].x, points[i].y);
-        }
+        this.drawSmoothPath(points, this.graphics);
       } else {
-        for (const seg of geometry.segments) {
-          this.graphics.moveTo(seg.startX, seg.startY);
-          this.graphics.lineTo(seg.endX, seg.endY);
-        }
+        this.drawSegmentsPath(geometry.segments, this.graphics);
       }
       this.graphics.stroke({
-        width: isSelected ? 5 : 4,
-        color: isSelected ? 0x60a5fa : 0x93c5fd,
-        alpha: 0.45,
+        width: 10,
+        color: 0x3b82f6,
+        alpha: 0.25,
         cap: 'round',
         join: 'round'
       });
     }
 
-    // Draw main wire insulation
+    // ── Hover glow (behind wire, subtle highlight) ───────────────────────────
+    if (isHovered && !isSelected) {
+      if (points.length >= 2) {
+        this.drawSmoothPath(points, this.graphics);
+      } else {
+        this.drawSegmentsPath(geometry.segments, this.graphics);
+      }
+      this.graphics.stroke({
+        width: 8,
+        color: colorHex,
+        alpha: 0.15,
+        cap: 'round',
+        join: 'round'
+      });
+    }
+
+    // ── Outer insulation stroke (main wire body) ─────────────────────────────
     if (points.length >= 2) {
-      this.graphics.moveTo(points[0].x, points[0].y);
-      for (let i = 1; i < points.length; i++) {
-        this.graphics.lineTo(points[i].x, points[i].y);
-      }
+      this.drawSmoothPath(points, this.graphics);
     } else {
-      for (const seg of geometry.segments) {
-        this.graphics.moveTo(seg.startX, seg.startY);
-        this.graphics.lineTo(seg.endX, seg.endY);
-      }
+      this.drawSegmentsPath(geometry.segments, this.graphics);
     }
     this.graphics.stroke({
-      width: 2.5,
+      width: 3.5,
       color: colorHex,
       cap: 'round',
       join: 'round'
     });
 
-    // Draw circular anchor dots at endpoints and joints (color-matched to wire)
+    // ── Inner conductor highlight (lighter core) ─────────────────────────────
+    if (points.length >= 2) {
+      this.drawSmoothPath(points, this.graphics);
+    } else {
+      this.drawSegmentsPath(geometry.segments, this.graphics);
+    }
+    this.graphics.stroke({
+      width: 1.5,
+      color: 0xffffff,
+      alpha: 0.4,
+      cap: 'round',
+      join: 'round'
+    });
+
+    // ── Endpoint & joint rendering (solder-joint style) ──────────────────────
     if (points.length >= 2) {
       for (let i = 0; i < points.length; i++) {
         const isEnd = i === 0 || i === points.length - 1;
-        this.graphics.circle(points[i].x, points[i].y, isEnd ? 3 : 2);
-        this.graphics.fill(colorHex);
-        this.graphics.stroke({ width: 0.5, color: colorHex });
+        if (isEnd) {
+          // Solder joint: filled circle with white outline
+          this.graphics.circle(points[i].x, points[i].y, 4);
+          this.graphics.fill(colorHex);
+          this.graphics.stroke({ width: 1, color: 0xffffff });
+        } else {
+          // Interior joint: smaller, no stroke
+          this.graphics.circle(points[i].x, points[i].y, 2.5);
+          this.graphics.fill(colorHex);
+        }
       }
     } else {
       for (const seg of geometry.segments) {
-        this.graphics.circle(seg.startX, seg.startY, 3);
+        this.graphics.circle(seg.startX, seg.startY, 4);
         this.graphics.fill(colorHex);
-        this.graphics.stroke({ width: 0.5, color: colorHex });
+        this.graphics.stroke({ width: 1, color: 0xffffff });
 
-        this.graphics.circle(seg.endX, seg.endY, 3);
+        this.graphics.circle(seg.endX, seg.endY, 4);
         this.graphics.fill(colorHex);
-        this.graphics.stroke({ width: 0.5, color: colorHex });
+        this.graphics.stroke({ width: 1, color: 0xffffff });
+      }
+    }
+
+    // ── Selection diamond markers at each route point ────────────────────────
+    if (isSelected && points.length >= 2) {
+      for (let i = 0; i < points.length; i++) {
+        const px = points[i].x;
+        const py = points[i].y;
+        const d = 4; // half-diagonal of diamond
+        this.graphics.moveTo(px, py - d);
+        this.graphics.lineTo(px + d, py);
+        this.graphics.lineTo(px, py + d);
+        this.graphics.lineTo(px - d, py);
+        this.graphics.closePath();
+        this.graphics.fill({ color: 0x3b82f6, alpha: 0.7 });
+        this.graphics.stroke({ width: 1, color: 0xffffff, alpha: 0.9 });
       }
     }
 
@@ -130,6 +183,83 @@ export class PixiWireRenderer {
       this.graphics.circle(dotX, dotY, 4);
       this.graphics.fill({ color: signalFlow.flowColor, alpha: 0.95 });
       this.graphics.stroke({ width: 1, color: 0xffffff, alpha: 0.7 });
+    }
+  }
+
+  /**
+   * Draw a smooth path through the given points using quadraticCurveTo at bends.
+   * For 2 points draws a straight line; for 3+ points rounds corners with 8px radius.
+   * @param offsetX/offsetY optional offsets (used for shadow rendering)
+   */
+  private drawSmoothPath(
+    points: ReadonlyArray<{ x: number; y: number }>,
+    g: Graphics,
+    offsetX = 0,
+    offsetY = 0,
+  ): void {
+    if (points.length < 2) return;
+
+    const RADIUS = 8;
+
+    if (points.length === 2) {
+      g.moveTo(points[0].x + offsetX, points[0].y + offsetY);
+      g.lineTo(points[1].x + offsetX, points[1].y + offsetY);
+      return;
+    }
+
+    // Start at the first point
+    g.moveTo(points[0].x + offsetX, points[0].y + offsetY);
+
+    for (let i = 1; i < points.length - 1; i++) {
+      const prev = points[i - 1];
+      const curr = points[i];
+      const next = points[i + 1];
+
+      // Vectors from curr to prev and curr to next
+      const dxPrev = prev.x - curr.x;
+      const dyPrev = prev.y - curr.y;
+      const dxNext = next.x - curr.x;
+      const dyNext = next.y - curr.y;
+
+      const lenPrev = Math.sqrt(dxPrev * dxPrev + dyPrev * dyPrev);
+      const lenNext = Math.sqrt(dxNext * dxNext + dyNext * dyNext);
+
+      // Clamp the radius so it doesn't overshoot short segments
+      const clampedRadius = Math.min(RADIUS, lenPrev * 0.5, lenNext * 0.5);
+
+      if (clampedRadius < 1 || lenPrev < 1 || lenNext < 1) {
+        // Degenerate – just lineTo through the point
+        g.lineTo(curr.x + offsetX, curr.y + offsetY);
+        continue;
+      }
+
+      // Points where the curve begins and ends (on the incoming/outgoing segments)
+      const enterX = curr.x + (dxPrev / lenPrev) * clampedRadius;
+      const enterY = curr.y + (dyPrev / lenPrev) * clampedRadius;
+      const exitX  = curr.x + (dxNext / lenNext) * clampedRadius;
+      const exitY  = curr.y + (dyNext / lenNext) * clampedRadius;
+
+      // Line to the curve entry point, then curve through the bend
+      g.lineTo(enterX + offsetX, enterY + offsetY);
+      g.quadraticCurveTo(
+        curr.x + offsetX, curr.y + offsetY,
+        exitX + offsetX,  exitY + offsetY,
+      );
+    }
+
+    // Finish with a straight line to the last point
+    const last = points[points.length - 1];
+    g.lineTo(last.x + offsetX, last.y + offsetY);
+  }
+
+  /** Draw fallback straight segments into the graphics context */
+  private drawSegmentsPath(
+    segments: ReadonlyArray<{ startX: number; startY: number; endX: number; endY: number }>,
+    g: Graphics,
+  ): void {
+    for (const seg of segments) {
+      g.moveTo(seg.startX, seg.startY);
+      g.lineTo(seg.endX, seg.endY);
     }
   }
 

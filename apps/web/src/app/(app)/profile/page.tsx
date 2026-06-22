@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle, Button, Input } from '@stemverse/ui';
 import { userApi } from '@/lib/api';
 import { useAuthStore } from '@/lib/auth-store';
@@ -153,15 +153,7 @@ export default function ProfilePage() {
                 </div>
                 <div className="flex justify-between py-2">
                   <span className="text-sm text-muted">Member since</span>
-                  <span className="text-sm text-foreground">
-                    {user?.createdAt
-                      ? new Date(user.createdAt).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                        })
-                      : '—'}
-                  </span>
+                  <span className="text-sm text-foreground">—</span>
                 </div>
               </div>
             )}

@@ -20,11 +20,15 @@ import { useSimulatorStore } from './simulator-store';
 export interface ContextMenuProps {
   onDuplicate: (id: string) => void;
   onDelete: (id: string) => void;
-  onRotate: (id: string, direction: 'cw' | 'ccw') => void;
-  onBringToFront: (id: string) => void;
-  onSendToBack: (id: string) => void;
-  onInspect: (id: string) => void;
-  onDisconnectWires: (id: string) => void;
+  onRotate?: (id: string, direction: 'cw' | 'ccw') => void;
+  onBringToFront?: (id: string) => void;
+  onSendToBack?: (id: string) => void;
+  onInspect?: (id: string) => void;
+  onDisconnectWires?: (id: string) => void;
+  /** Phase 31A.5: Optional per-direction rotation callbacks (used by robotics workspace) */
+  onRotateCW?: (id: string) => void;
+  onRotateCCW?: (id: string) => void;
+  onDeleteWire?: (wireId: string) => void;
 }
 
 /* ------------------------------------------------------------------ */
@@ -139,8 +143,8 @@ export function ContextMenu({
   const isWire = contextMenu.targetType === 'wire';
 
   /* ---- action wrapper ---------------------------------------------- */
-  function act(fn: (id: string) => void) {
-    fn(targetId);
+  function act(fn: ((id: string) => void) | undefined) {
+    fn?.(targetId);
     close();
   }
 
@@ -187,7 +191,7 @@ export function ContextMenu({
             icon={<RotateCw className="h-4 w-4 opacity-70" />}
             label="Rotate CW"
             shortcut="R"
-            onClick={() => { onRotate(targetId, 'cw'); close(); }}
+            onClick={() => { onRotate?.(targetId, 'cw'); close(); }}
           />
 
           {/* Rotate CCW */}
@@ -195,7 +199,7 @@ export function ContextMenu({
             icon={<RotateCcw className="h-4 w-4 opacity-70" />}
             label="Rotate CCW"
             shortcut="Shift+R"
-            onClick={() => { onRotate(targetId, 'ccw'); close(); }}
+            onClick={() => { onRotate?.(targetId, 'ccw'); close(); }}
           />
 
           <Separator />

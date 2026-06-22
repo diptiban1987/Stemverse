@@ -133,8 +133,10 @@ export function RoboticsWorkspace({
   const selectedSimComponentIdRef = useRef<string | null>(null);
 
   /* ── Context menu ──────────────────────────────────────────────── */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const contextMenu = useSimulatorStore((s) => s.contextMenu);
   const setContextMenu = useSimulatorStore((s) => s.setContextMenu);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const clearSelection = useSimulatorStore((s) => s.clearSelection);
 
   /* ── Canvas zoom state ──────────────────────────────────────────── */
@@ -1171,7 +1173,8 @@ export function RoboticsWorkspace({
                 objectType: obj.objectType,
                 positionX: obj.positionX + 30,
                 positionY: obj.positionY + 30,
-                rotation: obj.rotation,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                rotation: (obj as any).rotation,
                 scale: obj.scale,
                 selected: false,
                 locked: false,
@@ -1772,7 +1775,7 @@ export function RoboticsWorkspace({
       if (codeToSimulate.includes('lcd') || codeToSimulate.includes('LCD') || codeToSimulate.includes('LiquidCrystal')) {
         const rt = simRuntimeRef.current;
         const objects = rt?.getWorkspaceObjectModels?.() ?? [];
-        const lcdObjects = objects.filter(o => (o.objectType as string).includes('lcd'));
+        const lcdObjects = objects.filter((o: { objectType: string }) => o.objectType.includes('lcd'));
         for (const lcdObj of lcdObjects) {
           // Only flag if this specific LCD has NO assignments at all
           if (!componentGroups.has(lcdObj.objectId)) {
@@ -2654,7 +2657,8 @@ export function RoboticsWorkspace({
                               objectType: obj.objectType,
                               positionX: obj.positionX + 30,
                               positionY: obj.positionY + 30,
-                              rotation: obj.rotation,
+                              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                rotation: (obj as any).rotation,
                               scale: obj.scale,
                               selected: false,
                               locked: false,
@@ -2733,7 +2737,8 @@ export function RoboticsWorkspace({
                             objectType: obj.objectType,
                             positionX: obj.positionX + 30,
                             positionY: obj.positionY + 30,
-                            rotation: obj.rotation,
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                rotation: (obj as any).rotation,
                             scale: obj.scale,
                             selected: false,
                             locked: false,

@@ -105,6 +105,8 @@ export class PixiComponentRenderer {
   private graphics = new Graphics();
   private textureSprite: Sprite | null = null;
   private selectionGraphics = new Graphics();
+  /** Phase 31A.5: Drop shadow layer rendered behind component */
+  private shadowGraphics = new Graphics();
   private labelText: Text | null = null;
   /** Cached pin label Text objects to avoid recreation every frame */
   private pinLabelContainer: Container | null = null;
@@ -115,6 +117,7 @@ export class PixiComponentRenderer {
   public isUsingTexture = false;
 
   constructor() {
+    this.container.addChild(this.shadowGraphics);  // Shadow behind everything
     this.container.addChild(this.graphics);
     this.container.addChild(this.selectionGraphics);
   }
@@ -133,9 +136,34 @@ export class PixiComponentRenderer {
   ): void {
     this.graphics.clear();
     this.selectionGraphics.clear();
+    this.shadowGraphics.clear();
 
     const w = def.imageWidth || 100;
     const h = def.imageHeight || 100;
+
+    // ═══════════════════════════════════════════════════════════════
+    // Phase 31A.5: Dynamic Drop Shadow
+    // Renders a soft shadow behind the component for 3D depth.
+    // Shadow grows when component is being dragged (elevation effect).
+    // ═══════════════════════════════════════════════════════════════
+    {
+      const shadowOffX = isSelected ? 5 : 3;
+      const shadowOffY = isSelected ? 5 : 3;
+      const shadowAlpha = isSelected ? 0.18 : 0.12;
+      const shadowBlur = isSelected ? 4 : 2;
+      // Outer soft shadow (simulates blur with multiple layers)
+      for (let b = shadowBlur; b >= 1; b--) {
+        this.shadowGraphics.roundRect(
+          shadowOffX - b, shadowOffY - b,
+          w + b * 2, h + b * 2,
+          6 + b
+        );
+        this.shadowGraphics.fill({ color: 0x000000, alpha: shadowAlpha / (b + 1) });
+      }
+      // Core shadow
+      this.shadowGraphics.roundRect(shadowOffX, shadowOffY, w, h, 6);
+      this.shadowGraphics.fill({ color: 0x000000, alpha: shadowAlpha });
+    }
 
     // ═══════════════════════════════════════════════════════════════
     // Phase 19D: Texture-First Rendering Path

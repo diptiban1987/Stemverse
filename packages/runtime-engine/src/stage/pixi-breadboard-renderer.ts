@@ -25,54 +25,207 @@ export class PixiBreadboardRenderer {
       height = 170;
     }
 
-    // Draw drop shadow behind body
-    this.graphics.roundRect(4, 4, width, height, 16);
-    this.graphics.fill({ color: 0x000000, alpha: 0.12 });
+    const g = this.graphics;
+    const cornerR = isMini ? 12 : 16;
 
-    // Draw body background (rounded cream box)
-    this.graphics.roundRect(0, 0, width, height, 16);
-    this.graphics.fill(0xfbfaf6); // MB-102 cream color
-    this.graphics.stroke({ width: 3, color: 0xe5e1d3 }); // Bevel effect
-
-    // Inner border for 3D depth
-    this.graphics.roundRect(4, 4, width - 8, height - 8, 14);
-    this.graphics.stroke({ width: 1, color: 0xf5f0e0 });
-
-    if (!isMini) {
-      // Draw center ravine
-      this.graphics.rect(50, 165, width - 100, 10);
-      this.graphics.fill(0xded9c3);
-
-      // Draw power rail lines
-      // Top rails
-      this.graphics.moveTo(60, 42);
-      this.graphics.lineTo(width - 60, 42);
-      this.graphics.stroke({ width: 3, color: 0xef4444 }); // Positive line (+)
-      
-      this.graphics.moveTo(60, 78);
-      this.graphics.lineTo(width - 60, 78);
-      this.graphics.stroke({ width: 3, color: 0x3b82f6 }); // Negative line (-)
-
-      // Bottom rails
-      this.graphics.moveTo(60, 262);
-      this.graphics.lineTo(width - 60, 262);
-      this.graphics.stroke({ width: 3, color: 0xef4444 }); // Positive line (+)
-      
-      this.graphics.moveTo(60, 298);
-      this.graphics.lineTo(width - 60, 298);
-      this.graphics.stroke({ width: 3, color: 0x3b82f6 }); // Negative line (-)
-    } else {
-      // Mini: center ravine between top holes (Y≈78) and bottom holes (Y≈95)
-      this.graphics.rect(30, 82, width - 60, 10);
-      this.graphics.fill(0xded9c3);
+    // ── 1. Multi-layer drop shadow (simulated blur via stacked offset rects) ──
+    const shadowLayers = [
+      { dx: 8, dy: 8, alpha: 0.04 },
+      { dx: 7, dy: 7, alpha: 0.06 },
+      { dx: 6, dy: 6, alpha: 0.08 },
+      { dx: 5, dy: 5, alpha: 0.10 },
+      { dx: 4, dy: 4, alpha: 0.12 },
+      { dx: 3, dy: 3, alpha: 0.15 },
+    ];
+    for (const s of shadowLayers) {
+      g.roundRect(s.dx, s.dy, width, height, cornerR);
+      g.fill({ color: 0x000000, alpha: s.alpha });
     }
 
-    // Draw holes
+    // ── 2. Main body fill (cream MB-102) ──
+    g.roundRect(0, 0, width, height, cornerR);
+    g.fill(0xfbfaf6);
+
+    // ── 3. Outer bevel stroke (darker bottom-right edge illusion) ──
+    g.roundRect(0, 0, width, height, cornerR);
+    g.stroke({ width: 2.5, color: 0xd5d0be });
+
+    // ── 4. Edge highlight: top-left lighter line ──
+    g.moveTo(cornerR, 1);
+    g.lineTo(width - cornerR, 1);
+    g.stroke({ width: 1, color: 0xffffff, alpha: 0.45 });
+    g.moveTo(1, cornerR);
+    g.lineTo(1, height - cornerR);
+    g.stroke({ width: 1, color: 0xffffff, alpha: 0.35 });
+
+    // ── 5. Edge shadow: bottom-right darker line ──
+    g.moveTo(cornerR, height - 1);
+    g.lineTo(width - cornerR, height - 1);
+    g.stroke({ width: 1, color: 0xb0a98f, alpha: 0.40 });
+    g.moveTo(width - 1, cornerR);
+    g.lineTo(width - 1, height - cornerR);
+    g.stroke({ width: 1, color: 0xb0a98f, alpha: 0.35 });
+
+    // ── 6. Inner bevel (1px lighter border for 3D depth) ──
+    g.roundRect(3, 3, width - 6, height - 6, cornerR - 2);
+    g.stroke({ width: 1, color: 0xf7f3e8 });
+
+    // ── 7. Corner edge-wear marks (slightly darker at corners) ──
+    const wearAlpha = 0.06;
+    const wearR = 10;
+    // Top-left
+    g.circle(cornerR + 2, cornerR + 2, wearR);
+    g.fill({ color: 0x8b8570, alpha: wearAlpha });
+    // Top-right
+    g.circle(width - cornerR - 2, cornerR + 2, wearR);
+    g.fill({ color: 0x8b8570, alpha: wearAlpha });
+    // Bottom-left
+    g.circle(cornerR + 2, height - cornerR - 2, wearR);
+    g.fill({ color: 0x8b8570, alpha: wearAlpha });
+    // Bottom-right
+    g.circle(width - cornerR - 2, height - cornerR - 2, wearR);
+    g.fill({ color: 0x8b8570, alpha: wearAlpha });
+
+    // ── 8. Surface texture: subtle grid of tiny dots ──
+    for (let tx = 20; tx < width; tx += 20) {
+      for (let ty = 20; ty < height; ty += 20) {
+        g.circle(tx, ty, 0.3);
+        g.fill({ color: 0x9e9880, alpha: 0.05 });
+      }
+    }
+
+    if (!isMini) {
+      // ── 9. Professional power rails ─────────────────────────────────────────
+
+      const railMarginL = 55;
+      const railMarginR = width - 55;
+      const railGapEvery = 5; // gap every 5 holes, matching real MB-102
+      const holeSpacing = 13; // approximate hole spacing
+      const railStripW = 6;
+
+      // Helper: draw a segmented power rail stripe with gaps every 5 holes
+      const drawRailStripe = (y: number, color: number) => {
+        const segCount = Math.floor((railMarginR - railMarginL) / (holeSpacing * railGapEvery));
+        for (let s = 0; s <= segCount; s++) {
+          const sx = railMarginL + s * holeSpacing * railGapEvery;
+          const ex = Math.min(sx + holeSpacing * railGapEvery - 4, railMarginR);
+          if (sx >= railMarginR) break;
+          // Recessed trough behind the stripe
+          g.rect(sx, y - railStripW / 2 - 1, ex - sx, railStripW + 2);
+          g.fill({ color: 0xd9d4c0, alpha: 0.45 });
+          // Colored stripe
+          g.rect(sx, y - railStripW / 2, ex - sx, railStripW);
+          g.fill({ color, alpha: 0.85 });
+          // Top shine on stripe
+          g.moveTo(sx, y - railStripW / 2 + 1);
+          g.lineTo(ex, y - railStripW / 2 + 1);
+          g.stroke({ width: 0.5, color: 0xffffff, alpha: 0.30 });
+        }
+      };
+
+      // Top power rails
+      drawRailStripe(42, 0xdc2626);  // Red positive (+)
+      drawRailStripe(78, 0x2563eb);  // Blue negative (-)
+
+      // Bottom power rails
+      drawRailStripe(262, 0xdc2626); // Red positive (+)
+      drawRailStripe(298, 0x2563eb); // Blue negative (-)
+
+      // ── 10. Realistic center trench (recessed groove between rows E and F) ──
+
+      const trenchL = 48;
+      const trenchR = width - 48;
+      const trenchY = 163;
+      const trenchH = 14;
+
+      // Shadow at top of trench (dark edge)
+      g.rect(trenchL, trenchY, trenchR - trenchL, 2);
+      g.fill({ color: 0x8a8370, alpha: 0.50 });
+
+      // Main trench body — gradient simulated with horizontal bands
+      g.rect(trenchL, trenchY + 2, trenchR - trenchL, 3);
+      g.fill({ color: 0xc4bda5, alpha: 0.90 });
+      g.rect(trenchL, trenchY + 5, trenchR - trenchL, 4);
+      g.fill({ color: 0xd6ceb4, alpha: 0.85 }); // lighter center
+      g.rect(trenchL, trenchY + 9, trenchR - trenchL, 3);
+      g.fill({ color: 0xc4bda5, alpha: 0.90 });
+
+      // Shadow at bottom of trench (dark edge)
+      g.rect(trenchL, trenchY + trenchH - 2, trenchR - trenchL, 2);
+      g.fill({ color: 0x8a8370, alpha: 0.40 });
+
+      // Thin highlight line along top edge (light reflection)
+      g.moveTo(trenchL, trenchY);
+      g.lineTo(trenchR, trenchY);
+      g.stroke({ width: 0.5, color: 0xffffff, alpha: 0.20 });
+
+      // Thin dark line along bottom edge
+      g.moveTo(trenchL, trenchY + trenchH);
+      g.lineTo(trenchR, trenchY + trenchH);
+      g.stroke({ width: 0.5, color: 0x6b6350, alpha: 0.30 });
+
+    } else {
+      // ── Mini breadboard: center ravine ──
+      const mTrenchL = 25;
+      const mTrenchR = width - 25;
+      const mTrenchY = 80;
+      const mTrenchH = 12;
+
+      g.rect(mTrenchL, mTrenchY, mTrenchR - mTrenchL, 2);
+      g.fill({ color: 0x8a8370, alpha: 0.45 });
+      g.rect(mTrenchL, mTrenchY + 2, mTrenchR - mTrenchL, mTrenchH - 4);
+      g.fill({ color: 0xd0c9af, alpha: 0.80 });
+      g.rect(mTrenchL, mTrenchY + mTrenchH - 2, mTrenchR - mTrenchL, 2);
+      g.fill({ color: 0x8a8370, alpha: 0.35 });
+    }
+
+    // ── 11. Realistic holes ──────────────────────────────────────────────────
+
     if (model.holes) {
+      // Determine power-rail Y bands for coloring difference
+      const isPowerRailHole = (hy: number): boolean => {
+        if (isMini) return false;
+        // Top rails around y=42 and y=78; bottom rails around y=262 and y=298
+        return (hy < 95) || (hy > 245);
+      };
+
       for (const hole of model.holes) {
-        this.graphics.circle(hole.positionX, hole.positionY, 3.5);
-        this.graphics.fill(0x374151); // Dark metal contact inside
-        this.graphics.stroke({ width: 1, color: 0x9ca3af }); // Silver contact ring
+        const hx = hole.positionX;
+        const hy = hole.positionY;
+        const isPower = isPowerRailHole(hy);
+
+        // Layer 1: Outer shadow ring (dark halo)
+        g.circle(hx + 0.5, hy + 0.5, 4.5);
+        g.fill({ color: 0x2d2a22, alpha: 0.25 });
+
+        // Layer 2: Recessed pit (darker fill, simulates depth)
+        g.circle(hx, hy, 4.0);
+        g.fill(isPower ? 0x30302a : 0x2b2b25);
+
+        // Layer 3: Inner wall highlight (top-left light reflection)
+        g.circle(hx - 0.3, hy - 0.3, 3.6);
+        g.stroke({ width: 0.4, color: 0xffffff, alpha: 0.12 });
+
+        // Layer 4: Metallic contact center
+        if (isPower) {
+          // Power rail holes: slight gold-bronze tint
+          g.circle(hx, hy, 2.4);
+          g.fill(0x8b7d5e);
+          // Specular highlight dot
+          g.circle(hx - 0.5, hy - 0.5, 1.0);
+          g.fill({ color: 0xd4c49a, alpha: 0.60 });
+        } else {
+          // Terminal holes: silver metallic contact
+          g.circle(hx, hy, 2.5);
+          g.fill(0x6b7280);
+          // Specular highlight dot
+          g.circle(hx - 0.5, hy - 0.5, 1.0);
+          g.fill({ color: 0xb8c0cc, alpha: 0.55 });
+        }
+
+        // Layer 5: Outer ring stroke (crisp edge)
+        g.circle(hx, hy, 4.0);
+        g.stroke({ width: 0.6, color: 0x4a473d, alpha: 0.40 });
       }
     }
 
