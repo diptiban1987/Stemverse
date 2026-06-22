@@ -419,3 +419,35 @@ export {
 } from './xp-runtime';
 export type { XpSource, XpEvent, UserLevel, LevelDefinition } from './xp-runtime';
 export * from './gamification-runtime';
+
+// Phase 41A: AI Mentor, Adaptive Learning & Robothrone Coach
+export * from './ai-mentor-runtime';
+export {
+  getMasteryLevel, getMasteryThresholds,
+  createSkillNode, addSkillXp, isSkillMastered, getSkillProgress,
+  createKnowledgeGraph, updateKnowledgeGraph, getSkillByName,
+  createDifficultyProfile, recordAttempt, getRecommendedDifficulty,
+  detectWeaknesses, detectStrengths,
+  generateLessonSequence, completeLesson, getSequenceProgress,
+  createStudentAIProfile, updateStudentProfile,
+  getCompetitionReadiness as getAdaptiveCompetitionReadiness,
+  getAchievementReadiness,
+} from './adaptive-learning-runtime';
+export type {
+  SkillCategory, MasteryLevel, LessonStatus,
+  SkillNode, KnowledgeGraph, DifficultyProfile,
+  AdaptiveLesson, LessonSequence, StudentProfile,
+} from './adaptive-learning-runtime';
+export {
+  createCoachProfile, updateCategoryScore, recordTrainingSession,
+  getReadinessLevel, recommendChallenges,
+  generatePracticeRoadmap, completeRoadmapPhase, completeDrill, getRoadmapProgress,
+  analyzePerformance, recommendProjects,
+  calculateSkillScore,
+  getCompetitionReadiness as getCoachCompetitionReadiness,
+} from './robothrone-coach-runtime';
+export type {
+  CoachCategory, ReadinessLevel,
+  CoachProfile, PracticeRoadmap, ChallengeRecommendation,
+  PerformanceAnalysis, ProjectRecommendation,
+} from './robothrone-coach-runtime';
