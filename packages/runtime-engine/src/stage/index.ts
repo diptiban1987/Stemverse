@@ -278,3 +278,6 @@ export {
   AuthSynchronizer,
 } from './auth-runtime';
 export * from './api-layer-runtime';
+
+// Phase 36D: Runtime Integration Wiring
+export * from './integration-wiring-runtime';
