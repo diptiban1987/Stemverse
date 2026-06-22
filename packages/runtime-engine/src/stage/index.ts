@@ -160,6 +160,11 @@ export * from './realtime-collaboration-runtime';
 export * from './classroom-management-runtime';
 export * from './assignment-management-runtime';
 
+// Phase 34B: Auto Grading, Certification & Competition
+export * from './auto-grading-runtime';
+export * from './certification-runtime';
+export * from './competition-runtime';
+
 // Phase 31A: Professional Simulator UX
 // Note: calculateSelectionBounds is re-exported as calculateUXSelectionBounds
 // to avoid collision with workspace-runtime's calculateSelectionBounds

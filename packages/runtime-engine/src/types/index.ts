@@ -780,6 +780,9 @@ export interface StageSyncState {
 
   // Phase 34A: Classroom Management, Assignments & Analytics
   classroomManagementSnapshot?: ClassroomManagementSnapshot;
+
+  // Phase 34B: Auto Grading, Certification & Competition
+  assessmentSnapshot?: AssessmentSnapshot;
 }
 
 
@@ -1630,6 +1633,9 @@ export interface SerializedTarget {
 
   // Phase 34A: Classroom Management, Assignments & Analytics
   classroomManagementSnapshot?: ClassroomManagementSnapshot;
+
+  // Phase 34B: Auto Grading, Certification & Competition
+  assessmentSnapshot?: AssessmentSnapshot;
 }
 
 
@@ -8006,4 +8012,257 @@ export interface ClassroomManagementSnapshot {
   activeClassroomCount: number;
   totalStudentCount: number;
   totalAssignmentCount: number;
+}
+
+// ─── Phase 34B: Auto Grading, Certification & Competition ──
+
+/** Phase 34B: Assessment type */
+export type AssessmentType =
+  | 'mcq'
+  | 'true_false'
+  | 'short_answer'
+  | 'blockly_challenge'
+  | 'circuit_challenge'
+  | 'simulator_challenge';
+
+/** Phase 34B: Assessment status */
+export type AssessmentStatus =
+  | 'draft'
+  | 'published'
+  | 'active'
+  | 'closed'
+  | 'archived';
+
+/** Phase 34B: Attempt status */
+export type AttemptStatus =
+  | 'not_started'
+  | 'in_progress'
+  | 'submitted'
+  | 'graded'
+  | 'timed_out';
+
+/** Phase 34B: Certificate status */
+export type CertificateStatus =
+  | 'pending'
+  | 'issued'
+  | 'revoked'
+  | 'expired';
+
+/** Phase 34B: Certification type */
+export type CertificationType =
+  | 'course_completion'
+  | 'skill_certification'
+  | 'competition_certification'
+  | 'teacher_certification'
+  | 'robothrone_certification';
+
+/** Phase 34B: Competition status */
+export type CompetitionStatus =
+  | 'registration'
+  | 'active'
+  | 'judging'
+  | 'completed'
+  | 'cancelled';
+
+/** Phase 34B: Competition category level */
+export type CompetitionLevel =
+  | 'beginner'
+  | 'intermediate'
+  | 'advanced'
+  | 'iot'
+  | 'ai_robotics'
+  | 'innovation';
+
+/** Phase 34B: Evaluation area */
+export type EvaluationArea =
+  | 'circuit'
+  | 'blockly'
+  | 'simulation'
+  | 'device_upload'
+  | 'diagnostics';
+
+/** Phase 34B: Assessment question */
+export interface AssessmentQuestionModel {
+  questionId: string;
+  assessmentId: string;
+  type: AssessmentType;
+  prompt: string;
+  options: string[];
+  correctAnswer: string;
+  points: number;
+  order: number;
+}
+
+/** Phase 34B: Assessment */
+export interface AssessmentModel {
+  assessmentId: string;
+  classroomId: string;
+  teacherId: string;
+  title: string;
+  description: string;
+  status: AssessmentStatus;
+  timeLimitMinutes: number;
+  maxAttempts: number;
+  passingScore: number;
+  totalPoints: number;
+  questionIds: string[];
+  createdAt: number;
+  publishedAt: number | null;
+  closedAt: number | null;
+  deleted: boolean;
+}
+
+/** Phase 34B: Assessment attempt */
+export interface AssessmentAttemptModel {
+  attemptId: string;
+  assessmentId: string;
+  studentId: string;
+  studentName: string;
+  status: AttemptStatus;
+  answers: Array<{ questionId: string; answer: string; correct: boolean; pointsAwarded: number }>;
+  score: number;
+  maxScore: number;
+  percentage: number;
+  feedback: string;
+  startedAt: number;
+  submittedAt: number | null;
+  gradedAt: number | null;
+  attemptNumber: number;
+}
+
+/** Phase 34B: Certification program */
+export interface CertificationProgramModel {
+  programId: string;
+  title: string;
+  description: string;
+  type: CertificationType;
+  requiredAssessmentIds: string[];
+  requiredScore: number;
+  validityDays: number;
+  createdAt: number;
+  deleted: boolean;
+}
+
+/** Phase 34B: Certificate */
+export interface CertificateModel {
+  certificateId: string;
+  programId: string;
+  studentId: string;
+  studentName: string;
+  certificateNumber: string;
+  verificationId: string;
+  status: CertificateStatus;
+  issuedAt: number;
+  expiresAt: number | null;
+  revokedAt: number | null;
+  score: number;
+  type: CertificationType;
+}
+
+/** Phase 34B: Competition */
+export interface CompetitionModel {
+  competitionId: string;
+  title: string;
+  description: string;
+  organizer: string;
+  status: CompetitionStatus;
+  registrationDeadline: number;
+  startDate: number;
+  endDate: number;
+  maxParticipants: number;
+  categoryIds: string[];
+  createdAt: number;
+  deleted: boolean;
+}
+
+/** Phase 34B: Competition category */
+export interface CompetitionCategoryModel {
+  categoryId: string;
+  competitionId: string;
+  name: string;
+  description: string;
+  level: CompetitionLevel;
+  maxTeamSize: number;
+  judgeIds: string[];
+}
+
+/** Phase 34B: Competition submission */
+export interface CompetitionSubmissionModel {
+  submissionId: string;
+  competitionId: string;
+  categoryId: string;
+  teamName: string;
+  school: string;
+  mentorName: string;
+  participantIds: string[];
+  projectId: string;
+  projectTitle: string;
+  submittedAt: number;
+}
+
+/** Phase 34B: Competition score */
+export interface CompetitionScoreModel {
+  scoreId: string;
+  submissionId: string;
+  judgeId: string;
+  judgeName: string;
+  creativity: number;
+  technical: number;
+  presentation: number;
+  innovation: number;
+  totalScore: number;
+  comments: string;
+  scoredAt: number;
+}
+
+/** Phase 34B: Competition leaderboard entry */
+export interface CompetitionLeaderboardModel {
+  entryId: string;
+  competitionId: string;
+  categoryId: string;
+  teamName: string;
+  school: string;
+  rank: number;
+  averageScore: number;
+  judgeCount: number;
+  submissionId: string;
+}
+
+/** Phase 34B: Competition judge */
+export interface CompetitionJudgeModel {
+  judgeId: string;
+  competitionId: string;
+  name: string;
+  email: string;
+  assignedCategoryIds: string[];
+  totalScored: number;
+}
+
+/** Phase 34B: Practical evaluation result */
+export interface PracticalEvaluationResult {
+  area: EvaluationArea;
+  score: number;
+  maxScore: number;
+  passed: boolean;
+  strengths: string[];
+  weaknesses: string[];
+  improvements: string[];
+}
+
+/** Phase 34B: Full assessment snapshot */
+export interface AssessmentSnapshot {
+  assessments: AssessmentModel[];
+  questions: AssessmentQuestionModel[];
+  attempts: AssessmentAttemptModel[];
+  programs: CertificationProgramModel[];
+  certificates: CertificateModel[];
+  competitions: CompetitionModel[];
+  categories: CompetitionCategoryModel[];
+  competitionSubmissions: CompetitionSubmissionModel[];
+  scores: CompetitionScoreModel[];
+  competitionLeaderboards: CompetitionLeaderboardModel[];
+  judges: CompetitionJudgeModel[];
+  totalAssessmentCount: number;
+  totalCertificateCount: number;
+  totalCompetitionCount: number;
 }

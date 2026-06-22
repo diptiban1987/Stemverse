@@ -10,8 +10,8 @@ Repository maturity is HIGH.
 
 This repository contains:
 
-* 559,600+ passing tests
-* 93 passing test files
+* 559,700+ passing tests
+* 96 passing test files
 * Clean build
 
 You are NOT designing a new architecture.
