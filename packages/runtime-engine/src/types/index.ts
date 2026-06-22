@@ -783,6 +783,9 @@ export interface StageSyncState {
 
   // Phase 34B: Auto Grading, Certification & Competition
   assessmentSnapshot?: AssessmentSnapshot;
+
+  // Phase 35A: Cloud Platform & Public Project Gallery
+  publicGallerySnapshot?: PublicGallerySnapshot;
 }
 
 
@@ -1636,6 +1639,9 @@ export interface SerializedTarget {
 
   // Phase 34B: Auto Grading, Certification & Competition
   assessmentSnapshot?: AssessmentSnapshot;
+
+  // Phase 35A: Cloud Platform & Public Project Gallery
+  publicGallerySnapshot?: PublicGallerySnapshot;
 }
 
 
@@ -8265,4 +8271,178 @@ export interface AssessmentSnapshot {
   totalAssessmentCount: number;
   totalCertificateCount: number;
   totalCompetitionCount: number;
+}
+
+// ─── Phase 35A: Cloud Platform & Public Project Gallery ──
+
+/** Phase 35A: Project visibility */
+export type ProjectVisibility = 'public' | 'private' | 'unlisted';
+
+/** Phase 35A: Gallery sort order */
+export type GallerySortOrder = 'newest' | 'oldest' | 'most_rated' | 'most_forked' | 'most_viewed' | 'trending';
+
+/** Phase 35A: Gallery category */
+export type GalleryCategory =
+  | 'esp32'
+  | 'arduino'
+  | 'iot'
+  | 'robotics'
+  | 'ai_robotics'
+  | 'automation'
+  | 'education'
+  | 'innovation'
+  | 'competition'
+  | 'other';
+
+/** Phase 35A: Comment status */
+export type GalleryCommentStatus = 'visible' | 'hidden' | 'deleted';
+
+/** Phase 35A: Published project */
+export interface PublicProjectModel {
+  publicProjectId: string;
+  originalProjectId: string;
+  creatorId: string;
+  creatorName: string;
+  title: string;
+  description: string;
+  tags: string[];
+  category: GalleryCategory;
+  visibility: ProjectVisibility;
+  thumbnailUrl: string;
+  componentCount: number;
+  wireCount: number;
+  blockCount: number;
+  viewCount: number;
+  downloadCount: number;
+  forkCount: number;
+  cloneCount: number;
+  ratingCount: number;
+  averageRating: number;
+  commentCount: number;
+  shareCount: number;
+  deviceUploadCount: number;
+  publishedAt: number;
+  updatedAt: number;
+  featured: boolean;
+  deleted: boolean;
+}
+
+/** Phase 35A: Gallery listing */
+export interface ProjectGalleryModel {
+  galleryId: string;
+  title: string;
+  description: string;
+  curatedProjectIds: string[];
+  category: GalleryCategory;
+  sortOrder: GallerySortOrder;
+  createdAt: number;
+}
+
+/** Phase 35A: Comment */
+export interface GalleryCommentModel {
+  commentId: string;
+  publicProjectId: string;
+  authorId: string;
+  authorName: string;
+  content: string;
+  parentCommentId: string | null;
+  likeCount: number;
+  status: GalleryCommentStatus;
+  createdAt: number;
+  editedAt: number | null;
+}
+
+/** Phase 35A: Rating */
+export interface GalleryRatingModel {
+  ratingId: string;
+  publicProjectId: string;
+  userId: string;
+  userName: string;
+  stars: number;
+  createdAt: number;
+  updatedAt: number | null;
+}
+
+/** Phase 35A: Fork record */
+export interface GalleryForkModel {
+  forkId: string;
+  sourceProjectId: string;
+  forkedProjectId: string;
+  userId: string;
+  userName: string;
+  forkedAt: number;
+}
+
+/** Phase 35A: Follower record */
+export interface GalleryFollowerModel {
+  followId: string;
+  creatorId: string;
+  followerId: string;
+  followerName: string;
+  followedAt: number;
+}
+
+/** Phase 35A: Collection */
+export interface GalleryCollectionModel {
+  collectionId: string;
+  ownerId: string;
+  ownerName: string;
+  title: string;
+  description: string;
+  projectIds: string[];
+  isPublic: boolean;
+  createdAt: number;
+  updatedAt: number;
+}
+
+/** Phase 35A: Creator profile */
+export interface CreatorProfileModel {
+  profileId: string;
+  userId: string;
+  displayName: string;
+  bio: string;
+  avatarUrl: string;
+  projectCount: number;
+  followerCount: number;
+  followingCount: number;
+  totalViews: number;
+  totalForks: number;
+  totalRatings: number;
+  averageRating: number;
+  joinedAt: number;
+  lastActiveAt: number;
+}
+
+/** Phase 35A: Project analytics */
+export interface GalleryAnalyticsModel {
+  analyticsId: string;
+  publicProjectId: string;
+  views: number;
+  downloads: number;
+  forks: number;
+  clones: number;
+  ratings: number;
+  comments: number;
+  shares: number;
+  deviceUploads: number;
+  viewsLast7Days: number;
+  forksLast7Days: number;
+  trendingScore: number;
+  generatedAt: number;
+}
+
+/** Phase 35A: Public gallery snapshot */
+export interface PublicGallerySnapshot {
+  projects: PublicProjectModel[];
+  galleries: ProjectGalleryModel[];
+  comments: GalleryCommentModel[];
+  ratings: GalleryRatingModel[];
+  forks: GalleryForkModel[];
+  followers: GalleryFollowerModel[];
+  collections: GalleryCollectionModel[];
+  creators: CreatorProfileModel[];
+  analytics: GalleryAnalyticsModel[];
+  totalPublicProjects: number;
+  totalCreators: number;
+  totalCollections: number;
 }

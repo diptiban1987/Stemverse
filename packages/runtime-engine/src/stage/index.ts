@@ -165,6 +165,9 @@ export * from './auto-grading-runtime';
 export * from './certification-runtime';
 export * from './competition-runtime';
 
+// Phase 35A: Cloud Platform & Public Project Gallery
+export * from './project-gallery-runtime';
+
 // Phase 31A: Professional Simulator UX
 // Note: calculateSelectionBounds is re-exported as calculateUXSelectionBounds
 // to avoid collision with workspace-runtime's calculateSelectionBounds
