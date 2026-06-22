@@ -28,6 +28,7 @@ import { registerIoTBlocks } from './iot';
 import { registerHardwareExpansionBlocks, HARDWARE_EXPANSION_BLOCK_TYPES } from './hardware';
 import { registerCoreProgrammingBlocks, CORE_PROGRAMMING_BLOCK_TYPES } from './core-blocks';
 import { registerVoiceAssistanceBlocks, VOICE_ASSISTANCE_BLOCK_TYPES } from './voice';
+import { registerDebuggingBlocks, DEBUGGING_BLOCK_TYPES } from './debugging';
 
 function registerBlock(type: string, init: (this: Blockly.Block) => void) {
   Blockly.Blocks[type] = { init };
@@ -40,6 +41,7 @@ export function registerRoboticsBlocks(): void {
   registerHardwareExpansionBlocks();
   registerCoreProgrammingBlocks();
   registerVoiceAssistanceBlocks();
+  registerDebuggingBlocks();
   registerBlock('stemverse_program', function (this: Blockly.Block) {
     this.appendDummyInput().appendField('Start Program');
     this.appendStatementInput('SETUP').setCheck(null).appendField('Setup');
@@ -320,10 +322,13 @@ export function createToolboxDefinition(searchQuery?: string): Blockly.utils.too
     category('Timers', CATEGORY_COLORS.timers, [
       'stemverse_delay', 'stemverse_delay_micros', 'stemverse_millis',
       'stemverse_micros', 'stemverse_serial_begin',
+      'stemverse_timer_create', 'stemverse_timer_start',
+      'stemverse_timer_stop', 'stemverse_timer_reset',
     ]),
     category('Logic', CATEGORY_COLORS.logic, [
       'stemverse_logic_if', 'stemverse_logic_if_else', 'stemverse_logic_if_else_if',
-      'stemverse_logic_compare', 'stemverse_logic_operation', 'stemverse_logic_not'
+      'stemverse_logic_compare', 'stemverse_logic_operation', 'stemverse_logic_not',
+      'stemverse_logic_switch', 'stemverse_logic_xor', 'stemverse_logic_ternary',
     ]),
     category('Loops', CATEGORY_COLORS.loops, [
       'stemverse_loop_repeat', 'stemverse_loop_while', 'stemverse_loop_for',
@@ -332,7 +337,8 @@ export function createToolboxDefinition(searchQuery?: string): Blockly.utils.too
     category('Math', CATEGORY_COLORS.math, [
       'stemverse_math_number', 'stemverse_math_arithmetic', 'stemverse_math_modulo',
       'stemverse_math_random', 'stemverse_math_min_max', 'stemverse_math_map',
-      'stemverse_math_constrain'
+      'stemverse_math_constrain', 'stemverse_math_trig', 'stemverse_math_pow',
+      'stemverse_math_sqrt', 'stemverse_math_abs', 'stemverse_math_round',
     ]),
     category('Strings', CATEGORY_COLORS.strings, [
       'stemverse_string_create', 'stemverse_string_join', 'stemverse_string_length',
@@ -340,26 +346,44 @@ export function createToolboxDefinition(searchQuery?: string): Blockly.utils.too
       'stemverse_string_to_number', 'stemverse_string_change_case'
     ]),
     category('Variables', CATEGORY_COLORS.variables, [
-      'stemverse_set_variable', 'stemverse_get_variable', 'stemverse_constant'
+      'stemverse_set_variable', 'stemverse_get_variable', 'stemverse_constant',
+      'stemverse_set_typed_variable', 'stemverse_array_create',
+      'stemverse_array_set', 'stemverse_array_get',
     ]),
-    category('Sensors', CATEGORY_COLORS.sensors, ['stemverse_sensor_read']),
+    category('Sensors', CATEGORY_COLORS.sensors, [
+      'stemverse_sensor_read', 'stemverse_gps_read', 'stemverse_imu_read',
+      'stemverse_compass_read', 'stemverse_soil_moisture', 'stemverse_water_level',
+      'stemverse_sound_sensor', 'stemverse_flame_sensor', 'stemverse_touch_sensor',
+      'stemverse_gas_sensor', 'stemverse_color_sensor',
+    ]),
     category('Actuators', CATEGORY_COLORS.actuators, [
       'stemverse_servo_write', 'stemverse_relay_write', 'stemverse_buzzer_play',
       'stemverse_rgb_led', 'stemverse_stepper_move', 'stemverse_dc_motor',
+      'stemverse_led_control', 'stemverse_led_brightness', 'stemverse_led_blink',
+      'stemverse_relay_read', 'stemverse_buzzer_stop', 'stemverse_stepper_speed',
+      'stemverse_dc_motor_stop', 'stemverse_neopixel_init', 'stemverse_neopixel_set',
+      'stemverse_neopixel_show',
     ]),
     category('Communication', CATEGORY_COLORS.communication, [
       'stemverse_uart_begin', 'stemverse_uart_print', 'stemverse_uart_read',
       'stemverse_i2c_begin', 'stemverse_i2c_read', 'stemverse_i2c_write',
       'stemverse_spi_begin', 'stemverse_spi_transfer',
+      'stemverse_i2c_scan', 'stemverse_spi_begin_transaction', 'stemverse_spi_end_transaction',
     ]),
     category('Wireless', CATEGORY_COLORS.wireless, [
       'stemverse_wifi_begin', 'stemverse_wifi_status', 'stemverse_wifi_disconnect',
       'stemverse_wifi_rssi', 'stemverse_bluetooth_begin', 'stemverse_ble_begin',
+      'stemverse_wifi_scan', 'stemverse_wifi_ip',
+      'stemverse_bt_serial_begin', 'stemverse_bt_serial_send', 'stemverse_bt_serial_receive',
+      'stemverse_ble_advertise', 'stemverse_ble_notify',
     ]),
     category('Cloud IoT', CATEGORY_COLORS.cloudIot, [
       'stemverse_mqtt_connect', 'stemverse_mqtt_publish', 'stemverse_mqtt_subscribe',
       'stemverse_http_get', 'stemverse_http_post',
       'stemverse_firebase_read', 'stemverse_firebase_write',
+      'stemverse_mqtt_receive', 'stemverse_http_put', 'stemverse_http_delete',
+      'stemverse_websocket_connect', 'stemverse_websocket_send',
+      'stemverse_blynk_begin', 'stemverse_blynk_write', 'stemverse_blynk_read',
     ]),
     category('Displays', CATEGORY_COLORS.display, [
       'stemverse_lcd_init', 'stemverse_lcd_print', 'stemverse_lcd_clear', 'stemverse_lcd_set_cursor',
@@ -394,6 +418,10 @@ export function createToolboxDefinition(searchQuery?: string): Blockly.utils.too
       'stemverse_dfplayer_volume', 'stemverse_dfplayer_stop', 'stemverse_dfplayer_pause',
       'stemverse_speaker_tone', 'stemverse_speaker_stop',
       'stemverse_amp_init',
+    ]),
+    category('🔧 Debugging', '#607D8B', [
+      'stemverse_serial_print_value', 'stemverse_breakpoint', 'stemverse_assert',
+      'stemverse_log_level', 'stemverse_memory_usage', 'stemverse_execution_timer',
     ]),
   ].filter((item): item is NonNullable<typeof item> => item !== null);
 

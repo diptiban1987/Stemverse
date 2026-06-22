@@ -8,6 +8,9 @@ export const CORE_PROGRAMMING_BLOCK_TYPES = [
   'stemverse_logic_compare',
   'stemverse_logic_operation',
   'stemverse_logic_not',
+  'stemverse_logic_switch',
+  'stemverse_logic_xor',
+  'stemverse_logic_ternary',
   'stemverse_loop_repeat',
   'stemverse_loop_while',
   'stemverse_loop_for',
@@ -21,6 +24,11 @@ export const CORE_PROGRAMMING_BLOCK_TYPES = [
   'stemverse_math_min_max',
   'stemverse_math_map',
   'stemverse_math_constrain',
+  'stemverse_math_trig',
+  'stemverse_math_pow',
+  'stemverse_math_sqrt',
+  'stemverse_math_abs',
+  'stemverse_math_round',
   'stemverse_string_create',
   'stemverse_string_join',
   'stemverse_string_length',
@@ -29,6 +37,14 @@ export const CORE_PROGRAMMING_BLOCK_TYPES = [
   'stemverse_string_to_number',
   'stemverse_string_change_case',
   'stemverse_get_variable',
+  'stemverse_set_typed_variable',
+  'stemverse_array_create',
+  'stemverse_array_set',
+  'stemverse_array_get',
+  'stemverse_timer_create',
+  'stemverse_timer_start',
+  'stemverse_timer_stop',
+  'stemverse_timer_reset',
 ] as const;
 
 export type CoreProgrammingBlockType = (typeof CORE_PROGRAMMING_BLOCK_TYPES)[number];
@@ -236,5 +252,150 @@ export function registerCoreProgrammingBlocks(): void {
     this.appendDummyInput().appendField(new Blockly.FieldTextInput('counter'), 'VAR');
     this.setOutput(true, null);
     this.setColour(CATEGORY_COLORS.variables);
+  });
+
+  // --- NEW: Logic blocks ---
+  registerBlock('stemverse_logic_switch', function (this: Blockly.Block) {
+    this.appendValueInput('VALUE').setCheck(null).appendField('switch');
+    this.appendValueInput('CASE0').setCheck(null).appendField('case');
+    this.appendStatementInput('DO0').setCheck(null).appendField('do');
+    this.appendValueInput('CASE1').setCheck(null).appendField('case');
+    this.appendStatementInput('DO1').setCheck(null).appendField('do');
+    this.appendStatementInput('DEFAULT').setCheck(null).appendField('default');
+    this.setPreviousStatement(true);
+    this.setNextStatement(true);
+    this.setColour(CATEGORY_COLORS.logic);
+  });
+  registerBlock('stemverse_logic_xor', function (this: Blockly.Block) {
+    this.appendValueInput('A').setCheck('Boolean');
+    this.appendDummyInput().appendField('xor');
+    this.appendValueInput('B').setCheck('Boolean');
+    this.setInputsInline(true);
+    this.setOutput(true, 'Boolean');
+    this.setColour(CATEGORY_COLORS.logic);
+  });
+  registerBlock('stemverse_logic_ternary', function (this: Blockly.Block) {
+    this.appendValueInput('CONDITION').setCheck('Boolean').appendField('test');
+    this.appendValueInput('IF_TRUE').setCheck(null).appendField('if true');
+    this.appendValueInput('IF_FALSE').setCheck(null).appendField('if false');
+    this.setInputsInline(true);
+    this.setOutput(true, null);
+    this.setColour(CATEGORY_COLORS.logic);
+  });
+
+  // --- NEW: Math blocks ---
+  registerBlock('stemverse_math_trig', function (this: Blockly.Block) {
+    this.appendDummyInput().appendField(new Blockly.FieldDropdown([['sin', 'SIN'], ['cos', 'COS'], ['tan', 'TAN'], ['asin', 'ASIN'], ['acos', 'ACOS'], ['atan', 'ATAN']]), 'OP');
+    this.appendValueInput('VALUE').setCheck('Number');
+    this.setInputsInline(true);
+    this.setOutput(true, 'Number');
+    this.setColour(CATEGORY_COLORS.math);
+  });
+  registerBlock('stemverse_math_pow', function (this: Blockly.Block) {
+    this.appendValueInput('BASE').setCheck('Number').appendField('pow');
+    this.appendValueInput('EXP').setCheck('Number').appendField('^');
+    this.setInputsInline(true);
+    this.setOutput(true, 'Number');
+    this.setColour(CATEGORY_COLORS.math);
+  });
+  registerBlock('stemverse_math_sqrt', function (this: Blockly.Block) {
+    this.appendValueInput('VALUE').setCheck('Number').appendField('√');
+    this.setOutput(true, 'Number');
+    this.setColour(CATEGORY_COLORS.math);
+  });
+  registerBlock('stemverse_math_abs', function (this: Blockly.Block) {
+    this.appendValueInput('VALUE').setCheck('Number').appendField('abs');
+    this.setOutput(true, 'Number');
+    this.setColour(CATEGORY_COLORS.math);
+  });
+  registerBlock('stemverse_math_round', function (this: Blockly.Block) {
+    this.appendDummyInput().appendField(new Blockly.FieldDropdown([['round', 'ROUND'], ['ceil', 'CEIL'], ['floor', 'FLOOR']]), 'OP');
+    this.appendValueInput('VALUE').setCheck('Number');
+    this.setInputsInline(true);
+    this.setOutput(true, 'Number');
+    this.setColour(CATEGORY_COLORS.math);
+  });
+
+  // --- NEW: Variable blocks ---
+  registerBlock('stemverse_set_typed_variable', function (this: Blockly.Block) {
+    this.appendDummyInput()
+      .appendField(new Blockly.FieldDropdown([['int', 'int'], ['float', 'float'], ['double', 'double'], ['bool', 'bool'], ['String', 'String'], ['char', 'char'], ['long', 'long'], ['unsigned int', 'unsigned int']]), 'TYPE')
+      .appendField(new Blockly.FieldTextInput('myVar'), 'VAR')
+      .appendField('=');
+    this.appendValueInput('VALUE').setCheck(null);
+    this.setInputsInline(true);
+    this.setPreviousStatement(true);
+    this.setNextStatement(true);
+    this.setColour(CATEGORY_COLORS.variables);
+  });
+  registerBlock('stemverse_array_create', function (this: Blockly.Block) {
+    this.appendDummyInput()
+      .appendField(new Blockly.FieldDropdown([['int', 'int'], ['float', 'float'], ['String', 'String'], ['char', 'char'], ['bool', 'bool']]), 'TYPE')
+      .appendField(new Blockly.FieldTextInput('arr'), 'NAME')
+      .appendField('[')
+      .appendField(new Blockly.FieldNumber(10, 1, 1000), 'SIZE')
+      .appendField(']');
+    this.setPreviousStatement(true);
+    this.setNextStatement(true);
+    this.setColour(CATEGORY_COLORS.variables);
+  });
+  registerBlock('stemverse_array_set', function (this: Blockly.Block) {
+    this.appendDummyInput()
+      .appendField(new Blockly.FieldTextInput('arr'), 'NAME')
+      .appendField('[');
+    this.appendValueInput('INDEX').setCheck('Number');
+    this.appendDummyInput().appendField('] =');
+    this.appendValueInput('VALUE').setCheck(null);
+    this.setInputsInline(true);
+    this.setPreviousStatement(true);
+    this.setNextStatement(true);
+    this.setColour(CATEGORY_COLORS.variables);
+  });
+  registerBlock('stemverse_array_get', function (this: Blockly.Block) {
+    this.appendDummyInput()
+      .appendField(new Blockly.FieldTextInput('arr'), 'NAME')
+      .appendField('[');
+    this.appendValueInput('INDEX').setCheck('Number');
+    this.appendDummyInput().appendField(']');
+    this.setInputsInline(true);
+    this.setOutput(true, null);
+    this.setColour(CATEGORY_COLORS.variables);
+  });
+
+  // --- NEW: Timer blocks ---
+  registerBlock('stemverse_timer_create', function (this: Blockly.Block) {
+    this.appendDummyInput()
+      .appendField('Create Timer')
+      .appendField(new Blockly.FieldTextInput('timer1'), 'NAME')
+      .appendField('interval ms')
+      .appendField(new Blockly.FieldNumber(1000, 1, 3600000), 'INTERVAL');
+    this.appendStatementInput('CALLBACK').setCheck(null).appendField('do');
+    this.setPreviousStatement(true);
+    this.setNextStatement(true);
+    this.setColour(CATEGORY_COLORS.timers);
+  });
+  registerBlock('stemverse_timer_start', function (this: Blockly.Block) {
+    this.appendDummyInput()
+      .appendField('Start Timer')
+      .appendField(new Blockly.FieldTextInput('timer1'), 'NAME');
+    this.setPreviousStatement(true);
+    this.setNextStatement(true);
+    this.setColour(CATEGORY_COLORS.timers);
+  });
+  registerBlock('stemverse_timer_stop', function (this: Blockly.Block) {
+    this.appendDummyInput()
+      .appendField('Stop Timer')
+      .appendField(new Blockly.FieldTextInput('timer1'), 'NAME');
+    this.setPreviousStatement(true);
+    this.setNextStatement(true);
+    this.setColour(CATEGORY_COLORS.timers);
+  });
+  registerBlock('stemverse_timer_reset', function (this: Blockly.Block) {
+    this.appendDummyInput()
+      .appendField('Reset Timer')
+      .appendField(new Blockly.FieldTextInput('timer1'), 'NAME');
+    this.setPreviousStatement(true);
+    this.setNextStatement(true);
+    this.setColour(CATEGORY_COLORS.timers);
   });
 }

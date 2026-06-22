@@ -216,4 +216,134 @@ export function registerCoreBlockGenerators(
     const v = block.getFieldValue('VAR');
     return [v, ATOMIC];
   };
+
+  // --- NEW: Logic generators ---
+  generator.forBlock['stemverse_logic_switch'] = (block: Block) => {
+    const value = getCode(block, 'VALUE');
+    const case0 = getCode(block, 'CASE0');
+    const do0 = generator.statementToCode(block, 'DO0') || '';
+    const case1 = getCode(block, 'CASE1');
+    const do1 = generator.statementToCode(block, 'DO1') || '';
+    const defaultCode = generator.statementToCode(block, 'DEFAULT') || '';
+    if (isPython) {
+      return `match ${value}:\n  case ${case0}:\n${do0}  case ${case1}:\n${do1}  case _:\n${defaultCode}`;
+    }
+    return `switch (${value}) {\n  case ${case0}:\n${do0}    break;\n  case ${case1}:\n${do1}    break;\n  default:\n${defaultCode}    break;\n}\n`;
+  };
+
+  generator.forBlock['stemverse_logic_xor'] = (block: Block) => {
+    const a = getCode(block, 'A');
+    const b = getCode(block, 'B');
+    if (isPython) return [`(${a} and not ${b}) or (not ${a} and ${b})`, ATOMIC];
+    return [`(${a} && !${b}) || (!${a} && ${b})`, ATOMIC];
+  };
+
+  generator.forBlock['stemverse_logic_ternary'] = (block: Block) => {
+    const condition = getCode(block, 'CONDITION');
+    const ifTrue = getCode(block, 'IF_TRUE');
+    const ifFalse = getCode(block, 'IF_FALSE');
+    if (isPython) return [`${ifTrue} if ${condition} else ${ifFalse}`, ATOMIC];
+    return [`(${condition} ? ${ifTrue} : ${ifFalse})`, ATOMIC];
+  };
+
+  // --- NEW: Math generators ---
+  generator.forBlock['stemverse_math_trig'] = (block: Block) => {
+    const op = block.getFieldValue('OP');
+    const val = getCode(block, 'VALUE');
+    const fnMap: Record<string, string> = { SIN: 'sin', COS: 'cos', TAN: 'tan', ASIN: 'asin', ACOS: 'acos', ATAN: 'atan' };
+    const fn = fnMap[op] || 'sin';
+    if (isPython) {
+      return [`math.${fn}(${val})`, ATOMIC];
+    }
+    return [`${fn}(${val})`, ATOMIC];
+  };
+
+  generator.forBlock['stemverse_math_pow'] = (block: Block) => {
+    const base = getCode(block, 'BASE');
+    const exp = getCode(block, 'EXP');
+    if (isPython) return [`${base} ** ${exp}`, ATOMIC];
+    return [`pow(${base}, ${exp})`, ATOMIC];
+  };
+
+  generator.forBlock['stemverse_math_sqrt'] = (block: Block) => {
+    const val = getCode(block, 'VALUE');
+    if (isPython) return [`math.sqrt(${val})`, ATOMIC];
+    return [`sqrt(${val})`, ATOMIC];
+  };
+
+  generator.forBlock['stemverse_math_abs'] = (block: Block) => {
+    const val = getCode(block, 'VALUE');
+    return [`abs(${val})`, ATOMIC];
+  };
+
+  generator.forBlock['stemverse_math_round'] = (block: Block) => {
+    const op = block.getFieldValue('OP');
+    const val = getCode(block, 'VALUE');
+    if (isPython) {
+      const fnMap: Record<string, string> = { ROUND: 'round', CEIL: 'math.ceil', FLOOR: 'math.floor' };
+      return [`${fnMap[op] || 'round'}(${val})`, ATOMIC];
+    }
+    const fnMap: Record<string, string> = { ROUND: 'round', CEIL: 'ceil', FLOOR: 'floor' };
+    return [`${fnMap[op] || 'round'}(${val})`, ATOMIC];
+  };
+
+  // --- NEW: Variable generators ---
+  generator.forBlock['stemverse_set_typed_variable'] = (block: Block) => {
+    const type = block.getFieldValue('TYPE');
+    const name = block.getFieldValue('VAR');
+    const value = getCode(block, 'VALUE');
+    if (isPython) return `${name} = ${value}\n`;
+    return `${type} ${name} = ${value};\n`;
+  };
+
+  generator.forBlock['stemverse_array_create'] = (block: Block) => {
+    const type = block.getFieldValue('TYPE');
+    const name = block.getFieldValue('NAME');
+    const size = block.getFieldValue('SIZE');
+    if (isPython) return `${name} = [${type === 'int' || type === 'float' ? '0' : type === 'bool' ? 'False' : "''"}] * ${size}\n`;
+    return `${type} ${name}[${size}];\n`;
+  };
+
+  generator.forBlock['stemverse_array_set'] = (block: Block) => {
+    const name = block.getFieldValue('NAME');
+    const index = getCode(block, 'INDEX');
+    const value = getCode(block, 'VALUE');
+    if (isPython) return `${name}[${index}] = ${value}\n`;
+    return `${name}[${index}] = ${value};\n`;
+  };
+
+  generator.forBlock['stemverse_array_get'] = (block: Block) => {
+    const name = block.getFieldValue('NAME');
+    const index = getCode(block, 'INDEX');
+    return [`${name}[${index}]`, ATOMIC];
+  };
+
+  // --- NEW: Timer generators ---
+  generator.forBlock['stemverse_timer_create'] = (block: Block) => {
+    const name = block.getFieldValue('NAME');
+    const interval = block.getFieldValue('INTERVAL');
+    const callback = generator.statementToCode(block, 'CALLBACK') || '';
+    if (isPython) {
+      return `# Timer ${name}: interval ${interval}ms\n${name}_prev = 0\n${name}_interval = ${interval}\n${name}_running = True\nif ${name}_running and (time.ticks_ms() - ${name}_prev >= ${name}_interval):\n  ${name}_prev = time.ticks_ms()\n${callback}`;
+    }
+    return `// Timer ${name}: interval ${interval}ms\nunsigned long ${name}_prev = 0;\nunsigned long ${name}_interval = ${interval};\nbool ${name}_running = true;\nif (${name}_running && (millis() - ${name}_prev >= ${name}_interval)) {\n  ${name}_prev = millis();\n${callback}}\n`;
+  };
+
+  generator.forBlock['stemverse_timer_start'] = (block: Block) => {
+    const name = block.getFieldValue('NAME');
+    if (isPython) return `${name}_running = True\n`;
+    return `${name}_running = true;\n`;
+  };
+
+  generator.forBlock['stemverse_timer_stop'] = (block: Block) => {
+    const name = block.getFieldValue('NAME');
+    if (isPython) return `${name}_running = False\n`;
+    return `${name}_running = false;\n`;
+  };
+
+  generator.forBlock['stemverse_timer_reset'] = (block: Block) => {
+    const name = block.getFieldValue('NAME');
+    if (isPython) return `${name}_prev = time.ticks_ms()\n`;
+    return `${name}_prev = millis();\n`;
+  };
 }

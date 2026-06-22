@@ -113,6 +113,130 @@ export function registerActuatorBlocks(): void {
       this.setColour(CATEGORY_COLORS.actuators ?? '#FF9800');
     },
   };
+
+  Blockly.Blocks['stemverse_led_control'] = {
+    init: function (this: Blockly.Block) {
+      this.appendDummyInput()
+        .appendField('LED Pin')
+        .appendField(new Blockly.FieldNumber(13, 0, 53), 'PIN')
+        .appendField(new Blockly.FieldDropdown([['ON', 'HIGH'], ['OFF', 'LOW'], ['Toggle', 'TOGGLE']]), 'STATE');
+      this.setPreviousStatement(true);
+      this.setNextStatement(true);
+      this.setColour(CATEGORY_COLORS.actuators);
+    },
+  };
+
+  Blockly.Blocks['stemverse_led_brightness'] = {
+    init: function (this: Blockly.Block) {
+      this.appendDummyInput()
+        .appendField('LED Brightness Pin')
+        .appendField(new Blockly.FieldNumber(13, 0, 53), 'PIN');
+      this.appendValueInput('VALUE').setCheck('Number').appendField('Level (0-255)');
+      this.setInputsInline(true);
+      this.setPreviousStatement(true);
+      this.setNextStatement(true);
+      this.setColour(CATEGORY_COLORS.actuators);
+    },
+  };
+
+  Blockly.Blocks['stemverse_led_blink'] = {
+    init: function (this: Blockly.Block) {
+      this.appendDummyInput()
+        .appendField('Blink LED Pin')
+        .appendField(new Blockly.FieldNumber(13, 0, 53), 'PIN')
+        .appendField('interval ms')
+        .appendField(new Blockly.FieldNumber(500, 50, 60000), 'INTERVAL')
+        .appendField('times')
+        .appendField(new Blockly.FieldNumber(5, 1, 1000), 'COUNT');
+      this.setPreviousStatement(true);
+      this.setNextStatement(true);
+      this.setColour(CATEGORY_COLORS.actuators);
+    },
+  };
+
+  Blockly.Blocks['stemverse_relay_read'] = {
+    init: function (this: Blockly.Block) {
+      this.appendDummyInput()
+        .appendField('Relay State Pin')
+        .appendField(new Blockly.FieldNumber(12, 0, 53), 'PIN');
+      this.setOutput(true, 'Boolean');
+      this.setColour(CATEGORY_COLORS.actuators);
+    },
+  };
+
+  Blockly.Blocks['stemverse_buzzer_stop'] = {
+    init: function (this: Blockly.Block) {
+      this.appendDummyInput()
+        .appendField('Buzzer Stop Pin')
+        .appendField(new Blockly.FieldNumber(8, 0, 53), 'PIN');
+      this.setPreviousStatement(true);
+      this.setNextStatement(true);
+      this.setColour(CATEGORY_COLORS.actuators);
+    },
+  };
+
+  Blockly.Blocks['stemverse_stepper_speed'] = {
+    init: function (this: Blockly.Block) {
+      this.appendDummyInput()
+        .appendField('Stepper Set Speed RPM')
+        .appendField(new Blockly.FieldNumber(60, 1, 1000), 'RPM');
+      this.setPreviousStatement(true);
+      this.setNextStatement(true);
+      this.setColour(CATEGORY_COLORS.actuators);
+    },
+  };
+
+  Blockly.Blocks['stemverse_dc_motor_stop'] = {
+    init: function (this: Blockly.Block) {
+      this.appendDummyInput()
+        .appendField('DC Motor Stop Pin A')
+        .appendField(new Blockly.FieldNumber(5, 0, 53), 'PIN_A')
+        .appendField('B')
+        .appendField(new Blockly.FieldNumber(6, 0, 53), 'PIN_B');
+      this.setPreviousStatement(true);
+      this.setNextStatement(true);
+      this.setColour(CATEGORY_COLORS.actuators);
+    },
+  };
+
+  Blockly.Blocks['stemverse_neopixel_init'] = {
+    init: function (this: Blockly.Block) {
+      this.appendDummyInput()
+        .appendField('NeoPixel Init Pin')
+        .appendField(new Blockly.FieldNumber(6, 0, 53), 'PIN')
+        .appendField('LEDs')
+        .appendField(new Blockly.FieldNumber(8, 1, 1000), 'COUNT');
+      this.setPreviousStatement(true);
+      this.setNextStatement(true);
+      this.setColour(CATEGORY_COLORS.actuators);
+    },
+  };
+
+  Blockly.Blocks['stemverse_neopixel_set'] = {
+    init: function (this: Blockly.Block) {
+      this.appendDummyInput()
+        .appendField('NeoPixel #')
+        .appendField(new Blockly.FieldNumber(0, 0, 999), 'INDEX')
+        .appendField('R')
+        .appendField(new Blockly.FieldNumber(255, 0, 255), 'R')
+        .appendField('G')
+        .appendField(new Blockly.FieldNumber(0, 0, 255), 'G')
+        .appendField('B')
+        .appendField(new Blockly.FieldNumber(0, 0, 255), 'B');
+      this.setPreviousStatement(true);
+      this.setNextStatement(true);
+      this.setColour(CATEGORY_COLORS.actuators);
+    },
+  };
+
+  Blockly.Blocks['stemverse_neopixel_show'] = {
+    init: function (this: Blockly.Block) {
+      this.appendDummyInput().appendField('NeoPixel Show');
+      this.setPreviousStatement(true);
+      this.setNextStatement(true);
+      this.setColour(CATEGORY_COLORS.actuators);
+    },
+  };
 }
 
 export const ACTUATOR_BLOCK_TYPES = [
@@ -122,4 +246,14 @@ export const ACTUATOR_BLOCK_TYPES = [
   'stemverse_rgb_led',
   'stemverse_stepper_move',
   'stemverse_dc_motor',
+  'stemverse_led_control',
+  'stemverse_led_brightness',
+  'stemverse_led_blink',
+  'stemverse_relay_read',
+  'stemverse_buzzer_stop',
+  'stemverse_stepper_speed',
+  'stemverse_dc_motor_stop',
+  'stemverse_neopixel_init',
+  'stemverse_neopixel_set',
+  'stemverse_neopixel_show',
 ] as const;

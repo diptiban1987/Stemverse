@@ -8,6 +8,7 @@ export * from './blocks/sensors';
 export * from './blocks/actuators';
 export * from './blocks/iot';
 export * from './blocks/hardware';
+export * from './blocks/debugging';
 export * from './generators/arduino';
 export * from './generators/esp-idf';
 export * from './generators/micropython';
