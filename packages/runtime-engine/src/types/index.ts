@@ -768,6 +768,9 @@ export interface StageSyncState {
 
   // Phase 32A: Real ESP32 Device Upload Pipeline
   deviceSnapshot?: DeviceSnapshot;
+
+  // Phase 32B: AI Circuit Generation Assistant
+  aiGenerationSnapshot?: AIGenerationSnapshot;
 }
 
 
@@ -1606,6 +1609,9 @@ export interface SerializedTarget {
 
   // Phase 32A: Real ESP32 Device Upload Pipeline
   deviceSnapshot?: DeviceSnapshot;
+
+  // Phase 32B: AI Circuit Generation Assistant
+  aiGenerationSnapshot?: AIGenerationSnapshot;
 }
 
 
@@ -7380,4 +7386,115 @@ export interface DeviceSnapshot {
   connectedDeviceCount: number;
   openPortCount: number;
   activeJobCount: number;
+}
+
+// ─── Phase 32B: AI Circuit Generation Assistant ─────────────
+
+/** Phase 32B: AI circuit project category */
+export type AICircuitCategory =
+  | 'robotics'
+  | 'iot'
+  | 'electronics'
+  | 'automation'
+  | 'stem_project'
+  | 'competition'
+  | 'custom';
+
+/** Phase 32B: AI generation status */
+export type AIGenerationStatus =
+  | 'idle'
+  | 'analyzing'
+  | 'generating_components'
+  | 'generating_wiring'
+  | 'generating_blockly'
+  | 'generating_scene'
+  | 'validating'
+  | 'completed'
+  | 'failed';
+
+/** Phase 32B: AI circuit request from user prompt */
+export interface AICircuitRequestModel {
+  requestId: string;
+  prompt: string;
+  category: AICircuitCategory;
+  extractedIntent: string;
+  extractedComponents: string[];
+  extractedSensors: string[];
+  extractedActuators: string[];
+  extractedBoardType: string;
+  createdAt: number;
+  deleted: boolean;
+}
+
+/** Phase 32B: Starter circuit template */
+export interface AICircuitTemplateModel {
+  templateId: string;
+  name: string;
+  description: string;
+  category: AICircuitCategory;
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  components: string[];
+  sensors: string[];
+  actuators: string[];
+  boardType: string;
+  pinMappings: Record<string, string>;
+  blocklyStub: string;
+  tags: string[];
+  popularity: number;
+}
+
+/** Phase 32B: Full AI generation result */
+export interface AICircuitGenerationModel {
+  generationId: string;
+  requestId: string;
+  templateId: string | null;
+  status: AIGenerationStatus;
+  componentLayout: Array<{ componentId: string; type: string; x: number; y: number }>;
+  wiring: Array<{ wireId: string; from: string; to: string; color: string }>;
+  blocklyProgram: string;
+  simulationScene: Record<string, unknown>;
+  healthScore: number;
+  diagnostics: string[];
+  warnings: string[];
+  generatedAt: number;
+  durationMs: number;
+  deleted: boolean;
+}
+
+/** Phase 32B: AI suggestion for user prompt */
+export interface AICircuitSuggestionModel {
+  suggestionId: string;
+  requestId: string;
+  title: string;
+  description: string;
+  confidence: number;
+  alternativeComponents: string[];
+  tips: string[];
+}
+
+/** Phase 32B: AI circuit validation result */
+export interface AICircuitValidationModel {
+  validationId: string;
+  generationId: string;
+  healthScore: number;
+  missingComponents: string[];
+  invalidWirings: string[];
+  powerIssues: string[];
+  conflicts: string[];
+  fixSuggestions: string[];
+  passedChecks: number;
+  totalChecks: number;
+  timestamp: number;
+}
+
+/** Phase 32B: Full AI generation snapshot */
+export interface AIGenerationSnapshot {
+  requests: AICircuitRequestModel[];
+  templates: AICircuitTemplateModel[];
+  generations: AICircuitGenerationModel[];
+  suggestions: AICircuitSuggestionModel[];
+  validations: AICircuitValidationModel[];
+  requestCount: number;
+  templateCount: number;
+  generationCount: number;
 }

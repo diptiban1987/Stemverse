@@ -145,6 +145,11 @@ export * from './project-timeline-runtime';
 export * from './web-serial-runtime';
 export * from './device-upload-runtime';
 
+// Phase 32B: AI Circuit Generation Assistant
+export * from './ai-circuit-runtime';
+export * from './circuit-template-runtime';
+export * from './prompt-library';
+
 // Phase 31A: Professional Simulator UX
 // Note: calculateSelectionBounds is re-exported as calculateUXSelectionBounds
 // to avoid collision with workspace-runtime's calculateSelectionBounds
