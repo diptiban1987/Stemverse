@@ -70,14 +70,11 @@ const COMPONENT_DESCRIPTIONS: Record<string, string> = {
   pir: 'Passive infrared motion detect',
   touch_sensor: 'Capacitive touch input',
   // ── Actuators ──
-  relay: '5V single-channel relay',
   dc_motor: 'Brushed DC motor w/ driver',
   stepper_motor: '4-phase stepper motor',
   rgb_led: 'Common-cathode RGB LED',
   neopixel: 'WS2812B addressable strip',
   // ── Displays ──
-  lcd_i2c: '16×2 character LCD I²C',
-  oled_ssd1306_new: '0.96″ 128×64 OLED I²C',
   tft_ili9341: '2.4″ 320×240 TFT SPI',
 };
 
@@ -113,18 +110,15 @@ const ASSET_TO_SVG_KEY: Record<string, string> = {
   compass_hmc: 'COMPASS_HMC',
   ldr: 'LDR',
   color_sensor_tcs: 'COLOR_SENSOR_TCS',
-  gas_sensor_mq: 'GAS_SENSOR_MQ',
+  gas_sensor_mq: 'MQ2_SENSOR',
   flame_sensor: 'FLAME_SENSOR',
   sound_sensor: 'SOUND_SENSOR',
   pir: 'PIR',
   touch_sensor: 'TOUCH_SENSOR',
-  relay: 'RELAY_NEW',
   dc_motor: 'DC_MOTOR',
   stepper_motor: 'STEPPER_MOTOR',
   rgb_led: 'RGB_LED',
   neopixel: 'NEOPIXEL',
-  lcd_i2c: 'LCD_I2C',
-  oled_ssd1306_new: 'OLED_SSD1306',
   tft_ili9341: 'TFT_ILI9341',
 };
 
@@ -278,8 +272,6 @@ const CATEGORIES: CategoryDef[] = [
     components: [
       { assetId: 'oled_ssd1306', displayName: 'OLED SSD1306', description: COMPONENT_DESCRIPTIONS.oled_ssd1306 },
       { assetId: 'lcd1602', displayName: 'LCD 1602 I2C', description: COMPONENT_DESCRIPTIONS.lcd1602 },
-      { assetId: 'lcd_i2c', displayName: 'LCD 16×2 I2C', description: COMPONENT_DESCRIPTIONS.lcd_i2c },
-      { assetId: 'oled_ssd1306_new', displayName: 'OLED SSD1306', description: COMPONENT_DESCRIPTIONS.oled_ssd1306_new },
       { assetId: 'tft_ili9341', displayName: 'TFT ILI9341', description: COMPONENT_DESCRIPTIONS.tft_ili9341 },
     ],
   },
@@ -295,7 +287,6 @@ const CATEGORIES: CategoryDef[] = [
       { assetId: 'sg90_servo', displayName: 'SG90 Servo', description: COMPONENT_DESCRIPTIONS.sg90_servo },
       { assetId: 'relay_module', displayName: 'Relay Module', description: COMPONENT_DESCRIPTIONS.relay_module },
       { assetId: 'buzzer_passive', displayName: 'Buzzer', description: COMPONENT_DESCRIPTIONS.buzzer_passive },
-      { assetId: 'relay', displayName: 'Relay Module', description: COMPONENT_DESCRIPTIONS.relay },
       { assetId: 'dc_motor', displayName: 'DC Motor', description: COMPONENT_DESCRIPTIONS.dc_motor },
       { assetId: 'stepper_motor', displayName: 'Stepper Motor', description: COMPONENT_DESCRIPTIONS.stepper_motor },
       { assetId: 'rgb_led', displayName: 'RGB LED', description: COMPONENT_DESCRIPTIONS.rgb_led },
