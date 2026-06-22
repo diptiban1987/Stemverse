@@ -328,3 +328,36 @@ export type {
   ReleaseChannel, FeatureFlagStatus, ReleaseVersion,
   FeatureFlag, MigrationStep,
 } from './release-management-runtime';
+
+// Phase 38A: Analytics, Reporting & Data Platform
+export * from './analytics-runtime';
+export {
+  generateStudentReport, generateTeacherReport,
+  generateSchoolReport as generateSchoolAnalyticsReport,
+  generateCompetitionReport as generateCompetitionAnalyticsReport,
+  generateMarketplaceReport as generateMarketplaceAnalyticsReport,
+  generateDeviceUsageReport, generateCertificationReport,
+  generatePlatformReport, reportToCSV, reportToJSON, reportToPdfModel,
+  ReportingSynchronizer,
+} from './reporting-runtime';
+export type {
+  ReportType, ReportFormat, ReportStatus, ReportModel,
+  StudentReportData, TeacherReportData, SchoolReportData,
+  CompetitionReportData, MarketplaceReportData, DeviceReportData,
+  CertificationReportData, PlatformReportData,
+} from './reporting-runtime';
+export {
+  createFact, getFactsByTable, getFactsByDimension,
+  createDimension, updateDimension,
+  createRollup, createDailyRollup, createWeeklyRollup, createMonthlyRollup,
+  calculateTrend, detectGrowthRate,
+  createPipeline as createWarehousePipeline,
+  runPipeline as runWarehousePipeline,
+  getDefaultPipelines as getDefaultWarehousePipelines,
+  DataWarehouseSynchronizer,
+} from './data-warehouse-runtime';
+export type {
+  RollupPeriod, DimensionType, FactRecord, DimensionRecord,
+  RollupEntry, TrendPoint, AggregationPipeline,
+} from './data-warehouse-runtime';
+export * from './learning-analytics-runtime';
