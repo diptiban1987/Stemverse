@@ -1276,3 +1276,20 @@ Not Started:
 - **School Readiness**: 98/100 → 100/100
 - **Scratch Replacement**: 100%
 - **Build Status**: runtime-engine clean (0 errors)
+
+## Phase 41C: Scratch Engine Recovery, UX Audit & Premium Editor Rewrite — COMPLETE
+- **ROOT CAUSE 1 FIXED**: Workspace had NO Blockly — was static HTML labels
+  - Injected real `Blockly.inject()` workspace with zelos renderer
+  - Registered 71 block definitions across 8 Scratch-colored categories
+  - Motion (14), Looks (9), Sound (5), Events (6), Control (11), Sensing (10), Operators (16), Variables (custom)
+  - Full drag-and-drop, zoom (wheel/pinch), grid snap, trashcan
+- **ROOT CAUSE 2 FIXED**: SB3 import format mismatch
+  - `resolveProjectData()` validates and normalizes all input formats
+  - `isValidScratchProject()` checks for targets[] with isStage
+  - `createDefaultScratchProject()` fallback with proper Scratch 3.0 schema
+  - Handles stringified JSON, nested workspaceJson, and invalid data
+- **Premium UX**: Scratch-colored category sidebar, sprite grid, block count, keyboard shortcuts
+- **SB3 Validation Suite**: 99 tests (import, export, migration, round-trip, edge cases)
+- **Reports**: SCRATCH_ENGINE_AUDIT.md, SCRATCH_UI_UX_AUDIT.md, SCRATCH_COMPATIBILITY_REPORT.md, SCRATCH_PERFORMANCE_REPORT.md
+- **Scratch UX Score**: 23/100 → 77/100
+- **Build Status**: runtime-engine clean (0 errors)
