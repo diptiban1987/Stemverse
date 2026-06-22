@@ -27,7 +27,7 @@ export class RenderRegistry<T extends object> {
     }
     const copy = safeDeepCopy(value);
     if (this.entries.has(key)) {
-      // Silently replace — duplicates are expected in React Strict Mode (dev)
+      console.warn(`${warnPrefix} Duplicate key "${key}". Replacing existing entry.`);
       this.entries.set(key, copy);
       return;
     }

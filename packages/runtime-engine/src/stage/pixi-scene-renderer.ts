@@ -249,6 +249,15 @@ export class PixiSceneRenderer {
 
   /** Phase 31A.1: Camera target state for smooth interpolation */
   private cameraTarget = { x: 0, y: 0, zoom: 1 };
+  /** Read-only access to the camera target for testing and debugging */
+  public get camera() { return { ...this.cameraTarget }; }
+  /** Set camera position immediately (no lerp). Used for testing and programmatic camera moves. */
+  public setCamera(x: number, y: number, zoom: number): void {
+    this.cameraTarget = { x, y, zoom };
+    this.viewport.x = x;
+    this.viewport.y = y;
+    this.viewport.scale.set(zoom);
+  }
   private cameraLerping = false;
 
   /** Phase 31A.1: Space-pan mode tracking */

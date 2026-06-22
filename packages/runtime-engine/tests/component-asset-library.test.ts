@@ -12,8 +12,8 @@ describe('Component Asset Library and Runtime Integration', () => {
     const library = new ComponentAssetLibrary();
     const assets = library.getAssets();
 
-    // Verify exactly 13 assets are seeded (10 components + 3 breadboards)
-    expect(assets.length).toBe(13);
+    // Verify exactly 39 assets are seeded (36 components + 3 breadboards)
+    expect(assets.length).toBe(39);
 
     const assetKeys = library.getAssetKeys();
     expect(assetKeys).toContain('esp32_devkit_v1');
@@ -207,7 +207,7 @@ describe('Component Asset Library and Runtime Integration', () => {
     } as any);
 
     // Verify defaults are seeded automatically during initialize
-    expect(rt.getComponentAssets().length).toBe(13);
+    expect(rt.getComponentAssets().length).toBe(39);
 
     // CRUD delegates
     const customAsset: ComponentAssetDefinition = {

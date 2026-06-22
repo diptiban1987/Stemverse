@@ -103,11 +103,8 @@ describe('Phase 19A -- PixiJS Asset Renderer Foundation', () => {
       for (let i = 0; i < 10000; i++) {
         const panX = i * 0.15;
         const panY = -i * 0.05;
-        const snapshot = runtime.getStageSnapshot();
-        const stageSnap = snapshot.find(s => s.targetId === 'stage')!;
-        stageSnap.camera = { x: panX, y: panY, zoom: 1.5, rotation: 0 };
 
-        scene.render(snapshot);
+        scene.setCamera(panX, panY, 1.5);
 
         expect(scene.viewport.x).toBeCloseTo(panX);
         expect(scene.viewport.y).toBeCloseTo(panY);
@@ -120,11 +117,8 @@ describe('Phase 19A -- PixiJS Asset Renderer Foundation', () => {
       // Stress loop for zooming/scaling transforms
       for (let i = 0; i < 10000; i++) {
         const zoomScale = 1.0 + (i % 500) * 0.01;
-        const snapshot = runtime.getStageSnapshot();
-        const stageSnap = snapshot.find(s => s.targetId === 'stage')!;
-        stageSnap.camera = { x: 100, y: 150, zoom: zoomScale, rotation: 0 };
 
-        scene.render(snapshot);
+        scene.setCamera(100, 150, zoomScale);
 
         expect(scene.viewport.scale.x).toBeCloseTo(zoomScale);
         expect(scene.viewport.scale.y).toBeCloseTo(zoomScale);

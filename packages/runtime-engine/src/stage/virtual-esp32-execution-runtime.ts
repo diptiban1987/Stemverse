@@ -637,31 +637,61 @@ export class VirtualExecutionSynchronizer {
   ): VirtualExecutionSnapshot {
     this.clear();
 
+    // Detect duplicates before registering
+    const seenEsp32 = new Set<string>();
     for (const m of esp32Models) {
+      if (seenEsp32.has(m.esp32Id)) {
+        console.warn(`[VirtualExecutionSynchronizer] Duplicate ESP32 ID "${m.esp32Id}".`);
+      }
+      seenEsp32.add(m.esp32Id);
       const warnings = validateVirtualESP32Model(m);
       if (warnings.length === 0) {
         this.esp32Registry.register(m.esp32Id, m);
       }
     }
+
+    const seenGpio = new Set<string>();
     for (const m of gpioPins) {
+      if (seenGpio.has(m.gpioPinId)) {
+        console.warn(`[VirtualExecutionSynchronizer] Duplicate GPIO pin ID "${m.gpioPinId}".`);
+      }
+      seenGpio.add(m.gpioPinId);
       const warnings = validateVirtualGPIOPinModel(m);
       if (warnings.length === 0) {
         this.gpioPinRegistry.register(m.gpioPinId, m);
       }
     }
+
+    const seenPwm = new Set<string>();
     for (const m of pwmChannels) {
+      if (seenPwm.has(m.pwmChannelId)) {
+        console.warn(`[VirtualExecutionSynchronizer] Duplicate PWM channel ID "${m.pwmChannelId}".`);
+      }
+      seenPwm.add(m.pwmChannelId);
       const warnings = validateVirtualPWMChannelModel(m);
       if (warnings.length === 0) {
         this.pwmChannelRegistry.register(m.pwmChannelId, m);
       }
     }
+
+    const seenTimer = new Set<string>();
     for (const m of timers) {
+      if (seenTimer.has(m.timerId)) {
+        console.warn(`[VirtualExecutionSynchronizer] Duplicate timer ID "${m.timerId}".`);
+      }
+      seenTimer.add(m.timerId);
       const warnings = validateVirtualTimerModel(m);
       if (warnings.length === 0) {
         this.timerRegistry.register(m.timerId, m);
       }
     }
+
+    const seenInterrupt = new Set<string>();
     for (const m of interrupts) {
+      if (seenInterrupt.has(m.interruptId)) {
+        console.warn(`[VirtualExecutionSynchronizer] Duplicate interrupt ID "${m.interruptId}".`);
+      }
+      seenInterrupt.add(m.interruptId);
       const warnings = validateVirtualInterruptModel(m);
       if (warnings.length === 0) {
         this.interruptRegistry.register(m.interruptId, m);

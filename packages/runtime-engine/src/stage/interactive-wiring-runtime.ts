@@ -23,6 +23,9 @@ export const VALID_WIRE_COLORS = [
   'cyan',
   'orange',
   'purple',
+  'white',
+  'gray',
+  'brown',
 ];
 
 // ─── Factories ───
