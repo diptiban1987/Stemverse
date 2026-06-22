@@ -110,7 +110,7 @@ const ASSET_TO_SVG_KEY: Record<string, string> = {
   compass_hmc: 'COMPASS_HMC',
   ldr: 'LDR',
   color_sensor_tcs: 'COLOR_SENSOR_TCS',
-  gas_sensor_mq: 'MQ2_SENSOR',
+  gas_sensor_mq: 'GAS_SENSOR_MQ',
   flame_sensor: 'FLAME_SENSOR',
   sound_sensor: 'SOUND_SENSOR',
   pir: 'PIR',

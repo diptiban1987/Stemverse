@@ -1673,6 +1673,8 @@ const BREADBOARD_SVG_MAP: Record<string, string> = {
   'breadboard_mini': BREADBOARD_MINI_SVG,
 };
 
+import { EXTENDED_COMPONENT_SVG_MAP } from './component-svg-extended';
+
 // ─── Public API ─────────────────────────────────────────────────────────────
 
 /**
@@ -1684,7 +1686,7 @@ const BREADBOARD_SVG_MAP: Record<string, string> = {
  *          or an empty string if the component type is unknown.
  */
 export function getComponentSvg(componentType: string): string {
-  return COMPONENT_SVG_MAP[componentType] ?? '';
+  return COMPONENT_SVG_MAP[componentType] ?? EXTENDED_COMPONENT_SVG_MAP[componentType] ?? '';
 }
 
 /**
@@ -1708,8 +1710,12 @@ export function getAllComponentSvgAssets(): Map<string, string> {
   for (const [key, value] of Object.entries(COMPONENT_SVG_MAP)) {
     map.set(key, value);
   }
+  for (const [key, value] of Object.entries(EXTENDED_COMPONENT_SVG_MAP)) {
+    map.set(key, value);
+  }
   for (const [key, value] of Object.entries(BREADBOARD_SVG_MAP)) {
     map.set(key, value);
   }
   return map;
 }
+

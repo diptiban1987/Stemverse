@@ -106,6 +106,7 @@ export * from './line-following-runtime';
 export * from './obstacle-avoidance-runtime';
 export * from './high-fidelity-renderer-runtime';
 export * from './component-svg-assets';
+export * from './component-svg-extended';
 export * from './simulator-ui-runtime';
 export * from './component-asset-extensions';
 export * from './component-scale-runtime';
