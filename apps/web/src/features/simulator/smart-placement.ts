@@ -322,4 +322,31 @@ export const COMPONENT_DIMENSIONS: Record<string, { w: number; h: number; defaul
   buzzer_passive:      { w: 120, h: 100, defaultScale: 0.7 },
   potentiometer_10k:   { w: 120, h: 120, defaultScale: 0.7 },
   push_button_tactile: { w: 80,  h: 80,  defaultScale: 0.9 },
+  // ── Phase C: Environment Sensors ──
+  bmp280:              { w: 140, h: 120, defaultScale: 0.7 },
+  bme280:              { w: 140, h: 120, defaultScale: 0.7 },
+  ds18b20:             { w: 100, h: 160, defaultScale: 0.7 },
+  soil_moisture:       { w: 120, h: 200, defaultScale: 0.65 },
+  water_level:         { w: 100, h: 200, defaultScale: 0.65 },
+  // ── Phase C: Motion & Position ──
+  mpu6050:             { w: 140, h: 120, defaultScale: 0.7 },
+  gps_neo6m:           { w: 180, h: 160, defaultScale: 0.65 },
+  compass_hmc:         { w: 130, h: 120, defaultScale: 0.7 },
+  // ── Phase C: Light & Color ──
+  ldr:                 { w: 80,  h: 120, defaultScale: 0.8 },
+  color_sensor_tcs:    { w: 130, h: 120, defaultScale: 0.7 },
+  // ── Phase C: Safety & Gas ──
+  gas_sensor_mq:       { w: 160, h: 180, defaultScale: 0.7 },
+  flame_sensor:        { w: 120, h: 160, defaultScale: 0.7 },
+  sound_sensor:        { w: 120, h: 120, defaultScale: 0.7 },
+  // ── Phase C: Input & Touch ──
+  pir:                 { w: 140, h: 160, defaultScale: 0.7 },
+  touch_sensor:        { w: 100, h: 120, defaultScale: 0.7 },
+  // ── Phase C: Actuators ──
+  dc_motor:            { w: 180, h: 160, defaultScale: 0.65 },
+  stepper_motor:       { w: 200, h: 180, defaultScale: 0.6 },
+  rgb_led:             { w: 80,  h: 140, defaultScale: 0.9 },
+  neopixel:            { w: 240, h: 60,  defaultScale: 0.7 },
+  // ── Phase C: Displays ──
+  tft_ili9341:         { w: 220, h: 300, defaultScale: 0.55 },
 };

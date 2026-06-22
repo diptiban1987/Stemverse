@@ -275,8 +275,14 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
         // Try importing extended assets (may not all exist)
         let IR_SENSOR_ASSET: any, MQ2_SENSOR_ASSET: any, DHT11_SENSOR_ASSET: any; // eslint-disable-line @typescript-eslint/no-explicit-any
         let BUZZER_ASSET: any, POTENTIOMETER_ASSET: any, PUSH_BUTTON_ASSET: any; // eslint-disable-line @typescript-eslint/no-explicit-any
+        let EXTENDED_COMPONENT_ASSETS_ALL: any[] = []; // eslint-disable-line @typescript-eslint/no-explicit-any
         try {
           ({ IR_SENSOR_ASSET, MQ2_SENSOR_ASSET, DHT11_SENSOR_ASSET, BUZZER_ASSET, POTENTIOMETER_ASSET, PUSH_BUTTON_ASSET } = runtimeModule as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+          // Load ALL extended component assets (includes Phase C sensors, actuators, displays)
+          const { EXTENDED_COMPONENT_ASSETS } = runtimeModule as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+          if (Array.isArray(EXTENDED_COMPONENT_ASSETS)) {
+            EXTENDED_COMPONENT_ASSETS_ALL = EXTENDED_COMPONENT_ASSETS;
+          }
         } catch {
           // extended assets not available
         }
@@ -312,6 +318,7 @@ export function SimulatorWorkspace({ projectId, initialDocument }: SimulatorWork
           BUZZER_ASSET,
           POTENTIOMETER_ASSET,
           PUSH_BUTTON_ASSET,
+          ...EXTENDED_COMPONENT_ASSETS_ALL,
         ];
 
         for (const asset of coreAssets) {
