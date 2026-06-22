@@ -171,6 +171,11 @@ export * from './project-gallery-runtime';
 // Phase 35B: Marketplace & Template Exchange
 export * from './marketplace-runtime';
 
+// Phase 36A: Multi-Tenant Deployment
+export * from './tenant-runtime';
+export * from './organization-runtime';
+export * from './deployment-management-runtime';
+
 // Phase 31A: Professional Simulator UX
 // Note: calculateSelectionBounds is re-exported as calculateUXSelectionBounds
 // to avoid collision with workspace-runtime's calculateSelectionBounds

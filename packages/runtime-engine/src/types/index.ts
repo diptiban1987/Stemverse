@@ -789,6 +789,9 @@ export interface StageSyncState {
 
   // Phase 35B: Marketplace & Template Exchange
   marketplaceSnapshot?: MarketplaceSnapshot;
+
+  // Phase 36A: Multi-Tenant Deployment
+  deploymentSnapshot?: DeploymentSnapshot;
 }
 
 
@@ -1648,6 +1651,9 @@ export interface SerializedTarget {
 
   // Phase 35B: Marketplace & Template Exchange
   marketplaceSnapshot?: MarketplaceSnapshot;
+
+  // Phase 36A: Multi-Tenant Deployment
+  deploymentSnapshot?: DeploymentSnapshot;
 }
 
 
@@ -8619,4 +8625,182 @@ export interface MarketplaceSnapshot {
   totalAssets: number;
   totalInstalls: number;
   totalCreators: number;
+}
+
+// ─── Phase 36A: Multi-Tenant Deployment ─────────────────
+
+/** Phase 36A: Organization type */
+export type OrganizationType =
+  | 'school' | 'college' | 'university'
+  | 'robotics_lab' | 'coaching_center'
+  | 'corporate' | 'district';
+
+/** Phase 36A: Tenant status */
+export type TenantStatus =
+  | 'active' | 'suspended' | 'archived' | 'pending';
+
+/** Phase 36A: Organization role */
+export type OrganizationRoleType =
+  | 'super_admin' | 'district_admin' | 'org_admin'
+  | 'principal' | 'teacher' | 'lab_instructor'
+  | 'judge' | 'student' | 'guest';
+
+/** Phase 36A: Subscription tier */
+export type SubscriptionTier =
+  | 'free' | 'school' | 'district' | 'enterprise';
+
+/** Phase 36A: Subscription status */
+export type SubscriptionStatus =
+  | 'active' | 'expired' | 'cancelled' | 'trial';
+
+/** Phase 36A: Audit action */
+export type AuditAction =
+  | 'login' | 'role_change' | 'project_publish'
+  | 'competition_action' | 'certificate_issue'
+  | 'device_upload' | 'org_update' | 'tenant_update';
+
+/** Phase 36A: Tenant */
+export interface TenantModel {
+  tenantId: string;
+  name: string;
+  slug: string;
+  ownerId: string;
+  ownerName: string;
+  status: TenantStatus;
+  orgType: OrganizationType;
+  maxUsers: number;
+  maxStorage: number;
+  createdAt: number;
+  updatedAt: number;
+}
+
+/** Phase 36A: Organization */
+export interface OrganizationModel {
+  organizationId: string;
+  tenantId: string;
+  name: string;
+  orgType: OrganizationType;
+  address: string;
+  contactEmail: string;
+  contactPhone: string;
+  logoUrl: string;
+  memberCount: number;
+  classroomCount: number;
+  createdAt: number;
+  updatedAt: number;
+  archived: boolean;
+}
+
+/** Phase 36A: Campus */
+export interface CampusModel {
+  campusId: string;
+  organizationId: string;
+  name: string;
+  address: string;
+  labCount: number;
+  classroomCount: number;
+  createdAt: number;
+}
+
+/** Phase 36A: Department */
+export interface DepartmentModel {
+  departmentId: string;
+  organizationId: string;
+  name: string;
+  headId: string;
+  headName: string;
+  memberCount: number;
+  createdAt: number;
+}
+
+/** Phase 36A: Organization member */
+export interface OrganizationMemberModel {
+  memberId: string;
+  organizationId: string;
+  userId: string;
+  userName: string;
+  role: OrganizationRoleType;
+  departmentId: string | null;
+  campusId: string | null;
+  joinedAt: number;
+  active: boolean;
+}
+
+/** Phase 36A: Organization role */
+export interface OrganizationRoleModel {
+  roleId: string;
+  organizationId: string;
+  roleName: OrganizationRoleType;
+  permissions: string[];
+  createdAt: number;
+}
+
+/** Phase 36A: Subscription */
+export interface OrganizationSubscriptionModel {
+  subscriptionId: string;
+  tenantId: string;
+  tier: SubscriptionTier;
+  status: SubscriptionStatus;
+  maxUsers: number;
+  maxStorage: number;
+  startedAt: number;
+  expiresAt: number | null;
+  cancelledAt: number | null;
+}
+
+/** Phase 36A: Organization analytics */
+export interface OrganizationAnalyticsModel {
+  analyticsId: string;
+  organizationId: string;
+  activeStudents: number;
+  activeTeachers: number;
+  totalAssignments: number;
+  totalCompetitions: number;
+  deviceUploads: number;
+  marketplaceUsage: number;
+  aiUsage: number;
+  storageUsedMB: number;
+  generatedAt: number;
+}
+
+/** Phase 36A: District */
+export interface DistrictModel {
+  districtId: string;
+  name: string;
+  adminId: string;
+  adminName: string;
+  schoolCount: number;
+  totalStudents: number;
+  totalTeachers: number;
+  region: string;
+  createdAt: number;
+}
+
+/** Phase 36A: Audit log */
+export interface AuditLogModel {
+  logId: string;
+  tenantId: string;
+  userId: string;
+  userName: string;
+  action: AuditAction;
+  details: string;
+  ipAddress: string;
+  timestamp: number;
+}
+
+/** Phase 36A: Deployment snapshot */
+export interface DeploymentSnapshot {
+  tenants: TenantModel[];
+  organizations: OrganizationModel[];
+  campuses: CampusModel[];
+  departments: DepartmentModel[];
+  members: OrganizationMemberModel[];
+  roles: OrganizationRoleModel[];
+  subscriptions: OrganizationSubscriptionModel[];
+  analytics: OrganizationAnalyticsModel[];
+  districts: DistrictModel[];
+  auditLogs: AuditLogModel[];
+  totalTenants: number;
+  totalOrganizations: number;
+  totalMembers: number;
 }
