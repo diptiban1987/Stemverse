@@ -34,13 +34,13 @@
 
 | # | Task | Source Doc | Status | Notes |
 |---|------|-----------|--------|-------|
-| 2.1 | Design tokens (colors, spacing, radius, shadows) | Unified Docs v2, V3 Enterprise Spec | 🔶 | CSS vars: primary #2563EB, secondary #7C3AED, accent #06B6D4; Tailwind config with colors, radius, shadows; missing 8-spacing scale |
+| 2.1 | Design tokens (colors, spacing, radius, shadows) | Unified Docs v2, V3 Enterprise Spec | ✅ | CSS vars: primary #2563EB, secondary #7C3AED, accent #06B6D4; 14 spacing scale vars (--space-0 to --space-24); 12 typography vars; Tailwind config with colors, radius, shadows, fontSize, spacing |
 | 2.2 | Light theme implementation | Unified Docs v2, V3 Enterprise Spec | ✅ | `globals.css` :root with BG #F8FAFC, Card #FFF, Border #E2E8F0, Text #0F172A |
-| 2.3 | Dark theme implementation | Unified Docs v2 | ✅ | `ThemeProvider`, `theme-store` (light/dark/system + persist), `ThemeToggle` in app sidebar; `.dark` tokens in `globals.css` |
-| 2.4 | Typography system | Unified Docs v2 | 🔶 | Tailwind: Inter (sans), Poppins (display), JetBrains Mono (mono); missing full scale (H1 48px–Small 14px) |
+| 2.3 | Dark theme implementation | Unified Docs v2 | ✅ | `ThemeProvider`, `theme-store` (light/dark/system + persist), `ThemeToggle` in app sidebar + settings page; `.dark` tokens complete (all 11+2 ring vars) in `globals.css`; `darkMode: 'class'` in Tailwind |
+| 2.4 | Typography system | Unified Docs v2 | ✅ | Tailwind: Inter (sans), Poppins (display), JetBrains Mono (mono); full scale H1 48px (--text-5xl) → Small 14px (--text-sm) with line-height tokens |
 | 2.5 | Animation system | Unified Docs v2 | 🔶 | `animate-float`, `animate-slide-up`, `animate-fade-in`, theme transition class; landing hero typing + particle background |
-| 2.6 | Core components - Button, Card, Modal, Drawer, Tabs, Table, DataGrid, Command Palette | Enterprise Handoff v2 | 🔶 | Button, Card, Input + `CommandPalette` (Ctrl+K); missing Modal, Drawer, Tabs, Table, DataGrid |
-| 2.7 | Core components - Input, Dropdown, Slider, Switch, Navbar, Sidebar | Unified Docs v2, Enterprise Addendum | 🔶 | Input, AppSidebar, PublicNav; Toast, Skeleton, EmptyState, ErrorBoundary; missing Dropdown, Slider, Switch |
+| 2.6 | Core components - Button, Card, Modal, Drawer, Tabs, Table, DataGrid, Command Palette | Enterprise Handoff v2 | 🔶 | Button, Card, Input, Modal, Drawer, Tabs + `CommandPalette` (Ctrl+K); missing Table, DataGrid |
+| 2.7 | Core components - Input, Dropdown, Slider, Switch, Navbar, Sidebar | Unified Docs v2, Enterprise Addendum | 🔶 | Input, Select/Dropdown, Slider, Switch, AppSidebar, PublicNav; Toast, Skeleton, EmptyState, ErrorBoundary; all core inputs complete |
 | 2.8 | Accessibility (WCAG AA) | Unified Docs v2 | 🔶 | Command palette keyboard nav, focus rings on toggles; full WCAG audit not done |
 | 2.9 | Mobile responsive layout | Unified Docs v2 | 🔶 | Responsive landing, community, AI Studio, marketing pages; app shell partially responsive |
 
@@ -67,10 +67,10 @@
 | # | Task | Source Doc | Status | Notes |
 |---|------|-----------|--------|-------|
 | 4.1 | Auth microservice (NestJS) | System Design | ✅ | `services/api/src/auth/` — JWT access + refresh tokens, bcrypt, register/login/refresh/logout |
-| 4.2 | OAuth integration (Google, GitHub) | Implementation Bible v1, System Design | ⬜ | |
+| 4.2 | OAuth integration (Google, GitHub) | Implementation Bible v1, System Design | 🔶 | OAuthService with Google/GitHub profile handling, auto-register, JWT token issue; Passport strategies and callback routes pending |
 | 4.3 | SSO for Enterprise | System Design | ⬜ | |
-| 4.4 | Role-based access control (RBAC) | Implementation Bible v1, Enterprise Addendum | 🔶 | 7 roles in Prisma enum (UserRole); no role-checking middleware or UI for role assignment |
-| 4.5 | User profile & settings pages | V3 Enterprise Spec | 🔶 | `/settings` shows email + role; `/profile` page missing; no edit capability |
+| 4.4 | Role-based access control (RBAC) | Implementation Bible v1, Enterprise Addendum | 🔶 | 7 roles in Prisma enum (UserRole); @Roles() decorator + RolesGuard implemented; endpoint-level usage pending |
+| 4.5 | User profile & settings pages | V3 Enterprise Spec | ✅ | `/profile` page (view/edit display name, security section), `/settings` page (theme toggle, AI config, notifications, danger zone); PATCH /users/me API |
 | 4.6 | Audit logging | System Design, Enterprise Handoff v2 | ✅ | `AuditService` + `AuditLog` model; auth events logged with IP |
 | 4.7 | Rate limiting & security | Enterprise Handoff v2 | ✅ | Gateway sanitize middleware; auth throttle 10/min; shared `@stemverse/auth` JWT guards on AI/compiler |
 
@@ -627,6 +627,7 @@ Based on V3 Enterprise Spec quarterly breakdown:
 | 2026-06-12 | 8 | Phase 20C — Live Electrical Visualization Runtime: Implemented VoltageVisualizationModel, CurrentVisualizationModel, LogicStateVisualizationModel, ActivityVisualizationModel, SignalFlowModel with LiveElectricalVisualizationSynchronizer, resolveGlowColor helper, BaseRuntime CRUD registries, lifecycle hooks, snapshot sync, and export/import serialization. | Antigravity |
 | 2026-06-12 | 8 | Phase 21A — Virtual ESP32 Execution Runtime Foundation: Implemented VirtualESP32Model, VirtualGPIOPinModel, VirtualPWMChannelModel, VirtualTimerModel, VirtualInterruptModel with VirtualExecutionSynchronizer, 10 simulation helpers (applyPinMode, applyDigitalWrite, readDigitalPin, togglePin, shouldTriggerInterrupt, applyLedcAttachPin, applyLedcWrite, computeNormalizedDuty, advanceClock, tickTimers), 9 high-level runtime APIs, BaseRuntime CRUD registries, lifecycle hooks, snapshot sync, export/import serialization, and 9,879 unit test assertions. | Antigravity |
 | 2026-06-16 | 9 | Phase 28A — Tinkercad Circuit Editor Completion: Upgraded Robotics Studio's simulator tab from basic ComponentPalette to premium ComponentCatalog (10 categories, search, favorites, SVG thumbnails), added PropertyPanel (transform/pins/wires inspector), PinInspector (hover tooltip), circuit editor toolbar with 5 tool buttons (Select/Wire/Pan/Rotate/Delete), keyboard shortcuts (V/W/H/R/X/Del/Esc), status bar with tool indicator and zoom info, 3-column responsive layout, context menu prevention, right-side panel with PropertyPanel + PinAssignmentPanel, 3D SVG upgrades for LED/Resistor/Button/Pot/Buzzer, scale calibration to real-world proportions, breadboard hole highlighting system, wire click-to-select interactivity, and E2E test suite. | Antigravity |
+| 2026-06-22 | 2, 4 | Phase A — Design System & Auth Completion: Added 14 spacing scale CSS vars, 12 typography scale vars, complete dark theme overrides (all 11 colors + ring vars), darkMode: 'class' in Tailwind, fontSize/spacing/keyframes extensions. Created 6 new UI components (Modal, Drawer, Tabs, Select/Dropdown, Slider, Switch). Added @Roles() decorator + RolesGuard for RBAC. Created OAuthService foundation for Google/GitHub. New /profile page (view/edit display name). Enhanced /settings page (theme toggle, notifications, danger zone). PATCH /users/me API. Sidebar Profile link. | Antigravity |
 
 ---
 
