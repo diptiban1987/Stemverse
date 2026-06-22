@@ -14,6 +14,40 @@
   --success: #10b981;
   --warning: #f59e0b;
   --danger: #ef4444;
+
+  /* ── Spacing scale (4px base) ── */
+  --space-0: 0px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+
+  /* ── Typography scale ── */
+  --text-xs: 0.75rem;     /* 12px */
+  --text-sm: 0.875rem;    /* 14px */
+  --text-base: 1rem;      /* 16px */
+  --text-lg: 1.125rem;    /* 18px */
+  --text-xl: 1.25rem;     /* 20px */
+  --text-2xl: 1.5rem;     /* 24px */
+  --text-3xl: 1.875rem;   /* 30px */
+  --text-4xl: 2.25rem;    /* 36px */
+  --text-5xl: 3rem;       /* 48px */
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.75;
+
+  /* ── Ring / Focus ── */
+  --ring: #2563eb;
+  --ring-offset: #ffffff;
 }
 
 .dark {
@@ -22,6 +56,14 @@
   --card: #1e293b;
   --border: #334155;
   --muted: #94a3b8;
+  --primary: #3b82f6;
+  --secondary: #8b5cf6;
+  --accent: #22d3ee;
+  --success: #34d399;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --ring: #3b82f6;
+  --ring-offset: #0f172a;
 }
 
 @keyframes float {

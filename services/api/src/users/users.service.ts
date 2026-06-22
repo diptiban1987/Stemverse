@@ -68,4 +68,22 @@ export class UsersService {
       },
     };
   }
+
+  async updateProfile(userId: string, data: { displayName?: string }) {
+    const updateData: Record<string, unknown> = {};
+    if (data.displayName !== undefined) {
+      updateData.displayName = data.displayName.trim() || null;
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return this.getProfile(userId);
+    }
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+    });
+
+    return this.getProfile(userId);
+  }
 }

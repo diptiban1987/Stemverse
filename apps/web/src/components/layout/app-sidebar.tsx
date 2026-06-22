@@ -15,6 +15,7 @@ import {
   LogOut,
   Settings,
   Users,
+  UserCircle,
   PanelLeftClose,
   PanelLeftOpen,
 } from 'lucide-react';
@@ -33,6 +34,7 @@ const navItems = [
   { href: '/academy', label: 'Academy', icon: GraduationCap },
   { href: '/marketplace', label: 'Marketplace', icon: Store },
   { href: '/community', label: 'Community', icon: Users },
+  { href: '/profile', label: 'Profile', icon: UserCircle },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
