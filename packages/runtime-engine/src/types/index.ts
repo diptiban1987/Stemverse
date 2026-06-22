@@ -777,6 +777,9 @@ export interface StageSyncState {
 
   // Phase 33B: Real-Time Multiuser Collaboration & Shared Editing
   realtimeCollaborationSnapshot?: RealtimeCollaborationSnapshot;
+
+  // Phase 34A: Classroom Management, Assignments & Analytics
+  classroomManagementSnapshot?: ClassroomManagementSnapshot;
 }
 
 
@@ -1624,6 +1627,9 @@ export interface SerializedTarget {
 
   // Phase 33B: Real-Time Multiuser Collaboration & Shared Editing
   realtimeCollaborationSnapshot?: RealtimeCollaborationSnapshot;
+
+  // Phase 34A: Classroom Management, Assignments & Analytics
+  classroomManagementSnapshot?: ClassroomManagementSnapshot;
 }
 
 
@@ -7803,4 +7809,201 @@ export interface RealtimeCollaborationSnapshot {
   activeSessionCount: number;
   onlineParticipantCount: number;
   totalActivityCount: number;
+}
+
+// ─── Phase 34A: Classroom Management, Assignments & Analytics ──
+
+/** Phase 34A: Classroom status */
+export type ManagedClassroomStatus =
+  | 'active'
+  | 'archived'
+  | 'suspended'
+  | 'draft';
+
+/** Phase 34A: Enrollment status */
+export type EnrollmentStatus =
+  | 'enrolled'
+  | 'pending'
+  | 'removed'
+  | 'graduated';
+
+/** Phase 34A: Managed assignment status */
+export type ManagedAssignmentStatus =
+  | 'draft'
+  | 'published'
+  | 'closed'
+  | 'archived';
+
+/** Phase 34A: Submission status */
+export type ManagedSubmissionStatus =
+  | 'not_started'
+  | 'in_progress'
+  | 'submitted'
+  | 'reviewed'
+  | 'graded'
+  | 'returned';
+
+/** Phase 34A: Rubric criteria */
+export type RubricCriteriaType =
+  | 'creativity'
+  | 'correctness'
+  | 'circuit_design'
+  | 'code_quality'
+  | 'documentation'
+  | 'custom';
+
+/** Phase 34A: Teacher classroom model */
+export interface TeacherClassroomModel {
+  classroomId: string;
+  teacherId: string;
+  name: string;
+  description: string;
+  subject: string;
+  grade: string;
+  inviteCode: string;
+  status: ManagedClassroomStatus;
+  maxStudents: number;
+  createdAt: number;
+  archivedAt: number | null;
+  deleted: boolean;
+}
+
+/** Phase 34A: Student enrollment */
+export interface StudentEnrollmentModel {
+  enrollmentId: string;
+  classroomId: string;
+  studentId: string;
+  studentName: string;
+  status: EnrollmentStatus;
+  enrolledAt: number;
+  removedAt: number | null;
+}
+
+/** Phase 34A: Assignment rubric criteria */
+export interface RubricCriteriaModel {
+  criteriaId: string;
+  type: RubricCriteriaType;
+  name: string;
+  description: string;
+  maxScore: number;
+  weight: number;
+}
+
+/** Phase 34A: Assignment rubric */
+export interface AssignmentRubricModel {
+  rubricId: string;
+  assignmentId: string;
+  criteria: RubricCriteriaModel[];
+  totalMaxScore: number;
+  passingScore: number;
+}
+
+/** Phase 34A: Managed assignment */
+export interface ManagedAssignmentModel {
+  assignmentId: string;
+  classroomId: string;
+  teacherId: string;
+  title: string;
+  description: string;
+  templateProjectId: string;
+  status: ManagedAssignmentStatus;
+  rubricId: string;
+  dueDate: number;
+  publishedAt: number | null;
+  closedAt: number | null;
+  maxSubmissions: number;
+  createdAt: number;
+  deleted: boolean;
+}
+
+/** Phase 34A: Assignment submission */
+export interface ManagedSubmissionModel {
+  submissionId: string;
+  assignmentId: string;
+  studentId: string;
+  studentName: string;
+  projectId: string;
+  status: ManagedSubmissionStatus;
+  submittedAt: number | null;
+  reviewedAt: number | null;
+  gradedAt: number | null;
+  totalScore: number;
+  feedback: string;
+  criteriaScores: Array<{ criteriaId: string; score: number; comment: string }>;
+  attemptNumber: number;
+}
+
+/** Phase 34A: Student progress */
+export interface StudentProgressModel {
+  progressId: string;
+  studentId: string;
+  classroomId: string;
+  projectsCompleted: number;
+  assignmentsSubmitted: number;
+  assignmentsGraded: number;
+  averageScore: number;
+  simulatorUsageMinutes: number;
+  aiAssistantUsageCount: number;
+  deviceUploadCount: number;
+  debugSessionCount: number;
+  blocklyBlocksPlaced: number;
+  totalTimeMinutes: number;
+  lastActivityAt: number;
+}
+
+/** Phase 34A: Classroom analytics */
+export interface ClassroomAnalyticsModel {
+  analyticsId: string;
+  classroomId: string;
+  totalStudents: number;
+  activeStudents: number;
+  averageClassScore: number;
+  completionRate: number;
+  submissionRate: number;
+  averageTimeMinutes: number;
+  topPerformers: string[];
+  aiUsageCount: number;
+  deviceUploadCount: number;
+  generatedAt: number;
+}
+
+/** Phase 34A: Classroom leaderboard entry */
+export interface ClassroomLeaderboardModel {
+  leaderboardId: string;
+  classroomId: string;
+  studentId: string;
+  studentName: string;
+  rank: number;
+  projectScore: number;
+  submissionScore: number;
+  participationScore: number;
+  totalScore: number;
+  updatedAt: number;
+}
+
+/** Phase 34A: Learning outcome */
+export interface LearningOutcomeModel {
+  outcomeId: string;
+  studentId: string;
+  classroomId: string;
+  skill: string;
+  level: 'beginner' | 'intermediate' | 'advanced' | 'expert';
+  achievedAt: number;
+  evidence: string;
+}
+
+/** Phase 34A: Full classroom management snapshot */
+export interface ClassroomManagementSnapshot {
+  classrooms: TeacherClassroomModel[];
+  enrollments: StudentEnrollmentModel[];
+  assignments: ManagedAssignmentModel[];
+  rubrics: AssignmentRubricModel[];
+  submissions: ManagedSubmissionModel[];
+  progress: StudentProgressModel[];
+  analytics: ClassroomAnalyticsModel[];
+  leaderboards: ClassroomLeaderboardModel[];
+  outcomes: LearningOutcomeModel[];
+  activeClassroomCount: number;
+  totalStudentCount: number;
+  totalAssignmentCount: number;
 }

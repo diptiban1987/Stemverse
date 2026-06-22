@@ -156,6 +156,10 @@ export * from './device-debug-runtime';
 // Phase 33B: Real-Time Multiuser Collaboration & Shared Editing
 export * from './realtime-collaboration-runtime';
 
+// Phase 34A: Classroom Management, Assignments & Analytics
+export * from './classroom-management-runtime';
+export * from './assignment-management-runtime';
+
 // Phase 31A: Professional Simulator UX
 // Note: calculateSelectionBounds is re-exported as calculateUXSelectionBounds
 // to avoid collision with workspace-runtime's calculateSelectionBounds
